@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  effect,
   ElementRef,
   Injector,
   inject,
   input,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { Scene } from '@features/stories';
@@ -29,10 +31,12 @@ export interface ConnectionEvent {
   styles: `
     :host {
       display: block;
+      height: 100%;
     }
     .rete-container {
       width: 100%;
-      height: 600px;
+      height: 100%;
+      min-height: 400px;
       border: 1px solid #ccc;
       background: #fafafa;
     }
@@ -50,20 +54,55 @@ export class ReteCanvasComponent {
   private readonly container = viewChild.required<ElementRef<HTMLElement>>('container');
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+
   private handle?: EditorHandle;
+  private readonly handleReady = signal(false);
+  private knownIds = new Set<string>();
+  private knownTexts = new Map<string, string>();
 
   constructor() {
     afterNextRender(async () => {
       const { createEditor } = await import('../data-access/rete-editor');
+      const initial = this.scenes();
       this.handle = await createEditor({
         container: this.container().nativeElement,
         injector: this.injector,
-        scenes: this.scenes(),
+        scenes: initial,
         onMove: (sceneId, position) => this.move.emit({ sceneId, position }),
         onSelect: (sceneId) => this.select.emit(sceneId),
         onConnect: (from, to) => this.connect.emit({ from, to }),
         onDisconnect: (from, to) => this.disconnect.emit({ from, to }),
       });
+      this.knownIds = new Set(Object.keys(initial));
+      this.knownTexts = new Map(Object.entries(initial).map(([id, s]) => [id, s.text]));
+      this.handleReady.set(true);
+    });
+
+    effect(() => {
+      const scenes = this.scenes();
+      if (!this.handleReady() || !this.handle) return;
+
+      const currentIds = new Set(Object.keys(scenes));
+
+      for (const id of currentIds) {
+        const scene = scenes[id];
+        if (!this.knownIds.has(id)) {
+          this.handle.addNode(id, scene);
+          this.knownIds.add(id);
+          this.knownTexts.set(id, scene.text);
+        } else if (this.knownTexts.get(id) !== scene.text) {
+          this.handle.updateLabel(id, scene);
+          this.knownTexts.set(id, scene.text);
+        }
+      }
+
+      for (const id of [...this.knownIds]) {
+        if (!currentIds.has(id)) {
+          this.handle.removeNode(id);
+          this.knownIds.delete(id);
+          this.knownTexts.delete(id);
+        }
+      }
     });
 
     this.destroyRef.onDestroy(() => this.handle?.destroy());

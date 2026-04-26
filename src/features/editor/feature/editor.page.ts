@@ -1,19 +1,22 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EditorStore } from '../data-access/editor.store';
+import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
 import {
-  ConnectionEvent,
-  MoveEvent,
-  ReteCanvasComponent,
-} from '../ui/rete-canvas.component';
-import {
+  ChoiceLabelUpdate,
   SceneEditorPanelComponent,
   SceneUpdate,
 } from '../ui/scene-editor-panel.component';
+import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
 
 @Component({
   selector: 'app-editor-page',
-  imports: [RouterLink, ReteCanvasComponent, SceneEditorPanelComponent],
+  imports: [
+    RouterLink,
+    ReteCanvasComponent,
+    SceneEditorPanelComponent,
+    StoryMetaPanelComponent,
+  ],
   providers: [EditorStore],
   template: `
     @if (store.loading()) {
@@ -24,11 +27,12 @@ import {
     } @else if (store.storyId()) {
       <header class="bar">
         <h2>
-          {{ store.meta()?.title }}
+          {{ store.meta()?.title || 'Untitled story' }}
           @if (store.dirty()) {
             <span class="dirty" title="Unsaved changes">●</span>
           }
         </h2>
+        <button type="button" (click)="store.addScene()">+ Add scene</button>
         <button
           type="button"
           [disabled]="!store.dirty() || store.saving()"
@@ -39,6 +43,11 @@ import {
       </header>
 
       <div class="layout">
+        <app-story-meta-panel
+          [meta]="store.meta()"
+          (update)="store.updateMeta($event)"
+        />
+
         <app-rete-canvas
           [scenes]="store.scenes()"
           (move)="onMove($event)"
@@ -46,20 +55,31 @@ import {
           (connect)="onConnect($event)"
           (disconnect)="onDisconnect($event)"
         />
+
         <app-scene-editor-panel
           [sceneId]="store.selectedSceneId()"
           [scene]="store.selectedScene()"
+          [isStartScene]="isSelectedStart()"
           (update)="onUpdate($event)"
+          (updateChoiceLabel)="onChoiceLabel($event)"
+          (delete)="store.removeScene($event)"
+          (setAsStart)="store.setStartScene($event)"
         />
       </div>
     }
   `,
   styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
     .bar {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 1rem;
+      flex-shrink: 0;
     }
     .bar h2 {
       flex: 1;
@@ -74,9 +94,15 @@ import {
     }
     .layout {
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 280px 1fr 320px;
       gap: 1rem;
-      align-items: start;
+      flex: 1;
+      min-height: 0;
+    }
+    .layout > * {
+      min-height: 0;
+      height: 100%;
+      overflow: auto;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,6 +110,11 @@ import {
 export class EditorPage {
   readonly id = input.required<string>();
   protected readonly store = inject(EditorStore);
+
+  protected readonly isSelectedStart = computed(
+    () => this.store.selectedSceneId() !== null
+      && this.store.selectedSceneId() === this.store.startSceneId(),
+  );
 
   constructor() {
     effect(() => {
@@ -105,5 +136,9 @@ export class EditorPage {
 
   protected onUpdate(event: SceneUpdate): void {
     this.store.updateScene(event.id, event.patch);
+  }
+
+  protected onChoiceLabel(event: ChoiceLabelUpdate): void {
+    this.store.updateChoiceLabel(event.fromSceneId, event.toSceneId, event.label);
   }
 }

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { Scene, StoriesService, Story } from '@features/stories';
-import { EditorState } from './editor.state';
+import { EditorState, StoryMeta } from './editor.state';
 
 export function withEditorMethods() {
   return signalStoreFeature(
@@ -117,6 +117,75 @@ export function withEditorMethods() {
             scenes: { ...state.scenes, [fromSceneId]: { ...from, next: filtered } },
             dirty: true,
           };
+        });
+      },
+
+      addScene(position: { x: number; y: number } = { x: 0, y: 0 }): string {
+        const id = crypto.randomUUID();
+        const scene: Scene = {
+          text: '',
+          position,
+          next: [],
+        };
+        patchState(store, (state) => ({
+          scenes: { ...state.scenes, [id]: scene },
+          startSceneId: state.startSceneId ?? id,
+          selectedSceneId: id,
+          dirty: true,
+        }));
+        return id;
+      },
+
+      removeScene(id: string) {
+        patchState(store, (state) => {
+          if (!state.scenes[id]) return state;
+          const newScenes: Record<string, Scene> = {};
+          for (const [otherId, scene] of Object.entries(state.scenes)) {
+            if (otherId === id) continue;
+            const filtered = scene.next.filter((n) => n.sceneId !== id);
+            newScenes[otherId] =
+              filtered.length === scene.next.length ? scene : { ...scene, next: filtered };
+          }
+          return {
+            scenes: newScenes,
+            startSceneId:
+              state.startSceneId === id ? (Object.keys(newScenes)[0] ?? null) : state.startSceneId,
+            selectedSceneId: state.selectedSceneId === id ? null : state.selectedSceneId,
+            dirty: true,
+          };
+        });
+      },
+
+      setStartScene(id: string) {
+        patchState(store, (state) =>
+          state.scenes[id] && state.startSceneId !== id
+            ? { startSceneId: id, dirty: true }
+            : state,
+        );
+      },
+
+      updateChoiceLabel(fromSceneId: string, toSceneId: string, label: string | undefined) {
+        patchState(store, (state) => {
+          const from = state.scenes[fromSceneId];
+          if (!from) return state;
+          const next = from.next.map((n) =>
+            n.sceneId === toSceneId ? { ...n, label: label || undefined } : n,
+          );
+          return {
+            scenes: { ...state.scenes, [fromSceneId]: { ...from, next } },
+            dirty: true,
+          };
+        });
+      },
+
+      updateMeta(patch: Partial<StoryMeta>) {
+        patchState(store, (state) => {
+          if (!state.meta) return state;
+          const merged: StoryMeta = { ...state.meta, ...patch };
+          if (merged.draft === false && !merged.publishedAt) {
+            merged.publishedAt = Date.now();
+          }
+          return { meta: merged, dirty: true };
         });
       },
     })),

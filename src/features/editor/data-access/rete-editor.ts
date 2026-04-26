@@ -23,11 +23,27 @@ export interface CreateEditorOptions {
 
 export interface EditorHandle {
   destroy: () => void;
+  addNode: (id: string, scene: Scene) => Promise<void>;
+  removeNode: (id: string) => Promise<void>;
+  updateLabel: (id: string, scene: Scene) => Promise<void>;
 }
 
 function nodeLabel(id: string, scene: Scene): string {
   const preview = scene.text.slice(0, 28);
-  return scene.text.length > 28 ? `${id}: ${preview}…` : `${id}: ${preview}`;
+  const suffix = scene.text.length > 28 ? '…' : '';
+  return scene.text ? `${id}: ${preview}${suffix}` : id;
+}
+
+async function buildNode(
+  id: string,
+  scene: Scene,
+  socket: ClassicPreset.Socket,
+): Promise<ClassicPreset.Node> {
+  const node = new ClassicPreset.Node(nodeLabel(id, scene));
+  node.id = id;
+  node.addInput('prev', new ClassicPreset.Input(socket));
+  node.addOutput('next', new ClassicPreset.Output(socket));
+  return node;
 }
 
 export async function createEditor(options: CreateEditorOptions): Promise<EditorHandle> {
@@ -53,10 +69,7 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
   AreaExtensions.simpleNodesOrder(area);
 
   for (const [id, scene] of Object.entries(scenes)) {
-    const node = new ClassicPreset.Node(nodeLabel(id, scene));
-    node.id = id;
-    node.addInput('prev', new ClassicPreset.Input(socket));
-    node.addOutput('next', new ClassicPreset.Output(socket));
+    const node = await buildNode(id, scene, socket);
     await editor.addNode(node);
     await area.translate(id, scene.position);
   }
@@ -99,5 +112,31 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
 
   return {
     destroy: () => area.destroy(),
+
+    addNode: async (id, scene) => {
+      const node = await buildNode(id, scene, socket);
+      await editor.addNode(node);
+      await area.translate(id, scene.position);
+    },
+
+    removeNode: async (id) => {
+      const connections = editor
+        .getConnections()
+        .filter((c) => c.source === id || c.target === id);
+      for (const conn of connections) {
+        await editor.removeConnection(conn.id);
+      }
+      const node = editor.getNode(id);
+      if (node) {
+        await editor.removeNode(id);
+      }
+    },
+
+    updateLabel: async (id, scene) => {
+      const node = editor.getNode(id);
+      if (!node) return;
+      node.label = nodeLabel(id, scene);
+      await area.update('node', id);
+    },
   };
 }

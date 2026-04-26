@@ -1,11 +1,13 @@
 import { Scene, Story } from '@features/stories';
 
+export type StoryMeta = Pick<
+  Story,
+  'title' | 'summary' | 'mainCharacters' | 'places' | 'inGameDate' | 'draft' | 'publishedAt'
+>;
+
 export type EditorState = {
   storyId: string | null;
-  meta: Pick<
-    Story,
-    'title' | 'summary' | 'mainCharacters' | 'places' | 'inGameDate' | 'draft' | 'publishedAt'
-  > | null;
+  meta: StoryMeta | null;
   authorUid: string | null;
   startSceneId: string | null;
   scenes: Record<string, Scene>;
