@@ -1,12 +1,15 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthComponent } from './auth/auth.component';
-import { RetePocComponent } from './rete-poc/rete-poc.component';
+import { AuthStore } from './auth/auth.store';
 
 @Component({
   selector: 'app-root',
-  imports: [AuthComponent, RetePocComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AuthComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {}
+export class App {
+  protected readonly auth = inject(AuthStore);
+}

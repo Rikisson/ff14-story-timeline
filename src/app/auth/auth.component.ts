@@ -12,12 +12,20 @@ import { AuthStore } from './auth.store';
     } @else {
       <button type="button" (click)="auth.signIn()">Sign in with Google</button>
     }
+    @if (auth.error(); as error) {
+      <span class="error">{{ error }}</span>
+    }
   `,
   styles: `
     :host {
       display: inline-flex;
       gap: 0.5rem;
       align-items: center;
+      flex-wrap: wrap;
+    }
+    .error {
+      color: #b00020;
+      font-size: 0.875rem;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

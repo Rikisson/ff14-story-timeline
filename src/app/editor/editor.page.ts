@@ -5,16 +5,18 @@ import {
   ElementRef,
   Injector,
   inject,
+  input,
   viewChild,
 } from '@angular/core';
 
 @Component({
-  selector: 'app-rete-poc',
-  template: `<div #container class="rete-container"></div>`,
+  selector: 'app-editor-page',
+  template: `
+    <h2>Editor</h2>
+    <p>Story id: <code>{{ id() }}</code></p>
+    <div #container class="rete-container"></div>
+  `,
   styles: `
-    :host {
-      display: block;
-    }
     .rete-container {
       width: 100%;
       height: 600px;
@@ -24,7 +26,9 @@ import {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RetePocComponent {
+export class EditorPage {
+  readonly id = input.required<string>();
+
   private readonly container = viewChild.required<ElementRef<HTMLElement>>('container');
   private readonly injector = inject(Injector);
 

@@ -1,10 +1,14 @@
 <header>
-  <h1>FF14 Story Timeline</h1>
+  <a routerLink="/" class="brand">FF14 Story Timeline</a>
+  <nav>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Catalog</a>
+    @if (auth.user()) {
+      <a routerLink="/edit" routerLinkActive="active">My stories</a>
+    }
+  </nav>
   <app-auth />
 </header>
 
 <main>
-  <h2>Rete POC</h2>
-  <p>Drag nodes, drag from a port to connect, scroll to zoom.</p>
-  <app-rete-poc />
+  <router-outlet />
 </main>
