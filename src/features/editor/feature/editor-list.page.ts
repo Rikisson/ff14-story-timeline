@@ -2,16 +2,17 @@ import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@ang
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { authFeature } from '@features/auth';
+import { PrimaryButtonComponent } from '@shared/ui';
 import { StoriesService, Story } from '@features/stories';
 
 @Component({
   selector: 'app-editor-list-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PrimaryButtonComponent],
   template: `
     <header class="bar">
       <h2>My stories</h2>
-      <button type="button" (click)="createStory()" [disabled]="creating()">
-        {{ creating() ? 'Creating...' : '+ New story' }}
+      <button uiPrimary type="button" (click)="createStory()" [loading]="creating()">
+        + New story
       </button>
     </header>
 

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
 import { Scene } from '@features/stories';
 
 export interface SceneUpdate {
@@ -14,6 +15,7 @@ export interface ChoiceLabelUpdate {
 
 @Component({
   selector: 'app-scene-editor-panel',
+  imports: [GhostButtonComponent, DangerButtonComponent],
   template: `
     @if (sceneId(); as id) {
       @if (scene(); as s) {
@@ -22,7 +24,7 @@ export interface ChoiceLabelUpdate {
           @if (isStartScene()) {
             <span class="badge">START</span>
           } @else {
-            <button type="button" (click)="setAsStart.emit(id)">Set as start</button>
+            <button uiGhost type="button" (click)="setAsStart.emit(id)">Set as start</button>
           }
         </header>
 
@@ -63,7 +65,7 @@ export interface ChoiceLabelUpdate {
 
         <hr />
 
-        <button type="button" class="delete" (click)="delete.emit(id)" [disabled]="isStartScene()">
+        <button uiDanger type="button" (click)="delete.emit(id)" [disabled]="isStartScene()">
           Delete scene
         </button>
         @if (isStartScene()) {
@@ -151,12 +153,6 @@ export interface ChoiceLabelUpdate {
       border: none;
       border-top: 1px solid #e5e7eb;
       margin: 1rem 0;
-    }
-    .delete {
-      color: #b00020;
-    }
-    .delete:disabled {
-      color: #9ca3af;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

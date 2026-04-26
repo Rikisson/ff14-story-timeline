@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
 import {
@@ -16,6 +17,8 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
     ReteCanvasComponent,
     SceneEditorPanelComponent,
     StoryMetaPanelComponent,
+    PrimaryButtonComponent,
+    SecondaryButtonComponent,
   ],
   providers: [EditorStore],
   template: `
@@ -32,13 +35,15 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
             <span class="dirty" title="Unsaved changes">●</span>
           }
         </h2>
-        <button type="button" (click)="store.addScene()">+ Add scene</button>
+        <button uiSecondary type="button" (click)="store.addScene()">+ Add scene</button>
         <button
+          uiPrimary
           type="button"
-          [disabled]="!store.dirty() || store.saving()"
+          [disabled]="!store.dirty()"
+          [loading]="store.saving()"
           (click)="store.save()"
         >
-          {{ store.saving() ? 'Saving...' : 'Save' }}
+          Save
         </button>
       </header>
 
