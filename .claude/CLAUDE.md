@@ -1,4 +1,25 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+You are an expert in TypeScript, Angular, NgRx, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+
+## Docs Reference
+
+Before executing any request, check the `docs` folder for applicable rules: Empty at the moment.
+
+If a request conflicts with documented rules or architecture:
+- Point out the conflict
+- Explain it briefly
+- Ask whether to proceed or adjust the request
+
+## General Guidelines
+
+- Prefer minimal, scoped changes that solve the task directly
+- Do not refactor unrelated code
+- Follow existing project patterns and architecture
+- Do not introduce new abstractions unless clearly justified
+- Prefer simple, readable, maintainable code over clever solutions
+- Apply KISS and SOLID pragmatically; avoid overengineering
+- Use clear, consistent naming
+- Avoid circular dependencies and respect module boundaries
+- Briefly explain assumptions, tradeoffs, and notable risks when making changes
 
 ## TypeScript Best Practices
 
@@ -52,3 +73,17 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Design services around a single responsibility
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
+
+## NgRx
+
+- Prefer `@ngrx/signals` (`signalStore`) for local and feature state — it aligns with Angular's signal model
+- Use `@ngrx/store` only for truly global, cross-feature state that must be shared app-wide
+- Define state with `withState()`, computed with `withComputed()`, methods with `withMethods()`
+- Use `withEntities()` from `@ngrx/signals/entities` for collections
+- Use `tapResponse` from `@ngrx/operators` inside `rxMethod` to handle errors safely
+- Keep effects inside `withMethods()` using `rxMethod` for observable-based async operations
+- Use `@ngrx/store-devtools` in development only — never in production builds
+- Use `@ngrx/router-store` to sync router state into the store when route state is needed globally
+- Keep selectors pure and co-located with their feature state
+- Never mutate state directly — always return new state objects
+- Use `EntityAdapter` from `@ngrx/entity` for normalized CRUD collections in the global store
