@@ -19,6 +19,7 @@
       "@features/auth": ["src/features/auth/index.ts"],
       "@features/stories": ["src/features/stories/index.ts"],
       "@features/characters": ["src/features/characters/index.ts"],
+      "@features/places": ["src/features/places/index.ts"],
       "@features/player": ["src/features/player/index.ts"],
       "@features/editor": ["src/features/editor/index.ts"],
       "@shared/ui": ["src/shared/ui/index.ts"],
