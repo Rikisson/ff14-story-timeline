@@ -9,7 +9,8 @@
       "WebFetch(domain:retejs.org)",
       "WebFetch(domain:github.com)",
       "Bash(gh api *)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
