@@ -12,6 +12,7 @@ export function withPlayerComputed() {
         const id = state.currentSceneId();
         return story && id ? (story.scenes[id] ?? null) : null;
       }),
+      canGoBack: computed(() => state.history().length > 1),
     })),
   );
 }

@@ -65,6 +65,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [sceneId]="store.selectedSceneId()"
           [scene]="store.selectedScene()"
           [isStartScene]="isSelectedStart()"
+          [storyId]="store.storyId() ?? ''"
           (update)="onUpdate($event)"
           (updateChoiceLabel)="onChoiceLabel($event)"
           (delete)="store.removeScene($event)"

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
 import { Scene } from '@features/stories';
+import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
 
 export interface SceneUpdate {
   id: string;
@@ -15,7 +16,7 @@ export interface ChoiceLabelUpdate {
 
 @Component({
   selector: 'app-scene-editor-panel',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, SceneAssetsPanelComponent],
   template: `
     @if (sceneId(); as id) {
       @if (scene(); as s) {
@@ -62,6 +63,17 @@ export interface ChoiceLabelUpdate {
             </div>
           }
         }
+
+        <hr />
+
+        <app-scene-assets-panel
+          [storyId]="storyId()"
+          [sceneId]="id"
+          [background]="s.background"
+          [characters]="s.characters ?? []"
+          [audio]="s.audio"
+          (update)="update.emit({ id, patch: $event })"
+        />
 
         <hr />
 
@@ -161,6 +173,7 @@ export class SceneEditorPanelComponent {
   readonly sceneId = input.required<string | null>();
   readonly scene = input.required<Scene | null>();
   readonly isStartScene = input.required<boolean>();
+  readonly storyId = input.required<string>();
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();

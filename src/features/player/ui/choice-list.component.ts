@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { SecondaryButtonComponent } from '@shared/ui';
 
 export interface Choice {
   label?: string;
@@ -7,26 +8,22 @@ export interface Choice {
 
 @Component({
   selector: 'app-choice-list',
+  imports: [SecondaryButtonComponent],
   template: `
-    @for (choice of choices(); track $index) {
-      <button type="button" (click)="select.emit(choice.sceneId)">
-        {{ choice.label ?? 'Continue' }}
-      </button>
-    }
-  `,
-  styles: `
-    :host {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      max-width: 640px;
-      align-items: flex-start;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      text-align: left;
-      cursor: pointer;
-    }
+    <ul class="flex flex-col items-stretch gap-2">
+      @for (choice of choices(); track $index) {
+        <li>
+          <button
+            uiSecondary
+            type="button"
+            className="w-full justify-start"
+            (click)="select.emit(choice.sceneId)"
+          >
+            {{ choice.label ?? 'Continue' }}
+          </button>
+        </li>
+      }
+    </ul>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

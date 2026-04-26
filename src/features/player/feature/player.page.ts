@@ -1,39 +1,84 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { GhostButtonComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
 import { SceneViewComponent } from '../ui/scene-view.component';
 
 @Component({
   selector: 'app-player-page',
-  imports: [RouterLink, SceneViewComponent, ChoiceListComponent],
+  imports: [
+    RouterLink,
+    SceneViewComponent,
+    ChoiceListComponent,
+    PrimaryButtonComponent,
+    SecondaryButtonComponent,
+    GhostButtonComponent,
+  ],
   providers: [PlayerStore],
   template: `
-    @if (store.loading()) {
-      <p>Loading...</p>
-    } @else if (store.error(); as err) {
-      <p class="error">{{ err }}</p>
-      <p><a routerLink="/">Back to catalog</a></p>
-    } @else if (store.currentScene(); as scene) {
-      @if (store.story(); as story) {
-        <h2>{{ story.title }}</h2>
-      }
+    <div class="mx-auto flex max-w-3xl flex-col gap-4">
+      @if (store.loading()) {
+        <p class="text-slate-600">Loading...</p>
+      } @else if (store.error(); as err) {
+        <p class="text-red-700">{{ err }}</p>
+        <p><a routerLink="/" class="text-indigo-700 hover:underline">Back to catalog</a></p>
+      } @else if (store.story(); as story) {
+        <header class="flex flex-wrap items-center gap-3">
+          <h2 class="m-0 text-2xl font-semibold text-slate-900">{{ story.title }}</h2>
+          <div class="ml-auto flex items-center gap-2">
+            <button
+              uiGhost
+              type="button"
+              [disabled]="!store.canGoBack()"
+              (click)="store.back()"
+            >
+              ← Back
+            </button>
+            <a routerLink="/" class="text-sm text-slate-600 hover:underline">Catalog</a>
+          </div>
+        </header>
 
-      <app-scene-view [text]="scene.text" [speaker]="scene.speaker" />
+        @if (store.pendingResume(); as resume) {
+          <aside
+            class="flex flex-wrap items-center gap-3 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3"
+            role="status"
+          >
+            <p class="m-0 text-sm text-indigo-900">
+              You have a saved spot in this story.
+            </p>
+            <div class="ml-auto flex gap-2">
+              <button uiPrimary type="button" (click)="store.resume()">Resume</button>
+              <button uiSecondary type="button" (click)="store.dismissResume()">
+                Start over
+              </button>
+            </div>
+          </aside>
+        }
 
-      @if (scene.next.length === 0) {
-        <p><em>The end.</em></p>
-        <button type="button" (click)="store.restart()">Restart</button>
-        <a routerLink="/">Back to catalog</a>
-      } @else {
-        <app-choice-list [choices]="scene.next" (select)="store.choose($event)" />
+        @if (store.currentScene(); as scene) {
+          <app-scene-view
+            [text]="scene.text"
+            [speaker]="scene.speaker"
+            [background]="scene.background"
+            [characters]="scene.characters ?? []"
+            [audio]="scene.audio"
+          />
+
+          @if (scene.next.length === 0) {
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="m-0 italic text-slate-600">The end.</p>
+              <button uiPrimary type="button" (click)="store.restart()">Restart</button>
+              <a routerLink="/" class="text-sm text-indigo-700 hover:underline">
+                Back to catalog
+              </a>
+            </div>
+          } @else {
+            <app-choice-list [choices]="scene.next" (select)="store.choose($event)" />
+          }
+        }
       }
-    }
-  `,
-  styles: `
-    .error {
-      color: #b00020;
-    }
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
