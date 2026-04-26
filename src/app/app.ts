@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { authFeature, AuthButtonComponent } from '@features/auth';
+import { AuthButtonComponent } from '@features/auth';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +9,4 @@ import { authFeature, AuthButtonComponent } from '@features/auth';
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
-  protected readonly user = inject(Store).selectSignal(authFeature.selectUser);
-}
+export class App {}

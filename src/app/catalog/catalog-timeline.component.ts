@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Story } from '@features/stories';
+import { CatalogCardComponent } from './catalog-card.component';
 
 interface TimelineGroup {
   date: string;
@@ -11,30 +11,24 @@ const UNDATED_LABEL = 'Undated';
 
 @Component({
   selector: 'app-catalog-timeline',
-  imports: [RouterLink],
+  imports: [CatalogCardComponent],
   template: `
-    <ol class="relative flex flex-col gap-6 border-l-2 border-slate-200 pl-6">
+    <ol class="relative flex flex-col gap-8 border-l-2 border-slate-200 pl-6">
       @for (group of groups(); track group.date) {
         <li class="relative">
           <span
             class="absolute -left-[31px] top-1.5 inline-block size-3 rounded-full border-2 border-white bg-indigo-500 ring-2 ring-indigo-500"
             aria-hidden="true"
           ></span>
-          <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
             {{ group.date }}
           </h3>
-          <ul class="flex flex-col gap-2">
+          <ul
+            class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] justify-start gap-4"
+          >
             @for (story of group.stories; track story.id) {
-              <li class="rounded-md border border-slate-200 bg-white px-3 py-2">
-                <a
-                  [routerLink]="['/play', story.id]"
-                  class="text-sm font-semibold text-indigo-700 hover:underline"
-                >
-                  {{ story.title }}
-                </a>
-                @if (story.summary) {
-                  <p class="mt-0.5 text-xs text-slate-600">{{ story.summary }}</p>
-                }
+              <li>
+                <app-catalog-card [story]="story" [canEdit]="canEdit(story)" />
               </li>
             }
           </ul>
@@ -46,6 +40,7 @@ const UNDATED_LABEL = 'Undated';
 })
 export class CatalogTimelineComponent {
   readonly stories = input.required<Story[]>();
+  readonly currentUserUid = input<string | null>(null);
 
   protected readonly groups = computed<TimelineGroup[]>(() => {
     const buckets = new Map<string, Story[]>();
@@ -59,6 +54,11 @@ export class CatalogTimelineComponent {
       .sort(([a], [b]) => compareDates(a, b))
       .map(([date, stories]) => ({ date, stories }));
   });
+
+  protected canEdit(story: Story): boolean {
+    const uid = this.currentUserUid();
+    return !!uid && uid === story.authorUid;
+  }
 }
 
 function compareDates(a: string, b: string): number {

@@ -6,15 +6,34 @@ export interface CatalogFilters {
   character: string;
   place: string;
   inGameDate: string;
+  mineOnly: boolean;
 }
 
-export const EMPTY_FILTERS: CatalogFilters = { character: '', place: '', inGameDate: '' };
+export const EMPTY_FILTERS: CatalogFilters = {
+  character: '',
+  place: '',
+  inGameDate: '',
+  mineOnly: false,
+};
 
 @Component({
   selector: 'app-catalog-filters',
   imports: [GhostButtonComponent],
   template: `
     <div class="flex flex-wrap items-end gap-3">
+      @if (showMineFilter()) {
+        <label
+          class="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            [checked]="value().mineOnly"
+            (change)="emitMine($event)"
+          />
+          My stories
+        </label>
+      }
+
       <label class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Main character</span>
         <select
@@ -67,6 +86,7 @@ export const EMPTY_FILTERS: CatalogFilters = { character: '', place: '', inGameD
 export class CatalogFiltersComponent {
   readonly stories = input.required<Story[]>();
   readonly value = input.required<CatalogFilters>();
+  readonly showMineFilter = input<boolean>(false);
   readonly change = output<CatalogFilters>();
   readonly reset = output<void>();
 
@@ -81,12 +101,16 @@ export class CatalogFiltersComponent {
   );
   protected readonly hasActive = computed(() => {
     const v = this.value();
-    return !!(v.character || v.place || v.inGameDate);
+    return !!(v.character || v.place || v.inGameDate || v.mineOnly);
   });
 
-  protected emit(key: keyof CatalogFilters, event: Event): void {
+  protected emit(key: 'character' | 'place' | 'inGameDate', event: Event): void {
     const next = (event.target as HTMLSelectElement).value;
     this.change.emit({ ...this.value(), [key]: next });
+  }
+
+  protected emitMine(event: Event): void {
+    this.change.emit({ ...this.value(), mineOnly: (event.target as HTMLInputElement).checked });
   }
 }
 

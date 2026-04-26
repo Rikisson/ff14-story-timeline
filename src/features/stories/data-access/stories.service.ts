@@ -46,6 +46,24 @@ export class StoriesService {
     await setDoc(doc(this.firebase.firestore, 'stories', id), data);
   }
 
+  async createDraftStory(authorUid: string): Promise<string> {
+    const id = crypto.randomUUID();
+    const startSceneId = crypto.randomUUID();
+    const story: Story = {
+      id,
+      title: 'Untitled story',
+      mainCharacters: [],
+      places: [],
+      inGameDate: '',
+      startSceneId,
+      scenes: { [startSceneId]: { text: '', position: { x: 0, y: 0 }, next: [] } },
+      authorUid,
+      draft: true,
+    };
+    await this.saveStory(story);
+    return id;
+  }
+
   async deleteStory(id: string): Promise<void> {
     await deleteDoc(doc(this.firebase.firestore, 'stories', id));
   }
