@@ -11,7 +11,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { FirebaseService } from '../firebase/firebase.service';
+import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { StoredStory, Story } from './story.types';
 
 @Injectable({ providedIn: 'root' })

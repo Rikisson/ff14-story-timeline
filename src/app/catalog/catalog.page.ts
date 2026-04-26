@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { StoriesService } from '../stories/stories.service';
+import { StoriesService } from '@features/stories';
 
 @Component({
   selector: 'app-catalog-page',

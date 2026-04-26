@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AuthStore } from '../auth/auth.store';
-import { StoriesService } from '../stories/stories.service';
-import { Story } from '../stories/story.types';
+import { Store } from '@ngrx/store';
+import { authFeature } from '@features/auth';
+import { StoriesService, Story } from '@features/stories';
 
 @Component({
   selector: 'app-editor-list-page',
@@ -38,14 +38,14 @@ import { Story } from '../stories/story.types';
 })
 export class EditorListPage {
   private readonly stories = inject(StoriesService);
-  private readonly auth = inject(AuthStore);
+  private readonly user = inject(Store).selectSignal(authFeature.selectUser);
 
   protected readonly creating = signal(false);
   protected readonly lastCreatedId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
 
   async createExample(): Promise<void> {
-    const user = this.auth.user();
+    const user = this.user();
     if (!user) {
       this.error.set('Sign in first.');
       return;
