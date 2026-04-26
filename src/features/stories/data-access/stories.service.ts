@@ -49,4 +49,15 @@ export class StoriesService {
   async deleteStory(id: string): Promise<void> {
     await deleteDoc(doc(this.firebase.firestore, 'stories', id));
   }
+
+  subscribeAuthorStories(authorUid: string, callback: (stories: Story[]) => void): () => void {
+    if (!this.isBrowser) return () => {};
+    const q = query(
+      collection(this.firebase.firestore, 'stories'),
+      where('authorUid', '==', authorUid),
+    );
+    return onSnapshot(q, (snap) => {
+      callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredStory) })));
+    });
+  }
 }

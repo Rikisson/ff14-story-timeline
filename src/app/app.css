@@ -30,5 +30,8 @@ nav a.active {
 }
 
 main {
+  flex: 1;
+  min-height: 0;
   padding: 1.5rem;
+  overflow: auto;
 }
