@@ -31,7 +31,7 @@ type ViewMode = 'list' | 'timeline';
           [stories]="sourceStories()"
           [value]="filters()"
           [showMineFilter]="!!user()"
-          (change)="filters.set($event)"
+          (filtersChange)="filters.set($event)"
           (reset)="filters.set(EMPTY_FILTERS)"
         />
 

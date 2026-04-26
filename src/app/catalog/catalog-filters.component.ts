@@ -87,7 +87,7 @@ export class CatalogFiltersComponent {
   readonly stories = input.required<Story[]>();
   readonly value = input.required<CatalogFilters>();
   readonly showMineFilter = input<boolean>(false);
-  readonly change = output<CatalogFilters>();
+  readonly filtersChange = output<CatalogFilters>();
   readonly reset = output<void>();
 
   protected readonly characters = computed(() =>
@@ -106,11 +106,14 @@ export class CatalogFiltersComponent {
 
   protected emit(key: 'character' | 'place' | 'inGameDate', event: Event): void {
     const next = (event.target as HTMLSelectElement).value;
-    this.change.emit({ ...this.value(), [key]: next });
+    this.filtersChange.emit({ ...this.value(), [key]: next });
   }
 
   protected emitMine(event: Event): void {
-    this.change.emit({ ...this.value(), mineOnly: (event.target as HTMLInputElement).checked });
+    this.filtersChange.emit({
+      ...this.value(),
+      mineOnly: (event.target as HTMLInputElement).checked,
+    });
   }
 }
 
