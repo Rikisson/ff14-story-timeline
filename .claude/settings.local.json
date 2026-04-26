@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Read(//mnt/c/Users/rikis/WebstormProjects/**)",
+      "Bash(pnpm add *)"
     ]
   }
 }
