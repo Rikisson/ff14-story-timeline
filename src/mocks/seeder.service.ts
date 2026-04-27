@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { doc, setDoc } from 'firebase/firestore';
 import { FirebaseService } from '../app/firebase/firebase.service';
-import { SEED_CHARACTERS, SEED_PLACES, SEED_STORY } from './seed-data';
+import { SEED_CHARACTERS, SEED_EVENTS, SEED_PLACES, SEED_STORY } from './seed-data';
 
 @Injectable({ providedIn: 'root' })
 export class SeederService {
@@ -30,11 +30,21 @@ export class SeederService {
     await setDoc(doc(this.firebase.firestore, 'stories', id), { ...data, authorUid });
   }
 
+  async seedEvents(authorUid: string): Promise<void> {
+    const db = this.firebase.firestore;
+    await Promise.all(
+      SEED_EVENTS.map(({ id, ...data }) =>
+        setDoc(doc(db, 'events', id), { ...data, authorUid }),
+      ),
+    );
+  }
+
   async seedAll(authorUid: string): Promise<void> {
     await Promise.all([
       this.seedCharacters(authorUid),
       this.seedPlaces(authorUid),
       this.seedStory(authorUid),
+      this.seedEvents(authorUid),
     ]);
   }
 }

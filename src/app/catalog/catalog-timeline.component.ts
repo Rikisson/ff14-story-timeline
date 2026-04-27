@@ -1,17 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Story } from '@features/stories';
+import { EventCardComponent, TimelineEvent } from '@features/events';
 import { CatalogCardComponent } from './catalog-card.component';
+import { SortDirection } from './catalog-filters.component';
 
 interface TimelineGroup {
   date: string;
   stories: Story[];
+  events: TimelineEvent[];
 }
 
 const UNDATED_LABEL = 'Undated';
 
 @Component({
   selector: 'app-catalog-timeline',
-  imports: [CatalogCardComponent],
+  imports: [CatalogCardComponent, EventCardComponent],
   template: `
     <ol class="relative flex flex-col gap-8 border-l-2 border-slate-200 pl-6">
       @for (group of groups(); track group.date) {
@@ -26,9 +29,14 @@ const UNDATED_LABEL = 'Undated';
           <ul
             class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] justify-start gap-4"
           >
+            @for (event of group.events; track event.id) {
+              <li>
+                <app-event-card [event]="event" />
+              </li>
+            }
             @for (story of group.stories; track story.id) {
               <li>
-                <app-catalog-card [story]="story" [canEdit]="canEdit(story)" />
+                <app-catalog-card [story]="story" [canEdit]="canEditStory(story)" />
               </li>
             }
           </ul>
@@ -40,29 +48,39 @@ const UNDATED_LABEL = 'Undated';
 })
 export class CatalogTimelineComponent {
   readonly stories = input.required<Story[]>();
+  readonly events = input<TimelineEvent[]>([]);
+  readonly sortDirection = input<SortDirection>('asc');
   readonly currentUserUid = input<string | null>(null);
 
   protected readonly groups = computed<TimelineGroup[]>(() => {
-    const buckets = new Map<string, Story[]>();
+    const buckets = new Map<string, TimelineGroup>();
+    const ensure = (key: string): TimelineGroup => {
+      let group = buckets.get(key);
+      if (!group) {
+        group = { date: key, stories: [], events: [] };
+        buckets.set(key, group);
+      }
+      return group;
+    };
     for (const story of this.stories()) {
-      const key = story.inGameDate || UNDATED_LABEL;
-      const list = buckets.get(key);
-      if (list) list.push(story);
-      else buckets.set(key, [story]);
+      ensure(story.inGameDate || UNDATED_LABEL).stories.push(story);
     }
-    return Array.from(buckets.entries())
-      .sort(([a], [b]) => compareDates(a, b))
-      .map(([date, stories]) => ({ date, stories }));
+    for (const event of this.events()) {
+      ensure(event.inGameDate || UNDATED_LABEL).events.push(event);
+    }
+    const direction = this.sortDirection();
+    return Array.from(buckets.values()).sort((a, b) => compareDates(a.date, b.date, direction));
   });
 
-  protected canEdit(story: Story): boolean {
+  protected canEditStory(story: Story): boolean {
     const uid = this.currentUserUid();
     return !!uid && uid === story.authorUid;
   }
 }
 
-function compareDates(a: string, b: string): number {
+function compareDates(a: string, b: string, direction: SortDirection): number {
   if (a === UNDATED_LABEL) return 1;
   if (b === UNDATED_LABEL) return -1;
-  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  const cmp = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  return direction === 'asc' ? cmp : -cmp;
 }

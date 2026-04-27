@@ -4,6 +4,7 @@
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Stories</a>
     <a routerLink="/characters" routerLinkActive="active">Characters</a>
     <a routerLink="/places" routerLinkActive="active">Places</a>
+    <a routerLink="/events" routerLinkActive="active">Events</a>
   </nav>
   @if (canSeed()) {
     <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">

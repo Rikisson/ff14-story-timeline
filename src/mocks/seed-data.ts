@@ -1,4 +1,5 @@
 import { Character } from '@features/characters';
+import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
 import { Story } from '@features/stories';
 
@@ -79,6 +80,45 @@ export const SEED_PLACES: Place[] = [
     name: 'Gridania & the Northern Shroud',
     geoPosition: 'Black Shroud',
     factions: ['Order of the Twin Adder', 'Wood Wailers'],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+];
+
+export const SEED_EVENTS: TimelineEvent[] = [
+  {
+    id: 'event-seventh-umbral-calamity',
+    name: 'Calamity of the Seventh Umbral Era',
+    description:
+      'Dalamud crashes into Eorzea, releasing Bahamut and devastating the realm. Marks the close of the Sixth Astral Era and the start of the Seventh Umbral Era.',
+    mainCharacters: [],
+    places: ['place-uldah-pearl-lane', 'place-gridania-northern-shroud'],
+    inGameDate: '1572 6AE',
+    relatedDates: ['1577 6AE'],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'event-fall-of-doma',
+    name: 'Fall of Doma',
+    description:
+      'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
+    mainCharacters: ['char-sakuya'],
+    places: ['place-doma'],
+    inGameDate: '1557 6AE',
+    relatedDates: ['1582 6AE'],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'event-brann-house-attack',
+    name: "Attack on Brann's house",
+    description:
+      "The night Sakuya's blade ended Brann's reign — and nearly Ingrid's existence. Survivors fled toward the Black Shroud; Ingrid's path to Ul'dah began here.",
+    mainCharacters: ['char-ingrid', 'char-brann', 'char-sakuya', 'char-zahir'],
+    places: ['place-ishgard', 'place-gridania-northern-shroud'],
+    inGameDate: '1582 6AE',
+    relatedDates: ['1585 6AE, late afternoon'],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },

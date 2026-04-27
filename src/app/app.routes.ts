@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadChildren: () => import('@features/places').then((m) => m.PLACES_ROUTES),
   },
   {
+    path: 'events',
+    loadChildren: () => import('@features/events').then((m) => m.EVENTS_ROUTES),
+  },
+  {
     path: 'play',
     loadChildren: () => import('@features/player').then((m) => m.PLAYER_ROUTES),
   },

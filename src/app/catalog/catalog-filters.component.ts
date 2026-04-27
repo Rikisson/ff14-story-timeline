@@ -16,6 +16,8 @@ export const EMPTY_FILTERS: CatalogFilters = {
   mineOnly: false,
 };
 
+export type SortDirection = 'asc' | 'desc';
+
 @Component({
   selector: 'app-catalog-filters',
   imports: [GhostButtonComponent],
@@ -63,6 +65,20 @@ export const EMPTY_FILTERS: CatalogFilters = {
         </select>
       </label>
 
+      @if (showSortControl()) {
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Sort by date</span>
+          <select
+            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            [value]="sortDirection()"
+            (change)="emitSort($event)"
+          >
+            <option value="asc">Oldest first</option>
+            <option value="desc">Newest first</option>
+          </select>
+        </label>
+      }
+
       @if (showMineFilter()) {
         <label
           class="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm"
@@ -87,7 +103,10 @@ export class CatalogFiltersComponent {
   readonly stories = input.required<Story[]>();
   readonly value = input.required<CatalogFilters>();
   readonly showMineFilter = input<boolean>(false);
+  readonly showSortControl = input<boolean>(false);
+  readonly sortDirection = input<SortDirection>('asc');
   readonly filtersChange = output<CatalogFilters>();
+  readonly sortDirectionChange = output<SortDirection>();
   readonly reset = output<void>();
 
   protected readonly characters = computed(() =>
@@ -114,6 +133,11 @@ export class CatalogFiltersComponent {
       ...this.value(),
       mineOnly: (event.target as HTMLInputElement).checked,
     });
+  }
+
+  protected emitSort(event: Event): void {
+    const next = (event.target as HTMLSelectElement).value as SortDirection;
+    this.sortDirectionChange.emit(next);
   }
 }
 
