@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
@@ -124,9 +124,7 @@ export class EditorPage {
   );
 
   constructor() {
-    effect(() => {
-      this.store.load(this.id());
-    });
+    this.store.bindLoad(this.id);
   }
 
   protected onMove(event: MoveEvent): void {

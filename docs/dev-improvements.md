@@ -6,18 +6,6 @@ off as they ship.
 
 ## 1. Technical debt & optimizations
 
-### Editor specifics
-
-- **Rete `effect` ignores connection changes** in `rete-canvas.component.ts:81`
-  — tracks node add/remove and label changes only. Will bite the moment
-  undo/redo or paste arrives.
-- **No deselect path** — clicking the empty canvas doesn't fire
-  `onSelect(null)`, so the side panel stays on the previous scene.
-- **`effect(() => store.load(this.id()))`** in `editor.page.ts:126` mixes
-  `input.required` with `effect`; a `linkedSignal` or computed feels cleaner.
-- **Inline plain CSS** in `app.css` clashes with the rest of the project being
-  Tailwind.
-
 ### Misc
 
 - **Wildcard `redirectTo: ''`** silently swallows malformed URLs. No 404 page.

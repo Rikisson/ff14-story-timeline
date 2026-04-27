@@ -26,6 +26,8 @@ export interface EditorHandle {
   addNode: (id: string, scene: Scene) => Promise<void>;
   removeNode: (id: string) => Promise<void>;
   updateLabel: (id: string, scene: Scene) => Promise<void>;
+  addConnection: (fromSceneId: string, toSceneId: string) => Promise<void>;
+  removeConnection: (fromSceneId: string, toSceneId: string) => Promise<void>;
 }
 
 function nodeLabel(id: string, scene: Scene): string {
@@ -44,6 +46,14 @@ async function buildNode(
   node.addInput('prev', new ClassicPreset.Input(socket));
   node.addOutput('next', new ClassicPreset.Output(socket));
   return node;
+}
+
+function findConnection(
+  editor: NodeEditor<Schemes>,
+  fromId: string,
+  toId: string,
+): Schemes['Connection'] | undefined {
+  return editor.getConnections().find((c) => c.source === fromId && c.target === toId);
 }
 
 export async function createEditor(options: CreateEditorOptions): Promise<EditorHandle> {
@@ -90,12 +100,20 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
     AreaExtensions.zoomAt(area, editor.getNodes());
   }
 
+  let pickedThisGesture = false;
   area.addPipe((context) => {
     if (context.type === 'nodetranslated') {
       onMove(context.data.id, context.data.position);
     }
     if (context.type === 'nodepicked') {
+      pickedThisGesture = true;
       onSelect(context.data.id);
+    }
+    if (context.type === 'pointerdown') {
+      pickedThisGesture = false;
+      queueMicrotask(() => {
+        if (!pickedThisGesture) onSelect(null);
+      });
     }
     return context;
   });
@@ -137,6 +155,21 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
       if (!node) return;
       node.label = nodeLabel(id, scene);
       await area.update('node', id);
+    },
+
+    addConnection: async (fromId, toId) => {
+      if (findConnection(editor, fromId, toId)) return;
+      const fromNode = editor.getNode(fromId);
+      const toNode = editor.getNode(toId);
+      if (!fromNode || !toNode) return;
+      await editor.addConnection(
+        new ClassicPreset.Connection(fromNode, 'next', toNode, 'prev'),
+      );
+    },
+
+    removeConnection: async (fromId, toId) => {
+      const conn = findConnection(editor, fromId, toId);
+      if (conn) await editor.removeConnection(conn.id);
     },
   };
 }

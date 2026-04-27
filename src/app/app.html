@@ -1,10 +1,27 @@
-<header>
-  <a routerLink="/" class="brand">FF14 Story Timeline</a>
-  <nav>
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Stories</a>
-    <a routerLink="/characters" routerLinkActive="active">Characters</a>
-    <a routerLink="/places" routerLinkActive="active">Places</a>
-    <a routerLink="/events" routerLinkActive="active">Events</a>
+<header class="flex items-center gap-6 border-b border-slate-200 px-6 py-3">
+  <a routerLink="/" class="text-lg font-semibold text-inherit no-underline">FF14 Story Timeline</a>
+  <nav class="flex flex-1 gap-4">
+    <a
+      routerLink="/"
+      routerLinkActive="text-slate-900 font-medium"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="text-slate-600 no-underline"
+    >Stories</a>
+    <a
+      routerLink="/characters"
+      routerLinkActive="text-slate-900 font-medium"
+      class="text-slate-600 no-underline"
+    >Characters</a>
+    <a
+      routerLink="/places"
+      routerLinkActive="text-slate-900 font-medium"
+      class="text-slate-600 no-underline"
+    >Places</a>
+    <a
+      routerLink="/events"
+      routerLinkActive="text-slate-900 font-medium"
+      class="text-slate-600 no-underline"
+    >Events</a>
   </nav>
   @if (canSeed()) {
     <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
@@ -14,6 +31,6 @@
   <app-auth-button />
 </header>
 
-<main>
+<main class="min-h-0 flex-1 overflow-auto p-6">
   <router-outlet />
 </main>

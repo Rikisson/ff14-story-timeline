@@ -14,7 +14,6 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     GhostButtonComponent,
   ],
   templateUrl: './app.html',
-  styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {

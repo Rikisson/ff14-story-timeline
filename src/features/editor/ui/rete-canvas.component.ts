@@ -25,6 +25,14 @@ export interface ConnectionEvent {
   to: string;
 }
 
+function connectionsOf(scenes: Record<string, Scene>): Set<string> {
+  const out = new Set<string>();
+  for (const [fromId, scene] of Object.entries(scenes)) {
+    for (const next of scene.next) out.add(`${fromId}|${next.sceneId}`);
+  }
+  return out;
+}
+
 @Component({
   selector: 'app-rete-canvas',
   template: `<div #container class="rete-container"></div>`,
@@ -59,6 +67,7 @@ export class ReteCanvasComponent {
   private readonly handleReady = signal(false);
   private knownIds = new Set<string>();
   private knownTexts = new Map<string, string>();
+  private knownConnections = new Set<string>();
 
   constructor() {
     afterNextRender(async () => {
@@ -70,11 +79,18 @@ export class ReteCanvasComponent {
         scenes: initial,
         onMove: (sceneId, position) => this.move.emit({ sceneId, position }),
         onSelect: (sceneId) => this.selectScene.emit(sceneId),
-        onConnect: (from, to) => this.connect.emit({ from, to }),
-        onDisconnect: (from, to) => this.disconnect.emit({ from, to }),
+        onConnect: (from, to) => {
+          this.knownConnections.add(`${from}|${to}`);
+          this.connect.emit({ from, to });
+        },
+        onDisconnect: (from, to) => {
+          this.knownConnections.delete(`${from}|${to}`);
+          this.disconnect.emit({ from, to });
+        },
       });
       this.knownIds = new Set(Object.keys(initial));
       this.knownTexts = new Map(Object.entries(initial).map(([id, s]) => [id, s.text]));
+      this.knownConnections = connectionsOf(initial);
       this.handleReady.set(true);
     });
 
@@ -93,6 +109,22 @@ export class ReteCanvasComponent {
         } else if (this.knownTexts.get(id) !== scene.text) {
           this.handle.updateLabel(id, scene);
           this.knownTexts.set(id, scene.text);
+        }
+      }
+
+      const currentConnections = connectionsOf(scenes);
+      for (const key of currentConnections) {
+        if (!this.knownConnections.has(key)) {
+          const [from, to] = key.split('|');
+          this.handle.addConnection(from, to);
+          this.knownConnections.add(key);
+        }
+      }
+      for (const key of [...this.knownConnections]) {
+        if (!currentConnections.has(key)) {
+          const [from, to] = key.split('|');
+          this.handle.removeConnection(from, to);
+          this.knownConnections.delete(key);
         }
       }
 
