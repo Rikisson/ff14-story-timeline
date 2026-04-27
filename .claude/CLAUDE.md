@@ -2,7 +2,8 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 
 ## Docs Reference
 
-Before executing any request, check the `docs` folder for applicable rules: Empty at the moment.
+Before executing any request, check the `docs` folder for applicable rules:
+- `docs/dev-improvements.md` — known technical debt, feature debt, and new-feature backlog. Consult before starting non-trivial work to avoid duplicating planned changes or contradicting noted constraints.
 
 If a request conflicts with documented rules or architecture:
 - Point out the conflict
