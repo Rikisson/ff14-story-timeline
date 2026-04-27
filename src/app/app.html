@@ -5,6 +5,11 @@
     <a routerLink="/characters" routerLinkActive="active">Characters</a>
     <a routerLink="/places" routerLinkActive="active">Places</a>
   </nav>
+  @if (canSeed()) {
+    <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
+      Seed test data
+    </button>
+  }
   <app-auth-button />
 </header>
 
