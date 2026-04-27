@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { authFeature } from '@features/auth';
+import { AuthStore } from '@features/auth';
 import { EventsService, TimelineEvent } from '@features/events';
 import { StoriesService, Story } from '@features/stories';
 import { GhostButtonComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
@@ -102,7 +101,9 @@ export class CatalogPage {
   private readonly stories = inject(StoriesService);
   private readonly events = inject(EventsService);
   private readonly router = inject(Router);
-  protected readonly user = inject(Store).selectSignal(authFeature.selectUser);
+  protected readonly user = inject(AuthStore).user;
+
+  readonly mineOnly = input<string | undefined>();
 
   protected readonly published = this.stories.publishedStories;
   protected readonly allEvents = this.events.events;
@@ -130,6 +131,12 @@ export class CatalogPage {
   });
 
   constructor() {
+    effect(() => {
+      if (this.mineOnly() === 'true') {
+        this.filters.update((f) => (f.mineOnly ? f : { ...f, mineOnly: true }));
+      }
+    });
+
     effect((onCleanup) => {
       const u = this.user();
       if (!u) {

@@ -1,19 +1,24 @@
-import { inject } from '@angular/core';
+import { effect, inject, Injector, runInInjectionContext } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { filter, firstValueFrom, map } from 'rxjs';
-import { authFeature } from './auth.feature';
+import { AuthStore } from './auth.store';
 
 export const authGuard: CanActivateFn = async () => {
-  const store = inject(Store);
+  const auth = inject(AuthStore);
   const router = inject(Router);
+  const injector = inject(Injector);
 
-  const user = await firstValueFrom(
-    store.select(authFeature.selectAuthState).pipe(
-      filter((state) => !state.loading),
-      map((state) => state.user),
-    ),
-  );
+  if (auth.loading()) {
+    await new Promise<void>((resolve) => {
+      runInInjectionContext(injector, () => {
+        const ref = effect(() => {
+          if (!auth.loading()) {
+            ref.destroy();
+            resolve();
+          }
+        });
+      });
+    });
+  }
 
-  return user ? true : router.createUrlTree(['/']);
+  return auth.user() ? true : router.createUrlTree(['/']);
 };

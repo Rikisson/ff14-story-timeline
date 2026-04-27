@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { authFeature } from '@features/auth';
+import { AuthStore } from '@features/auth';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
@@ -52,7 +51,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class PlacesPage {
   private readonly service = inject(PlacesService);
-  protected readonly user = inject(Store).selectSignal(authFeature.selectUser);
+  protected readonly user = inject(AuthStore).user;
 
   protected readonly places = this.service.places;
   protected readonly mode = signal<Mode>({ kind: 'idle' });

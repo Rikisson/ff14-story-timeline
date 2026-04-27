@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { authFeature } from '@features/auth';
+import { AuthStore } from '@features/auth';
 import {
   EventCardComponent,
   EventsService,
@@ -56,7 +55,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class EventsPage {
   private readonly service = inject(EventsService);
-  protected readonly user = inject(Store).selectSignal(authFeature.selectUser);
+  protected readonly user = inject(AuthStore).user;
 
   protected readonly events = this.service.events;
   protected readonly mode = signal<Mode>({ kind: 'idle' });

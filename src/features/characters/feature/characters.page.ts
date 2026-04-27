@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { authFeature } from '@features/auth';
+import { AuthStore } from '@features/auth';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
@@ -52,7 +51,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class CharactersPage {
   private readonly service = inject(CharactersService);
-  protected readonly user = inject(Store).selectSignal(authFeature.selectUser);
+  protected readonly user = inject(AuthStore).user;
 
   protected readonly characters = this.service.characters;
   protected readonly mode = signal<Mode>({ kind: 'idle' });

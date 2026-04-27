@@ -6,21 +6,6 @@ off as they ship.
 
 ## 1. Technical debt & optimizations
 
-### Architecture / wiring
-
-- **Duplicated `provideEffects` in `app.config.ts:15`** — the bare
-  `provideEffects()` is empty; `provideAuthFeature()` already provides
-  `AuthEffects`.
-- **Auth uses classic `Store` + `createFeature` + `Effects`** while editor and
-  player use `signalStore`. Auth being global justifies `Store`, but the
-  implementation is heavier than necessary for 5 actions.
-- **Stale broken test** — `src/app/app.spec.ts:21` asserts an `<h1>` with
-  "Hello, ff14-story-timeline" that no longer exists.
-- **Hard-coded `SEED_AUTHOR_UID`** in `src/mocks/seed-data.ts:6` baked into the
-  prod bundle along with the entire seed text. Move behind a build flag.
-- **`/edit` has no index route** — `editor.routes.ts:4` only defines `:id`. The
-  editor's "Back to my stories" link falls through to the wildcard redirect.
-
 ### Firestore / network
 
 - **Listeners never unsubscribe** in `stories.service.ts`,

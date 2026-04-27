@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Injector, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { AuthButtonComponent, authFeature } from '@features/auth';
+import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { GhostButtonComponent } from '@shared/ui';
-import { SEED_AUTHOR_UID } from '../mocks/seed-data';
-import { SeederService } from '../mocks/seeder.service';
+import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
 @Component({
   selector: 'app-root',
@@ -20,8 +18,8 @@ import { SeederService } from '../mocks/seeder.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  private readonly seeder = inject(SeederService);
-  private readonly user = inject(Store).selectSignal(authFeature.selectUser);
+  private readonly injector = inject(Injector);
+  private readonly user = inject(AuthStore).user;
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
@@ -31,7 +29,8 @@ export class App {
     if (!u || !this.canSeed()) return;
     this.seeding.set(true);
     try {
-      await this.seeder.seedAll(u.uid);
+      const { SeederService } = await import('../mocks/seeder.service');
+      await this.injector.get(SeederService).seedAll(u.uid);
     } catch (err) {
       console.error('Seed failed', err);
     } finally {

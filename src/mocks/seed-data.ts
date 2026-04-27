@@ -2,8 +2,7 @@ import { Character } from '@features/characters';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
 import { Story } from '@features/stories';
-
-export const SEED_AUTHOR_UID = 'uDRxrMxHMtNZfgbpNjbJat1BPBE3';
+import { SEED_AUTHOR_UID } from './seed-author';
 
 const SEED_CREATED_AT = 1777593600000;
 
