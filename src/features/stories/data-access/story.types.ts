@@ -20,6 +20,8 @@ export interface Story {
   authorUid: string;
   draft: boolean;
   publishedAt?: number;
+  updatedAt?: number;
+  version?: number;
 }
 
 export type StoredStory = Omit<Story, 'id'>;

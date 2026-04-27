@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore/lite';
 import { FirebaseService } from '../app/firebase/firebase.service';
 import { SEED_CHARACTERS, SEED_EVENTS, SEED_PLACES, SEED_STORY } from './seed-data';
 

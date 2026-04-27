@@ -30,6 +30,7 @@ export function withEditorMethods() {
             startSceneId: story.startSceneId,
             scenes: story.scenes,
             selectedSceneId: null,
+            version: story.version ?? 0,
             dirty: false,
             loading: false,
           });
@@ -55,8 +56,8 @@ export function withEditorMethods() {
             startSceneId,
             scenes: store.scenes(),
           };
-          await stories.saveStory(story);
-          patchState(store, { saving: false, dirty: false });
+          const nextVersion = await stories.saveStory(story, store.version());
+          patchState(store, { saving: false, dirty: false, version: nextVersion });
         } catch (err) {
           const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
           patchState(store, { saving: false, error: message });

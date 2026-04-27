@@ -6,22 +6,6 @@ off as they ship.
 
 ## 1. Technical debt & optimizations
 
-### Firestore / network
-
-- **Listeners never unsubscribe** in `stories.service.ts`,
-  `characters.service.ts`, `places.service.ts`, `events.service.ts`. Inject
-  `DestroyRef` and clean up.
-- **No pagination/limit** on any collection query. Add `limit(50)` + cursor.
-- **No catalog-side `firestore/lite`** — the full Firestore SDK ships on the
-  initial route. Biggest single win for the 500 kB budget.
-- **Stuck-listener issue** — `onSnapshot` doesn't recover from the index-build
-  error state without a hard refresh. Wrap with retry/backoff or expose a
-  "Reconnect" affordance.
-- **No Firebase API key restriction** — domain restriction in Cloud Console
-  still pending.
-- **`saveStory` uses `setDoc` (full replace)** with no `updatedAt` / `version`
-  field, so two-tab edits silently overwrite. Trivial to add a guard.
-
 ### Editor specifics
 
 - **Rete `effect` ignores connection changes** in `rete-canvas.component.ts:81`
@@ -39,6 +23,11 @@ off as they ship.
 - **Wildcard `redirectTo: ''`** silently swallows malformed URLs. No 404 page.
 - **Confirm-before-leave with unsaved changes** missing in editor.
 - **Vitest is wired but unused** — no coverage on stores, services, guards.
+- **No Firebase API key restriction** — domain restriction in Cloud Console
+  still pending. No code change required; pairs with the GitHub Pages deploy.
+- **No pagination cursor / "Load more" UI** — list queries cap at 50 via
+  `limit(50)`, but there's no UI or service method to fetch the next page.
+  Pair with a "Load more" button when collections grow.
 
 ## 2. Feature debt & improvements to existing features
 

@@ -4,34 +4,38 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
+  getDocs,
+  limit,
   orderBy,
   query,
   setDoc,
   updateDoc,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { Character, CharacterDraft, StoredCharacter } from './character.types';
+
+const PAGE_SIZE = 50;
 
 @Injectable({ providedIn: 'root' })
 export class CharactersService {
   private readonly firebase = inject(FirebaseService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  readonly characters: Signal<Character[]>;
+  private readonly _characters = signal<Character[]>([]);
+  readonly characters: Signal<Character[]> = this._characters.asReadonly();
 
   constructor() {
-    const sig = signal<Character[]>([]);
-    if (this.isBrowser) {
-      const q = query(
-        collection(this.firebase.firestore, 'characters'),
-        orderBy('createdAt', 'desc'),
-      );
-      onSnapshot(q, (snap) => {
-        sig.set(snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredCharacter) })));
-      });
-    }
-    this.characters = sig.asReadonly();
+    if (this.isBrowser) void this.refresh();
+  }
+
+  async refresh(): Promise<void> {
+    const q = query(
+      collection(this.firebase.firestore, 'characters'),
+      orderBy('createdAt', 'desc'),
+      limit(PAGE_SIZE),
+    );
+    const snap = await getDocs(q);
+    this._characters.set(snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredCharacter) })));
   }
 
   async create(draft: CharacterDraft, authorUid: string): Promise<string> {
@@ -42,14 +46,17 @@ export class CharactersService {
       createdAt: Date.now(),
     };
     await setDoc(doc(this.firebase.firestore, 'characters', id), data);
+    await this.refresh();
     return id;
   }
 
   async update(id: string, patch: CharacterDraft): Promise<void> {
     await updateDoc(doc(this.firebase.firestore, 'characters', id), { ...patch });
+    await this.refresh();
   }
 
   async remove(id: string): Promise<void> {
     await deleteDoc(doc(this.firebase.firestore, 'characters', id));
+    await this.refresh();
   }
 }

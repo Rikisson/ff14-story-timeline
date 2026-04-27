@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { initializeApp } from 'firebase/app';
 import { Auth, getAuth } from 'firebase/auth';
-import { Firestore, initializeFirestore } from 'firebase/firestore';
+import { Firestore, initializeFirestore } from 'firebase/firestore/lite';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import { firebaseConfig } from '../firebase.config';
 

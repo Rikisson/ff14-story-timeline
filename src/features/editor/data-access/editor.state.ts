@@ -12,6 +12,7 @@ export type EditorState = {
   startSceneId: string | null;
   scenes: Record<string, Scene>;
   selectedSceneId: string | null;
+  version: number;
   loading: boolean;
   saving: boolean;
   dirty: boolean;
@@ -25,6 +26,7 @@ export const initialEditorState: EditorState = {
   startSceneId: null,
   scenes: {},
   selectedSceneId: null,
+  version: 0,
   loading: false,
   saving: false,
   dirty: false,

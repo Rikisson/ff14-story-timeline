@@ -137,17 +137,14 @@ export class CatalogPage {
       }
     });
 
-    effect((onCleanup) => {
+    effect(() => {
       const u = this.user();
       if (!u) {
         this.myStories.set([]);
         if (this.filters().mineOnly) this.filters.set({ ...this.filters(), mineOnly: false });
         return;
       }
-      const unsubscribe = this.stories.subscribeAuthorStories(u.uid, (list) => {
-        this.myStories.set(list);
-      });
-      onCleanup(() => unsubscribe());
+      void this.stories.getAuthorStories(u.uid).then((list) => this.myStories.set(list));
     });
   }
 
@@ -158,6 +155,7 @@ export class CatalogPage {
     this.createError.set(null);
     try {
       const id = await this.stories.createDraftStory(u.uid);
+      void this.stories.getAuthorStories(u.uid).then((list) => this.myStories.set(list));
       await this.router.navigate(['/edit', id]);
     } catch (err) {
       this.createError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
