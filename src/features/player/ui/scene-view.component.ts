@@ -1,18 +1,17 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'app-scene-view',
+  imports: [NgOptimizedImage],
   template: `
     <article
       class="relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
     >
       @if (background(); as bg) {
-        <img
-          [src]="bg"
-          alt=""
-          class="aspect-video w-full object-cover"
-          loading="lazy"
-        />
+        <div class="relative aspect-video w-full">
+          <img [ngSrc]="bg" alt="" fill class="object-cover" />
+        </div>
       }
 
       @if (characters().length > 0) {
@@ -20,10 +19,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
           @for (src of characters(); track src) {
             <li>
               <img
-                [src]="src"
+                [ngSrc]="src"
                 alt=""
+                width="64"
+                height="64"
                 class="size-16 rounded-full border border-slate-200 object-cover"
-                loading="lazy"
               />
             </li>
           }

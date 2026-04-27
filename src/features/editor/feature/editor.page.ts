@@ -29,12 +29,12 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <p><a routerLink="/edit">Back to my stories</a></p>
     } @else if (store.storyId()) {
       <header class="bar">
-        <h2>
+        <h1>
           {{ store.meta()?.title || 'Untitled story' }}
           @if (store.dirty()) {
             <span class="dirty" title="Unsaved changes">●</span>
           }
-        </h2>
+        </h1>
         <button uiSecondary type="button" (click)="store.addScene()">+ Add scene</button>
         <button
           uiPrimary
@@ -56,7 +56,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
         <app-rete-canvas
           [scenes]="store.scenes()"
           (move)="onMove($event)"
-          (select)="store.selectScene($event)"
+          (selectScene)="store.selectScene($event)"
           (connect)="onConnect($event)"
           (disconnect)="onDisconnect($event)"
         />
@@ -68,7 +68,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [storyId]="store.storyId() ?? ''"
           (update)="onUpdate($event)"
           (updateChoiceLabel)="onChoiceLabel($event)"
-          (delete)="store.removeScene($event)"
+          (remove)="store.removeScene($event)"
           (setAsStart)="store.setStartScene($event)"
         />
       </div>
@@ -87,9 +87,10 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       margin-bottom: 1rem;
       flex-shrink: 0;
     }
-    .bar h2 {
+    .bar h1 {
       flex: 1;
       margin: 0;
+      font-size: 1.25rem;
     }
     .dirty {
       color: #b00020;

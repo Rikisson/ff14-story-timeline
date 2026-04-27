@@ -47,7 +47,7 @@ export class ReteCanvasComponent {
   readonly scenes = input.required<Record<string, Scene>>();
 
   readonly move = output<MoveEvent>();
-  readonly select = output<string | null>();
+  readonly selectScene = output<string | null>();
   readonly connect = output<ConnectionEvent>();
   readonly disconnect = output<ConnectionEvent>();
 
@@ -69,7 +69,7 @@ export class ReteCanvasComponent {
         injector: this.injector,
         scenes: initial,
         onMove: (sceneId, position) => this.move.emit({ sceneId, position }),
-        onSelect: (sceneId) => this.select.emit(sceneId),
+        onSelect: (sceneId) => this.selectScene.emit(sceneId),
         onConnect: (from, to) => this.connect.emit({ from, to }),
         onDisconnect: (from, to) => this.disconnect.emit({ from, to }),
       });

@@ -6,23 +6,6 @@ off as they ship.
 
 ## 1. Technical debt & optimizations
 
-### Memory / CLAUDE.md rule violations
-
-- **`output('select')`** in `src/features/player/ui/choice-list.component.ts:32`
-  and `src/features/editor/ui/rete-canvas.component.ts:50` — `select` is a
-  bubbling DOM event. Rename (e.g. `choose`, `pick`, `selectScene`).
-- **`output('delete')`** in
-  `src/features/editor/ui/scene-editor-panel.component.ts:180` — `delete` is a
-  JS reserved word. Rename to `remove` to match other cards.
-- **`NgOptimizedImage` not used.** CLAUDE.md mandates it for static images.
-  Catalog card backgrounds, scene-view backgrounds and portraits, scene assets
-  panel previews all use plain `<img>`.
-- **AXE / WCAG audit never run.** Header has no `<h1>`, view-toggle uses
-  `aria-pressed` instead of a tablist, custom `[attr.disabled]=""` on
-  `button-base.ts:29` instead of the real `disabled` property.
-- **README is the default Angular CLI template** — no project description, no
-  Firebase setup notes.
-
 ### Architecture / wiring
 
 - **Duplicated `provideEffects` in `app.config.ts:15`** — the bare

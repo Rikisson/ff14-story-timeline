@@ -1,3 +1,4 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Story } from '@features/stories';
@@ -14,7 +15,7 @@ const BTN_SECONDARY =
 
 @Component({
   selector: 'app-catalog-card',
-  imports: [RouterLink],
+  imports: [RouterLink, NgOptimizedImage],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -27,10 +28,10 @@ const BTN_SECONDARY =
       >
         @if (background(); as bg) {
           <img
-            [src]="bg"
+            [ngSrc]="bg"
             alt=""
-            class="size-full object-cover transition-transform duration-200 group-hover:scale-105"
-            loading="lazy"
+            fill
+            class="object-cover transition-transform duration-200 group-hover:scale-105"
           />
         } @else {
           <div

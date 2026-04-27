@@ -14,7 +14,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
   template: `
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="m-0 text-2xl font-semibold text-slate-900">Characters</h2>
+        <h1 class="m-0 text-2xl font-semibold text-slate-900">Characters</h1>
         @if (user() && mode().kind === 'idle') {
           <button uiPrimary type="button" (click)="startCreate()">+ Add character</button>
         }

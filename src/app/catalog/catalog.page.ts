@@ -28,6 +28,7 @@ type ViewMode = 'list' | 'timeline';
   ],
   template: `
     <div class="flex flex-col gap-4">
+      <h1 class="sr-only">Stories</h1>
       <div class="flex flex-wrap items-end justify-between gap-3">
         <app-catalog-filters
           [stories]="sourceStories()"
@@ -46,12 +47,20 @@ type ViewMode = 'list' | 'timeline';
               + New story
             </button>
           }
-          <div class="flex gap-1 rounded-md border border-slate-200 bg-white p-1">
+          <div
+            class="flex gap-1 rounded-md border border-slate-200 bg-white p-1"
+            role="group"
+            aria-label="View mode"
+          >
             @if (view() === 'list') {
               <button uiSecondary type="button" aria-pressed="true">List</button>
-              <button uiGhost type="button" (click)="view.set('timeline')">Timeline</button>
+              <button uiGhost type="button" aria-pressed="false" (click)="view.set('timeline')">
+                Timeline
+              </button>
             } @else {
-              <button uiGhost type="button" (click)="view.set('list')">List</button>
+              <button uiGhost type="button" aria-pressed="false" (click)="view.set('list')">
+                List
+              </button>
               <button uiSecondary type="button" aria-pressed="true">Timeline</button>
             }
           </div>

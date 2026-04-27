@@ -1,10 +1,11 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { Scene, StoryAssetsService } from '@features/stories';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-scene-assets-panel',
-  imports: [GhostButtonComponent, SecondaryButtonComponent],
+  imports: [GhostButtonComponent, SecondaryButtonComponent, NgOptimizedImage],
   template: `
     <section class="flex flex-col gap-4">
       <h4 class="m-0 text-sm font-semibold text-slate-700">Assets</h4>
@@ -18,11 +19,9 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
           Background
         </label>
         @if (background(); as bg) {
-          <img
-            [src]="bg"
-            alt="Scene background"
-            class="aspect-video w-full rounded border border-slate-200 object-cover"
-          />
+          <div class="relative aspect-video w-full overflow-hidden rounded border border-slate-200">
+            <img [ngSrc]="bg" alt="Scene background" fill class="object-cover" />
+          </div>
           <div class="flex gap-2">
             <button
               uiSecondary
@@ -62,8 +61,10 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
             @for (src of characters(); track $index) {
               <li class="relative">
                 <img
-                  [src]="src"
+                  [ngSrc]="src"
                   alt="Character portrait"
+                  width="64"
+                  height="64"
                   class="size-16 rounded-full border border-slate-200 object-cover"
                 />
                 <button

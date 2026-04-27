@@ -25,7 +25,7 @@ import { SceneViewComponent } from '../ui/scene-view.component';
         <p><a routerLink="/" class="text-indigo-700 hover:underline">Back to catalog</a></p>
       } @else if (store.story(); as story) {
         <header class="flex flex-wrap items-center gap-3">
-          <h2 class="m-0 text-2xl font-semibold text-slate-900">{{ story.title }}</h2>
+          <h1 class="m-0 text-2xl font-semibold text-slate-900">{{ story.title }}</h1>
           <div class="ml-auto flex items-center gap-2">
             <button
               uiGhost
@@ -74,7 +74,7 @@ import { SceneViewComponent } from '../ui/scene-view.component';
               </a>
             </div>
           } @else {
-            <app-choice-list [choices]="scene.next" (select)="store.choose($event)" />
+            <app-choice-list [choices]="scene.next" (choose)="store.choose($event)" />
           }
         }
       }

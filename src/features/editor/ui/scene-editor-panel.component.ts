@@ -77,7 +77,7 @@ export interface ChoiceLabelUpdate {
 
         <hr />
 
-        <button uiDanger type="button" (click)="delete.emit(id)" [disabled]="isStartScene()">
+        <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
           Delete scene
         </button>
         @if (isStartScene()) {
@@ -177,7 +177,7 @@ export class SceneEditorPanelComponent {
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
-  readonly delete = output<string>();
+  readonly remove = output<string>();
   readonly setAsStart = output<string>();
 
   protected emitText(event: Event, id: string): void {

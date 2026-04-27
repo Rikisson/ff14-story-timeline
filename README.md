@@ -1,59 +1,41 @@
-# Ff14StoryTimeline
+# FF14 Story Timeline
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
+An interactive visual-novel and timeline tool for cataloging characters,
+places, events, and branching stories — currently focused on FFXIV-inspired
+narratives.
 
-## Development server
+## Tech stack
 
-To start a local development server, run:
+- Angular 21 (standalone components, signals)
+- NgRx — `@ngrx/signals` for feature stores; `@ngrx/store` for the auth slice
+- Firebase — Auth (Google sign-in), Firestore, Storage
+- Tailwind CSS v4
+- Rete.js for the editor's node-based scene canvas
+- Vitest for unit tests
+- GitHub Pages deploy via `.github/workflows/deploy.yml`
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Local development
 
 ```bash
-ng generate --help
+pnpm install
+pnpm start           # ng serve on http://localhost:4200
+pnpm build           # production build into dist/
+pnpm test            # vitest
 ```
 
-## Building
+The Firebase project is wired up in `src/app/firebase.config.ts`. Firestore
+rules (`firestore.rules`) and Storage rules (`storage.rules`) live at the repo
+root and are deployed manually via the Firebase CLI.
 
-To build the project run:
+## Project layout
 
-```bash
-ng build
-```
+- `src/app/` — root component, routing, Firebase wiring, catalog page (entry route)
+- `src/features/` — feature folders (`auth`, `stories`, `characters`, `places`, `events`, `editor`, `player`), each with `data-access/`, `feature/`, `ui/`, and an `index.ts` barrel
+- `src/shared/ui/` — design-system buttons (`uiPrimary` / `uiSecondary` / `uiGhost` / `uiDanger`)
+- `src/shared/utils/` — small utilities (e.g. `cn` for class merging)
+- `src/mocks/` — seeder service + seed data, gated to a hard-coded author UID
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Conventions and backlog
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Project-specific coding rules live in `.claude/CLAUDE.md`.
+- The current technical-debt, feature-debt, and new-feature backlog lives in `docs/dev-improvements.md` — consult before starting non-trivial work.
