@@ -8,14 +8,13 @@ off as they ship.
 
 ### Misc
 
-- **Wildcard `redirectTo: ''`** silently swallows malformed URLs. No 404 page.
-- **Confirm-before-leave with unsaved changes** missing in editor.
-- **Vitest is wired but unused** — no coverage on stores, services, guards.
 - **No Firebase API key restriction** — domain restriction in Cloud Console
   still pending. No code change required; pairs with the GitHub Pages deploy.
 - **No pagination cursor / "Load more" UI** — list queries cap at 50 via
   `limit(50)`, but there's no UI or service method to fetch the next page.
   Pair with a "Load more" button when collections grow.
+- **Test coverage is thin.** Editor and player stores have basic specs;
+  services, guards, and components are still uncovered.
 
 ## 2. Feature debt & improvements to existing features
 

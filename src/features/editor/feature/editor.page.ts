@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  PLATFORM_ID,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
+import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
 import {
   ChoiceLabelUpdate,
@@ -114,9 +124,11 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditorPage {
+export class EditorPage implements HasUnsavedChanges {
   readonly id = input.required<string>();
   protected readonly store = inject(EditorStore);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly isSelectedStart = computed(
     () => this.store.selectedSceneId() !== null
@@ -125,6 +137,21 @@ export class EditorPage {
 
   constructor() {
     this.store.bindLoad(this.id);
+
+    if (this.isBrowser) {
+      const handler = (event: BeforeUnloadEvent) => {
+        if (this.store.dirty()) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      };
+      window.addEventListener('beforeunload', handler);
+      this.destroyRef.onDestroy(() => window.removeEventListener('beforeunload', handler));
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.store.dirty();
   }
 
   protected onMove(event: MoveEvent): void {
