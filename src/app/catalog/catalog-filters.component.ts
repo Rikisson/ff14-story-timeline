@@ -21,19 +21,6 @@ export const EMPTY_FILTERS: CatalogFilters = {
   imports: [GhostButtonComponent],
   template: `
     <div class="flex flex-wrap items-end gap-3">
-      @if (showMineFilter()) {
-        <label
-          class="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm"
-        >
-          <input
-            type="checkbox"
-            [checked]="value().mineOnly"
-            (change)="emitMine($event)"
-          />
-          My stories
-        </label>
-      }
-
       <label class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Main character</span>
         <select
@@ -75,6 +62,19 @@ export const EMPTY_FILTERS: CatalogFilters = {
           }
         </select>
       </label>
+
+      @if (showMineFilter()) {
+        <label
+          class="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            [checked]="value().mineOnly"
+            (change)="emitMine($event)"
+          />
+          My stories
+        </label>
+      }
 
       @if (hasActive()) {
         <button uiGhost type="button" (click)="reset.emit()">Clear filters</button>

@@ -36,6 +36,11 @@ type ViewMode = 'list' | 'timeline';
         />
 
         <div class="flex items-center gap-2">
+          @if (user()) {
+            <button uiPrimary type="button" [loading]="creating()" (click)="createStory()">
+              + New story
+            </button>
+          }
           <div class="flex gap-1 rounded-md border border-slate-200 bg-white p-1">
             @if (view() === 'list') {
               <button uiSecondary type="button" aria-pressed="true">List</button>
@@ -45,11 +50,6 @@ type ViewMode = 'list' | 'timeline';
               <button uiSecondary type="button" aria-pressed="true">Timeline</button>
             }
           </div>
-          @if (user()) {
-            <button uiPrimary type="button" [loading]="creating()" (click)="createStory()">
-              + New story
-            </button>
-          }
         </div>
       </div>
 
