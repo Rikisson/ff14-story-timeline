@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthStore } from '@features/auth';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
@@ -18,14 +18,12 @@ import { UniverseFormComponent } from '../ui/universe-form.component';
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Universes</h1>
-        @if (user() && !creating() && canCreate()) {
+        @if (!creating() && canCreate()) {
           <button uiPrimary type="button" (click)="startCreate()">+ Create universe</button>
         }
       </div>
 
-      @if (!user()) {
-        <p class="text-slate-600">Sign in to view your universes.</p>
-      } @else if (creating()) {
+      @if (creating()) {
         <app-universe-form
           [busy]="busy()"
           [errorMessage]="errorMessage()"
@@ -35,18 +33,7 @@ import { UniverseFormComponent } from '../ui/universe-form.component';
       } @else if (loading()) {
         <p class="text-slate-600">Loading universes…</p>
       } @else if (universes().length === 0) {
-        <div class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4">
-          <p class="m-0 text-sm text-slate-700">
-            You don't have any universes yet. A universe is the workspace that holds your
-            characters, places, events, and stories.
-          </p>
-          @if (!canCreate()) {
-            <p class="m-0 text-sm text-slate-500">
-              Universe creation is gated by an admin claim. Ask an admin to grant
-              <code>universeCreator</code>.
-            </p>
-          }
-        </div>
+        <p class="text-slate-600">No universes yet.</p>
       } @else {
         <ul class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
           @for (u of universes(); track u.id) {
@@ -57,11 +44,18 @@ import { UniverseFormComponent } from '../ui/universe-form.component';
             >
               <div class="flex items-center justify-between gap-2">
                 <span class="text-sm font-semibold text-slate-900">{{ u.name }}</span>
-                @if (u.id === activeId()) {
-                  <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                    Active
-                  </span>
-                }
+                <div class="flex items-center gap-1">
+                  @if (canEdit(u)) {
+                    <span class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                      Editor
+                    </span>
+                  }
+                  @if (u.id === activeId()) {
+                    <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      Active
+                    </span>
+                  }
+                </div>
               </div>
               <span class="text-xs text-slate-500">{{ u.slug }}</span>
               @if (u.description) {
@@ -91,20 +85,16 @@ export class UniversesPage {
   protected readonly universes = this.store.universes;
   protected readonly activeId = this.store.activeUniverseId;
   protected readonly loading = this.store.loading;
+  protected readonly canCreate = this.store.canCreateUniverse;
 
   protected readonly creating = signal(false);
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly canCreateSignal = signal(false);
 
-  protected readonly canCreate = computed(() => this.canCreateSignal());
-
-  constructor() {
-    void this.refreshCanCreate();
-  }
-
-  private async refreshCanCreate(): Promise<void> {
-    this.canCreateSignal.set(await this.store.canCreateUniverse());
+  protected canEdit(u: Universe): boolean {
+    const uid = this.user()?.uid;
+    if (!uid) return false;
+    return u.ownerUid === uid || u.editorUids.includes(uid);
   }
 
   protected startCreate(): void {
@@ -124,7 +114,7 @@ export class UniversesPage {
     this.errorMessage.set(null);
     try {
       const id = await this.service.create(draft, u.uid);
-      await this.store.refreshForUser(u.uid);
+      await this.store.refresh();
       this.store.setActive(id);
       this.creating.set(false);
       await this.router.navigate(['/']);

@@ -3,53 +3,52 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Universe creators — keep in sync with src/features/universes/data-access/universe-creators.ts
+    function isUniverseCreator() {
+      return request.auth != null
+        && request.auth.uid in [
+          'uDRxrMxHMtNZfgbpNjbJat1BPBE3'
+        ];
+    }
+
     function isMember(universeId) {
       let u = get(/databases/$(database)/documents/universes/$(universeId)).data;
       return request.auth != null
         && (u.ownerUid == request.auth.uid || request.auth.uid in u.editorUids);
     }
 
-    function isResourceMember() {
-      return request.auth != null
-        && (resource.data.ownerUid == request.auth.uid
-          || request.auth.uid in resource.data.editorUids);
-    }
-
-    function hasUniverseCreatorClaim() {
-      return request.auth != null
-        && request.auth.token.universeCreator == true;
-    }
-
     match /universes/{universeId} {
-      allow read: if isResourceMember();
+      // Public read — guests need this to browse and pick a universe.
+      allow read: if true;
 
-      allow create: if hasUniverseCreatorClaim()
+      allow create: if isUniverseCreator()
         && request.resource.data.ownerUid == request.auth.uid;
 
-      allow update: if isResourceMember()
+      allow update: if request.auth != null
+        && (resource.data.ownerUid == request.auth.uid
+          || request.auth.uid in resource.data.editorUids)
         && request.resource.data.ownerUid == resource.data.ownerUid;
 
       allow delete: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;
 
       match /characters/{characterId} {
-        allow read: if isMember(universeId);
+        allow read: if true;
         allow create, update, delete: if isMember(universeId);
       }
 
       match /places/{placeId} {
-        allow read: if isMember(universeId);
+        allow read: if true;
         allow create, update, delete: if isMember(universeId);
       }
 
       match /events/{eventId} {
-        allow read: if isMember(universeId);
+        allow read: if true;
         allow create, update, delete: if isMember(universeId);
       }
 
       match /stories/{storyId} {
-        allow read: if isMember(universeId)
-          || resource.data.draft == false;
+        allow read: if resource.data.draft == false || isMember(universeId);
         allow create, update, delete: if isMember(universeId);
       }
     }

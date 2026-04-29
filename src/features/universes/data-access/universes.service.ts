@@ -27,30 +27,14 @@ export class SlugTakenError extends Error {
 export class UniversesService {
   private readonly firebase = inject(FirebaseService);
 
-  async listForUser(uid: string): Promise<Universe[]> {
-    const owned = query(
+  async listAll(): Promise<Universe[]> {
+    const q = query(
       collection(this.firebase.firestore, 'universes'),
-      where('ownerUid', '==', uid),
       orderBy('createdAt', 'desc'),
       limit(PAGE_SIZE),
     );
-    const editing = query(
-      collection(this.firebase.firestore, 'universes'),
-      where('editorUids', 'array-contains', uid),
-      orderBy('createdAt', 'desc'),
-      limit(PAGE_SIZE),
-    );
-    const [ownedSnap, editingSnap] = await Promise.all([getDocs(owned), getDocs(editing)]);
-    const map = new Map<string, Universe>();
-    for (const d of ownedSnap.docs) {
-      map.set(d.id, { id: d.id, ...(d.data() as StoredUniverse) });
-    }
-    for (const d of editingSnap.docs) {
-      if (!map.has(d.id)) {
-        map.set(d.id, { id: d.id, ...(d.data() as StoredUniverse) });
-      }
-    }
-    return [...map.values()].sort((a, b) => b.createdAt - a.createdAt);
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredUniverse) }));
   }
 
   async get(id: string): Promise<Universe | undefined> {

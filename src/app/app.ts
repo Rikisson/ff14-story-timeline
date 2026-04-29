@@ -35,7 +35,7 @@ export class App {
     try {
       const { SeederService, DEFAULT_UNIVERSE_ID } = await import('../mocks/seeder.service');
       await this.injector.get(SeederService).seedAll(u.uid);
-      await this.universes.refreshForUser(u.uid);
+      await this.universes.refresh();
       this.universes.setActive(DEFAULT_UNIVERSE_ID);
     } catch (err) {
       console.error('Seed failed', err);

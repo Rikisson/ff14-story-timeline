@@ -1,9 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
-import { getIdTokenResult } from 'firebase/auth';
 import { AuthStore } from '@features/auth';
-import { FirebaseService } from '../../../app/firebase/firebase.service';
+import { UNIVERSE_CREATOR_UIDS } from './universe-creators';
 import { Universe } from './universe.types';
 import { UniversesService } from './universes.service';
 
@@ -49,21 +48,40 @@ function errorMessage(err: unknown): string {
 export const UniverseStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withComputed((store) => ({
+  withComputed((store, auth = inject(AuthStore)) => ({
     activeUniverse: computed<Universe | null>(() => {
       const id = store.activeUniverseId();
       if (!id) return null;
       return store.universes().find((u) => u.id === id) ?? null;
     }),
+    myUniverses: computed<Universe[]>(() => {
+      const uid = auth.user()?.uid;
+      if (!uid) return [];
+      return store.universes().filter(
+        (u) => u.ownerUid === uid || u.editorUids.includes(uid),
+      );
+    }),
+    isMemberOfActive: computed<boolean>(() => {
+      const uid = auth.user()?.uid;
+      const id = store.activeUniverseId();
+      if (!uid || !id) return false;
+      const u = store.universes().find((x) => x.id === id);
+      if (!u) return false;
+      return u.ownerUid === uid || u.editorUids.includes(uid);
+    }),
+    canCreateUniverse: computed<boolean>(() => {
+      const uid = auth.user()?.uid;
+      return !!uid && UNIVERSE_CREATOR_UIDS.includes(uid);
+    }),
   })),
-  withMethods((store, service = inject(UniversesService), firebase = inject(FirebaseService)) => ({
+  withMethods((store, service = inject(UniversesService)) => ({
     setActive(id: string | null): void {
       patchState(store, { activeUniverseId: id });
     },
-    async refreshForUser(uid: string): Promise<void> {
+    async refresh(): Promise<void> {
       patchState(store, { loading: true, error: null });
       try {
-        const universes = await service.listForUser(uid);
+        const universes = await service.listAll();
         const currentId = store.activeUniverseId();
         const stillValid = currentId && universes.some((u) => u.id === currentId);
         patchState(store, {
@@ -76,23 +94,8 @@ export const UniverseStore = signalStore(
         patchState(store, { loading: false, error: errorMessage(err) });
       }
     },
-    clear(): void {
-      patchState(store, { universes: [], activeUniverseId: null, error: null });
-    },
-    async canCreateUniverse(): Promise<boolean> {
-      const user = firebase.auth.currentUser;
-      if (!user) return false;
-      try {
-        const token = await getIdTokenResult(user);
-        return token.claims['universeCreator'] === true;
-      } catch (err) {
-        console.error('failed to read claims', err);
-        return false;
-      }
-    },
   })),
   withHooks((store) => {
-    const auth = inject(AuthStore);
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
     return {
       onInit() {
@@ -100,14 +103,7 @@ export const UniverseStore = signalStore(
         const stored = readStoredActiveId(isBrowser);
         if (stored) patchState(store, { activeUniverseId: stored });
 
-        effect(() => {
-          const user = auth.user();
-          if (!user) {
-            store.clear();
-            return;
-          }
-          void store.refreshForUser(user.uid);
-        });
+        void store.refresh();
 
         effect(() => {
           writeStoredActiveId(isBrowser, store.activeUniverseId());
