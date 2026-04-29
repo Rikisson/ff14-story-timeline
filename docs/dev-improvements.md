@@ -39,29 +39,11 @@ Implementation specifics — TS types, Firestore layout, picker fuzzy
 rules, edge cases, migration steps — live in
 [`narrative-engine-impl.md`](narrative-engine-impl.md).
 
-- **Everything lives inside a Universe.** Add a top-level `Universe`
-  entity that scopes all Characters, Places, Events, and Stories,
-  stored as Firestore subcollections (`universes/{id}/characters/{id}`
-  etc.). Cross-universe references are forbidden in pickers and inline
-  autocomplete — an author who wants the same entity in two universes
-  duplicates it. Universe creation is gated by an admin-granted custom
-  claim (long-term restricted; dev-bootstrap easy by setting the claim
-  manually). Universe selection becomes the implicit context for every
-  editor view, picker, and catalog query — users see "create universe
-  → work inside it." Authorization shifts from per-entity `authorUid`
-  to per-universe owner / editor membership.
-
-- **Field surface — typed pickers replace every free-text entity
-  field.** Multi/single-select bound to the active universe's
-  collection, returning `EntityRef`. Existing CSV inputs to fix:
-  `Story.mainCharacters` / `Story.places` (seed data uses IDs but the
-  meta panel renders comma-separated names and the catalog filter
-  shows mixed IDs and names); `Event.mainCharacters` / `Event.places`
-  (`event-form.component.ts:53` literally labels these "comma-separated
-  IDs"); `Scene.characters` and `Scene.speaker`. New fields:
-  `Story.linkedEvents`, `Character.relatedCharacters`, `Scene.place`.
-  Catalog filters consume the Story-level source so the ID/name mixing
-  disappears.
+**Status:** Universe scoping, EntityRef + slug uniqueness, typed pickers
+on Story/Event level, and the resolved scene model are shipped (PR1–PR4).
+The remaining work is the inline-ref surface (PR5), rich-text host
+promotion (PR6), and character portraits with mood selection (PR4.5 — adds
+`Character.portraits[]` + `StagedCharacter.portraitId`).
 
 - **Inline surface — `${kind:<guid>}[Display Text]` references inside
   any rich-text body.**
@@ -89,39 +71,12 @@ rules, edge cases, migration steps — live in
     rich-text renderer); add `Character.description` and
     `Place.description`.
 
-- **Resolved scene model.** Concrete shape now decided:
-  - `Scene.speaker?: EntityRef<'character'> | string` — `EntityRef`
-    for major characters (chip + portrait), free string for
-    non-essential speakers (narrator, off-screen voice, inner
-    thought), `undefined` for descriptive scenes with no speaker.
-    Singular for v1; promotion to a multi-speaker array is
-    backwards-compatible later.
-  - `Scene.characters: StagedCharacter[]` — explicit on-stage roster.
-    Each entry carries a `position` slot (extensible string; UI
-    presets `left` / `center` / `right`) and optional `order` to
-    disambiguate collisions in the same slot. One character instance
-    per scene.
-  - `Scene.place?: EntityRef<'place'>` and `Scene.background?: string`
-    are independent: `place` is the canonical world reference
-    (timeline / map / consistency); `background` is the rendered
-    asset.
-  - A speaker referencing a character not in `characters[]` triggers a
-    visible editor prompt ("speaker not on stage — add?") rather than
-    silently mutating the array.
-
 - **Decorative tier explicitly carved out.** Inline `${kind:<guid>}[…]`
   refs inside `Scene.text` (or any other rich-text body) are reader
   hints only — they do not put the character on stage, do not make
   them the speaker, do not affect any runtime state. Conditional
   logic on entities ("choice locked until X met") will live in a
   separate variable system later.
-
-- **Slugs are unique per `(universe, kind)`.** GUID stays the
-  immutable Firestore doc ID; `slug` is user-editable and free to
-  rename, with "slug taken in this universe" validation in the form.
-  Inline refs store the GUID, so renames never break existing text.
-  Two universes may both have an `ingrid` character; one universe may
-  have an `ingrid` character and an `ingrid` place.
 
 - **Descriptive tags are not `EntityRef`s.** Genre / tone labels
   ("horror", "slow-burn", "canon-divergent") have no entity behind
