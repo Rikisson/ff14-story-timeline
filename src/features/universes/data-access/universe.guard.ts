@@ -5,19 +5,17 @@ import { UniverseStore } from './universe.store';
 
 async function waitForUniverses(injector: Injector): Promise<void> {
   const universes = injector.get(UniverseStore);
-  if (!universes.loading() && universes.universes().length > 0) return;
-  if (universes.loading()) {
-    await new Promise<void>((resolve) => {
-      runInInjectionContext(injector, () => {
-        const ref = effect(() => {
-          if (!universes.loading()) {
-            ref.destroy();
-            resolve();
-          }
-        });
+  if (!universes.loading()) return;
+  await new Promise<void>((resolve) => {
+    runInInjectionContext(injector, () => {
+      const ref = effect(() => {
+        if (!universes.loading()) {
+          ref.destroy();
+          resolve();
+        }
       });
     });
-  }
+  });
 }
 
 export const universeGuard: CanActivateFn = async () => {
@@ -27,7 +25,7 @@ export const universeGuard: CanActivateFn = async () => {
 
   await waitForUniverses(injector);
 
-  return universes.activeUniverseId() ? true : router.createUrlTree(['/universes']);
+  return universes.activeUniverseId() ? true : router.createUrlTree(['/']);
 };
 
 export const editorGuard: CanActivateFn = async () => {
@@ -53,7 +51,7 @@ export const editorGuard: CanActivateFn = async () => {
 
   await waitForUniverses(injector);
 
-  if (!universes.activeUniverseId()) return router.createUrlTree(['/universes']);
-  if (!universes.isMemberOfActive()) return router.createUrlTree(['/universes']);
+  if (!universes.activeUniverseId()) return router.createUrlTree(['/']);
+  if (!universes.isMemberOfActive()) return router.createUrlTree(['/']);
   return true;
 };

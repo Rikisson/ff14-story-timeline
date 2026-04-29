@@ -4,12 +4,7 @@ import { editorGuard, universeGuard } from '@features/universes';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [universeGuard],
     loadComponent: () => import('./catalog/catalog.page').then((m) => m.CatalogPage),
-  },
-  {
-    path: 'universes',
-    loadChildren: () => import('@features/universes').then((m) => m.UNIVERSES_ROUTES),
   },
   {
     path: 'play',

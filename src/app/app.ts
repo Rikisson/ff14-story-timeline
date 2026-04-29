@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
-import { UniverseStore } from '@features/universes';
+import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { GhostButtonComponent } from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
@@ -13,6 +13,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     RouterLinkActive,
     AuthButtonComponent,
     GhostButtonComponent,
+    UniverseSelectorComponent,
   ],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,9 +25,6 @@ export class App {
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
-  protected readonly activeUniverseName = computed(
-    () => this.universes.activeUniverse()?.name ?? null,
-  );
 
   protected async seedTestData(): Promise<void> {
     const u = this.user();

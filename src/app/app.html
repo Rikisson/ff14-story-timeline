@@ -1,5 +1,5 @@
 <header class="flex items-center gap-6 border-b border-slate-200 px-6 py-3">
-  <a routerLink="/" class="text-lg font-semibold text-inherit no-underline">FF14 Story Timeline</a>
+  <app-universe-selector />
   <nav class="flex flex-1 gap-4">
     <a
       routerLink="/"
@@ -22,15 +22,7 @@
       routerLinkActive="text-slate-900 font-medium"
       class="text-slate-600 no-underline"
     >Events</a>
-    <a
-      routerLink="/universes"
-      routerLinkActive="text-slate-900 font-medium"
-      class="text-slate-600 no-underline"
-    >Universes</a>
   </nav>
-  @if (activeUniverseName(); as name) {
-    <span class="text-xs text-slate-500">Universe: <strong class="text-slate-700">{{ name }}</strong></span>
-  }
   @if (canSeed()) {
     <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
       Seed test data
