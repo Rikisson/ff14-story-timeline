@@ -10,6 +10,7 @@ export interface Character {
   name: string;
   race: string;
   job: string;
+  description?: string;
   portraits?: CharacterPortrait[];
   authorUid: string;
   createdAt: number;
@@ -22,4 +23,5 @@ export interface CharacterDraft {
   name: string;
   race: string;
   job: string;
+  description?: string;
 }

@@ -4,6 +4,7 @@ export interface Place {
   name: string;
   geoPosition: string;
   factions: string[];
+  description?: string;
   authorUid: string;
   createdAt: number;
 }
@@ -15,4 +16,5 @@ export interface PlaceDraft {
   name: string;
   geoPosition: string;
   factions: string[];
+  description?: string;
 }

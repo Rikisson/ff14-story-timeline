@@ -13,7 +13,8 @@ import { CharacterPortrait, CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
-import { InlineRefOption, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
@@ -66,6 +67,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [meta]="store.meta()"
           [characterOptions]="characterOptions()"
           [placeOptions]="placeOptions()"
+          [inlineRefOptions]="inlineRefOptions()"
           (update)="store.updateMeta($event)"
         />
 

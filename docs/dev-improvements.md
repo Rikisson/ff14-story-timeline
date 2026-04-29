@@ -39,18 +39,14 @@ Implementation specifics — TS types, Firestore layout, picker fuzzy
 rules, edge cases, migration steps — live in
 [`narrative-engine-impl.md`](narrative-engine-impl.md).
 
-**Status:** Universe scoping, EntityRef + slug uniqueness, typed pickers
-on Story/Event level, the resolved scene model, character portraits
-with mood selection, and the inline-ref surface (autocomplete +
-parser/resolver + player rendering on `Scene.text` and
-`Event.description` textareas) are shipped (PR1–PR5). Storage rules
-match the universe-scoped paths. Remaining work is rich-text host
-promotion (PR6 — TipTap-based `<app-rich-text-input>`,
-markdown-with-tokens storage, applied to `Scene.text` /
-`Event.description` / `Story.summary` plus new `Character.description`
-/ `Place.description` fields). See
-[`narrative-engine-impl.md`](narrative-engine-impl.md) for the PR6
-implementation plan.
+**Status:** Universe scoping, EntityRef + slug uniqueness, typed
+pickers on Story/Event level, the resolved scene model, character
+portraits with mood selection, the inline-ref surface, and the
+rich-text host promotion (TipTap-based `<app-rich-text-input>` with
+chips on `Scene.text` / `Event.description` / `Story.summary` /
+`Character.description` / `Place.description`; markdown-rendered
+read-only output in player and catalog) are shipped (PR1–PR6).
+Storage rules match the universe-scoped paths.
 
 - **Inline surface — `${kind:<guid>}[Display Text]` references inside
   any rich-text body.**

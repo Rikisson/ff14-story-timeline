@@ -6,10 +6,10 @@ import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import {
   GhostButtonComponent,
-  InlineRefOption,
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';

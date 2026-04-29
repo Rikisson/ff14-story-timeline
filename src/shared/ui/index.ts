@@ -1,4 +1,4 @@
 export * from './button';
 export * from './entity-picker';
-export * from './inline-ref-text';
-export * from './inline-ref-textarea';
+export * from './markdown-text';
+export * from './rich-text-input';

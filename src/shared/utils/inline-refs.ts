@@ -1,5 +1,12 @@
 import { EntityKind, EntityRef } from '@shared/models';
 
+export interface InlineRefOption {
+  kind: EntityKind;
+  id: string;
+  label: string;
+  slug?: string;
+}
+
 export type InlineRefKindPrefix = 'ch' | 'pl' | 'ev' | 'st';
 
 export const INLINE_REF_KIND_BY_PREFIX: Record<InlineRefKindPrefix, EntityKind> = {

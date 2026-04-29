@@ -7,9 +7,9 @@ import {
   EntityPickerComponent,
   EntityPickerOption,
   GhostButtonComponent,
-  InlineRefOption,
-  InlineRefTextareaComponent,
+  RichTextInputComponent,
 } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
 
 export interface SceneUpdate {
@@ -31,7 +31,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     GhostButtonComponent,
     DangerButtonComponent,
     EntityPickerComponent,
-    InlineRefTextareaComponent,
+    RichTextInputComponent,
     SceneAssetsPanelComponent,
   ],
   template: `
@@ -91,17 +91,14 @@ type SpeakerMode = 'none' | 'character' | 'custom';
         </fieldset>
 
         <div class="field">
-          <label for="text">Text</label>
-          <app-inline-ref-textarea
-            textareaId="text"
-            [rows]="6"
+          <label>Text</label>
+          <app-rich-text-input
             [value]="s.text"
             [options]="inlineRefOptions()"
+            ariaLabel="Scene text"
+            placeholder="Write the scene…"
             (valueChange)="emitTextValue(id, $event)"
           />
-          <p class="hint">
-            Type <code>$&#123;</code> to reference a character, place, event, or story.
-          </p>
         </div>
 
         <fieldset class="group">

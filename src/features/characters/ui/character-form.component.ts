@@ -1,12 +1,35 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { EventsService } from '@features/events';
+import { PlacesService } from '@features/places';
+import { StoriesService } from '@features/stories';
+import { CharactersService } from '../data-access/characters.service';
 import { CharacterDraft } from '../data-access/character.types';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
-import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
+import {
+  GhostButtonComponent,
+  PrimaryButtonComponent,
+  RichTextInputComponent,
+} from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 
 @Component({
   selector: 'app-character-form',
-  imports: [ReactiveFormsModule, PrimaryButtonComponent, GhostButtonComponent],
+  imports: [
+    ReactiveFormsModule,
+    PrimaryButtonComponent,
+    GhostButtonComponent,
+    RichTextInputComponent,
+  ],
   template: `
     <form
       [formGroup]="form"
@@ -60,6 +83,17 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
         </label>
       </div>
 
+      <div class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Description</span>
+        <app-rich-text-input
+          [value]="description()"
+          [options]="inlineRefOptions()"
+          ariaLabel="Description"
+          placeholder="Background, personality, ties to other characters…"
+          (valueChange)="onDescription($event)"
+        />
+      </div>
+
       @if (errorMessage(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
@@ -86,6 +120,39 @@ export class CharacterFormComponent {
   readonly submitted = output<CharacterDraft>();
   readonly cancelled = output<void>();
 
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+  private readonly events = inject(EventsService);
+  private readonly stories = inject(StoriesService);
+
+  protected readonly description = signal<string>('');
+  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
+    ...this.characters.characters().map((c) => ({
+      kind: 'character' as const,
+      id: c.id,
+      label: c.name,
+      slug: c.slug,
+    })),
+    ...this.places.places().map((p) => ({
+      kind: 'place' as const,
+      id: p.id,
+      label: p.name,
+      slug: p.slug,
+    })),
+    ...this.events.events().map((e) => ({
+      kind: 'event' as const,
+      id: e.id,
+      label: e.name,
+      slug: e.slug,
+    })),
+    ...this.stories.publishedStories().map((s) => ({
+      kind: 'story' as const,
+      id: s.id,
+      label: s.title,
+      slug: s.slug,
+    })),
+  ]);
+
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
@@ -96,18 +163,30 @@ export class CharacterFormComponent {
   constructor() {
     effect(() => {
       const init = this.initial();
-      this.form.reset(init ?? { slug: '', name: '', race: '', job: '' });
+      this.form.reset({
+        slug: init?.slug ?? '',
+        name: init?.name ?? '',
+        race: init?.race ?? '',
+        job: init?.job ?? '',
+      });
+      this.description.set(init?.description ?? '');
     });
+  }
+
+  protected onDescription(value: string): void {
+    this.description.set(value);
   }
 
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
+    const desc = this.description().trim();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       race: v.race.trim(),
       job: v.job.trim(),
+      description: desc || undefined,
     });
   }
 }

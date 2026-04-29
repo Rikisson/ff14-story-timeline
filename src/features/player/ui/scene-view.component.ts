@@ -1,6 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { InlineRefOption, InlineRefTextComponent } from '@shared/ui';
+import { MarkdownTextComponent } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 
 export interface StagedView {
   id: string;
@@ -16,7 +17,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
 
 @Component({
   selector: 'app-scene-view',
-  imports: [NgOptimizedImage, InlineRefTextComponent],
+  imports: [NgOptimizedImage, MarkdownTextComponent],
   template: `
     <article
       class="relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
@@ -91,9 +92,11 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
         @if (speaker(); as s) {
           <p class="m-0 text-sm font-semibold text-slate-700">{{ s }}</p>
         }
-        <p class="m-0 whitespace-pre-wrap text-base leading-relaxed text-slate-900">
-          <app-inline-ref-text [text]="text()" [options]="inlineRefOptions()" />
-        </p>
+        <app-markdown-text
+          class="text-base leading-relaxed text-slate-900"
+          [text]="text()"
+          [options]="inlineRefOptions()"
+        />
       </div>
 
       @if (audio(); as a) {

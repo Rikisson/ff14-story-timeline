@@ -15,7 +15,10 @@
       "Bash(npx ng *)",
       "Bash(echo \"exit=$?\")",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(pnpm exec *)",
+      "Bash(echo \"started $!\")",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

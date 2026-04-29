@@ -4,7 +4,7 @@ Companion to `dev-improvements.md` §2 *Data-model coherence*. That section
 sets the design (tiers, fields, surfaces); this file pins surface behavior
 and rules for the parts that are not yet implemented.
 
-Shipped pieces (PR1–PR5):
+Shipped pieces (PR1–PR6):
 
 - `EntityRef<Kind>` and `EntityKind` live in `src/shared/models/`.
 - Universe scoping (top-level `universes/{id}` collection, per-universe
@@ -26,16 +26,21 @@ Shipped pieces (PR1–PR5):
   write under `universes/{universeId}/{allPaths=**}`, with a 25 MB
   upload size cap.
 - Inline `${kind:<guid>}[Display Text]` references: `parseRefs` /
-  `buildInlineRef` / `resolveRef` in `src/shared/utils/inline-refs.ts`,
-  `<app-inline-ref-textarea>` in `src/shared/ui/inline-ref-textarea/`
-  (caret-anchored popup, kind-prefix narrowing, fuzzy filter on
-  name + slug, keyboard nav, mirror-div caret coords), wired into
-  `Scene.text` (scene-editor-panel) and `Event.description`
-  (event-form). Player rendering: `<app-inline-ref-text>` in
-  `src/shared/ui/inline-ref-text/` — literals plain, resolved refs as
-  `<a>` with `title=entity.name`, unresolved refs as plain
-  `[Display Text]`. Editor still shows raw tokens; chip rendering and
-  rich-text host promotion ship in PR6.
+  `buildInlineRef` / `resolveRef` / `InlineRefOption` in
+  `src/shared/utils/inline-refs.ts`. Editor uses TipTap-based
+  `<app-rich-text-input>` (PR6) — chip rendering for refs, Bold /
+  Italic / BulletList toolbar, `${` suggestion popup. Player and
+  catalog use `<app-markdown-text>` (marked + custom inlineRef
+  extension; relies on Angular's `[innerHTML]` sanitizer).
+- Markdown rich-text host: TipTap-based `<app-rich-text-input>`
+  (`src/shared/ui/rich-text-input/`) with custom `EntityRefNode`
+  inline atom + suggestion plugin reusing PR5 fuzzy-filter. Markdown ↔
+  TipTap (de)serialization via hand-rolled
+  `markdownToTiptapHtml` / `tiptapJsonToMarkdown`
+  (`src/shared/utils/tiptap-markdown.ts`). Wired into `Scene.text`,
+  `Event.description`, `Story.summary`, plus new `Character.description`
+  / `Place.description` fields. Catalog card renders markdown summary
+  inline via `<app-markdown-text [inline]="true">`.
 
 ## Open optimization
 
@@ -173,6 +178,23 @@ each one reviewable; the UX wart of raw tokens is short-lived.
 - Bold / italic / lists
 - `Story.summary` / `Character.description` / `Place.description` hosts
 - Hover-card UX
+
+## PR6 — rich-text host (shipped)
+
+Implementation notes for the shipped PR follow the original plan
+below, with these resolutions to the open questions:
+
+- **Sanitization:** Angular's `[innerHTML]` sanitizer (built-in) — no
+  DOMPurify dependency. Marked emits a controlled subset; the
+  sanitizer keeps `class` / `title` / standard formatting tags and
+  strips `<script>` / `on*` attrs / `javascript:` URLs.
+- **SSR:** catalog markdown rendering runs at prerender time using
+  marked alone (no DOM dependency). TipTap is editor-only and behind
+  `editorGuard` lazy routes; never loads on the prerendered catalog.
+- **Single newlines:** existing PR5 textarea content uses `\n` for
+  line breaks. `markdownToTiptapHtml` runs marked with `breaks: true`
+  → `<br>`; `HardBreak` extension preserves them in TipTap;
+  `tiptapJsonToMarkdown` re-emits them as Markdown trailing-spaces.
 
 ## Implementation plan — PR6 (rich-text host)
 

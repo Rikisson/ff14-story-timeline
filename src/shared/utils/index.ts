@@ -12,7 +12,11 @@ export {
 export type {
   InlineRefKindPrefix,
   InlineRefLookup,
+  InlineRefOption,
   LiteralSegment,
   RefSegment,
   Segment,
 } from './inline-refs';
+export { renderMarkdown, renderMarkdownInline } from './markdown';
+export type { MarkdownRefOption } from './markdown';
+export { markdownToTiptapHtml, tiptapJsonToMarkdown } from './tiptap-markdown';

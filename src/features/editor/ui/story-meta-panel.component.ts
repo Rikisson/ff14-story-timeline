@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { EntityRef, SLUG_PATTERN } from '@shared/models';
-import { EntityPickerComponent, EntityPickerOption } from '@shared/ui';
+import {
+  EntityPickerComponent,
+  EntityPickerOption,
+  RichTextInputComponent,
+} from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 import { StoryMeta } from '../data-access/editor.state';
 
 @Component({
   selector: 'app-story-meta-panel',
-  imports: [EntityPickerComponent],
+  imports: [EntityPickerComponent, RichTextInputComponent],
   template: `
     @if (meta(); as m) {
       <h3>Story info</h3>
@@ -31,13 +36,14 @@ import { StoryMeta } from '../data-access/editor.state';
       </div>
 
       <div class="field">
-        <label for="meta-summary">Summary</label>
-        <textarea
-          id="meta-summary"
-          rows="3"
+        <label>Summary</label>
+        <app-rich-text-input
           [value]="m.summary ?? ''"
-          (input)="onSummary($event)"
-        ></textarea>
+          [options]="inlineRefOptions()"
+          ariaLabel="Summary"
+          placeholder="What is this story about?"
+          (valueChange)="onSummary($event)"
+        />
       </div>
 
       <div class="field">
@@ -134,6 +140,7 @@ export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
+  readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly update = output<Partial<StoryMeta>>();
 
   protected readonly slugValid = computed(() => {
@@ -150,8 +157,7 @@ export class StoryMetaPanelComponent {
     this.update.emit({ slug: (event.target as HTMLInputElement).value });
   }
 
-  protected onSummary(event: Event): void {
-    const value = (event.target as HTMLTextAreaElement).value;
+  protected onSummary(value: string): void {
     this.update.emit({ summary: value || undefined });
   }
 

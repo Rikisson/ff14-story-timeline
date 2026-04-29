@@ -1,7 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Story } from '@features/stories';
+import { CharactersService } from '@features/characters';
+import { EventsService } from '@features/events';
+import { PlacesService } from '@features/places';
+import { Story, StoriesService } from '@features/stories';
+import { MarkdownTextComponent } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 
 const BTN_BASE =
   'inline-flex h-10 flex-1 items-center justify-center rounded-md px-4 text-sm font-medium ' +
@@ -15,7 +20,7 @@ const BTN_SECONDARY =
 
 @Component({
   selector: 'app-catalog-card',
-  imports: [RouterLink, NgOptimizedImage],
+  imports: [RouterLink, NgOptimizedImage, MarkdownTextComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -64,7 +69,12 @@ const BTN_SECONDARY =
           {{ story().title || 'Untitled' }}
         </h3>
         @if (story().summary; as s) {
-          <p class="m-0 line-clamp-3 text-sm text-slate-600">{{ s }}</p>
+          <app-markdown-text
+            class="line-clamp-3 text-sm text-slate-600"
+            [text]="s"
+            [options]="inlineRefOptions()"
+            [inline]="true"
+          />
         }
         @if (tagsVisible()) {
           <div class="mt-auto flex flex-wrap gap-1.5 pt-1">
@@ -97,8 +107,40 @@ export class CatalogCardComponent {
   readonly story = input.required<Story>();
   readonly canEdit = input<boolean>(false);
 
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+  private readonly events = inject(EventsService);
+  private readonly stories = inject(StoriesService);
+
   protected readonly primaryClass = BTN_PRIMARY;
   protected readonly secondaryClass = BTN_SECONDARY;
+
+  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
+    ...this.characters.characters().map((c) => ({
+      kind: 'character' as const,
+      id: c.id,
+      label: c.name,
+      slug: c.slug,
+    })),
+    ...this.places.places().map((p) => ({
+      kind: 'place' as const,
+      id: p.id,
+      label: p.name,
+      slug: p.slug,
+    })),
+    ...this.events.events().map((e) => ({
+      kind: 'event' as const,
+      id: e.id,
+      label: e.name,
+      slug: e.slug,
+    })),
+    ...this.stories.publishedStories().map((s) => ({
+      kind: 'story' as const,
+      id: s.id,
+      label: s.title,
+      slug: s.slug,
+    })),
+  ]);
 
   protected readonly background = computed(() => {
     const s = this.story();

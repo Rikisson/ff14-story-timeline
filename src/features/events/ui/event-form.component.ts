@@ -7,10 +7,10 @@ import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   EntityPickerComponent,
   GhostButtonComponent,
-  InlineRefOption,
-  InlineRefTextareaComponent,
   PrimaryButtonComponent,
+  RichTextInputComponent,
 } from '@shared/ui';
+import { InlineRefOption } from '@shared/utils';
 import { EventsService } from '../data-access/events.service';
 import { TimelineEventDraft } from '../data-access/event.types';
 
@@ -21,7 +21,7 @@ import { TimelineEventDraft } from '../data-access/event.types';
     PrimaryButtonComponent,
     GhostButtonComponent,
     EntityPickerComponent,
-    InlineRefTextareaComponent,
+    RichTextInputComponent,
   ],
   template: `
     <form
@@ -67,17 +67,13 @@ import { TimelineEventDraft } from '../data-access/event.types';
 
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
-        <app-inline-ref-textarea
-          [rows]="4"
+        <app-rich-text-input
           [value]="description()"
           [options]="inlineRefOptions()"
           ariaLabel="Description"
           placeholder="What happens in this event…"
           (valueChange)="onDescription($event)"
         />
-        <span class="text-xs text-slate-500">
-          Type <code>$&#123;</code> to reference a character, place, event, or story.
-        </span>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
