@@ -1,3 +1,5 @@
+import { EntityRef } from '@shared/models';
+
 export interface Scene {
   text: string;
   speaker?: string;
@@ -13,8 +15,8 @@ export interface Story {
   slug: string;
   title: string;
   summary?: string;
-  mainCharacters: string[];
-  places: string[];
+  mainCharacters: EntityRef<'character'>[];
+  places: EntityRef<'place'>[];
   inGameDate: string;
   startSceneId: string;
   scenes: Record<string, Scene>;

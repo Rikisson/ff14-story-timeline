@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CharactersService } from '@features/characters';
+import { PlacesService } from '@features/places';
+import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityPickerComponent, GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { TimelineEventDraft } from '../data-access/event.types';
-import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
-import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-event-form',
-  imports: [ReactiveFormsModule, PrimaryButtonComponent, GhostButtonComponent],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent, GhostButtonComponent, EntityPickerComponent],
   template: `
     <form
       [formGroup]="form"
@@ -60,24 +62,28 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
       </label>
 
       <div class="grid gap-3 sm:grid-cols-2">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Main characters (comma-separated IDs)</span>
-          <input
-            type="text"
-            formControlName="mainCharacters"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. char-ingrid, char-marcus"
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Main characters</span>
+          <app-entity-picker
+            kind="character"
+            [options]="characterOptions()"
+            [value]="mainCharacters()"
+            [multiple]="true"
+            emptyMessage="No characters in this universe yet."
+            (selected)="onCharacters($event)"
           />
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Places (comma-separated IDs)</span>
-          <input
-            type="text"
-            formControlName="places"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. place-uldah-pearl-lane"
+        </div>
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Places</span>
+          <app-entity-picker
+            kind="place"
+            [options]="placeOptions()"
+            [value]="places()"
+            [multiple]="true"
+            emptyMessage="No places in this universe yet."
+            (selected)="onPlaces($event)"
           />
-        </label>
+        </div>
       </div>
 
       <label class="flex flex-col gap-1 text-sm">
@@ -116,13 +122,24 @@ export class EventFormComponent {
   readonly submitted = output<TimelineEventDraft>();
   readonly cancelled = output<void>();
 
+  private readonly charactersService = inject(CharactersService);
+  private readonly placesService = inject(PlacesService);
+
+  protected readonly characterOptions = computed(() =>
+    this.charactersService.characters().map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
+  );
+  protected readonly placeOptions = computed(() =>
+    this.placesService.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
+  );
+
+  protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
+  protected readonly places = signal<EntityRef<'place'>[]>([]);
+
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
     description: ['', [Validators.maxLength(2000)]],
-    mainCharacters: [''],
-    places: [''],
     relatedDates: [''],
   });
 
@@ -134,11 +151,19 @@ export class EventFormComponent {
         name: init?.name ?? '',
         inGameDate: init?.inGameDate ?? '',
         description: init?.description ?? '',
-        mainCharacters: init?.mainCharacters.join(', ') ?? '',
-        places: init?.places.join(', ') ?? '',
         relatedDates: init?.relatedDates.join(', ') ?? '',
       });
+      this.mainCharacters.set(init?.mainCharacters ?? []);
+      this.places.set(init?.places ?? []);
     });
+  }
+
+  protected onCharacters(refs: EntityRef[]): void {
+    this.mainCharacters.set(refs as EntityRef<'character'>[]);
+  }
+
+  protected onPlaces(refs: EntityRef[]): void {
+    this.places.set(refs as EntityRef<'place'>[]);
   }
 
   protected onSubmit(): void {
@@ -149,8 +174,8 @@ export class EventFormComponent {
       name: v.name.trim(),
       inGameDate: v.inGameDate.trim(),
       description: v.description.trim(),
-      mainCharacters: splitCsv(v.mainCharacters),
-      places: splitCsv(v.places),
+      mainCharacters: this.mainCharacters(),
+      places: this.places(),
       relatedDates: splitCsv(v.relatedDates),
     });
   }

@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { CharactersService } from '@features/characters';
+import { PlacesService } from '@features/places';
 import { Story } from '@features/stories';
 import { GhostButtonComponent } from '@shared/ui';
 
@@ -18,6 +20,11 @@ export const EMPTY_FILTERS: CatalogFilters = {
 
 export type SortDirection = 'asc' | 'desc';
 
+interface FilterOption {
+  id: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-catalog-filters',
   imports: [GhostButtonComponent],
@@ -31,8 +38,8 @@ export type SortDirection = 'asc' | 'desc';
           (change)="emit('character', $event)"
         >
           <option value="">Any</option>
-          @for (c of characters(); track c) {
-            <option [value]="c">{{ c }}</option>
+          @for (c of characterOptions(); track c.id) {
+            <option [value]="c.id">{{ c.label }}</option>
           }
         </select>
       </label>
@@ -45,8 +52,8 @@ export type SortDirection = 'asc' | 'desc';
           (change)="emit('place', $event)"
         >
           <option value="">Any</option>
-          @for (p of places(); track p) {
-            <option [value]="p">{{ p }}</option>
+          @for (p of placeOptions(); track p.id) {
+            <option [value]="p.id">{{ p.label }}</option>
           }
         </select>
       </label>
@@ -109,11 +116,20 @@ export class CatalogFiltersComponent {
   readonly sortDirectionChange = output<SortDirection>();
   readonly reset = output<void>();
 
-  protected readonly characters = computed(() =>
-    distinctSorted(this.stories().flatMap((s) => s.mainCharacters)),
+  private readonly charactersService = inject(CharactersService);
+  private readonly placesService = inject(PlacesService);
+
+  protected readonly characterOptions = computed<FilterOption[]>(() =>
+    this.charactersService
+      .characters()
+      .map((c) => ({ id: c.id, label: c.name }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   );
-  protected readonly places = computed(() =>
-    distinctSorted(this.stories().flatMap((s) => s.places)),
+  protected readonly placeOptions = computed<FilterOption[]>(() =>
+    this.placesService
+      .places()
+      .map((p) => ({ id: p.id, label: p.name }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   );
   protected readonly dates = computed(() =>
     distinctSorted(this.stories().map((s) => s.inGameDate)),

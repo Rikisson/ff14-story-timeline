@@ -71,12 +71,12 @@ const BTN_SECONDARY =
             @if (story().inGameDate; as d) {
               <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
             }
-            @for (c of story().mainCharacters; track c) {
-              <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
+            @for (c of story().mainCharacters; track c.id) {
+              <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c.id }}</span>
             }
-            @for (p of story().places; track p) {
+            @for (p of story().places; track p.id) {
               <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
-                {{ p }}
+                {{ p.id }}
               </span>
             }
           </div>

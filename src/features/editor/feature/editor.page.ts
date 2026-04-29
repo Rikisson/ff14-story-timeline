@@ -9,6 +9,8 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CharactersService } from '@features/characters';
+import { PlacesService } from '@features/places';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
@@ -60,6 +62,8 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <div class="layout">
         <app-story-meta-panel
           [meta]="store.meta()"
+          [characterOptions]="characterOptions()"
+          [placeOptions]="placeOptions()"
           (update)="store.updateMeta($event)"
         />
 
@@ -129,10 +133,19 @@ export class EditorPage implements HasUnsavedChanges {
   protected readonly store = inject(EditorStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
 
   protected readonly isSelectedStart = computed(
     () => this.store.selectedSceneId() !== null
       && this.store.selectedSceneId() === this.store.startSceneId(),
+  );
+
+  protected readonly characterOptions = computed(() =>
+    this.characters.characters().map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
+  );
+  protected readonly placeOptions = computed(() =>
+    this.places.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
   );
 
   constructor() {

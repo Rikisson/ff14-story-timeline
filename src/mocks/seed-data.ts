@@ -101,7 +101,10 @@ export const SEED_EVENTS: TimelineEvent[] = [
     description:
       'Dalamud crashes into Eorzea, releasing Bahamut and devastating the realm. Marks the close of the Sixth Astral Era and the start of the Seventh Umbral Era.',
     mainCharacters: [],
-    places: ['place-uldah-pearl-lane', 'place-gridania-northern-shroud'],
+    places: [
+      { kind: 'place', id: 'place-uldah-pearl-lane' },
+      { kind: 'place', id: 'place-gridania-northern-shroud' },
+    ],
     inGameDate: '1572 6AE',
     relatedDates: ['1577 6AE'],
     authorUid: SEED_AUTHOR_UID,
@@ -113,8 +116,8 @@ export const SEED_EVENTS: TimelineEvent[] = [
     name: 'Fall of Doma',
     description:
       'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
-    mainCharacters: ['char-sakuya'],
-    places: ['place-doma'],
+    mainCharacters: [{ kind: 'character', id: 'char-sakuya' }],
+    places: [{ kind: 'place', id: 'place-doma' }],
     inGameDate: '1557 6AE',
     relatedDates: ['1582 6AE'],
     authorUid: SEED_AUTHOR_UID,
@@ -126,8 +129,16 @@ export const SEED_EVENTS: TimelineEvent[] = [
     name: "Attack on Brann's house",
     description:
       "The night Sakuya's blade ended Brann's reign — and nearly Ingrid's existence. Survivors fled toward the Black Shroud; Ingrid's path to Ul'dah began here.",
-    mainCharacters: ['char-ingrid', 'char-brann', 'char-sakuya', 'char-zahir'],
-    places: ['place-ishgard', 'place-gridania-northern-shroud'],
+    mainCharacters: [
+      { kind: 'character', id: 'char-ingrid' },
+      { kind: 'character', id: 'char-brann' },
+      { kind: 'character', id: 'char-sakuya' },
+      { kind: 'character', id: 'char-zahir' },
+    ],
+    places: [
+      { kind: 'place', id: 'place-ishgard' },
+      { kind: 'place', id: 'place-gridania-northern-shroud' },
+    ],
     inGameDate: '1582 6AE',
     relatedDates: ['1585 6AE, late afternoon'],
     authorUid: SEED_AUTHOR_UID,
@@ -142,17 +153,17 @@ export const SEED_STORY: Story = {
   summary:
     "Three years after fleeing the destruction of her former master's house, Ingrid meets an old contact in Ul'dah's Pearl Lane to arrange provisions for a journey east — and to ask a question she has never dared voice aloud.",
   mainCharacters: [
-    'char-ingrid',
-    'char-marcus',
-    'char-brann',
-    'char-sakuya',
-    'char-zahir',
+    { kind: 'character', id: 'char-ingrid' },
+    { kind: 'character', id: 'char-marcus' },
+    { kind: 'character', id: 'char-brann' },
+    { kind: 'character', id: 'char-sakuya' },
+    { kind: 'character', id: 'char-zahir' },
   ],
   places: [
-    'place-uldah-pearl-lane',
-    'place-ishgard',
-    'place-doma',
-    'place-gridania-northern-shroud',
+    { kind: 'place', id: 'place-uldah-pearl-lane' },
+    { kind: 'place', id: 'place-ishgard' },
+    { kind: 'place', id: 'place-doma' },
+    { kind: 'place', id: 'place-gridania-northern-shroud' },
   ],
   inGameDate: '1585 6AE, late afternoon',
   startSceneId: 's01_opening',

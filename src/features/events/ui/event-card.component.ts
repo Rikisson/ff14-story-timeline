@@ -32,11 +32,11 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
         event().mainCharacters.length || event().places.length || event().relatedDates.length
       ) {
         <div class="flex flex-wrap gap-1.5">
-          @for (c of event().mainCharacters; track c) {
-            <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
+          @for (c of event().mainCharacters; track c.id) {
+            <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c.id }}</span>
           }
-          @for (p of event().places; track p) {
-            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ p }}</span>
+          @for (p of event().places; track p.id) {
+            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ p.id }}</span>
           }
           @for (d of event().relatedDates; track d) {
             <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>

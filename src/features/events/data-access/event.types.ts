@@ -1,10 +1,12 @@
+import { EntityRef } from '@shared/models';
+
 export interface TimelineEvent {
   id: string;
   slug: string;
   name: string;
   description: string;
-  mainCharacters: string[];
-  places: string[];
+  mainCharacters: EntityRef<'character'>[];
+  places: EntityRef<'place'>[];
   inGameDate: string;
   relatedDates: string[];
   authorUid: string;
@@ -17,8 +19,8 @@ export interface TimelineEventDraft {
   slug: string;
   name: string;
   description: string;
-  mainCharacters: string[];
-  places: string[];
+  mainCharacters: EntityRef<'character'>[];
+  places: EntityRef<'place'>[];
   inGameDate: string;
   relatedDates: string[];
 }

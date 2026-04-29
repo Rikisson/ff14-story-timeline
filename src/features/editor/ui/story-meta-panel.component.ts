@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { SLUG_PATTERN } from '@shared/models';
+import { EntityRef, SLUG_PATTERN } from '@shared/models';
+import { EntityPickerComponent, EntityPickerOption } from '@shared/ui';
 import { StoryMeta } from '../data-access/editor.state';
 
 @Component({
   selector: 'app-story-meta-panel',
+  imports: [EntityPickerComponent],
   template: `
     @if (meta(); as m) {
       <h3>Story info</h3>
@@ -39,22 +41,26 @@ import { StoryMeta } from '../data-access/editor.state';
       </div>
 
       <div class="field">
-        <label for="meta-characters">Main characters (comma-separated)</label>
-        <input
-          id="meta-characters"
-          type="text"
-          [value]="m.mainCharacters.join(', ')"
-          (input)="onCharacters($event)"
+        <label>Main characters</label>
+        <app-entity-picker
+          kind="character"
+          [options]="characterOptions()"
+          [value]="m.mainCharacters"
+          [multiple]="true"
+          emptyMessage="No characters in this universe yet."
+          (selected)="onCharacters($event)"
         />
       </div>
 
       <div class="field">
-        <label for="meta-places">Places (comma-separated)</label>
-        <input
-          id="meta-places"
-          type="text"
-          [value]="m.places.join(', ')"
-          (input)="onPlaces($event)"
+        <label>Places</label>
+        <app-entity-picker
+          kind="place"
+          [options]="placeOptions()"
+          [value]="m.places"
+          [multiple]="true"
+          emptyMessage="No places in this universe yet."
+          (selected)="onPlaces($event)"
         />
       </div>
 
@@ -126,6 +132,8 @@ import { StoryMeta } from '../data-access/editor.state';
 })
 export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
+  readonly characterOptions = input<EntityPickerOption[]>([]);
+  readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly update = output<Partial<StoryMeta>>();
 
   protected readonly slugValid = computed(() => {
@@ -147,12 +155,12 @@ export class StoryMetaPanelComponent {
     this.update.emit({ summary: value || undefined });
   }
 
-  protected onCharacters(event: Event): void {
-    this.update.emit({ mainCharacters: this.parseCsv(event) });
+  protected onCharacters(refs: EntityRef[]): void {
+    this.update.emit({ mainCharacters: refs as EntityRef<'character'>[] });
   }
 
-  protected onPlaces(event: Event): void {
-    this.update.emit({ places: this.parseCsv(event) });
+  protected onPlaces(refs: EntityRef[]): void {
+    this.update.emit({ places: refs as EntityRef<'place'>[] });
   }
 
   protected onDate(event: Event): void {
@@ -161,12 +169,5 @@ export class StoryMetaPanelComponent {
 
   protected onDraft(event: Event): void {
     this.update.emit({ draft: (event.target as HTMLInputElement).checked });
-  }
-
-  private parseCsv(event: Event): string[] {
-    return (event.target as HTMLInputElement).value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
   }
 }
