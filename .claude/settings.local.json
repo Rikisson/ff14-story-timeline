@@ -12,7 +12,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc *)",
-      "Bash(npx ng *)"
+      "Bash(npx ng *)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

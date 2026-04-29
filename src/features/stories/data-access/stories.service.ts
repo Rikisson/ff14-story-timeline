@@ -1,4 +1,4 @@
-import { inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
+import { effect, inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   collection,
@@ -13,6 +13,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore/lite';
+import { UniverseStore } from '@features/universes';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { StoredStory, Story } from './story.types';
 
@@ -30,18 +31,33 @@ export class StaleStoryError extends Error {
 @Injectable({ providedIn: 'root' })
 export class StoriesService {
   private readonly firebase = inject(FirebaseService);
+  private readonly universes = inject(UniverseStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _publishedStories = signal<Story[]>([]);
   readonly publishedStories: Signal<Story[]> = this._publishedStories.asReadonly();
 
   constructor() {
-    if (this.isBrowser) void this.refreshPublished();
+    if (this.isBrowser) {
+      effect(() => {
+        const id = this.universes.activeUniverseId();
+        if (!id) {
+          this._publishedStories.set([]);
+          return;
+        }
+        void this.refreshPublished(id);
+      });
+    }
   }
 
-  async refreshPublished(): Promise<void> {
+  async refreshPublished(universeId?: string): Promise<void> {
+    const id = universeId ?? this.universes.activeUniverseId();
+    if (!id) {
+      this._publishedStories.set([]);
+      return;
+    }
     const q = query(
-      collection(this.firebase.firestore, 'stories'),
+      collection(this.firebase.firestore, 'universes', id, 'stories'),
       where('draft', '==', false),
       orderBy('publishedAt', 'desc'),
       limit(PAGE_SIZE),
@@ -51,12 +67,16 @@ export class StoriesService {
   }
 
   async getStory(id: string): Promise<Story | undefined> {
-    const snap = await getDoc(doc(this.firebase.firestore, 'stories', id));
+    const universeId = this.requireUniverseId();
+    const snap = await getDoc(
+      doc(this.firebase.firestore, 'universes', universeId, 'stories', id),
+    );
     return snap.exists() ? { id: snap.id, ...(snap.data() as StoredStory) } : undefined;
   }
 
   async saveStory(story: Story, expectedVersion: number): Promise<number> {
-    const ref = doc(this.firebase.firestore, 'stories', story.id);
+    const universeId = this.requireUniverseId();
+    const ref = doc(this.firebase.firestore, 'universes', universeId, 'stories', story.id);
     return runTransaction(this.firebase.firestore, async (tx) => {
       const snap = await tx.get(ref);
       if (snap.exists()) {
@@ -73,6 +93,7 @@ export class StoriesService {
   }
 
   async createDraftStory(authorUid: string): Promise<string> {
+    const universeId = this.requireUniverseId();
     const id = crypto.randomUUID();
     const startSceneId = crypto.randomUUID();
     const story: Story = {
@@ -89,21 +110,30 @@ export class StoriesService {
       updatedAt: Date.now(),
     };
     const { id: _id, ...data } = story;
-    await setDoc(doc(this.firebase.firestore, 'stories', id), data);
+    await setDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id), data);
     return id;
   }
 
   async deleteStory(id: string): Promise<void> {
-    await deleteDoc(doc(this.firebase.firestore, 'stories', id));
+    const universeId = this.requireUniverseId();
+    await deleteDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id));
   }
 
   async getAuthorStories(authorUid: string): Promise<Story[]> {
+    const universeId = this.universes.activeUniverseId();
+    if (!universeId) return [];
     const q = query(
-      collection(this.firebase.firestore, 'stories'),
+      collection(this.firebase.firestore, 'universes', universeId, 'stories'),
       where('authorUid', '==', authorUid),
       limit(PAGE_SIZE),
     );
     const snap = await getDocs(q);
     return snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredStory) }));
+  }
+
+  private requireUniverseId(): string {
+    const id = this.universes.activeUniverseId();
+    if (!id) throw new Error('No active universe selected.');
+    return id;
   }
 }

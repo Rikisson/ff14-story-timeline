@@ -3,49 +3,55 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /stories/{storyId} {
-      allow read: if resource.data.draft == false
-        || (request.auth != null && request.auth.uid == resource.data.authorUid);
-
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
-
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.authorUid
-        && request.resource.data.authorUid == resource.data.authorUid;
+    function isMember(universeId) {
+      let u = get(/databases/$(database)/documents/universes/$(universeId)).data;
+      return request.auth != null
+        && (u.ownerUid == request.auth.uid || request.auth.uid in u.editorUids);
     }
 
-    match /characters/{characterId} {
-      allow read: if true;
-
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
-
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.authorUid
-        && request.resource.data.authorUid == resource.data.authorUid;
+    function isResourceMember() {
+      return request.auth != null
+        && (resource.data.ownerUid == request.auth.uid
+          || request.auth.uid in resource.data.editorUids);
     }
 
-    match /places/{placeId} {
-      allow read: if true;
-
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
-
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.authorUid
-        && request.resource.data.authorUid == resource.data.authorUid;
+    function hasUniverseCreatorClaim() {
+      return request.auth != null
+        && request.auth.token.universeCreator == true;
     }
 
-    match /events/{eventId} {
-      allow read: if true;
+    match /universes/{universeId} {
+      allow read: if isResourceMember();
 
-      allow create: if request.auth != null
-        && request.resource.data.authorUid == request.auth.uid;
+      allow create: if hasUniverseCreatorClaim()
+        && request.resource.data.ownerUid == request.auth.uid;
 
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.authorUid
-        && request.resource.data.authorUid == resource.data.authorUid;
+      allow update: if isResourceMember()
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+
+      match /characters/{characterId} {
+        allow read: if isMember(universeId);
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /places/{placeId} {
+        allow read: if isMember(universeId);
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /events/{eventId} {
+        allow read: if isMember(universeId);
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /stories/{storyId} {
+        allow read: if isMember(universeId)
+          || resource.data.draft == false;
+        allow create, update, delete: if isMember(universeId);
+      }
     }
   }
 }

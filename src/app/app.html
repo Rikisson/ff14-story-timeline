@@ -22,7 +22,15 @@
       routerLinkActive="text-slate-900 font-medium"
       class="text-slate-600 no-underline"
     >Events</a>
+    <a
+      routerLink="/universes"
+      routerLinkActive="text-slate-900 font-medium"
+      class="text-slate-600 no-underline"
+    >Universes</a>
   </nav>
+  @if (activeUniverseName(); as name) {
+    <span class="text-xs text-slate-500">Universe: <strong class="text-slate-700">{{ name }}</strong></span>
+  }
   @if (canSeed()) {
     <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
       Seed test data
