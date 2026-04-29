@@ -39,40 +39,8 @@ Implementation specifics — TS types, Firestore layout, picker fuzzy
 rules, edge cases, migration steps — live in
 [`narrative-engine-impl.md`](narrative-engine-impl.md).
 
-**Status:** Universe scoping, EntityRef + slug uniqueness, typed
-pickers on Story/Event level, the resolved scene model, character
-portraits with mood selection, the inline-ref surface, and the
-rich-text host promotion (TipTap-based `<app-rich-text-input>` with
-chips on `Scene.text` / `Event.description` / `Story.summary` /
-`Character.description` / `Place.description`; markdown-rendered
-read-only output in player and catalog) are shipped (PR1–PR6).
-Storage rules match the universe-scoped paths.
-
-- **Inline surface — `${kind:<guid>}[Display Text]` references inside
-  any rich-text body.**
-  - Typing `${` opens an autocomplete popup under the caret. Zero or
-    one character after `${` matches names across all kinds in the
-    active universe; once the kind prefix completes — `${ch` →
-    characters, `${pl` → places, `${ev` → events — the list narrows
-    to that kind and further typing fuzzy-filters by name and slug.
-  - Picking inserts a reference token and places the caret between the
-    brackets so the author types the display text immediately. The
-    canonical stored form is `${kind:<guid>}[…]`; the editor renders
-    the token as a chip showing slug + display text, hiding the raw
-    GUID from the WYSIWYG view. Raw form appears only in JSON export.
-  - Player and catalog render the bracketed display text as a link /
-    hover-card resolved against the active universe; unresolved IDs
-    fall back to plain bracket text (no broken link, no cross-universe
-    fallback).
-  - Popup scope is the active universe's full collection for that
-    kind. Story meta is not a filter — meta is curatorial (deliberately
-    omitting characters to avoid spoilers), not a permission list.
-    Entries referenced elsewhere in the same story or scene can rank
-    first as UX, but no entity is hidden.
-  - Rich-text hosts: `Scene.text` and `Event.description` exist;
-    promote `Story.summary` to rich text (catalog card needs a
-    rich-text renderer); add `Character.description` and
-    `Place.description`.
+**Status:** PR1–PR6 shipped. Storage rules match the universe-scoped
+paths.
 
 - **Decorative tier explicitly carved out.** Inline `${kind:<guid>}[…]`
   refs inside `Scene.text` (or any other rich-text body) are reader
