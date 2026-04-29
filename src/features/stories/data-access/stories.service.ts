@@ -107,7 +107,7 @@ export class StoriesService {
       places: [],
       inGameDate: '',
       startSceneId,
-      scenes: { [startSceneId]: { text: '', position: { x: 0, y: 0 }, next: [] } },
+      scenes: { [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] } },
       authorUid,
       draft: true,
       version: 1,

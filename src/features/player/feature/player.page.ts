@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CharactersService } from '@features/characters';
 import { GhostButtonComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
@@ -59,9 +60,8 @@ import { SceneViewComponent } from '../ui/scene-view.component';
         @if (store.currentScene(); as scene) {
           <app-scene-view
             [text]="scene.text"
-            [speaker]="scene.speaker"
+            [speaker]="speakerLabel()"
             [background]="scene.background"
-            [characters]="scene.characters ?? []"
             [audio]="scene.audio"
           />
 
@@ -85,6 +85,14 @@ import { SceneViewComponent } from '../ui/scene-view.component';
 export class PlayerPage {
   readonly id = input.required<string>();
   protected readonly store = inject(PlayerStore);
+  private readonly characters = inject(CharactersService);
+
+  protected readonly speakerLabel = computed<string | undefined>(() => {
+    const sp = this.store.currentScene()?.speaker;
+    if (sp === undefined) return undefined;
+    if (typeof sp === 'string') return sp;
+    return this.characters.characters().find((c) => c.id === sp.id)?.name ?? sp.id;
+  });
 
   constructor() {
     effect(() => {

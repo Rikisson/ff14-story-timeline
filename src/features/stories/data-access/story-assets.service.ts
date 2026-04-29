@@ -3,7 +3,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { UniverseStore } from '@features/universes';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 
-export type SceneAssetKind = 'background' | 'character' | 'audio';
+export type SceneAssetKind = 'background' | 'audio';
 
 @Injectable({ providedIn: 'root' })
 export class StoryAssetsService {

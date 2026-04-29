@@ -1,10 +1,17 @@
 import { EntityRef } from '@shared/models';
 
+export interface StagedCharacter {
+  entity: EntityRef<'character'>;
+  position: string;
+  order?: number;
+}
+
 export interface Scene {
   text: string;
-  speaker?: string;
+  speaker?: EntityRef<'character'> | string;
   background?: string;
-  characters?: string[];
+  characters: StagedCharacter[];
+  place?: EntityRef<'place'>;
   audio?: string;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;

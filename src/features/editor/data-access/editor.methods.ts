@@ -138,6 +138,7 @@ export function withEditorMethods() {
           const id = crypto.randomUUID();
           const scene: Scene = {
             text: '',
+            characters: [],
             position,
             next: [],
           };

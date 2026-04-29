@@ -14,22 +14,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         </div>
       }
 
-      @if (characters().length > 0) {
-        <ul class="flex flex-wrap gap-2 border-b border-slate-200 px-4 py-3">
-          @for (src of characters(); track src) {
-            <li>
-              <img
-                [ngSrc]="src"
-                alt=""
-                width="64"
-                height="64"
-                class="size-16 rounded-full border border-slate-200 object-cover"
-              />
-            </li>
-          }
-        </ul>
-      }
-
       <div class="flex flex-col gap-2 px-5 py-4">
         @if (speaker(); as s) {
           <p class="m-0 text-sm font-semibold text-slate-700">{{ s }}</p>
@@ -56,7 +40,6 @@ export class SceneViewComponent {
   readonly text = input.required<string>();
   readonly speaker = input<string | undefined>();
   readonly background = input<string | undefined>();
-  readonly characters = input<string[]>([]);
   readonly audio = input<string | undefined>();
 
   protected readonly audioLabel = computed(() => {

@@ -12,9 +12,9 @@ const sampleStory: Story = {
   inGameDate: '',
   startSceneId: 'a',
   scenes: {
-    a: { text: 'A', position: { x: 0, y: 0 }, next: [{ sceneId: 'b' }, { sceneId: 'c' }] },
-    b: { text: 'B', position: { x: 100, y: 0 }, next: [{ sceneId: 'c' }] },
-    c: { text: 'C', position: { x: 200, y: 0 }, next: [] },
+    a: { text: 'A', characters: [], position: { x: 0, y: 0 }, next: [{ sceneId: 'b' }, { sceneId: 'c' }] },
+    b: { text: 'B', characters: [], position: { x: 100, y: 0 }, next: [{ sceneId: 'c' }] },
+    c: { text: 'C', characters: [], position: { x: 200, y: 0 }, next: [] },
   },
   authorUid: 'u1',
   draft: false,
