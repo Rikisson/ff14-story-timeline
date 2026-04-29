@@ -1,5 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { InlineRefOption, InlineRefTextComponent } from '@shared/ui';
 
 export interface StagedView {
   id: string;
@@ -15,7 +16,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
 
 @Component({
   selector: 'app-scene-view',
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, InlineRefTextComponent],
   template: `
     <article
       class="relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
@@ -91,7 +92,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
           <p class="m-0 text-sm font-semibold text-slate-700">{{ s }}</p>
         }
         <p class="m-0 whitespace-pre-wrap text-base leading-relaxed text-slate-900">
-          {{ text() }}
+          <app-inline-ref-text [text]="text()" [options]="inlineRefOptions()" />
         </p>
       </div>
 
@@ -114,6 +115,7 @@ export class SceneViewComponent {
   readonly background = input<string | undefined>();
   readonly audio = input<string | undefined>();
   readonly staged = input<StagedView[]>([]);
+  readonly inlineRefOptions = input<InlineRefOption[]>([]);
 
   protected readonly slots = POSITION_SLOTS;
 

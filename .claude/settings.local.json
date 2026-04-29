@@ -14,7 +14,8 @@
       "Bash(npx tsc *)",
       "Bash(npx ng *)",
       "Bash(echo \"exit=$?\")",
-      "Bash(echo \"EXIT=$?\")"
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(git *)"
     ]
   }
 }

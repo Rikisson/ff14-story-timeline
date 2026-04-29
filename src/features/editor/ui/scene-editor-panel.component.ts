@@ -7,6 +7,8 @@ import {
   EntityPickerComponent,
   EntityPickerOption,
   GhostButtonComponent,
+  InlineRefOption,
+  InlineRefTextareaComponent,
 } from '@shared/ui';
 import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
 
@@ -29,6 +31,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     GhostButtonComponent,
     DangerButtonComponent,
     EntityPickerComponent,
+    InlineRefTextareaComponent,
     SceneAssetsPanelComponent,
   ],
   template: `
@@ -89,7 +92,16 @@ type SpeakerMode = 'none' | 'character' | 'custom';
 
         <div class="field">
           <label for="text">Text</label>
-          <textarea id="text" rows="6" [value]="s.text" (input)="emitText($event, id)"></textarea>
+          <app-inline-ref-textarea
+            textareaId="text"
+            [rows]="6"
+            [value]="s.text"
+            [options]="inlineRefOptions()"
+            (valueChange)="emitTextValue(id, $event)"
+          />
+          <p class="hint">
+            Type <code>$&#123;</code> to reference a character, place, event, or story.
+          </p>
         </div>
 
         <fieldset class="group">
@@ -362,6 +374,7 @@ export class SceneEditorPanelComponent {
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly characterPortraits = input<Record<string, CharacterPortrait[]>>({});
+  readonly inlineRefOptions = input<InlineRefOption[]>([]);
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
@@ -420,8 +433,8 @@ export class SceneEditorPanelComponent {
     return [{ id: '', label: '(default)' }, ...list.map((p) => ({ id: p.id, label: p.label }))];
   }
 
-  protected emitText(event: Event, id: string): void {
-    this.update.emit({ id, patch: { text: (event.target as HTMLTextAreaElement).value } });
+  protected emitTextValue(id: string, value: string): void {
+    this.update.emit({ id, patch: { text: value } });
   }
 
   protected onSpeakerMode(id: string, mode: SpeakerMode): void {

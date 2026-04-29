@@ -4,7 +4,7 @@ Companion to `dev-improvements.md` §2 *Data-model coherence*. That section
 sets the design (tiers, fields, surfaces); this file pins surface behavior
 and rules for the parts that are not yet implemented.
 
-Shipped pieces (PR1–PR4.5):
+Shipped pieces (PR1–PR5):
 
 - `EntityRef<Kind>` and `EntityKind` live in `src/shared/models/`.
 - Universe scoping (top-level `universes/{id}` collection, per-universe
@@ -25,6 +25,17 @@ Shipped pieces (PR1–PR4.5):
 - `storage.rules` mirrors `firestore.rules` — public read, member-only
   write under `universes/{universeId}/{allPaths=**}`, with a 25 MB
   upload size cap.
+- Inline `${kind:<guid>}[Display Text]` references: `parseRefs` /
+  `buildInlineRef` / `resolveRef` in `src/shared/utils/inline-refs.ts`,
+  `<app-inline-ref-textarea>` in `src/shared/ui/inline-ref-textarea/`
+  (caret-anchored popup, kind-prefix narrowing, fuzzy filter on
+  name + slug, keyboard nav, mirror-div caret coords), wired into
+  `Scene.text` (scene-editor-panel) and `Event.description`
+  (event-form). Player rendering: `<app-inline-ref-text>` in
+  `src/shared/ui/inline-ref-text/` — literals plain, resolved refs as
+  `<a>` with `title=entity.name`, unresolved refs as plain
+  `[Display Text]`. Editor still shows raw tokens; chip rendering and
+  rich-text host promotion ship in PR6.
 
 ## Open optimization
 
@@ -55,7 +66,7 @@ future PRs:
   is an `EntityRef<'character'>` not present in `characters[]` triggers a
   visible editor prompt rather than silently mutating the array.
 
-## Inline reference token (PR5, unshipped)
+## Inline reference token (PR5, shipped)
 
 ### Canonical form
 

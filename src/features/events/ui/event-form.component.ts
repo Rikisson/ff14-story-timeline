@@ -2,13 +2,27 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
 import { PlacesService } from '@features/places';
+import { StoriesService } from '@features/stories';
 import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
-import { EntityPickerComponent, GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
+import {
+  EntityPickerComponent,
+  GhostButtonComponent,
+  InlineRefOption,
+  InlineRefTextareaComponent,
+  PrimaryButtonComponent,
+} from '@shared/ui';
+import { EventsService } from '../data-access/events.service';
 import { TimelineEventDraft } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-form',
-  imports: [ReactiveFormsModule, PrimaryButtonComponent, GhostButtonComponent, EntityPickerComponent],
+  imports: [
+    ReactiveFormsModule,
+    PrimaryButtonComponent,
+    GhostButtonComponent,
+    EntityPickerComponent,
+    InlineRefTextareaComponent,
+  ],
   template: `
     <form
       [formGroup]="form"
@@ -51,15 +65,20 @@ import { TimelineEventDraft } from '../data-access/event.types';
         />
       </label>
 
-      <label class="flex flex-col gap-1 text-sm">
+      <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
-        <textarea
-          formControlName="description"
-          rows="4"
-          class="rounded-md border border-slate-300 bg-white p-3 text-sm"
+        <app-inline-ref-textarea
+          [rows]="4"
+          [value]="description()"
+          [options]="inlineRefOptions()"
+          ariaLabel="Description"
           placeholder="What happens in this event…"
-        ></textarea>
-      </label>
+          (valueChange)="onDescription($event)"
+        />
+        <span class="text-xs text-slate-500">
+          Type <code>$&#123;</code> to reference a character, place, event, or story.
+        </span>
+      </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="flex flex-col gap-1 text-sm">
@@ -124,6 +143,8 @@ export class EventFormComponent {
 
   private readonly charactersService = inject(CharactersService);
   private readonly placesService = inject(PlacesService);
+  private readonly eventsService = inject(EventsService);
+  private readonly storiesService = inject(StoriesService);
 
   protected readonly characterOptions = computed(() =>
     this.charactersService.characters().map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
@@ -131,15 +152,41 @@ export class EventFormComponent {
   protected readonly placeOptions = computed(() =>
     this.placesService.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
   );
+  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
+    ...this.charactersService.characters().map((c) => ({
+      kind: 'character' as const,
+      id: c.id,
+      label: c.name,
+      slug: c.slug,
+    })),
+    ...this.placesService.places().map((p) => ({
+      kind: 'place' as const,
+      id: p.id,
+      label: p.name,
+      slug: p.slug,
+    })),
+    ...this.eventsService.events().map((e) => ({
+      kind: 'event' as const,
+      id: e.id,
+      label: e.name,
+      slug: e.slug,
+    })),
+    ...this.storiesService.publishedStories().map((s) => ({
+      kind: 'story' as const,
+      id: s.id,
+      label: s.title,
+      slug: s.slug,
+    })),
+  ]);
 
   protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
   protected readonly places = signal<EntityRef<'place'>[]>([]);
+  protected readonly description = signal<string>('');
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
-    description: ['', [Validators.maxLength(2000)]],
     relatedDates: [''],
   });
 
@@ -150,11 +197,11 @@ export class EventFormComponent {
         slug: init?.slug ?? '',
         name: init?.name ?? '',
         inGameDate: init?.inGameDate ?? '',
-        description: init?.description ?? '',
         relatedDates: init?.relatedDates.join(', ') ?? '',
       });
       this.mainCharacters.set(init?.mainCharacters ?? []);
       this.places.set(init?.places ?? []);
+      this.description.set(init?.description ?? '');
     });
   }
 
@@ -166,6 +213,10 @@ export class EventFormComponent {
     this.places.set(refs as EntityRef<'place'>[]);
   }
 
+  protected onDescription(value: string): void {
+    this.description.set(value);
+  }
+
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
@@ -173,7 +224,7 @@ export class EventFormComponent {
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       inGameDate: v.inGameDate.trim(),
-      description: v.description.trim(),
+      description: this.description().trim(),
       mainCharacters: this.mainCharacters(),
       places: this.places(),
       relatedDates: splitCsv(v.relatedDates),
