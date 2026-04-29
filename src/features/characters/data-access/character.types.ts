@@ -1,9 +1,16 @@
+export interface CharacterPortrait {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface Character {
   id: string;
   slug: string;
   name: string;
   race: string;
   job: string;
+  portraits?: CharacterPortrait[];
   authorUid: string;
   createdAt: number;
 }

@@ -4,7 +4,7 @@ import { CharactersService } from '@features/characters';
 import { GhostButtonComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
-import { SceneViewComponent } from '../ui/scene-view.component';
+import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 
 @Component({
   selector: 'app-player-page',
@@ -63,6 +63,7 @@ import { SceneViewComponent } from '../ui/scene-view.component';
             [speaker]="speakerLabel()"
             [background]="scene.background"
             [audio]="scene.audio"
+            [staged]="stagedView()"
           />
 
           @if (scene.next.length === 0) {
@@ -92,6 +93,29 @@ export class PlayerPage {
     if (sp === undefined) return undefined;
     if (typeof sp === 'string') return sp;
     return this.characters.characters().find((c) => c.id === sp.id)?.name ?? sp.id;
+  });
+
+  protected readonly stagedView = computed<StagedView[]>(() => {
+    const scene = this.store.currentScene();
+    if (!scene) return [];
+    const sp = scene.speaker;
+    const speakerId = sp && typeof sp !== 'string' ? sp.id : null;
+    const charList = this.characters.characters();
+    return scene.characters.map((sc) => {
+      const char = charList.find((c) => c.id === sc.entity.id);
+      const portraits = char?.portraits ?? [];
+      const portrait = sc.portraitId
+        ? portraits.find((p) => p.id === sc.portraitId) ?? portraits[0]
+        : portraits[0];
+      return {
+        id: sc.entity.id,
+        name: char?.name ?? sc.entity.id,
+        position: sc.position,
+        order: sc.order,
+        portraitUrl: portrait?.url,
+        isSpeaker: speakerId === sc.entity.id,
+      };
+    });
   });
 
   constructor() {

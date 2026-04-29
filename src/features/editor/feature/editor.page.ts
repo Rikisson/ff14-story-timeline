@@ -9,7 +9,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CharactersService } from '@features/characters';
+import { CharacterPortrait, CharactersService } from '@features/characters';
 import { PlacesService } from '@features/places';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
@@ -82,6 +82,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [storyId]="store.storyId() ?? ''"
           [characterOptions]="characterOptions()"
           [placeOptions]="placeOptions()"
+          [characterPortraits]="characterPortraits()"
           (update)="onUpdate($event)"
           (updateChoiceLabel)="onChoiceLabel($event)"
           (remove)="store.removeScene($event)"
@@ -149,6 +150,13 @@ export class EditorPage implements HasUnsavedChanges {
   protected readonly placeOptions = computed(() =>
     this.places.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
   );
+  protected readonly characterPortraits = computed<Record<string, CharacterPortrait[]>>(() => {
+    const map: Record<string, CharacterPortrait[]> = {};
+    for (const c of this.characters.characters()) {
+      if (c.portraits?.length) map[c.id] = c.portraits;
+    }
+    return map;
+  });
 
   constructor() {
     this.store.bindLoad(this.id);

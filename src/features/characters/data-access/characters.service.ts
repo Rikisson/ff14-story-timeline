@@ -15,7 +15,7 @@ import {
 import { UniverseStore } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { Character, CharacterDraft, StoredCharacter } from './character.types';
+import { Character, CharacterDraft, CharacterPortrait, StoredCharacter } from './character.types';
 
 const PAGE_SIZE = 50;
 
@@ -83,6 +83,15 @@ export class CharactersService {
   async remove(id: string): Promise<void> {
     const universeId = this.requireUniverseId();
     await deleteDoc(doc(this.firebase.firestore, 'universes', universeId, 'characters', id));
+    await this.refresh(universeId);
+  }
+
+  async updatePortraits(id: string, portraits: CharacterPortrait[]): Promise<void> {
+    const universeId = this.requireUniverseId();
+    await updateDoc(
+      doc(this.firebase.firestore, 'universes', universeId, 'characters', id),
+      { portraits },
+    );
     await this.refresh(universeId);
   }
 

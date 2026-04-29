@@ -4,6 +4,7 @@ export interface StagedCharacter {
   entity: EntityRef<'character'>;
   position: string;
   order?: number;
+  portraitId?: string;
 }
 
 export interface Scene {

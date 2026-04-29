@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { CharacterPortrait } from '@features/characters';
 import { Scene, StagedCharacter } from '@features/stories';
 import { EntityRef } from '@shared/models';
 import {
@@ -108,6 +109,17 @@ type SpeakerMode = 'none' | 'character' | 'custom';
                       <option [value]="p">{{ p }}</option>
                     }
                   </select>
+                  @if (portraitOptions(sc.entity.id).length > 1) {
+                    <select
+                      [value]="sc.portraitId ?? ''"
+                      [attr.aria-label]="'Portrait for ' + characterName(sc.entity.id)"
+                      (change)="onPortraitChange($event, id, sc.entity.id)"
+                    >
+                      @for (po of portraitOptions(sc.entity.id); track po.id) {
+                        <option [value]="po.id">{{ po.label }}</option>
+                      }
+                    </select>
+                  }
                   <button
                     type="button"
                     class="remove"
@@ -349,6 +361,7 @@ export class SceneEditorPanelComponent {
   readonly storyId = input.required<string>();
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
+  readonly characterPortraits = input<Record<string, CharacterPortrait[]>>({});
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
@@ -399,6 +412,12 @@ export class SceneEditorPanelComponent {
 
   protected characterName(id: string): string {
     return this.characterOptions().find((o) => o.id === id)?.label ?? id;
+  }
+
+  protected portraitOptions(characterId: string): { id: string; label: string }[] {
+    const list = this.characterPortraits()[characterId] ?? [];
+    if (list.length === 0) return [];
+    return [{ id: '', label: '(default)' }, ...list.map((p) => ({ id: p.id, label: p.label }))];
   }
 
   protected emitText(event: Event, id: string): void {
@@ -457,6 +476,16 @@ export class SceneEditorPanelComponent {
     const current = this.scene()?.characters ?? [];
     const next = current.map((c) =>
       c.entity.id === characterId ? { ...c, position } : c,
+    );
+    this.update.emit({ id, patch: { characters: next } });
+  }
+
+  protected onPortraitChange(event: Event, id: string, characterId: string): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const portraitId = value || undefined;
+    const current = this.scene()?.characters ?? [];
+    const next = current.map((c) =>
+      c.entity.id === characterId ? { ...c, portraitId } : c,
     );
     this.update.emit({ id, patch: { characters: next } });
   }
