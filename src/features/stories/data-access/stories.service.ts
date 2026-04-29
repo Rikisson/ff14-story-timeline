@@ -14,6 +14,7 @@ import {
   where,
 } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
+import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { StoredStory, Story } from './story.types';
 
@@ -76,6 +77,7 @@ export class StoriesService {
 
   async saveStory(story: Story, expectedVersion: number): Promise<number> {
     const universeId = this.requireUniverseId();
+    await this.assertSlugAvailable(universeId, story.slug, story.id);
     const ref = doc(this.firebase.firestore, 'universes', universeId, 'stories', story.id);
     return runTransaction(this.firebase.firestore, async (tx) => {
       const snap = await tx.get(ref);
@@ -96,8 +98,10 @@ export class StoriesService {
     const universeId = this.requireUniverseId();
     const id = crypto.randomUUID();
     const startSceneId = crypto.randomUUID();
+    const slug = await this.allocateUntitledSlug(universeId);
     const story: Story = {
       id,
+      slug,
       title: 'Untitled story',
       mainCharacters: [],
       places: [],
@@ -112,6 +116,36 @@ export class StoriesService {
     const { id: _id, ...data } = story;
     await setDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id), data);
     return id;
+  }
+
+  private async allocateUntitledSlug(universeId: string): Promise<string> {
+    const base = 'untitled-story';
+    for (let i = 0; i < 1000; i++) {
+      const candidate = i === 0 ? base : `${base}-${i + 1}`;
+      const q = query(
+        collection(this.firebase.firestore, 'universes', universeId, 'stories'),
+        where('slug', '==', candidate),
+        limit(1),
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return candidate;
+    }
+    return `${base}-${Date.now()}`;
+  }
+
+  private async assertSlugAvailable(
+    universeId: string,
+    slug: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const q = query(
+      collection(this.firebase.firestore, 'universes', universeId, 'stories'),
+      where('slug', '==', slug),
+      limit(2),
+    );
+    const snap = await getDocs(q);
+    const taken = snap.docs.some((d) => d.id !== excludeId);
+    if (taken) throw new SlugTakenError('story', slug);
   }
 
   async deleteStory(id: string): Promise<void> {

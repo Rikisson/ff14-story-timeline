@@ -9,6 +9,7 @@ const SEED_CREATED_AT = 1777593600000;
 export const SEED_CHARACTERS: Character[] = [
   {
     id: 'char-ingrid',
+    slug: 'ingrid',
     name: 'Ingrid',
     race: 'Hyur (voidsent-tainted)',
     job: 'Rogue',
@@ -17,6 +18,7 @@ export const SEED_CHARACTERS: Character[] = [
   },
   {
     id: 'char-marcus',
+    slug: 'marcus',
     name: 'Marcus',
     race: 'Hyur',
     job: 'Merchant',
@@ -25,6 +27,7 @@ export const SEED_CHARACTERS: Character[] = [
   },
   {
     id: 'char-brann',
+    slug: 'brann',
     name: 'Brann',
     race: 'Hyur',
     job: 'Voidwalker',
@@ -33,6 +36,7 @@ export const SEED_CHARACTERS: Character[] = [
   },
   {
     id: 'char-sakuya',
+    slug: 'sakuya',
     name: 'Sakuya',
     race: 'Au Ra',
     job: 'Samurai',
@@ -41,6 +45,7 @@ export const SEED_CHARACTERS: Character[] = [
   },
   {
     id: 'char-zahir',
+    slug: 'zahir',
     name: 'Zahir',
     race: 'Hyur',
     job: 'Dark Knight',
@@ -52,6 +57,7 @@ export const SEED_CHARACTERS: Character[] = [
 export const SEED_PLACES: Place[] = [
   {
     id: 'place-uldah-pearl-lane',
+    slug: 'uldah-pearl-lane',
     name: "Pearl Lane, Ul'dah",
     geoPosition: "Ul'dah - Steps of Thal, Thanalan",
     factions: ['Syndicate', 'Immortal Flames'],
@@ -60,6 +66,7 @@ export const SEED_PLACES: Place[] = [
   },
   {
     id: 'place-ishgard',
+    slug: 'ishgard',
     name: 'Ishgard',
     geoPosition: 'Coerthas Central Highlands',
     factions: ['House Fortemps', 'Temple Knights'],
@@ -68,6 +75,7 @@ export const SEED_PLACES: Place[] = [
   },
   {
     id: 'place-doma',
+    slug: 'doma',
     name: 'Doma',
     geoPosition: 'Yanxia, Far East',
     factions: ['Doman Liberation Front'],
@@ -76,6 +84,7 @@ export const SEED_PLACES: Place[] = [
   },
   {
     id: 'place-gridania-northern-shroud',
+    slug: 'gridania-northern-shroud',
     name: 'Gridania & the Northern Shroud',
     geoPosition: 'Black Shroud',
     factions: ['Order of the Twin Adder', 'Wood Wailers'],
@@ -87,6 +96,7 @@ export const SEED_PLACES: Place[] = [
 export const SEED_EVENTS: TimelineEvent[] = [
   {
     id: 'event-seventh-umbral-calamity',
+    slug: 'seventh-umbral-calamity',
     name: 'Calamity of the Seventh Umbral Era',
     description:
       'Dalamud crashes into Eorzea, releasing Bahamut and devastating the realm. Marks the close of the Sixth Astral Era and the start of the Seventh Umbral Era.',
@@ -99,6 +109,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
   },
   {
     id: 'event-fall-of-doma',
+    slug: 'fall-of-doma',
     name: 'Fall of Doma',
     description:
       'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
@@ -111,6 +122,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
   },
   {
     id: 'event-brann-house-attack',
+    slug: 'brann-house-attack',
     name: "Attack on Brann's house",
     description:
       "The night Sakuya's blade ended Brann's reign — and nearly Ingrid's existence. Survivors fled toward the Black Shroud; Ingrid's path to Ul'dah began here.",
@@ -125,6 +137,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
 
 export const SEED_STORY: Story = {
   id: 'story-shadows-and-provisions',
+  slug: 'shadows-and-provisions',
   title: 'Shadows and Provisions',
   summary:
     "Three years after fleeing the destruction of her former master's house, Ingrid meets an old contact in Ul'dah's Pearl Lane to arrange provisions for a journey east — and to ask a question she has never dared voice aloud.",

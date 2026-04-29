@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PlaceDraft } from '../data-access/place.types';
+import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 
 @Component({
@@ -16,7 +17,7 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
         {{ initial() ? 'Edit place' : 'Add place' }}
       </h3>
 
-      <div class="grid gap-3 sm:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Name</span>
           <input
@@ -26,6 +27,19 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
             placeholder="e.g. Limsa Lominsa"
           />
         </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Slug</span>
+          <input
+            type="text"
+            formControlName="slug"
+            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            placeholder="e.g. limsa-lominsa"
+          />
+          <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
+        </label>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Geographical position</span>
           <input
@@ -73,6 +87,7 @@ export class PlaceFormComponent {
   readonly cancelled = output<void>();
 
   protected readonly form = new FormBuilder().nonNullable.group({
+    slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
     geoPosition: ['', [Validators.required, Validators.maxLength(120)]],
     factions: [''],
@@ -82,6 +97,7 @@ export class PlaceFormComponent {
     effect(() => {
       const init = this.initial();
       this.form.reset({
+        slug: init?.slug ?? '',
         name: init?.name ?? '',
         geoPosition: init?.geoPosition ?? '',
         factions: init?.factions.join(', ') ?? '',
@@ -93,6 +109,7 @@ export class PlaceFormComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     this.submitted.emit({
+      slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       geoPosition: v.geoPosition.trim(),
       factions: v.factions

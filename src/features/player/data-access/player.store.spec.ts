@@ -5,6 +5,7 @@ import { PlayerStore } from './player.store';
 
 const sampleStory: Story = {
   id: 's1',
+  slug: 'test',
   title: 'Test',
   mainCharacters: [],
   places: [],

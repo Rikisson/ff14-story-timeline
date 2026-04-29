@@ -49,7 +49,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
         <button
           uiPrimary
           type="button"
-          [disabled]="!store.dirty()"
+          [disabled]="!store.dirty() || !store.metaValid()"
           [loading]="store.saving()"
           (click)="store.save()"
         >

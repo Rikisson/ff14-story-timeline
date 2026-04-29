@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TimelineEventDraft } from '../data-access/event.types';
+import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 
 @Component({
@@ -27,15 +28,26 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
           />
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">In-game date</span>
+          <span class="font-medium text-slate-700">Slug</span>
           <input
             type="text"
-            formControlName="inGameDate"
+            formControlName="slug"
             class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. 1577 6AE"
+            placeholder="e.g. seventh-umbral-calamity"
           />
+          <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
         </label>
       </div>
+
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">In-game date</span>
+        <input
+          type="text"
+          formControlName="inGameDate"
+          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+          placeholder="e.g. 1577 6AE"
+        />
+      </label>
 
       <label class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
@@ -105,6 +117,7 @@ export class EventFormComponent {
   readonly cancelled = output<void>();
 
   protected readonly form = new FormBuilder().nonNullable.group({
+    slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
     description: ['', [Validators.maxLength(2000)]],
@@ -117,6 +130,7 @@ export class EventFormComponent {
     effect(() => {
       const init = this.initial();
       this.form.reset({
+        slug: init?.slug ?? '',
         name: init?.name ?? '',
         inGameDate: init?.inGameDate ?? '',
         description: init?.description ?? '',
@@ -131,6 +145,7 @@ export class EventFormComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     this.submitted.emit({
+      slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       inGameDate: v.inGameDate.trim(),
       description: v.description.trim(),

@@ -10,8 +10,10 @@ import {
   query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
+import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { Character, CharacterDraft, StoredCharacter } from './character.types';
 
@@ -56,6 +58,7 @@ export class CharactersService {
 
   async create(draft: CharacterDraft, authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
+    await this.assertSlugAvailable(universeId, draft.slug);
     const id = crypto.randomUUID();
     const data: StoredCharacter = {
       ...draft,
@@ -69,6 +72,7 @@ export class CharactersService {
 
   async update(id: string, patch: CharacterDraft): Promise<void> {
     const universeId = this.requireUniverseId();
+    await this.assertSlugAvailable(universeId, patch.slug, id);
     await updateDoc(
       doc(this.firebase.firestore, 'universes', universeId, 'characters', id),
       { ...patch },
@@ -80,6 +84,21 @@ export class CharactersService {
     const universeId = this.requireUniverseId();
     await deleteDoc(doc(this.firebase.firestore, 'universes', universeId, 'characters', id));
     await this.refresh(universeId);
+  }
+
+  private async assertSlugAvailable(
+    universeId: string,
+    slug: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const q = query(
+      collection(this.firebase.firestore, 'universes', universeId, 'characters'),
+      where('slug', '==', slug),
+      limit(2),
+    );
+    const snap = await getDocs(q);
+    const taken = snap.docs.some((d) => d.id !== excludeId);
+    if (taken) throw new SlugTakenError('character', slug);
   }
 
   private requireUniverseId(): string {

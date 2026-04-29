@@ -13,7 +13,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc *)",
       "Bash(npx ng *)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }

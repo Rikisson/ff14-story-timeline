@@ -1,5 +1,6 @@
 export interface TimelineEvent {
   id: string;
+  slug: string;
   name: string;
   description: string;
   mainCharacters: string[];
@@ -13,6 +14,7 @@ export interface TimelineEvent {
 export type StoredTimelineEvent = Omit<TimelineEvent, 'id'>;
 
 export interface TimelineEventDraft {
+  slug: string;
   name: string;
   description: string;
   mainCharacters: string[];

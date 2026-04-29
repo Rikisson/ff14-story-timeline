@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharacterDraft } from '../data-access/character.types';
+import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 
 @Component({
@@ -16,7 +17,7 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
         {{ initial() ? 'Edit character' : 'Add character' }}
       </h3>
 
-      <div class="grid gap-3 sm:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Name</span>
           <input
@@ -26,6 +27,19 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
             placeholder="e.g. Y'shtola"
           />
         </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Slug</span>
+          <input
+            type="text"
+            formControlName="slug"
+            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            placeholder="e.g. yshtola"
+          />
+          <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
+        </label>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Race</span>
           <input
@@ -73,6 +87,7 @@ export class CharacterFormComponent {
   readonly cancelled = output<void>();
 
   protected readonly form = new FormBuilder().nonNullable.group({
+    slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
     race: ['', [Validators.required, Validators.maxLength(40)]],
     job: ['', [Validators.required, Validators.maxLength(40)]],
@@ -81,13 +96,18 @@ export class CharacterFormComponent {
   constructor() {
     effect(() => {
       const init = this.initial();
-      this.form.reset(init ?? { name: '', race: '', job: '' });
+      this.form.reset(init ?? { slug: '', name: '', race: '', job: '' });
     });
   }
 
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    this.submitted.emit({ name: v.name.trim(), race: v.race.trim(), job: v.job.trim() });
+    this.submitted.emit({
+      slug: v.slug.trim().toLowerCase(),
+      name: v.name.trim(),
+      race: v.race.trim(),
+      job: v.job.trim(),
+    });
   }
 }

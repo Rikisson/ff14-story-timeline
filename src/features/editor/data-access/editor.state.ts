@@ -2,7 +2,7 @@ import { Scene, Story } from '@features/stories';
 
 export type StoryMeta = Pick<
   Story,
-  'title' | 'summary' | 'mainCharacters' | 'places' | 'inGameDate' | 'draft' | 'publishedAt'
+  'slug' | 'title' | 'summary' | 'mainCharacters' | 'places' | 'inGameDate' | 'draft' | 'publishedAt'
 >;
 
 export type EditorState = {

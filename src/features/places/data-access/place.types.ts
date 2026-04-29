@@ -1,5 +1,6 @@
 export interface Place {
   id: string;
+  slug: string;
   name: string;
   geoPosition: string;
   factions: string[];
@@ -10,6 +11,7 @@ export interface Place {
 export type StoredPlace = Omit<Place, 'id'>;
 
 export interface PlaceDraft {
+  slug: string;
   name: string;
   geoPosition: string;
   factions: string[];

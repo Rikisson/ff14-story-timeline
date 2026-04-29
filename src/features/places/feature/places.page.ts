@@ -62,7 +62,9 @@ export class PlacesPage {
     const m = this.mode();
     if (m.kind !== 'edit') return null;
     const p = this.places().find((x) => x.id === m.id);
-    return p ? { name: p.name, geoPosition: p.geoPosition, factions: p.factions } : null;
+    return p
+      ? { slug: p.slug, name: p.name, geoPosition: p.geoPosition, factions: p.factions }
+      : null;
   });
 
   protected canEdit(p: Place): boolean {

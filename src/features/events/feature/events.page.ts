@@ -68,6 +68,7 @@ export class EventsPage {
     const e = this.events().find((x) => x.id === m.id);
     return e
       ? {
+          slug: e.slug,
           name: e.name,
           description: e.description,
           mainCharacters: e.mainCharacters,

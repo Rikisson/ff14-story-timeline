@@ -10,6 +10,7 @@ export interface Scene {
 
 export interface Story {
   id: string;
+  slug: string;
   title: string;
   summary?: string;
   mainCharacters: string[];

@@ -62,7 +62,7 @@ export class CharactersPage {
     const m = this.mode();
     if (m.kind !== 'edit') return null;
     const c = this.characters().find((x) => x.id === m.id);
-    return c ? { name: c.name, race: c.race, job: c.job } : null;
+    return c ? { slug: c.slug, name: c.name, race: c.race, job: c.job } : null;
   });
 
   protected canEdit(c: Character): boolean {

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { SLUG_PATTERN } from '@shared/models';
 import { StoryMeta } from '../data-access/editor.state';
 
 @Component({
@@ -10,6 +11,21 @@ import { StoryMeta } from '../data-access/editor.state';
       <div class="field">
         <label for="meta-title">Title</label>
         <input id="meta-title" type="text" [value]="m.title" (input)="onTitle($event)" />
+      </div>
+
+      <div class="field">
+        <label for="meta-slug">Slug</label>
+        <input
+          id="meta-slug"
+          type="text"
+          [value]="m.slug"
+          [class.invalid]="!slugValid()"
+          (input)="onSlug($event)"
+        />
+        <span class="hint">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
+        @if (!slugValid()) {
+          <span class="error">Slug must start with a letter or digit and contain only lowercase letters, digits, and hyphens.</span>
+        }
       </div>
 
       <div class="field">
@@ -84,12 +100,23 @@ import { StoryMeta } from '../data-access/editor.state';
       font-weight: 500;
       color: #4b5563;
     }
+    .hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .error {
+      font-size: 0.75rem;
+      color: #b00020;
+    }
     input[type='text'],
     textarea {
       padding: 0.5rem;
       border: 1px solid #d1d5db;
       border-radius: 0.25rem;
       font: inherit;
+    }
+    input[type='text'].invalid {
+      border-color: #b00020;
     }
     textarea {
       resize: vertical;
@@ -101,8 +128,18 @@ export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
   readonly update = output<Partial<StoryMeta>>();
 
+  protected readonly slugValid = computed(() => {
+    const m = this.meta();
+    if (!m) return true;
+    return SLUG_PATTERN.test(m.slug);
+  });
+
   protected onTitle(event: Event): void {
     this.update.emit({ title: (event.target as HTMLInputElement).value });
+  }
+
+  protected onSlug(event: Event): void {
+    this.update.emit({ slug: (event.target as HTMLInputElement).value });
   }
 
   protected onSummary(event: Event): void {

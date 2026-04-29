@@ -22,6 +22,7 @@ export function withEditorMethods() {
           patchState(store, {
             storyId: story.id,
             meta: {
+              slug: story.slug,
               title: story.title,
               summary: story.summary,
               mainCharacters: story.mainCharacters,
