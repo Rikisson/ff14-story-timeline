@@ -40,10 +40,16 @@ rules, edge cases, migration steps — live in
 [`narrative-engine-impl.md`](narrative-engine-impl.md).
 
 **Status:** Universe scoping, EntityRef + slug uniqueness, typed pickers
-on Story/Event level, and the resolved scene model are shipped (PR1–PR4).
-The remaining work is the inline-ref surface (PR5), rich-text host
-promotion (PR6), and character portraits with mood selection (PR4.5 — adds
-`Character.portraits[]` + `StagedCharacter.portraitId`).
+on Story/Event level, the resolved scene model, and character portraits
+with mood selection are shipped (PR1–PR4.5). Storage rules now match the
+universe-scoped paths. Remaining work is the inline-ref surface (PR5,
+narrow — autocomplete + parser/resolver + player rendering, textarea
+hosts) followed by rich-text host promotion (PR6 — TipTap-based
+`<app-rich-text-input>`, markdown-with-tokens storage, applied to
+`Scene.text` / `Event.description` / `Story.summary` plus new
+`Character.description` / `Place.description` fields). See
+[`narrative-engine-impl.md`](narrative-engine-impl.md) for both
+implementation plans.
 
 - **Inline surface — `${kind:<guid>}[Display Text]` references inside
   any rich-text body.**

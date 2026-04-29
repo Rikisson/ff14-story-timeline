@@ -4,18 +4,27 @@ Companion to `dev-improvements.md` §2 *Data-model coherence*. That section
 sets the design (tiers, fields, surfaces); this file pins surface behavior
 and rules for the parts that are not yet implemented.
 
-Shipped pieces (PR1–PR4):
+Shipped pieces (PR1–PR4.5):
 
 - `EntityRef<Kind>` and `EntityKind` live in `src/shared/models/`.
 - Universe scoping (top-level `universes/{id}` collection, per-universe
   membership rules, universe-creator gating) lives in
-  `src/features/universes/` and `firestore.rules`.
-- Slug uniqueness is enforced per `(universeId, kind)` via a `where('slug','==')`
-  read-then-write check in each entity service.
+  `src/features/universes/`, `firestore.rules`, and `storage.rules`.
+- Slug uniqueness is enforced per `(universeId, kind)` via a
+  `where('slug','==')` read-then-write check in each entity service.
 - The resolved `Scene` shape (speaker union, `StagedCharacter[]`,
   `Scene.place`, free-string `position`) lives in
-  `src/features/stories/data-access/story.types.ts`. Editor surfaces are in
-  `scene-editor-panel.component.ts`.
+  `src/features/stories/data-access/story.types.ts`. Editor surfaces are
+  in `scene-editor-panel.component.ts`.
+- Character portraits with mood selection: `Character.portraits[]` (first
+  entry is the default — reorder to change), `StagedCharacter.portraitId`,
+  `CharacterAssetsService` for uploads, portrait library on the
+  characters page, per-staged-character portrait selector in the scene
+  editor, and a 3-column position grid in the player's `scene-view`
+  with non-speaker dimming per §"Rendering pipeline" Layer 2/3.
+- `storage.rules` mirrors `firestore.rules` — public read, member-only
+  write under `universes/{universeId}/{allPaths=**}`, with a 25 MB
+  upload size cap.
 
 ## Open optimization
 
@@ -118,3 +127,84 @@ PR4.5 and PR5 respectively.
 - **Story moved between universes:** every inline ref in its scenes
   becomes unresolvable in the destination universe. The editor offers
   a re-resolution pass before the move completes.
+
+## Implementation plan — PR5 (inline refs, narrow)
+
+Token grammar formalization, parser/resolver utilities, autocomplete UX
+in the existing textarea hosts (`Scene.text`, `Event.description`), and
+player rendering. Editor stays on `<textarea>` in this PR — author sees
+raw tokens. **Acknowledged deviation from §"Author-facing rendering"**;
+closed in PR6 when the WYSIWYG host lands. Two PRs in sequence keeps
+each one reviewable; the UX wart of raw tokens is short-lived.
+
+**Wiring:**
+
+- `parseRefs(text)` returns
+  `Array<{ literal: string } | { ref: EntityRef; displayText: string }>`.
+  Single regex: `\$\{(ch|pl|ev|st):([A-Za-z0-9_-]+)\}\[([^\]]*)\]`.
+- `resolveRef(ref, entities)` → entity name or undefined; consumers
+  inject the relevant feature service.
+- Autocomplete: caret-anchored popup on `${`. With 0–1 chars matches
+  across all kinds; `${ch` / `${pl` / `${ev` / `${st` narrows to that
+  kind. Fuzzy-filter on name + slug. Selection inserts canonical token
+  and places caret between the brackets. Keyboard nav: Up / Down /
+  Enter / Esc.
+- Caret coordinate computation: mirroring trick — render a hidden
+  `<div>` matching the textarea's font/size with the prefix text plus a
+  zero-width marker; read its position. No external dependency.
+- Player segment renderer: literal text plain, resolved refs as `<a>`
+  with `title` set to the entity's current name (plain tooltip — full
+  hover-card UX deferred), unresolved refs as plain `[Display Text]`.
+
+**Out of scope (PR6 territory):**
+
+- Chip rendering inside the input (WYSIWYG)
+- Bold / italic / lists
+- `Story.summary` / `Character.description` / `Place.description` hosts
+- Hover-card UX
+
+## Implementation plan — PR6 (rich-text host)
+
+**Storage format:** markdown text with embedded `${kind:<guid>}[…]`
+tokens, stored as plain string. Existing `Scene.text` /
+`Event.description` / `Story.summary` (plain text) are valid markdown —
+no data migration. Player's parser stays the same as PR5; markdown
+rendering layered on top of the segment list.
+
+**Library:** TipTap (ProseMirror-based). Headless, Angular-friendly,
+extensible inline nodes for the entity-ref chip. Bundle cost ~50–80 KB
+gzipped. Alternatives ruled out:
+
+- **Quill** — Delta format adds export friction; harder to fit inline
+  ref nodes that round-trip to markdown.
+- **Toast UI** — markdown-first but heavier opinions, less extensible.
+- **Raw `contenteditable`** — chip cursor logic too fragile for the
+  time budget.
+
+**Scope:**
+
+- New `<app-rich-text-input>` in `src/shared/ui/`: bold / italic +
+  unordered-list toolbar; the PR5 `${` autocomplete carried over as a
+  TipTap suggestion plugin; custom inline node for entity refs that
+  renders a chip and serializes to `${kind:<guid>}[Display Text]`.
+- Markdown ↔ TipTap (de)serialization. Use `marked` for markdown
+  parsing; hand-written extension for the token node.
+- Hosts:
+  - Swap `<textarea>` → `<app-rich-text-input>` in
+    `scene-editor-panel` (`Scene.text`) and `event-form`
+    (`Event.description`).
+  - Promote `Story.summary` from `<textarea>` to rich-text input in
+    `story-meta-panel`. Catalog card replaces `<p>{{ summary }}</p>`
+    with a markdown-rendered output.
+  - Add `Character.description?: string` (markdown) — input on
+    `character-form`.
+  - Add `Place.description?: string` (markdown) — input on `place-form`.
+
+**Out of scope:** headings, blockquotes, code blocks, tables, external
+link insertion via toolbar (raw markdown still parses), embedded media.
+
+**Open questions to resolve at PR start:**
+
+- HTML sanitization library — DOMPurify or marked's built-in guards.
+- Whether SSR matters for the catalog markdown rendering or it stays
+  client-side only.
