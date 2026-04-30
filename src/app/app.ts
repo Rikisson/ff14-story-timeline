@@ -1,5 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
@@ -24,6 +35,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 })
 export class App {
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
   private readonly characters = inject(CharactersService);
@@ -33,6 +45,22 @@ export class App {
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
+
+  protected readonly isNavigating = toSignal(
+    this.router.events.pipe(
+      filter(
+        (e) =>
+          e instanceof NavigationStart ||
+          e instanceof NavigationEnd ||
+          e instanceof NavigationCancel ||
+          e instanceof NavigationError,
+      ),
+      switchMap((e) =>
+        e instanceof NavigationStart ? timer(150).pipe(map(() => true)) : of(false),
+      ),
+    ),
+    { initialValue: false },
+  );
 
   protected readonly refreshErrors = computed<{ label: string; message: string }[]>(() => {
     const errors: { label: string; message: string }[] = [];
