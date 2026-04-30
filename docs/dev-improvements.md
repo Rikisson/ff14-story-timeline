@@ -62,14 +62,12 @@ paths.
 
 ### UI gaps in flows that already exist
 
-- **Cannot delete a story from the UI.** Service has `deleteStory`; no button.
 - **Editor isn't responsive.** `grid-template-columns: 280px 1fr 320px`
   (`editor.page.ts:103`) breaks below ~900 px.
 - **No orphan-scene warning.** Scenes unreachable from `startSceneId` aren't
   flagged.
 - **No drag-to-reorder choices.** Order matters in the player but the only way
   to change it is delete + recreate.
-- **"Set as start" has no confirm.** Easy misclick.
 - **No keyboard shortcuts** in the editor (Ctrl-S, Del, N).
 - **Catalog list view excludes events.** Events only appear in the timeline
   view, so filtering by event in list view does nothing visible.
@@ -78,14 +76,12 @@ paths.
 - **No catalog cover image override.** Card thumbnail is whatever
   `scenes[startSceneId].background` happens to be — give the story its own
   `coverImage` field.
-- **Auth button is plain inline-styled HTML** — doesn't use the design-system
-  buttons.
-- **Subscription errors are swallowed** — `onSnapshot` has no error handler in
-  any of the 4 services.
-- **Seeder UI** has no confirm dialog; one click overwrites real data.
-- **Editor header doesn't show draft/published state** — title only.
+- **`refreshError` signals are exposed but unused.** Characters / Places /
+  Events / Stories services now expose a `refreshError` signal, but no UI
+  banner reads it. Wire one in (or remove the signal) once UX is decided.
+- **`CharacterAssetsService.uploadPortrait` has no size/type guard.**
+  Sister method to `StoryAssetsService.upload`, which now validates.
 - **Player only offers Resume on first load.** Mid-session it's gone.
-- **No upload size/type guard on `StoryAssetsService.upload`.**
 
 ## 3. New feature avenues
 
