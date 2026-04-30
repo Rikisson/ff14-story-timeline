@@ -1,9 +1,10 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { StoryAssetsService } from '@features/stories';
-import { EntityRef, SLUG_PATTERN } from '@shared/models';
+import { SLUG_PATTERN } from '@shared/models';
 import {
-  EntityPickerComponent,
+  ComboboxOption,
+  ComboboxPickerComponent,
   EntityPickerOption,
   GhostButtonComponent,
   RichTextInputComponent,
@@ -15,7 +16,7 @@ import { StoryMeta } from '../data-access/editor.state';
 @Component({
   selector: 'app-story-meta-panel',
   imports: [
-    EntityPickerComponent,
+    ComboboxPickerComponent,
     RichTextInputComponent,
     GhostButtonComponent,
     SecondaryButtonComponent,
@@ -102,25 +103,23 @@ import { StoryMeta } from '../data-access/editor.state';
 
       <div class="field">
         <label>Main characters</label>
-        <app-entity-picker
-          kind="character"
-          [options]="characterOptions()"
-          [value]="m.mainCharacters"
-          [multiple]="true"
+        <app-combobox-picker
+          [options]="characterCombobox()"
+          [value]="characterIds()"
+          placeholder="Search characters…"
           emptyMessage="No characters in this universe yet."
-          (selected)="onCharacters($event)"
+          (valueChange)="onCharacterIds($event)"
         />
       </div>
 
       <div class="field">
         <label>Places</label>
-        <app-entity-picker
-          kind="place"
-          [options]="placeOptions()"
-          [value]="m.places"
-          [multiple]="true"
+        <app-combobox-picker
+          [options]="placeCombobox()"
+          [value]="placeIds()"
+          placeholder="Search places…"
           emptyMessage="No places in this universe yet."
-          (selected)="onPlaces($event)"
+          (valueChange)="onPlaceIds($event)"
         />
       </div>
 
@@ -229,6 +228,15 @@ export class StoryMetaPanelComponent {
     return SLUG_PATTERN.test(m.slug);
   });
 
+  protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
+    this.characterOptions().map((o) => ({ id: o.id, label: o.label, hint: o.slug })),
+  );
+  protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
+    this.placeOptions().map((o) => ({ id: o.id, label: o.label, hint: o.slug })),
+  );
+  protected readonly characterIds = computed(() => this.meta()?.mainCharacters.map((r) => r.id) ?? []);
+  protected readonly placeIds = computed(() => this.meta()?.places.map((r) => r.id) ?? []);
+
   protected onTitle(event: Event): void {
     this.update.emit({ title: (event.target as HTMLInputElement).value });
   }
@@ -241,12 +249,16 @@ export class StoryMetaPanelComponent {
     this.update.emit({ summary: value || undefined });
   }
 
-  protected onCharacters(refs: EntityRef[]): void {
-    this.update.emit({ mainCharacters: refs as EntityRef<'character'>[] });
+  protected onCharacterIds(ids: string[]): void {
+    this.update.emit({
+      mainCharacters: ids.map((id) => ({ kind: 'character', id })),
+    });
   }
 
-  protected onPlaces(refs: EntityRef[]): void {
-    this.update.emit({ places: refs as EntityRef<'place'>[] });
+  protected onPlaceIds(ids: string[]): void {
+    this.update.emit({
+      places: ids.map((id) => ({ kind: 'place', id })),
+    });
   }
 
   protected onDate(event: Event): void {

@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { CharactersService } from '@features/characters';
 import { PlacesService } from '@features/places';
 import { Story } from '@features/stories';
-import { GhostButtonComponent } from '@shared/ui';
-import { cn } from '@shared/utils';
+import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
 
 export interface CatalogFilters {
   characters: string[];
@@ -23,81 +22,43 @@ export type SortDirection = 'asc' | 'desc';
 
 type ArrayKey = 'characters' | 'places' | 'inGameDates';
 
-interface FilterOption {
-  id: string;
-  label: string;
-}
-
 @Component({
   selector: 'app-catalog-filters',
-  imports: [GhostButtonComponent],
+  imports: [GhostButtonComponent, ComboboxPickerComponent],
   template: `
     <div class="flex flex-wrap items-start gap-4">
-      <fieldset class="flex flex-col gap-1">
-        <legend class="text-sm font-medium text-slate-700">Main character</legend>
-        @if (characterOptions().length === 0) {
-          <p class="m-0 text-xs italic text-slate-500">No characters yet.</p>
-        } @else {
-          <ul class="flex max-w-md flex-wrap gap-1">
-            @for (c of characterOptions(); track c.id) {
-              <li>
-                <button
-                  type="button"
-                  [attr.aria-pressed]="value().characters.includes(c.id)"
-                  [class]="chipClass(value().characters.includes(c.id))"
-                  (click)="toggle('characters', c.id)"
-                >
-                  {{ c.label }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </fieldset>
+      <label class="flex w-60 flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Main character</span>
+        <app-combobox-picker
+          [options]="characterOptions()"
+          [value]="value().characters"
+          placeholder="Search characters…"
+          emptyMessage="No characters yet."
+          (valueChange)="setKey('characters', $event)"
+        />
+      </label>
 
-      <fieldset class="flex flex-col gap-1">
-        <legend class="text-sm font-medium text-slate-700">Place</legend>
-        @if (placeOptions().length === 0) {
-          <p class="m-0 text-xs italic text-slate-500">No places yet.</p>
-        } @else {
-          <ul class="flex max-w-md flex-wrap gap-1">
-            @for (p of placeOptions(); track p.id) {
-              <li>
-                <button
-                  type="button"
-                  [attr.aria-pressed]="value().places.includes(p.id)"
-                  [class]="chipClass(value().places.includes(p.id))"
-                  (click)="toggle('places', p.id)"
-                >
-                  {{ p.label }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </fieldset>
+      <label class="flex w-60 flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Place</span>
+        <app-combobox-picker
+          [options]="placeOptions()"
+          [value]="value().places"
+          placeholder="Search places…"
+          emptyMessage="No places yet."
+          (valueChange)="setKey('places', $event)"
+        />
+      </label>
 
-      <fieldset class="flex flex-col gap-1">
-        <legend class="text-sm font-medium text-slate-700">In-game date</legend>
-        @if (dates().length === 0) {
-          <p class="m-0 text-xs italic text-slate-500">No dates yet.</p>
-        } @else {
-          <ul class="flex max-w-md flex-wrap gap-1">
-            @for (d of dates(); track d) {
-              <li>
-                <button
-                  type="button"
-                  [attr.aria-pressed]="value().inGameDates.includes(d)"
-                  [class]="chipClass(value().inGameDates.includes(d))"
-                  (click)="toggle('inGameDates', d)"
-                >
-                  {{ d }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </fieldset>
+      <label class="flex w-60 flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">In-game date</span>
+        <app-combobox-picker
+          [options]="dateOptions()"
+          [value]="value().inGameDates"
+          placeholder="Search dates…"
+          emptyMessage="No dates yet."
+          (valueChange)="setKey('inGameDates', $event)"
+        />
+      </label>
 
       @if (showSortControl()) {
         <label class="flex flex-col gap-1 text-sm">
@@ -148,20 +109,20 @@ export class CatalogFiltersComponent {
   private readonly charactersService = inject(CharactersService);
   private readonly placesService = inject(PlacesService);
 
-  protected readonly characterOptions = computed<FilterOption[]>(() =>
+  protected readonly characterOptions = computed<ComboboxOption[]>(() =>
     this.charactersService
       .characters()
       .map((c) => ({ id: c.id, label: c.name }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
-  protected readonly placeOptions = computed<FilterOption[]>(() =>
+  protected readonly placeOptions = computed<ComboboxOption[]>(() =>
     this.placesService
       .places()
       .map((p) => ({ id: p.id, label: p.name }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
-  protected readonly dates = computed(() =>
-    distinctSorted(this.stories().map((s) => s.inGameDate)),
+  protected readonly dateOptions = computed<ComboboxOption[]>(() =>
+    distinctSorted(this.stories().map((s) => s.inGameDate)).map((d) => ({ id: d, label: d })),
   );
   protected readonly hasActive = computed(() => {
     const v = this.value();
@@ -173,11 +134,7 @@ export class CatalogFiltersComponent {
     );
   });
 
-  protected toggle(key: ArrayKey, id: string): void {
-    const current = this.value()[key];
-    const next = current.includes(id)
-      ? current.filter((x) => x !== id)
-      : [...current, id];
+  protected setKey(key: ArrayKey, next: string[]): void {
     this.filtersChange.emit({ ...this.value(), [key]: next });
   }
 
@@ -191,16 +148,6 @@ export class CatalogFiltersComponent {
   protected emitSort(event: Event): void {
     const next = (event.target as HTMLSelectElement).value as SortDirection;
     this.sortDirectionChange.emit(next);
-  }
-
-  protected chipClass(active: boolean): string {
-    return cn(
-      'inline-flex items-center rounded-full border px-3 py-1 text-xs transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1',
-      active
-        ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500'
-        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100',
-    );
   }
 }
 
