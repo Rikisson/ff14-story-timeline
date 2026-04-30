@@ -1,8 +1,35 @@
 # Narrative engine — implementation notes
 
-Companion to `dev-improvements.md` §2 *Data-model coherence*. That
-section sets the design (tiers, fields, surfaces); this file pins
-design rationale and edge-case behavior that constrain future PRs.
+Pins the design rationale and edge-case behavior of the EntityRef
+narrative engine (shipped in PR1–PR6). Constrains future PRs touching
+entity types, picker UX, or inline `${kind:<guid>}` references.
+
+## Reference tiers
+
+References appear on two surfaces — typed pickers and inline
+`${kind:<guid>}[…]` tokens — and fields fall into four semantic tiers.
+The same picker UX serves all of them, but the meanings are not
+interchangeable:
+
+| Tier        | Surface                                       | Purpose                | Drives runtime? |
+|-------------|-----------------------------------------------|------------------------|-----------------|
+| Curatorial  | Story-level fields                            | Catalog & filtering    | No              |
+| Runtime     | `Scene.characters` / `speaker` / `place`      | Staging / placement    | Yes             |
+| Factual     | `Event.*` refs, `Character.relatedCharacters` | World-building         | No              |
+| Decorative  | Inline `${…}[…]` in any rich-text body        | Tooltip / hover-card   | No              |
+
+## Scope locks
+
+- **Decorative tier is reader hints only.** Inline `${kind:<guid>}[…]`
+  refs inside `Scene.text` (or any other rich-text body) do not put the
+  character on stage, do not make them the speaker, and do not affect
+  any runtime state. Conditional logic on entities ("choice locked
+  until X met") will live in a separate variable system later.
+- **Descriptive tags are not `EntityRef`s.** Genre / tone labels
+  ("horror", "slow-burn", "canon-divergent") have no entity behind
+  them — keep as free strings (or a small standalone `Tag` kind if
+  filtering demands it), excluded from the `${…}` picker.
+  `Place.factions` stays descriptive.
 
 ## Open optimization
 

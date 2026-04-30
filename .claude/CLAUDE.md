@@ -3,7 +3,7 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 ## Docs Reference
 
 Before executing any request, check the `docs` folder for applicable rules:
-- `docs/dev-improvements.md` — known technical debt, feature debt, and new-feature backlog. Consult before starting non-trivial work to avoid duplicating planned changes or contradicting noted constraints.
+- `docs/dev-improvements.md` — known technical debt and new-feature backlog. Consult before starting non-trivial work to avoid duplicating planned changes or contradicting noted constraints.
 - `docs/narrative-engine-impl.md` — implementation notes for the narrative engine (EntityRef, Universe scope, storage layout, picker behavior, migration steps). Consult before touching entity types, picker UX, or inline `${kind:<guid>}` references.
 
 If a request conflicts with documented rules or architecture:

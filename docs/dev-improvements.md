@@ -1,8 +1,8 @@
 # Dev improvements
 
-A snapshot review of the project, grouped into three buckets: technical debt,
-feature debt, and new feature avenues. Use as a backlog reference; tick items
-off as they ship.
+A snapshot review of the project, grouped into two buckets: technical debt
+and new feature avenues. Use as a backlog reference; tick items off as
+they ship.
 
 ## 1. Technical debt & optimizations
 
@@ -16,51 +16,7 @@ off as they ship.
 - **Test coverage is thin.** Editor and player stores have basic specs;
   services, guards, and components are still uncovered.
 
-## 2. Feature debt & improvements to existing features
-
-### Data-model coherence (biggest single source of friction)
-
-Replace ad-hoc free-text entity links (CSV strings on Story/Event, no
-link at all in scene bodies, no relational fields on Character/Place)
-with a single `EntityRef` primitive (`{ kind, id }`) used wherever an
-entity is mentioned. References appear on two surfaces — typed pickers
-and inline `${kind:<guid>}[…]` tokens — and fields fall into four
-semantic tiers. The same picker UX serves all of them, but the meanings
-are not interchangeable:
-
-| Tier        | Surface                                       | Purpose                | Drives runtime? |
-|-------------|-----------------------------------------------|------------------------|-----------------|
-| Curatorial  | Story-level fields                            | Catalog & filtering    | No              |
-| Runtime     | `Scene.characters` / `speaker` / `place`      | Staging / placement    | Yes             |
-| Factual     | `Event.*` refs, `Character.relatedCharacters` | World-building         | No              |
-| Decorative  | Inline `${…}[…]` in any rich-text body        | Tooltip / hover-card   | No              |
-
-Implementation specifics — TS types, Firestore layout, picker fuzzy
-rules, edge cases, migration steps — live in
-[`narrative-engine-impl.md`](narrative-engine-impl.md).
-
-**Status:** PR1–PR6 shipped. Storage rules match the universe-scoped
-paths.
-
-- **Decorative tier explicitly carved out.** Inline `${kind:<guid>}[…]`
-  refs inside `Scene.text` (or any other rich-text body) are reader
-  hints only — they do not put the character on stage, do not make
-  them the speaker, do not affect any runtime state. Conditional
-  logic on entities ("choice locked until X met") will live in a
-  separate variable system later.
-
-- **Descriptive tags are not `EntityRef`s.** Genre / tone labels
-  ("horror", "slow-burn", "canon-divergent") have no entity behind
-  them. Keep as free strings (or a small standalone `Tag` kind if
-  filtering demands it), excluded from the `${…}` picker.
-  `Place.factions` stays descriptive.
-
-- **`inGameDate` is free text everywhere.** Locale-numeric sorting
-  works, but cross-story consistency is on the author. A canonical
-  date type (era + year + optional time-of-day) would unblock real
-  timeline rendering.
-
-## 3. New feature avenues
+## 2. New feature avenues
 
 ### Player / reader experience
 
@@ -86,6 +42,9 @@ paths.
 - **Map view of places** — store lat/lon, render with leaflet/maplibre.
 - **Relationship graph** — Rete is already in the bundle; reuse it.
 - **Asset library** — reuse uploaded backgrounds/portraits across stories.
+- **Canonical `inGameDate` type** — currently free text; locale-numeric
+  sorting works but cross-story consistency is on the author. An era + year
+  (+ optional time-of-day) type would unblock real timeline rendering.
 
 ### Editor / authoring
 
