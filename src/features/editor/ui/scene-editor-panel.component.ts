@@ -44,13 +44,28 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     @if (sceneId(); as id) {
       @if (scene(); as s) {
         <header class="header">
-          <h3>Scene: <code>{{ id }}</code></h3>
+          <h3>Scene: <code>{{ headLabel(id, s) }}</code></h3>
           @if (isStartScene()) {
             <span class="badge">START</span>
           } @else {
             <button uiGhost type="button" (click)="confirmSetAsStart(id)">Set as start</button>
           }
         </header>
+        <p class="full-id" [title]="id">id: {{ id }}</p>
+
+        <div class="field">
+          <label for="scene-label">Label</label>
+          <input
+            id="scene-label"
+            type="text"
+            placeholder="Optional shorthand (e.g. intro, ending-bad)"
+            [value]="s.label ?? ''"
+            (input)="emitLabel($event, id)"
+          />
+          <span class="hint">
+            Shows up in the graph and choice list. Doesn't have to be unique.
+          </span>
+        </div>
 
         <fieldset class="group">
           <legend>Speaker</legend>
@@ -197,7 +212,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
                   ⋮⋮
                 </button>
                 <span class="arrow" [title]="choice.sceneId">
-                  → <code>{{ shortId(choice.sceneId) }}</code>
+                  → <code>{{ destLabel(choice.sceneId) }}</code>
                 </span>
                 <input
                   type="text"
@@ -245,11 +260,20 @@ type SpeakerMode = 'none' | 'character' | 'custom';
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.25rem;
     }
     .header h3 {
       margin: 0;
       flex: 1;
+    }
+    .full-id {
+      margin: 0 0 1rem;
+      color: #9ca3af;
+      font-size: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .badge {
       background: #dcfce7;
@@ -442,6 +466,7 @@ export class SceneEditorPanelComponent {
   readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly characterPortraits = input<Record<string, CharacterPortrait[]>>({});
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
+  readonly sceneLabels = input<Record<string, string>>({});
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
@@ -577,6 +602,19 @@ export class SceneEditorPanelComponent {
   protected emitChoiceLabel(event: Event, fromSceneId: string, toSceneId: string): void {
     const value = (event.target as HTMLInputElement).value;
     this.updateChoiceLabel.emit({ fromSceneId, toSceneId, label: value || undefined });
+  }
+
+  protected emitLabel(event: Event, id: string): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.update.emit({ id, patch: { label: value || undefined } });
+  }
+
+  protected headLabel(id: string, scene: Scene): string {
+    return scene.label?.trim() || this.shortId(id);
+  }
+
+  protected destLabel(targetId: string): string {
+    return this.sceneLabels()[targetId] ?? this.shortId(targetId);
   }
 
   protected confirmSetAsStart(id: string): void {

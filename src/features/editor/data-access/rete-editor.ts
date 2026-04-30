@@ -31,9 +31,14 @@ export interface EditorHandle {
 }
 
 function nodeLabel(id: string, scene: Scene): string {
+  const head = scene.label?.trim() || shortId(id);
   const preview = scene.text.slice(0, 28);
   const suffix = scene.text.length > 28 ? '…' : '';
-  return scene.text ? `${id}: ${preview}${suffix}` : id;
+  return scene.text ? `${head}: ${preview}${suffix}` : head;
+}
+
+function shortId(id: string): string {
+  return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
 async function buildNode(

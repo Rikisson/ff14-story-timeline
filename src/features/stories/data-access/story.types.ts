@@ -9,6 +9,7 @@ export interface StagedCharacter {
 
 export interface Scene {
   text: string;
+  label?: string;
   speaker?: EntityRef<'character'> | string;
   background?: string;
   characters: StagedCharacter[];

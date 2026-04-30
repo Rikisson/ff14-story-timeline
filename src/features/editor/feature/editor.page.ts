@@ -75,8 +75,13 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           <strong>{{ count }} orphan {{ count === 1 ? 'scene' : 'scenes' }}</strong>
           unreachable from the start scene:
           @for (id of store.orphanSceneIds(); track id) {
-            <button type="button" class="orphan-chip" (click)="store.selectScene(id)">
-              {{ shortId(id) }}
+            <button
+              type="button"
+              class="orphan-chip"
+              [title]="id"
+              (click)="store.selectScene(id)"
+            >
+              {{ sceneLabels()[id] }}
             </button>
           }
         </aside>
@@ -109,6 +114,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [placeOptions]="placeOptions()"
           [characterPortraits]="characterPortraits()"
           [inlineRefOptions]="inlineRefOptions()"
+          [sceneLabels]="sceneLabels()"
           (update)="onUpdate($event)"
           (updateChoiceLabel)="onChoiceLabel($event)"
           (reorderChoices)="onReorderChoices($event)"
@@ -243,6 +249,13 @@ export class EditorPage implements HasUnsavedChanges {
     const map: Record<string, CharacterPortrait[]> = {};
     for (const c of this.characters.characters()) {
       if (c.portraits?.length) map[c.id] = c.portraits;
+    }
+    return map;
+  });
+  protected readonly sceneLabels = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const [id, scene] of Object.entries(this.store.scenes())) {
+      map[id] = scene.label?.trim() || this.shortId(id);
     }
     return map;
   });
