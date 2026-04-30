@@ -69,6 +69,18 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
         </button>
       </header>
 
+      @if (store.orphanSceneIds().length; as count) {
+        <aside class="orphans" role="status">
+          <strong>{{ count }} orphan {{ count === 1 ? 'scene' : 'scenes' }}</strong>
+          unreachable from the start scene:
+          @for (id of store.orphanSceneIds(); track id) {
+            <button type="button" class="orphan-chip" (click)="store.selectScene(id)">
+              {{ shortId(id) }}
+            </button>
+          }
+        </aside>
+      }
+
       <div class="layout">
         <app-story-meta-panel
           [meta]="store.meta()"
@@ -115,6 +127,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       gap: 0.75rem;
       margin-bottom: 1rem;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     .bar h1 {
       flex: 1;
@@ -147,17 +160,57 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
     .error {
       color: #b00020;
     }
+    .orphans {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid #fbbf24;
+      background: #fffbeb;
+      border-radius: 0.375rem;
+      color: #92400e;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+    }
+    .orphan-chip {
+      font: inherit;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      padding: 0.125rem 0.5rem;
+      border: 1px solid #fbbf24;
+      border-radius: 0.25rem;
+      background: #fef3c7;
+      color: #92400e;
+      cursor: pointer;
+    }
+    .orphan-chip:hover {
+      background: #fde68a;
+    }
     .layout {
       display: grid;
-      grid-template-columns: 280px 1fr 320px;
+      grid-template-columns: 1fr;
       gap: 1rem;
       flex: 1;
       min-height: 0;
     }
     .layout > * {
       min-height: 0;
-      height: 100%;
       overflow: auto;
+    }
+    .layout app-rete-canvas {
+      min-height: 60vh;
+    }
+    @media (min-width: 1024px) {
+      .layout {
+        grid-template-columns: 280px 1fr 320px;
+      }
+      .layout > * {
+        height: 100%;
+      }
+      .layout app-rete-canvas {
+        min-height: 0;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -254,5 +307,9 @@ export class EditorPage implements HasUnsavedChanges {
 
   protected onChoiceLabel(event: ChoiceLabelUpdate): void {
     this.store.updateChoiceLabel(event.fromSceneId, event.toSceneId, event.label);
+  }
+
+  protected shortId(id: string): string {
+    return id.length > 12 ? `${id.slice(0, 8)}…` : id;
   }
 }

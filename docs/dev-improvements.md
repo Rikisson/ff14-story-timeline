@@ -62,10 +62,6 @@ paths.
 
 ### UI gaps in flows that already exist
 
-- **Editor isn't responsive.** `grid-template-columns: 280px 1fr 320px`
-  (`editor.page.ts:103`) breaks below ~900 px.
-- **No orphan-scene warning.** Scenes unreachable from `startSceneId` aren't
-  flagged.
 - **No drag-to-reorder choices.** Order matters in the player but the only way
   to change it is delete + recreate.
 - **No keyboard shortcuts** in the editor (Ctrl-S, Del, N).
@@ -79,8 +75,6 @@ paths.
 - **`refreshError` signals are exposed but unused.** Characters / Places /
   Events / Stories services now expose a `refreshError` signal, but no UI
   banner reads it. Wire one in (or remove the signal) once UX is decided.
-- **`CharacterAssetsService.uploadPortrait` has no size/type guard.**
-  Sister method to `StoryAssetsService.upload`, which now validates.
 - **Player only offers Resume on first load.** Mid-session it's gone.
 
 ## 3. New feature avenues

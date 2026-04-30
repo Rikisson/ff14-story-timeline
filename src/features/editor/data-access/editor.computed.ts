@@ -17,6 +17,24 @@ export function withEditorComputed() {
         if (!meta) return false;
         return SLUG_PATTERN.test(meta.slug);
       }),
+      orphanSceneIds: computed<string[]>(() => {
+        const scenes = state.scenes();
+        const start = state.startSceneId();
+        if (!start || !scenes[start]) return [];
+        const reachable = new Set<string>();
+        const queue: string[] = [start];
+        while (queue.length) {
+          const id = queue.shift()!;
+          if (reachable.has(id)) continue;
+          reachable.add(id);
+          const scene = scenes[id];
+          if (!scene) continue;
+          for (const next of scene.next) {
+            if (!reachable.has(next.sceneId)) queue.push(next.sceneId);
+          }
+        }
+        return Object.keys(scenes).filter((id) => !reachable.has(id));
+      }),
     })),
   );
 }
