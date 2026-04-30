@@ -180,16 +180,26 @@ export class CatalogPage {
 }
 
 function matches(story: Story, f: CatalogFilters): boolean {
-  if (f.character && !story.mainCharacters.some((r) => r.id === f.character)) return false;
-  if (f.place && !story.places.some((r) => r.id === f.place)) return false;
-  if (f.inGameDate && story.inGameDate !== f.inGameDate) return false;
+  if (
+    f.characters.length &&
+    !story.mainCharacters.some((r) => f.characters.includes(r.id))
+  ) {
+    return false;
+  }
+  if (f.places.length && !story.places.some((r) => f.places.includes(r.id))) return false;
+  if (f.inGameDates.length && !f.inGameDates.includes(story.inGameDate)) return false;
   return true;
 }
 
 function matchesEvent(event: TimelineEvent, f: CatalogFilters, uid: string | null): boolean {
   if (f.mineOnly && (!uid || event.authorUid !== uid)) return false;
-  if (f.character && !event.mainCharacters.some((r) => r.id === f.character)) return false;
-  if (f.place && !event.places.some((r) => r.id === f.place)) return false;
-  if (f.inGameDate && event.inGameDate !== f.inGameDate) return false;
+  if (
+    f.characters.length &&
+    !event.mainCharacters.some((r) => f.characters.includes(r.id))
+  ) {
+    return false;
+  }
+  if (f.places.length && !event.places.some((r) => f.places.includes(r.id))) return false;
+  if (f.inGameDates.length && !f.inGameDates.includes(event.inGameDate)) return false;
   return true;
 }

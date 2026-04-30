@@ -274,14 +274,49 @@ export class EditorPage implements HasUnsavedChanges {
     this.store.bindLoad(this.id);
 
     if (this.isBrowser) {
-      const handler = (event: BeforeUnloadEvent) => {
+      const beforeUnload = (event: BeforeUnloadEvent) => {
         if (this.store.dirty()) {
           event.preventDefault();
           event.returnValue = '';
         }
       };
-      window.addEventListener('beforeunload', handler);
-      this.destroyRef.onDestroy(() => window.removeEventListener('beforeunload', handler));
+      window.addEventListener('beforeunload', beforeUnload);
+
+      const keydown = (event: KeyboardEvent) => this.onKeydown(event);
+      window.addEventListener('keydown', keydown);
+
+      this.destroyRef.onDestroy(() => {
+        window.removeEventListener('beforeunload', beforeUnload);
+        window.removeEventListener('keydown', keydown);
+      });
+    }
+  }
+
+  private onKeydown(event: KeyboardEvent): void {
+    if (!this.store.storyId()) return;
+
+    if ((event.ctrlKey || event.metaKey) && (event.key === 's' || event.key === 'S')) {
+      event.preventDefault();
+      if (this.store.dirty() && this.store.metaValid() && !this.store.saving()) {
+        void this.store.save();
+      }
+      return;
+    }
+
+    if (isEditableTarget(event.target)) return;
+
+    if (event.key === 'Delete') {
+      const id = this.store.selectedSceneId();
+      if (!id) return;
+      if (id === this.store.startSceneId()) return;
+      event.preventDefault();
+      this.store.removeScene(id);
+      return;
+    }
+
+    if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.store.addScene();
     }
   }
 
@@ -312,4 +347,11 @@ export class EditorPage implements HasUnsavedChanges {
   protected shortId(id: string): string {
     return id.length > 12 ? `${id.slice(0, 8)}…` : id;
   }
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }

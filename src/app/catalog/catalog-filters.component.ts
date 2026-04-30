@@ -3,22 +3,25 @@ import { CharactersService } from '@features/characters';
 import { PlacesService } from '@features/places';
 import { Story } from '@features/stories';
 import { GhostButtonComponent } from '@shared/ui';
+import { cn } from '@shared/utils';
 
 export interface CatalogFilters {
-  character: string;
-  place: string;
-  inGameDate: string;
+  characters: string[];
+  places: string[];
+  inGameDates: string[];
   mineOnly: boolean;
 }
 
 export const EMPTY_FILTERS: CatalogFilters = {
-  character: '',
-  place: '',
-  inGameDate: '',
+  characters: [],
+  places: [],
+  inGameDates: [],
   mineOnly: false,
 };
 
 export type SortDirection = 'asc' | 'desc';
+
+type ArrayKey = 'characters' | 'places' | 'inGameDates';
 
 interface FilterOption {
   id: string;
@@ -29,48 +32,72 @@ interface FilterOption {
   selector: 'app-catalog-filters',
   imports: [GhostButtonComponent],
   template: `
-    <div class="flex flex-wrap items-end gap-3">
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Main character</span>
-        <select
-          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          [value]="value().character"
-          (change)="emit('character', $event)"
-        >
-          <option value="">Any</option>
-          @for (c of characterOptions(); track c.id) {
-            <option [value]="c.id">{{ c.label }}</option>
-          }
-        </select>
-      </label>
+    <div class="flex flex-wrap items-start gap-4">
+      <fieldset class="flex flex-col gap-1">
+        <legend class="text-sm font-medium text-slate-700">Main character</legend>
+        @if (characterOptions().length === 0) {
+          <p class="m-0 text-xs italic text-slate-500">No characters yet.</p>
+        } @else {
+          <ul class="flex max-w-md flex-wrap gap-1">
+            @for (c of characterOptions(); track c.id) {
+              <li>
+                <button
+                  type="button"
+                  [attr.aria-pressed]="value().characters.includes(c.id)"
+                  [class]="chipClass(value().characters.includes(c.id))"
+                  (click)="toggle('characters', c.id)"
+                >
+                  {{ c.label }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </fieldset>
 
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Place</span>
-        <select
-          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          [value]="value().place"
-          (change)="emit('place', $event)"
-        >
-          <option value="">Any</option>
-          @for (p of placeOptions(); track p.id) {
-            <option [value]="p.id">{{ p.label }}</option>
-          }
-        </select>
-      </label>
+      <fieldset class="flex flex-col gap-1">
+        <legend class="text-sm font-medium text-slate-700">Place</legend>
+        @if (placeOptions().length === 0) {
+          <p class="m-0 text-xs italic text-slate-500">No places yet.</p>
+        } @else {
+          <ul class="flex max-w-md flex-wrap gap-1">
+            @for (p of placeOptions(); track p.id) {
+              <li>
+                <button
+                  type="button"
+                  [attr.aria-pressed]="value().places.includes(p.id)"
+                  [class]="chipClass(value().places.includes(p.id))"
+                  (click)="toggle('places', p.id)"
+                >
+                  {{ p.label }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </fieldset>
 
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">In-game date</span>
-        <select
-          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          [value]="value().inGameDate"
-          (change)="emit('inGameDate', $event)"
-        >
-          <option value="">Any</option>
-          @for (d of dates(); track d) {
-            <option [value]="d">{{ d }}</option>
-          }
-        </select>
-      </label>
+      <fieldset class="flex flex-col gap-1">
+        <legend class="text-sm font-medium text-slate-700">In-game date</legend>
+        @if (dates().length === 0) {
+          <p class="m-0 text-xs italic text-slate-500">No dates yet.</p>
+        } @else {
+          <ul class="flex max-w-md flex-wrap gap-1">
+            @for (d of dates(); track d) {
+              <li>
+                <button
+                  type="button"
+                  [attr.aria-pressed]="value().inGameDates.includes(d)"
+                  [class]="chipClass(value().inGameDates.includes(d))"
+                  (click)="toggle('inGameDates', d)"
+                >
+                  {{ d }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </fieldset>
 
       @if (showSortControl()) {
         <label class="flex flex-col gap-1 text-sm">
@@ -88,7 +115,7 @@ interface FilterOption {
 
       @if (showMineFilter()) {
         <label
-          class="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm"
+          class="flex h-10 items-center gap-2 self-end rounded-md border border-slate-300 bg-white px-3 text-sm"
         >
           <input
             type="checkbox"
@@ -100,7 +127,9 @@ interface FilterOption {
       }
 
       @if (hasActive()) {
-        <button uiGhost type="button" (click)="reset.emit()">Clear filters</button>
+        <button uiGhost type="button" class="self-end" (click)="reset.emit()">
+          Clear filters
+        </button>
       }
     </div>
   `,
@@ -136,11 +165,19 @@ export class CatalogFiltersComponent {
   );
   protected readonly hasActive = computed(() => {
     const v = this.value();
-    return !!(v.character || v.place || v.inGameDate || v.mineOnly);
+    return (
+      v.characters.length > 0 ||
+      v.places.length > 0 ||
+      v.inGameDates.length > 0 ||
+      v.mineOnly
+    );
   });
 
-  protected emit(key: 'character' | 'place' | 'inGameDate', event: Event): void {
-    const next = (event.target as HTMLSelectElement).value;
+  protected toggle(key: ArrayKey, id: string): void {
+    const current = this.value()[key];
+    const next = current.includes(id)
+      ? current.filter((x) => x !== id)
+      : [...current, id];
     this.filtersChange.emit({ ...this.value(), [key]: next });
   }
 
@@ -154,6 +191,16 @@ export class CatalogFiltersComponent {
   protected emitSort(event: Event): void {
     const next = (event.target as HTMLSelectElement).value as SortDirection;
     this.sortDirectionChange.emit(next);
+  }
+
+  protected chipClass(active: boolean): string {
+    return cn(
+      'inline-flex items-center rounded-full border px-3 py-1 text-xs transition-colors',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1',
+      active
+        ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500'
+        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100',
+    );
   }
 }
 

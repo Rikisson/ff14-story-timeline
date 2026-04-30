@@ -64,11 +64,8 @@ paths.
 
 - **No drag-to-reorder choices.** Order matters in the player but the only way
   to change it is delete + recreate.
-- **No keyboard shortcuts** in the editor (Ctrl-S, Del, N).
 - **Catalog list view excludes events.** Events only appear in the timeline
   view, so filtering by event in list view does nothing visible.
-- **Filter dropdowns are single-select only.** Multi-select (OR within
-  a category) is the standard expectation.
 - **No catalog cover image override.** Card thumbnail is whatever
   `scenes[startSceneId].background` happens to be — give the story its own
   `coverImage` field.
