@@ -20,6 +20,7 @@ import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
 import {
   ChoiceLabelUpdate,
+  ChoiceReorder,
   SceneEditorPanelComponent,
   SceneUpdate,
 } from '../ui/scene-editor-panel.component';
@@ -84,6 +85,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <div class="layout">
         <app-story-meta-panel
           [meta]="store.meta()"
+          [storyId]="store.storyId() ?? ''"
           [characterOptions]="characterOptions()"
           [placeOptions]="placeOptions()"
           [inlineRefOptions]="inlineRefOptions()"
@@ -109,6 +111,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [inlineRefOptions]="inlineRefOptions()"
           (update)="onUpdate($event)"
           (updateChoiceLabel)="onChoiceLabel($event)"
+          (reorderChoices)="onReorderChoices($event)"
           (remove)="store.removeScene($event)"
           (setAsStart)="store.setStartScene($event)"
         />
@@ -342,6 +345,10 @@ export class EditorPage implements HasUnsavedChanges {
 
   protected onChoiceLabel(event: ChoiceLabelUpdate): void {
     this.store.updateChoiceLabel(event.fromSceneId, event.toSceneId, event.label);
+  }
+
+  protected onReorderChoices(event: ChoiceReorder): void {
+    this.store.reorderChoices(event.sceneId, event.fromIndex, event.toIndex);
   }
 
   protected shortId(id: string): string {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CharacterPortrait } from '@features/characters';
 import { Scene, StagedCharacter } from '@features/stories';
 import { EntityRef } from '@shared/models';
@@ -21,6 +21,12 @@ export interface ChoiceLabelUpdate {
   fromSceneId: string;
   toSceneId: string;
   label: string | undefined;
+}
+
+export interface ChoiceReorder {
+  sceneId: string;
+  fromIndex: number;
+  toIndex: number;
 }
 
 type SpeakerMode = 'none' | 'character' | 'custom';
@@ -167,19 +173,41 @@ type SpeakerMode = 'none' | 'character' | 'custom';
         @if (s.next.length === 0) {
           <p class="hint">Drag from this scene's "next" port to another scene to create a choice.</p>
         } @else {
-          @for (choice of s.next; track choice.sceneId) {
-            <div class="choice">
-              <span class="arrow" [title]="choice.sceneId">
-                → <code>{{ shortId(choice.sceneId) }}</code>
-              </span>
-              <input
-                type="text"
-                placeholder="Label (e.g. Yes / Continue)"
-                [value]="choice.label ?? ''"
-                (input)="emitChoiceLabel($event, id, choice.sceneId)"
-              />
-            </div>
+          @if (s.next.length > 1) {
+            <p class="hint">Drag the handle to reorder choices.</p>
           }
+          <ul class="choices">
+            @for (choice of s.next; track choice.sceneId; let i = $index) {
+              <li
+                class="choice"
+                [class.dragging]="dragIndex() === i"
+                [class.drag-over]="dragOverIndex() === i && dragIndex() !== i"
+                (dragover)="onDragOver($event, i)"
+                (dragleave)="onDragLeave(i)"
+                (drop)="onDrop($event, id, i)"
+              >
+                <button
+                  type="button"
+                  class="handle"
+                  draggable="true"
+                  [attr.aria-label]="'Reorder choice ' + (i + 1) + ' of ' + s.next.length"
+                  (dragstart)="onDragStart($event, i)"
+                  (dragend)="onDragEnd()"
+                >
+                  ⋮⋮
+                </button>
+                <span class="arrow" [title]="choice.sceneId">
+                  → <code>{{ shortId(choice.sceneId) }}</code>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Label (e.g. Yes / Continue)"
+                  [value]="choice.label ?? ''"
+                  (input)="emitChoiceLabel($event, id, choice.sceneId)"
+                />
+              </li>
+            }
+          </ul>
         }
 
         <hr />
@@ -333,17 +361,59 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     textarea {
       resize: vertical;
     }
-    .choice {
+    .choices {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 0.75rem;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+    .choice {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 0.5rem;
+      row-gap: 0.25rem;
+      align-items: center;
+      padding: 0.375rem 0.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.25rem;
+      background: #fff;
+    }
+    .choice.dragging {
+      opacity: 0.5;
+    }
+    .choice.drag-over {
+      border-color: #6366f1;
+      background: #eef2ff;
+    }
+    .handle {
+      grid-row: span 2;
+      width: 1.5rem;
+      height: 100%;
+      min-height: 2rem;
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      cursor: grab;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+    }
+    .handle:active {
+      cursor: grabbing;
+    }
+    .handle:focus-visible {
+      outline: 2px solid #6366f1;
+      outline-offset: 2px;
+      border-radius: 0.25rem;
     }
     .arrow {
       font-size: 0.875rem;
       color: #6b7280;
     }
     .choice input {
+      grid-column: 2;
       width: 100%;
       box-sizing: border-box;
     }
@@ -375,8 +445,12 @@ export class SceneEditorPanelComponent {
 
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
+  readonly reorderChoices = output<ChoiceReorder>();
   readonly remove = output<string>();
   readonly setAsStart = output<string>();
+
+  protected readonly dragIndex = signal<number | null>(null);
+  protected readonly dragOverIndex = signal<number | null>(null);
 
   protected readonly speakerModes: { value: SpeakerMode; label: string }[] = [
     { value: 'none', label: 'None' },
@@ -510,6 +584,39 @@ export class SceneEditorPanelComponent {
       'Make this the starting scene? Players will begin the story here.',
     );
     if (ok) this.setAsStart.emit(id);
+  }
+
+  protected onDragStart(event: DragEvent, index: number): void {
+    this.dragIndex.set(index);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+    }
+  }
+
+  protected onDragOver(event: DragEvent, index: number): void {
+    if (this.dragIndex() === null) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    this.dragOverIndex.set(index);
+  }
+
+  protected onDragLeave(index: number): void {
+    if (this.dragOverIndex() === index) this.dragOverIndex.set(null);
+  }
+
+  protected onDrop(event: DragEvent, sceneId: string, index: number): void {
+    event.preventDefault();
+    const from = this.dragIndex();
+    this.dragIndex.set(null);
+    this.dragOverIndex.set(null);
+    if (from === null || from === index) return;
+    this.reorderChoices.emit({ sceneId, fromIndex: from, toIndex: index });
+  }
+
+  protected onDragEnd(): void {
+    this.dragIndex.set(null);
+    this.dragOverIndex.set(null);
   }
 
   protected shortId(id: string): string {

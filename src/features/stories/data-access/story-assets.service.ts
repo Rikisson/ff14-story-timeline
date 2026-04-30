@@ -15,6 +15,8 @@ const ALLOWED_PREFIX: Record<SceneAssetKind, string> = {
   audio: 'audio/',
 };
 
+const MAX_COVER_BYTES = 5 * 1024 * 1024;
+
 @Injectable({ providedIn: 'root' })
 export class StoryAssetsService {
   private readonly firebase = inject(FirebaseService);
@@ -35,6 +37,17 @@ export class StoryAssetsService {
     await uploadBytes(objectRef, file);
     return getDownloadURL(objectRef);
   }
+
+  async uploadCover(storyId: string, file: File): Promise<string> {
+    const universeId = this.universes.activeUniverseId();
+    if (!universeId) throw new Error('No active universe selected.');
+    assertCoverAcceptable(file);
+    const safeName = `${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`;
+    const path = `universes/${universeId}/stories/${storyId}/cover/${safeName}`;
+    const objectRef = ref(this.firebase.storage, path);
+    await uploadBytes(objectRef, file);
+    return getDownloadURL(objectRef);
+  }
 }
 
 function assertAcceptable(kind: SceneAssetKind, file: File): void {
@@ -48,6 +61,19 @@ function assertAcceptable(kind: SceneAssetKind, file: File): void {
   if (file.size > max) {
     throw new Error(
       `File is too large (${formatMb(file.size)}). Maximum for ${kind} is ${formatMb(max)}.`,
+    );
+  }
+}
+
+function assertCoverAcceptable(file: File): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error(
+      `Unsupported cover type: "${file.type || file.name}". Expected image/*.`,
+    );
+  }
+  if (file.size > MAX_COVER_BYTES) {
+    throw new Error(
+      `Cover image is too large (${formatMb(file.size)}). Maximum is ${formatMb(MAX_COVER_BYTES)}.`,
     );
   }
 }

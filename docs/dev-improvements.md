@@ -60,20 +60,6 @@ paths.
   date type (era + year + optional time-of-day) would unblock real
   timeline rendering.
 
-### UI gaps in flows that already exist
-
-- **No drag-to-reorder choices.** Order matters in the player but the only way
-  to change it is delete + recreate.
-- **Catalog list view excludes events.** Events only appear in the timeline
-  view, so filtering by event in list view does nothing visible.
-- **No catalog cover image override.** Card thumbnail is whatever
-  `scenes[startSceneId].background` happens to be — give the story its own
-  `coverImage` field.
-- **`refreshError` signals are exposed but unused.** Characters / Places /
-  Events / Stories services now expose a `refreshError` signal, but no UI
-  banner reads it. Wire one in (or remove the signal) once UX is decided.
-- **Player only offers Resume on first load.** Mid-session it's gone.
-
 ## 3. New feature avenues
 
 ### Player / reader experience

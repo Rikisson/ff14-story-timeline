@@ -31,6 +31,19 @@
   <app-auth-button />
 </header>
 
+@if (refreshErrors().length > 0) {
+  <div
+    class="border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
+    role="alert"
+  >
+    @for (err of refreshErrors(); track err.label) {
+      <p class="m-0">
+        <strong>Couldn't load {{ err.label }}:</strong> {{ err.message }}
+      </p>
+    }
+  </div>
+}
+
 <main class="min-h-0 flex-1 overflow-auto p-6">
   <router-outlet />
 </main>

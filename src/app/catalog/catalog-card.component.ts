@@ -163,7 +163,7 @@ export class CatalogCardComponent {
 
   protected readonly background = computed(() => {
     const s = this.story();
-    return s.scenes[s.startSceneId]?.background;
+    return s.coverImage ?? s.scenes[s.startSceneId]?.background;
   });
 
   protected readonly tagsVisible = computed(() => {

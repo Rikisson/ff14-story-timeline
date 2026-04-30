@@ -1,16 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { StoryAssetsService } from '@features/stories';
 import { EntityRef, SLUG_PATTERN } from '@shared/models';
 import {
   EntityPickerComponent,
   EntityPickerOption,
+  GhostButtonComponent,
   RichTextInputComponent,
+  SecondaryButtonComponent,
 } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import { StoryMeta } from '../data-access/editor.state';
 
 @Component({
   selector: 'app-story-meta-panel',
-  imports: [EntityPickerComponent, RichTextInputComponent],
+  imports: [
+    EntityPickerComponent,
+    RichTextInputComponent,
+    GhostButtonComponent,
+    SecondaryButtonComponent,
+    NgOptimizedImage,
+  ],
   template: `
     @if (meta(); as m) {
       <h3>Story info</h3>
@@ -33,6 +43,50 @@ import { StoryMeta } from '../data-access/editor.state';
         @if (!slugValid()) {
           <span class="error">Slug must start with a letter or digit and contain only lowercase letters, digits, and hyphens.</span>
         }
+      </div>
+
+      <div class="field">
+        <label>Cover image</label>
+        @if (uploadError(); as e) {
+          <span class="error">{{ e }}</span>
+        }
+        @if (m.coverImage; as url) {
+          <div class="cover-preview">
+            <img [ngSrc]="url" alt="Story cover" fill class="cover-img" />
+          </div>
+          <div class="cover-actions">
+            <button
+              uiSecondary
+              type="button"
+              [loading]="busy()"
+              [disabled]="!storyId()"
+              (click)="coverInput.click()"
+            >
+              Replace
+            </button>
+            <button uiGhost type="button" (click)="clearCover()">Remove</button>
+          </div>
+        } @else {
+          <button
+            uiSecondary
+            type="button"
+            [loading]="busy()"
+            [disabled]="!storyId()"
+            (click)="coverInput.click()"
+          >
+            Upload cover
+          </button>
+          <span class="hint">
+            Used for the catalog card. Falls back to the start scene's background.
+          </span>
+        }
+        <input
+          #coverInput
+          type="file"
+          accept="image/*"
+          class="hidden"
+          (change)="onPick($event)"
+        />
       </div>
 
       <div class="field">
@@ -133,15 +187,41 @@ import { StoryMeta } from '../data-access/editor.state';
     textarea {
       resize: vertical;
     }
+    .hidden {
+      display: none;
+    }
+    .cover-preview {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 0.25rem;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+    }
+    .cover-img {
+      object-fit: cover;
+    }
+    .cover-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
+  readonly storyId = input<string>('');
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly update = output<Partial<StoryMeta>>();
+
+  private readonly assets = inject(StoryAssetsService);
+
+  protected readonly busy = signal(false);
+  protected readonly uploadError = signal<string | null>(null);
 
   protected readonly slugValid = computed(() => {
     const m = this.meta();
@@ -175,5 +255,29 @@ export class StoryMetaPanelComponent {
 
   protected onDraft(event: Event): void {
     this.update.emit({ draft: (event.target as HTMLInputElement).checked });
+  }
+
+  protected async onPick(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const id = this.storyId();
+    if (!id) return;
+
+    this.busy.set(true);
+    this.uploadError.set(null);
+    try {
+      const url = await this.assets.uploadCover(id, file);
+      this.update.emit({ coverImage: url });
+    } catch (err) {
+      this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected clearCover(): void {
+    this.update.emit({ coverImage: undefined });
   }
 }

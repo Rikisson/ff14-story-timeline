@@ -23,6 +23,7 @@ export interface Story {
   slug: string;
   title: string;
   summary?: string;
+  coverImage?: string;
   mainCharacters: EntityRef<'character'>[];
   places: EntityRef<'place'>[];
   inGameDate: string;

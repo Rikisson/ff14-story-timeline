@@ -25,6 +25,7 @@ export function withEditorMethods() {
               slug: story.slug,
               title: story.title,
               summary: story.summary,
+              coverImage: story.coverImage,
               mainCharacters: story.mainCharacters,
               places: story.places,
               inGameDate: story.inGameDate,
@@ -177,6 +178,23 @@ export function withEditorMethods() {
               ? { startSceneId: id, dirty: true }
               : state,
           );
+        },
+
+        reorderChoices(sceneId: string, fromIndex: number, toIndex: number) {
+          patchState(store, (state) => {
+            const scene = state.scenes[sceneId];
+            if (!scene) return state;
+            if (fromIndex === toIndex) return state;
+            if (fromIndex < 0 || fromIndex >= scene.next.length) return state;
+            if (toIndex < 0 || toIndex >= scene.next.length) return state;
+            const next = [...scene.next];
+            const [moved] = next.splice(fromIndex, 1);
+            next.splice(toIndex, 0, moved);
+            return {
+              scenes: { ...state.scenes, [sceneId]: { ...scene, next } },
+              dirty: true,
+            };
+          });
         },
 
         updateChoiceLabel(fromSceneId: string, toSceneId: string, label: string | undefined) {

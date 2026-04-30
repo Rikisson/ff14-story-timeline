@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
+import { CharactersService } from '@features/characters';
+import { EventsService } from '@features/events';
+import { PlacesService } from '@features/places';
+import { StoriesService } from '@features/stories';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { GhostButtonComponent } from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
@@ -22,9 +26,26 @@ export class App {
   private readonly injector = inject(Injector);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+  private readonly events = inject(EventsService);
+  private readonly stories = inject(StoriesService);
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
+
+  protected readonly refreshErrors = computed<{ label: string; message: string }[]>(() => {
+    const errors: { label: string; message: string }[] = [];
+    const c = this.characters.refreshError();
+    if (c) errors.push({ label: 'Characters', message: c });
+    const p = this.places.refreshError();
+    if (p) errors.push({ label: 'Places', message: p });
+    const e = this.events.refreshError();
+    if (e) errors.push({ label: 'Events', message: e });
+    const s = this.stories.refreshError();
+    if (s) errors.push({ label: 'Stories', message: s });
+    return errors;
+  });
 
   protected async seedTestData(): Promise<void> {
     const u = this.user();
