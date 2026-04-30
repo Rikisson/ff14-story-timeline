@@ -125,7 +125,22 @@ import { StoryMeta } from '../data-access/editor.state';
 
       <div class="field">
         <label for="meta-date">In-game date</label>
-        <input id="meta-date" type="text" [value]="m.inGameDate" (input)="onDate($event)" />
+        <input
+          id="meta-date"
+          type="text"
+          list="meta-date-suggestions"
+          autocomplete="off"
+          [value]="m.inGameDate"
+          (input)="onDate($event)"
+        />
+        <datalist id="meta-date-suggestions">
+          @for (d of dateSuggestions(); track d) {
+            <option [value]="d"></option>
+          }
+        </datalist>
+        <span class="hint">
+          Pick from existing dates or type a new one — universe authors set the convention.
+        </span>
       </div>
 
       <div class="field checkbox">
@@ -215,6 +230,7 @@ export class StoryMetaPanelComponent {
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
+  readonly dateSuggestions = input<string[]>([]);
   readonly update = output<Partial<StoryMeta>>();
 
   private readonly assets = inject(StoryAssetsService);

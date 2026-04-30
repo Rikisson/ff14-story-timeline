@@ -5,7 +5,8 @@ import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
-  EntityPickerComponent,
+  ComboboxOption,
+  ComboboxPickerComponent,
   GhostButtonComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
@@ -20,7 +21,7 @@ import { TimelineEventDraft } from '../data-access/event.types';
     ReactiveFormsModule,
     PrimaryButtonComponent,
     GhostButtonComponent,
-    EntityPickerComponent,
+    ComboboxPickerComponent,
     RichTextInputComponent,
   ],
   template: `
@@ -60,9 +61,16 @@ import { TimelineEventDraft } from '../data-access/event.types';
         <input
           type="text"
           formControlName="inGameDate"
+          list="event-date-suggestions"
+          autocomplete="off"
           class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          placeholder="e.g. 1577 6AE"
+          placeholder="Year 1, Spring of the Wolf, 1577 6AE…"
         />
+        <datalist id="event-date-suggestions">
+          @for (d of dateSuggestions(); track d) {
+            <option [value]="d"></option>
+          }
+        </datalist>
       </label>
 
       <div class="flex flex-col gap-1 text-sm">
@@ -79,37 +87,37 @@ import { TimelineEventDraft } from '../data-access/event.types';
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Main characters</span>
-          <app-entity-picker
-            kind="character"
-            [options]="characterOptions()"
-            [value]="mainCharacters()"
-            [multiple]="true"
+          <app-combobox-picker
+            [options]="characterCombobox()"
+            [value]="characterIds()"
+            placeholder="Search characters…"
             emptyMessage="No characters in this universe yet."
-            (selected)="onCharacters($event)"
+            (valueChange)="onCharacterIds($event)"
           />
         </div>
         <div class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Places</span>
-          <app-entity-picker
-            kind="place"
-            [options]="placeOptions()"
-            [value]="places()"
-            [multiple]="true"
+          <app-combobox-picker
+            [options]="placeCombobox()"
+            [value]="placeIds()"
+            placeholder="Search places…"
             emptyMessage="No places in this universe yet."
-            (selected)="onPlaces($event)"
+            (valueChange)="onPlaceIds($event)"
           />
         </div>
       </div>
 
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Related dates (comma-separated)</span>
-        <input
-          type="text"
-          formControlName="relatedDates"
-          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          placeholder="e.g. 1572 6AE, 1580 6AE"
+      <div class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Related dates</span>
+        <app-combobox-picker
+          [options]="dateCombobox()"
+          [value]="relatedDates()"
+          [allowCreate]="true"
+          placeholder="Pick or type a date…"
+          emptyMessage="No dates yet — type one to add."
+          (valueChange)="onRelatedDates($event)"
         />
-      </label>
+      </div>
 
       @if (errorMessage(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
@@ -134,6 +142,7 @@ export class EventFormComponent {
   readonly initial = input<TimelineEventDraft | null>(null);
   readonly busy = input<boolean>(false);
   readonly errorMessage = input<string | null>(null);
+  readonly dateSuggestions = input<string[]>([]);
   readonly submitted = output<TimelineEventDraft>();
   readonly cancelled = output<void>();
 
@@ -142,11 +151,16 @@ export class EventFormComponent {
   private readonly eventsService = inject(EventsService);
   private readonly storiesService = inject(StoriesService);
 
-  protected readonly characterOptions = computed(() =>
-    this.charactersService.characters().map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
+  protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
+    this.charactersService
+      .characters()
+      .map((c) => ({ id: c.id, label: c.name, hint: c.slug })),
   );
-  protected readonly placeOptions = computed(() =>
-    this.placesService.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
+  protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
+    this.placesService.places().map((p) => ({ id: p.id, label: p.name, hint: p.slug })),
+  );
+  protected readonly dateCombobox = computed<ComboboxOption[]>(() =>
+    this.dateSuggestions().map((d) => ({ id: d, label: d })),
   );
   protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
     ...this.charactersService.characters().map((c) => ({
@@ -177,13 +191,16 @@ export class EventFormComponent {
 
   protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
   protected readonly places = signal<EntityRef<'place'>[]>([]);
+  protected readonly relatedDates = signal<string[]>([]);
   protected readonly description = signal<string>('');
+
+  protected readonly characterIds = computed(() => this.mainCharacters().map((r) => r.id));
+  protected readonly placeIds = computed(() => this.places().map((r) => r.id));
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
-    relatedDates: [''],
   });
 
   constructor() {
@@ -193,20 +210,24 @@ export class EventFormComponent {
         slug: init?.slug ?? '',
         name: init?.name ?? '',
         inGameDate: init?.inGameDate ?? '',
-        relatedDates: init?.relatedDates.join(', ') ?? '',
       });
       this.mainCharacters.set(init?.mainCharacters ?? []);
       this.places.set(init?.places ?? []);
+      this.relatedDates.set(init?.relatedDates ?? []);
       this.description.set(init?.description ?? '');
     });
   }
 
-  protected onCharacters(refs: EntityRef[]): void {
-    this.mainCharacters.set(refs as EntityRef<'character'>[]);
+  protected onCharacterIds(ids: string[]): void {
+    this.mainCharacters.set(ids.map((id) => ({ kind: 'character', id })));
   }
 
-  protected onPlaces(refs: EntityRef[]): void {
-    this.places.set(refs as EntityRef<'place'>[]);
+  protected onPlaceIds(ids: string[]): void {
+    this.places.set(ids.map((id) => ({ kind: 'place', id })));
+  }
+
+  protected onRelatedDates(dates: string[]): void {
+    this.relatedDates.set(dates);
   }
 
   protected onDescription(value: string): void {
@@ -223,14 +244,7 @@ export class EventFormComponent {
       description: this.description().trim(),
       mainCharacters: this.mainCharacters(),
       places: this.places(),
-      relatedDates: splitCsv(v.relatedDates),
+      relatedDates: this.relatedDates(),
     });
   }
-}
-
-function splitCsv(value: string): string[] {
-  return value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
 }

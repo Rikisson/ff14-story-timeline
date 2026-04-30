@@ -15,10 +15,14 @@ export interface ComboboxOption {
   hint?: string;
 }
 
+type ComboItem =
+  | { kind: 'create'; query: string }
+  | { kind: 'option'; option: ComboboxOption };
+
 @Component({
   selector: 'app-combobox-picker',
   template: `
-    @if (options().length === 0) {
+    @if (options().length === 0 && !allowCreate()) {
       <p class="m-0 text-sm italic text-slate-500">{{ emptyMessage() }}</p>
     } @else {
       <div class="flex flex-col gap-1">
@@ -56,7 +60,7 @@ export interface ComboboxOption {
             (keydown)="onKey($event)"
           />
           @if (open()) {
-            @if (filtered().length === 0) {
+            @if (items().length === 0) {
               <p
                 class="absolute left-0 right-0 top-full z-10 mt-1 m-0 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm italic text-slate-500 shadow-md"
               >
@@ -67,17 +71,24 @@ export interface ComboboxOption {
                 role="listbox"
                 class="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 list-none overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-md"
               >
-                @for (opt of filtered(); track opt.id; let i = $index) {
+                @for (item of items(); track itemKey(item); let i = $index) {
                   <li
                     role="option"
                     [class]="optionClass(i === activeIndex())"
                     [attr.aria-selected]="false"
-                    (mousedown)="onOptionMouseDown($event, opt.id)"
+                    (mousedown)="onItemMouseDown($event, item)"
                     (mouseenter)="activeIndex.set(i)"
                   >
-                    <span>{{ opt.label }}</span>
-                    @if (opt.hint; as h) {
-                      <span class="text-xs text-slate-500">{{ h }}</span>
+                    @if (item.kind === 'create') {
+                      <span>
+                        Add <span class="font-semibold">"{{ item.query }}"</span>
+                      </span>
+                      <span class="text-xs text-slate-500">new</span>
+                    } @else {
+                      <span>{{ item.option.label }}</span>
+                      @if (item.option.hint; as h) {
+                        <span class="text-xs text-slate-500">{{ h }}</span>
+                      }
                     }
                   </li>
                 }
@@ -95,6 +106,7 @@ export class ComboboxPickerComponent {
   readonly value = input<string[]>([]);
   readonly placeholder = input<string>('Search…');
   readonly emptyMessage = input<string>('No options available.');
+  readonly allowCreate = input<boolean>(false);
   readonly valueChange = output<string[]>();
 
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -121,6 +133,24 @@ export class ComboboxPickerComponent {
       .filter((o) => !q || o.label.toLowerCase().includes(q));
   });
 
+  private readonly createCandidate = computed<string | null>(() => {
+    if (!this.allowCreate()) return null;
+    const q = this.query().trim();
+    if (q === '') return null;
+    const lowered = q.toLowerCase();
+    if (this.options().some((o) => o.label.toLowerCase() === lowered)) return null;
+    if (this.value().some((v) => v.toLowerCase() === lowered)) return null;
+    return q;
+  });
+
+  protected readonly items = computed<ComboItem[]>(() => {
+    const list: ComboItem[] = [];
+    const create = this.createCandidate();
+    if (create) list.push({ kind: 'create', query: create });
+    for (const opt of this.filtered()) list.push({ kind: 'option', option: opt });
+    return list;
+  });
+
   protected onQuery(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
     this.activeIndex.set(0);
@@ -138,18 +168,18 @@ export class ComboboxPickerComponent {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       this.open.set(true);
-      const max = this.filtered().length;
+      const max = this.items().length;
       if (max === 0) return;
       this.activeIndex.update((i) => (i + 1) % max);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      const max = this.filtered().length;
+      const max = this.items().length;
       if (max === 0) return;
       this.activeIndex.update((i) => (i - 1 + max) % max);
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      const opt = this.filtered()[this.activeIndex()];
-      if (opt) this.add(opt.id);
+      const item = this.items()[this.activeIndex()];
+      if (item) this.activate(item);
     } else if (event.key === 'Escape') {
       event.preventDefault();
       this.open.set(false);
@@ -163,9 +193,18 @@ export class ComboboxPickerComponent {
     }
   }
 
-  protected onOptionMouseDown(event: MouseEvent, id: string): void {
+  protected onItemMouseDown(event: MouseEvent, item: ComboItem): void {
     event.preventDefault();
-    this.add(id);
+    this.activate(item);
+  }
+
+  protected itemKey(item: ComboItem): string {
+    return item.kind === 'create' ? `__create__:${item.query}` : item.option.id;
+  }
+
+  private activate(item: ComboItem): void {
+    if (item.kind === 'create') this.add(item.query);
+    else this.add(item.option.id);
   }
 
   protected add(id: string): void {

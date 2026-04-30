@@ -94,6 +94,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [characterOptions]="characterOptions()"
           [placeOptions]="placeOptions()"
           [inlineRefOptions]="inlineRefOptions()"
+          [dateSuggestions]="dateSuggestions()"
           (update)="store.updateMeta($event)"
         />
 
@@ -258,6 +259,18 @@ export class EditorPage implements HasUnsavedChanges {
       map[id] = scene.label?.trim() || this.shortId(id);
     }
     return map;
+  });
+  protected readonly dateSuggestions = computed<string[]>(() => {
+    const dates = new Set<string>();
+    for (const s of this.stories.publishedStories()) {
+      if (s.inGameDate) dates.add(s.inGameDate);
+    }
+    for (const e of this.events.events()) {
+      if (e.inGameDate) dates.add(e.inGameDate);
+    }
+    return Array.from(dates).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }),
+    );
   });
   protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
     ...this.characters.characters().map((c) => ({

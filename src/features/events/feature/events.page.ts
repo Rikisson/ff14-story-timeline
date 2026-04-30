@@ -6,6 +6,7 @@ import {
   TimelineEvent,
   TimelineEventDraft,
 } from '@features/events';
+import { StoriesService } from '@features/stories';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { EventFormComponent } from '../ui/event-form.component';
 
@@ -28,6 +29,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
           [initial]="editingDraft()"
           [busy]="busy()"
           [errorMessage]="errorMessage()"
+          [dateSuggestions]="dateSuggestions()"
           (submitted)="onSubmit($event)"
           (cancelled)="cancel()"
         />
@@ -55,6 +57,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class EventsPage {
   private readonly service = inject(EventsService);
+  private readonly storiesService = inject(StoriesService);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly events = this.service.events;
@@ -77,6 +80,19 @@ export class EventsPage {
           relatedDates: e.relatedDates,
         }
       : null;
+  });
+
+  protected readonly dateSuggestions = computed<string[]>(() => {
+    const dates = new Set<string>();
+    for (const s of this.storiesService.publishedStories()) {
+      if (s.inGameDate) dates.add(s.inGameDate);
+    }
+    for (const e of this.events()) {
+      if (e.inGameDate) dates.add(e.inGameDate);
+    }
+    return Array.from(dates).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }),
+    );
   });
 
   protected canEdit(e: TimelineEvent): boolean {
