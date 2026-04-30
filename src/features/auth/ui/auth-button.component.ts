@@ -1,33 +1,28 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
 
 @Component({
   selector: 'app-auth-button',
+  imports: [GhostButtonComponent, SecondaryButtonComponent],
   template: `
     @if (auth.loading()) {
-      <span>Loading...</span>
+      <span class="text-sm text-slate-600">Loading…</span>
     } @else if (auth.user(); as u) {
-      <span>Signed in as {{ u.displayName ?? u.email }}</span>
-      <button type="button" (click)="auth.logout()">Sign out</button>
+      <span class="text-sm text-slate-700">
+        Signed in as {{ u.displayName ?? u.email }}
+      </span>
+      <button uiGhost type="button" (click)="auth.logout()">Sign out</button>
     } @else {
-      <button type="button" (click)="auth.login()">Sign in with Google</button>
+      <button uiSecondary type="button" (click)="auth.login()">
+        Sign in with Google
+      </button>
     }
     @if (auth.error(); as err) {
-      <span class="error">{{ err }}</span>
+      <span class="text-sm text-red-700" role="alert">{{ err }}</span>
     }
   `,
-  styles: `
-    :host {
-      display: inline-flex;
-      gap: 0.5rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .error {
-      color: #b00020;
-      font-size: 0.875rem;
-    }
-  `,
+  host: { class: 'inline-flex flex-wrap items-center gap-2' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthButtonComponent {

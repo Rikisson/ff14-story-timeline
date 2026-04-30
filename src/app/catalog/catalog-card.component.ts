@@ -1,11 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { Story, StoriesService } from '@features/stories';
-import { MarkdownTextComponent } from '@shared/ui';
+import { GhostButtonComponent, MarkdownTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 
 const BTN_BASE =
@@ -20,7 +20,7 @@ const BTN_SECONDARY =
 
 @Component({
   selector: 'app-catalog-card',
-  imports: [RouterLink, NgOptimizedImage, MarkdownTextComponent],
+  imports: [RouterLink, NgOptimizedImage, MarkdownTextComponent, GhostButtonComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -97,6 +97,15 @@ const BTN_SECONDARY =
         <a [routerLink]="['/play', story().id]" [class]="primaryClass">Play</a>
         @if (canEdit()) {
           <a [routerLink]="['/edit', story().id]" [class]="secondaryClass">Edit</a>
+          <button
+            uiGhost
+            type="button"
+            class="text-red-700 hover:bg-red-50"
+            [attr.aria-label]="'Delete ' + story().title"
+            (click)="confirmDelete()"
+          >
+            Delete
+          </button>
         }
       </div>
     </article>
@@ -107,10 +116,20 @@ export class CatalogCardComponent {
   readonly story = input.required<Story>();
   readonly canEdit = input<boolean>(false);
 
+  readonly remove = output<string>();
+
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
+
+  protected confirmDelete(): void {
+    const s = this.story();
+    const ok = window.confirm(
+      `Delete "${s.title || 'Untitled'}"? This cannot be undone.`,
+    );
+    if (ok) this.remove.emit(s.id);
+  }
 
   protected readonly primaryClass = BTN_PRIMARY;
   protected readonly secondaryClass = BTN_SECONDARY;

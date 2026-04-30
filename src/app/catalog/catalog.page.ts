@@ -66,7 +66,7 @@ type ViewMode = 'list' | 'timeline';
         </div>
       </div>
 
-      @if (createError(); as e) {
+      @if (actionError(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
@@ -84,6 +84,7 @@ type ViewMode = 'list' | 'timeline';
         <app-catalog-list
           [stories]="filteredStories()"
           [currentUserUid]="user()?.uid ?? null"
+          (remove)="deleteStory($event)"
         />
       } @else {
         <app-catalog-timeline
@@ -112,7 +113,7 @@ export class CatalogPage {
   protected readonly filters = signal<CatalogFilters>(EMPTY_FILTERS);
   protected readonly sortDirection = signal<SortDirection>('asc');
   protected readonly creating = signal(false);
-  protected readonly createError = signal<string | null>(null);
+  protected readonly actionError = signal<string | null>(null);
   protected readonly EMPTY_FILTERS = EMPTY_FILTERS;
 
   protected readonly sourceStories = computed<Story[]>(() =>
@@ -152,16 +153,29 @@ export class CatalogPage {
     const u = this.user();
     if (!u) return;
     this.creating.set(true);
-    this.createError.set(null);
+    this.actionError.set(null);
     try {
       const id = await this.stories.createDraftStory(u.uid);
       void this.stories.getAuthorStories(u.uid).then((list) => this.myStories.set(list));
       await this.router.navigate(['/edit', id]);
     } catch (err) {
-      this.createError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+      this.actionError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
       this.creating.set(false);
     }
+  }
+
+  protected async deleteStory(id: string): Promise<void> {
+    const u = this.user();
+    if (!u) return;
+    try {
+      await this.stories.deleteStory(id);
+    } catch (err) {
+      this.actionError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+      return;
+    }
+    this.myStories.update((list) => list.filter((s) => s.id !== id));
+    void this.stories.refreshPublished();
   }
 }
 

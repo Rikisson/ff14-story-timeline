@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Story } from '@features/stories';
 import { CatalogCardComponent } from './catalog-card.component';
 
@@ -11,7 +11,11 @@ import { CatalogCardComponent } from './catalog-card.component';
     >
       @for (story of stories(); track story.id) {
         <li>
-          <app-catalog-card [story]="story" [canEdit]="canEdit(story)" />
+          <app-catalog-card
+            [story]="story"
+            [canEdit]="canEdit(story)"
+            (remove)="remove.emit($event)"
+          />
         </li>
       }
     </ul>
@@ -21,6 +25,8 @@ import { CatalogCardComponent } from './catalog-card.component';
 export class CatalogListComponent {
   readonly stories = input.required<Story[]>();
   readonly currentUserUid = input<string | null>(null);
+
+  readonly remove = output<string>();
 
   protected canEdit(story: Story): boolean {
     const uid = this.currentUserUid();

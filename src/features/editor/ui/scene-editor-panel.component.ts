@@ -42,7 +42,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
           @if (isStartScene()) {
             <span class="badge">START</span>
           } @else {
-            <button uiGhost type="button" (click)="setAsStart.emit(id)">Set as start</button>
+            <button uiGhost type="button" (click)="confirmSetAsStart(id)">Set as start</button>
           }
         </header>
 
@@ -503,6 +503,13 @@ export class SceneEditorPanelComponent {
   protected emitChoiceLabel(event: Event, fromSceneId: string, toSceneId: string): void {
     const value = (event.target as HTMLInputElement).value;
     this.updateChoiceLabel.emit({ fromSceneId, toSceneId, label: value || undefined });
+  }
+
+  protected confirmSetAsStart(id: string): void {
+    const ok = window.confirm(
+      'Make this the starting scene? Players will begin the story here.',
+    );
+    if (ok) this.setAsStart.emit(id);
   }
 
   protected shortId(id: string): string {

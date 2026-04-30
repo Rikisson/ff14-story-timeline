@@ -29,6 +29,10 @@ export class App {
   protected async seedTestData(): Promise<void> {
     const u = this.user();
     if (!u || !this.canSeed()) return;
+    const ok = window.confirm(
+      'Seed test data? This will overwrite the default universe and any existing seeded characters, places, events, and stories.',
+    );
+    if (!ok) return;
     this.seeding.set(true);
     try {
       const { SeederService, DEFAULT_UNIVERSE_ID } = await import('../mocks/seeder.service');

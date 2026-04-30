@@ -46,6 +46,13 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <header class="bar">
         <h1>
           {{ store.meta()?.title || 'Untitled story' }}
+          @if (store.meta()?.draft) {
+            <span class="status status--draft" title="This story is a draft">Draft</span>
+          } @else {
+            <span class="status status--published" title="This story is published">
+              Published
+            </span>
+          }
           @if (store.dirty()) {
             <span class="dirty" title="Unsaved changes">●</span>
           }
@@ -117,6 +124,25 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
     .dirty {
       color: #b00020;
       margin-left: 0.5rem;
+    }
+    .status {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .status--draft {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status--published {
+      background: #dcfce7;
+      color: #166534;
     }
     .error {
       color: #b00020;

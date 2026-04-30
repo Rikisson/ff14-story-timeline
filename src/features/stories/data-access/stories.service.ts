@@ -38,15 +38,25 @@ export class StoriesService {
   private readonly _publishedStories = signal<Story[]>([]);
   readonly publishedStories: Signal<Story[]> = this._publishedStories.asReadonly();
 
+  private readonly _refreshError = signal<string | null>(null);
+  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
+
   constructor() {
     if (this.isBrowser) {
       effect(() => {
         const id = this.universes.activeUniverseId();
         if (!id) {
           this._publishedStories.set([]);
+          this._refreshError.set(null);
           return;
         }
-        void this.refreshPublished(id);
+        this._refreshError.set(null);
+        this.refreshPublished(id).catch((err) => {
+          console.error('StoriesService.refreshPublished failed', err);
+          this._refreshError.set(
+            err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+          );
+        });
       });
     }
   }

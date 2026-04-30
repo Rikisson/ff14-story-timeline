@@ -28,15 +28,25 @@ export class EventsService {
   private readonly _events = signal<TimelineEvent[]>([]);
   readonly events: Signal<TimelineEvent[]> = this._events.asReadonly();
 
+  private readonly _refreshError = signal<string | null>(null);
+  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
+
   constructor() {
     if (this.isBrowser) {
       effect(() => {
         const id = this.universes.activeUniverseId();
         if (!id) {
           this._events.set([]);
+          this._refreshError.set(null);
           return;
         }
-        void this.refresh(id);
+        this._refreshError.set(null);
+        this.refresh(id).catch((err) => {
+          console.error('EventsService.refresh failed', err);
+          this._refreshError.set(
+            err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+          );
+        });
       });
     }
   }

@@ -28,15 +28,25 @@ export class CharactersService {
   private readonly _characters = signal<Character[]>([]);
   readonly characters: Signal<Character[]> = this._characters.asReadonly();
 
+  private readonly _refreshError = signal<string | null>(null);
+  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
+
   constructor() {
     if (this.isBrowser) {
       effect(() => {
         const id = this.universes.activeUniverseId();
         if (!id) {
           this._characters.set([]);
+          this._refreshError.set(null);
           return;
         }
-        void this.refresh(id);
+        this._refreshError.set(null);
+        this.refresh(id).catch((err) => {
+          console.error('CharactersService.refresh failed', err);
+          this._refreshError.set(
+            err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+          );
+        });
       });
     }
   }
