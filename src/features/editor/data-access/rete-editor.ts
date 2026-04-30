@@ -43,7 +43,7 @@ async function buildNode(
 ): Promise<ClassicPreset.Node> {
   const node = new ClassicPreset.Node(nodeLabel(id, scene));
   node.id = id;
-  node.addInput('prev', new ClassicPreset.Input(socket));
+  node.addInput('prev', new ClassicPreset.Input(socket, undefined, true));
   node.addOutput('next', new ClassicPreset.Output(socket));
   return node;
 }
@@ -101,6 +101,8 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
   }
 
   let pickedThisGesture = false;
+  let lastEmptyDownAt = 0;
+  const DOUBLE_CLICK_MS = 350;
   area.addPipe((context) => {
     if (context.type === 'nodetranslated') {
       onMove(context.data.id, context.data.position);
@@ -112,7 +114,17 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
     if (context.type === 'pointerdown') {
       pickedThisGesture = false;
       queueMicrotask(() => {
-        if (!pickedThisGesture) onSelect(null);
+        if (pickedThisGesture) {
+          lastEmptyDownAt = 0;
+          return;
+        }
+        const now = Date.now();
+        if (now - lastEmptyDownAt < DOUBLE_CLICK_MS) {
+          lastEmptyDownAt = 0;
+          onSelect(null);
+        } else {
+          lastEmptyDownAt = now;
+        }
       });
     }
     return context;
