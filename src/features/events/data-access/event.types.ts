@@ -9,8 +9,17 @@ export interface TimelineEvent {
   places: EntityRef<'place'>[];
   inGameDate: string;
   relatedDates: string[];
+  type?: string;
+  summary?: string;
+  sortOrder?: number;
+  consequences?: string;
+  relatedEvents?: EntityRef<'event'>[];
+  plotlineRefs?: EntityRef<'plotline'>[];
+  itemRefs?: EntityRef<'item'>[];
+  factionRefs?: EntityRef<'faction'>[];
   authorUid: string;
   createdAt: number;
+  updatedAt?: number;
 }
 
 export type StoredTimelineEvent = Omit<TimelineEvent, 'id'>;
@@ -23,4 +32,12 @@ export interface TimelineEventDraft {
   places: EntityRef<'place'>[];
   inGameDate: string;
   relatedDates: string[];
+  type?: string;
+  summary?: string;
+  sortOrder?: number;
+  consequences?: string;
+  relatedEvents?: EntityRef<'event'>[];
+  plotlineRefs?: EntityRef<'plotline'>[];
+  itemRefs?: EntityRef<'item'>[];
+  factionRefs?: EntityRef<'faction'>[];
 }

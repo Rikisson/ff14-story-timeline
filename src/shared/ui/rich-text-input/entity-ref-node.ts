@@ -1,7 +1,8 @@
 import { mergeAttributes, Node } from '@tiptap/core';
+import { EntityKind } from '@shared/models';
 
 export interface EntityRefAttrs {
-  kind: 'character' | 'place' | 'event' | 'story';
+  kind: EntityKind;
   id: string;
   displayText: string;
 }

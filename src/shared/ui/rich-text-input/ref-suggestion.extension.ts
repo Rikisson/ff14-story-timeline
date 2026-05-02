@@ -4,6 +4,7 @@ import Suggestion, { SuggestionOptions } from '@tiptap/suggestion';
 import { EntityKind } from '@shared/models';
 import {
   INLINE_REF_KIND_BY_PREFIX,
+  INLINE_REF_PREFIX_BY_KIND,
   InlineRefKindPrefix,
   InlineRefOption,
 } from '@shared/utils';
@@ -16,7 +17,7 @@ export interface RefSuggestionState {
     : never;
 }
 
-const KIND_PREFIXES: InlineRefKindPrefix[] = ['ch', 'pl', 'ev', 'st'];
+const KIND_PREFIXES: InlineRefKindPrefix[] = Object.values(INLINE_REF_PREFIX_BY_KIND);
 const MAX_RESULTS = 8;
 
 function parseQuery(query: string): { kind: EntityKind | null; filter: string } {

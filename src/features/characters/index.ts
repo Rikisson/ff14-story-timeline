@@ -4,6 +4,7 @@ export type {
   Character,
   CharacterDraft,
   CharacterPortrait,
+  CharacterRelation,
   StoredCharacter,
 } from './data-access/character.types';
 export { CharacterAssetsService } from './data-access/character-assets.service';

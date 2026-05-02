@@ -1,4 +1,5 @@
 import { Marked, Tokens } from 'marked';
+import { EntityKind } from '../models/entity-ref';
 import {
   INLINE_REF_KIND_BY_PREFIX,
   INLINE_REF_REGEX,
@@ -6,7 +7,7 @@ import {
 } from './inline-refs';
 
 export interface MarkdownRefOption {
-  kind: 'character' | 'place' | 'event' | 'story';
+  kind: EntityKind;
   id: string;
   label: string;
 }
@@ -34,7 +35,7 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
         name: 'inlineRef',
         level: 'inline',
         start(src: string) {
-          const idx = src.search(/\$\{(ch|pl|ev|st):/);
+          const idx = src.search(/\$\{(?:ch|pl|ev|st|pt|it|fa|cx):/);
           return idx === -1 ? undefined : idx;
         },
         tokenizer(src: string): InlineRefToken | undefined {

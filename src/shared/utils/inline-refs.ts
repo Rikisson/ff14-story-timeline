@@ -7,13 +7,25 @@ export interface InlineRefOption {
   slug?: string;
 }
 
-export type InlineRefKindPrefix = 'ch' | 'pl' | 'ev' | 'st';
+export type InlineRefKindPrefix =
+  | 'ch'
+  | 'pl'
+  | 'ev'
+  | 'st'
+  | 'pt'
+  | 'it'
+  | 'fa'
+  | 'cx';
 
 export const INLINE_REF_KIND_BY_PREFIX: Record<InlineRefKindPrefix, EntityKind> = {
   ch: 'character',
   pl: 'place',
   ev: 'event',
   st: 'story',
+  pt: 'plotline',
+  it: 'item',
+  fa: 'faction',
+  cx: 'codexEntry',
 };
 
 export const INLINE_REF_PREFIX_BY_KIND: Record<EntityKind, InlineRefKindPrefix> = {
@@ -21,9 +33,14 @@ export const INLINE_REF_PREFIX_BY_KIND: Record<EntityKind, InlineRefKindPrefix> 
   place: 'pl',
   event: 'ev',
   story: 'st',
+  plotline: 'pt',
+  item: 'it',
+  faction: 'fa',
+  codexEntry: 'cx',
 };
 
-export const INLINE_REF_REGEX = /\$\{(ch|pl|ev|st):([A-Za-z0-9_-]+)\}\[([^\]]*)\]/g;
+export const INLINE_REF_REGEX =
+  /\$\{(ch|pl|ev|st|pt|it|fa|cx):([A-Za-z0-9_-]+)\}\[([^\]]*)\]/g;
 
 export interface RefSegment {
   ref: EntityRef;
