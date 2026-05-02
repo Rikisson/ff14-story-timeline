@@ -51,6 +51,26 @@ service cloud.firestore {
         allow read: if resource.data.draft == false || isMember(universeId);
         allow create, update, delete: if isMember(universeId);
       }
+
+      match /plotlines/{plotlineId} {
+        allow read: if true;
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /items/{itemId} {
+        allow read: if true;
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /factions/{factionId} {
+        allow read: if true;
+        allow create, update, delete: if isMember(universeId);
+      }
+
+      match /codexEntries/{codexEntryId} {
+        allow read: if true;
+        allow create, update, delete: if isMember(universeId);
+      }
     }
   }
 }
