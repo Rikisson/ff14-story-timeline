@@ -13,8 +13,12 @@ import {
 import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CharactersService } from '@features/characters';
+import { CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
+import { FactionsService } from '@features/factions';
+import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
+import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { GhostButtonComponent } from '@shared/ui';
@@ -42,6 +46,10 @@ export class App {
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
+  private readonly plotlines = inject(PlotlinesService);
+  private readonly items = inject(ItemsService);
+  private readonly factions = inject(FactionsService);
+  private readonly codex = inject(CodexEntriesService);
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
@@ -72,6 +80,14 @@ export class App {
     if (e) errors.push({ label: 'Events', message: e });
     const s = this.stories.refreshError();
     if (s) errors.push({ label: 'Stories', message: s });
+    const pl = this.plotlines.refreshError();
+    if (pl) errors.push({ label: 'Plotlines', message: pl });
+    const it = this.items.refreshError();
+    if (it) errors.push({ label: 'Items', message: it });
+    const fa = this.factions.refreshError();
+    if (fa) errors.push({ label: 'Factions', message: fa });
+    const cx = this.codex.refreshError();
+    if (cx) errors.push({ label: 'Codex', message: cx });
     return errors;
   });
 

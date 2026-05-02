@@ -1,3 +1,4 @@
+export { CODEX_ROUTES } from './codex.routes';
 export { CodexEntriesService } from './data-access/codex-entries.service';
 export type {
   CodexEntry,
