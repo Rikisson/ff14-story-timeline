@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Place } from '../data-access/place.types';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { DangerButtonComponent, GhostButtonComponent, TagComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-place-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, TagComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -18,7 +18,7 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
       @if (place().factions.length > 0) {
         <div class="flex flex-wrap gap-1.5">
           @for (f of place().factions; track f) {
-            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ f }}</span>
+            <app-tag>{{ f }}</app-tag>
           }
         </div>
       }

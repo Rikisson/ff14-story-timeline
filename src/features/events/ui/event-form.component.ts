@@ -236,24 +236,32 @@ export class EventFormComponent {
   protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
     this.charactersService
       .characters()
-      .map((c) => ({ id: c.id, label: c.name, hint: c.slug })),
+      .map((c) => ({ id: c.id, label: c.name, hint: c.slug, kind: 'character' as const })),
   );
   protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
-    this.placesService.places().map((p) => ({ id: p.id, label: p.name, hint: p.slug })),
+    this.placesService
+      .places()
+      .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
   );
   protected readonly eventCombobox = computed<ComboboxOption[]>(() =>
-    this.eventsService.events().map((e) => ({ id: e.id, label: e.name, hint: e.slug })),
+    this.eventsService
+      .events()
+      .map((e) => ({ id: e.id, label: e.name, hint: e.slug, kind: 'event' as const })),
   );
   protected readonly plotlineCombobox = computed<ComboboxOption[]>(() =>
     this.plotlinesService
       .plotlines()
-      .map((p) => ({ id: p.id, label: p.title, hint: p.slug })),
+      .map((p) => ({ id: p.id, label: p.title, hint: p.slug, kind: 'plotline' as const })),
   );
   protected readonly itemCombobox = computed<ComboboxOption[]>(() =>
-    this.itemsService.items().map((i) => ({ id: i.id, label: i.name, hint: i.slug })),
+    this.itemsService
+      .items()
+      .map((i) => ({ id: i.id, label: i.name, hint: i.slug, kind: 'item' as const })),
   );
   protected readonly factionCombobox = computed<ComboboxOption[]>(() =>
-    this.factionsService.factions().map((f) => ({ id: f.id, label: f.name, hint: f.slug })),
+    this.factionsService
+      .factions()
+      .map((f) => ({ id: f.id, label: f.name, hint: f.slug, kind: 'faction' as const })),
   );
   protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
     ...this.charactersService.characters().map((c) => ({

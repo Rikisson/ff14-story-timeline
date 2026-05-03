@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { DangerButtonComponent, GhostButtonComponent, TagComponent, TagTone } from '@shared/ui';
 import { Plotline, PlotlineStatus } from '../data-access/plotline.types';
 
 const STATUS_LABEL: Record<PlotlineStatus, string> = {
@@ -8,15 +8,15 @@ const STATUS_LABEL: Record<PlotlineStatus, string> = {
   resolved: 'Resolved',
 };
 
-const STATUS_CLASS: Record<PlotlineStatus, string> = {
-  planned: 'bg-slate-100 text-slate-700',
-  active: 'bg-emerald-50 text-emerald-700',
-  resolved: 'bg-indigo-50 text-indigo-700',
+const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
+  planned: 'neutral',
+  active: 'emerald',
+  resolved: 'indigo',
 };
 
 @Component({
   selector: 'app-plotline-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, TagComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -32,10 +32,7 @@ const STATUS_CLASS: Record<PlotlineStatus, string> = {
         }
         <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ plotline().title }}</h3>
         @if (statusInfo(); as s) {
-          <span
-            class="rounded-full px-2 py-0.5 text-xs font-medium"
-            [class]="s.cls"
-          >{{ s.label }}</span>
+          <app-tag [tone]="s.tone">{{ s.label }}</app-tag>
         }
       </div>
       @if (plotline().summary; as s) {
@@ -60,6 +57,6 @@ export class PlotlineCardComponent {
   protected readonly statusInfo = computed(() => {
     const s = this.plotline().status;
     if (!s) return null;
-    return { label: STATUS_LABEL[s], cls: STATUS_CLASS[s] };
+    return { label: STATUS_LABEL[s], tone: STATUS_TONE[s] };
   });
 }

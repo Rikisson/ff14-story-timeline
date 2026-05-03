@@ -8,16 +8,22 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { EntityKind } from '@shared/models';
+import { KIND_PICKER_CLASS } from '@shared/utils';
 
 export interface ComboboxOption {
   id: string;
   label: string;
   hint?: string;
+  kind?: EntityKind;
 }
 
 type ComboItem =
   | { kind: 'create'; query: string }
   | { kind: 'option'; option: ComboboxOption };
+
+const NEUTRAL_PICKER_CLASS =
+  'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100';
 
 @Component({
   selector: 'app-combobox-picker',
@@ -32,7 +38,8 @@ type ComboItem =
               <li>
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 py-0.5 pl-3 pr-1 text-xs text-indigo-900 hover:bg-indigo-100"
+                  class="inline-flex items-center gap-1 rounded-md border py-0.5 pl-3 pr-1 text-xs font-medium"
+                  [class]="chipClass(opt)"
                   [attr.aria-label]="'Remove ' + opt.label"
                   (click)="remove(opt.id)"
                 >
@@ -223,5 +230,9 @@ export class ComboboxPickerComponent {
     const base =
       'flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-sm';
     return active ? `${base} bg-indigo-50 text-indigo-900` : `${base} text-slate-700`;
+  }
+
+  protected chipClass(opt: ComboboxOption): string {
+    return opt.kind ? KIND_PICKER_CLASS[opt.kind] : NEUTRAL_PICKER_CLASS;
   }
 }

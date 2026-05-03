@@ -5,3 +5,4 @@ export * from './entity-ref';
 export * from './in-game-date-input';
 export * from './markdown-text';
 export * from './rich-text-input';
+export * from './tag';

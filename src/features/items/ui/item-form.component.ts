@@ -159,10 +159,14 @@ export class ItemFormComponent {
   private readonly placesService = inject(PlacesService);
 
   protected readonly characterOptions = computed<ComboboxOption[]>(() =>
-    this.charactersService.characters().map((c) => ({ id: c.id, label: c.name, hint: c.slug })),
+    this.charactersService
+      .characters()
+      .map((c) => ({ id: c.id, label: c.name, hint: c.slug, kind: 'character' as const })),
   );
   protected readonly placeOptions = computed<ComboboxOption[]>(() =>
-    this.placesService.places().map((p) => ({ id: p.id, label: p.name, hint: p.slug })),
+    this.placesService
+      .places()
+      .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
   );
 
   protected readonly relatedChars = signal<EntityRef<'character'>[]>([]);

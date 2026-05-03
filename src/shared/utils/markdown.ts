@@ -1,5 +1,6 @@
 import { Marked, Tokens } from 'marked';
 import { EntityKind } from '../models/entity-ref';
+import { INLINE_REF_BASE_CLASS, KIND_TEXT_CLASS } from './entity-kind-palette';
 import {
   INLINE_REF_KIND_BY_PREFIX,
   INLINE_REF_REGEX,
@@ -19,9 +20,6 @@ interface InlineRefToken extends Tokens.Generic {
   id: string;
   displayText: string;
 }
-
-const ANCHOR_CLASS =
-  'text-indigo-700 underline decoration-dotted underline-offset-2 hover:bg-indigo-50';
 
 export function renderMarkdown(text: string, options: MarkdownRefOption[] = []): string {
   if (!text) return '';
@@ -56,7 +54,7 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
           const match = lookup.get(`${kind}:${t.id}`);
           const display = escapeHtml(t.displayText || match?.label || '');
           if (match) {
-            return `<a class="${ANCHOR_CLASS}" data-entity-ref-kind="${kind}" data-entity-ref-id="${escapeHtml(t.id)}" tabindex="0" title="${escapeHtml(match.label)}">${display}</a>`;
+            return `<a class="${INLINE_REF_BASE_CLASS} ${KIND_TEXT_CLASS[kind]}" data-entity-ref-kind="${kind}" data-entity-ref-id="${escapeHtml(t.id)}" tabindex="0" title="${escapeHtml(match.label)}">${display}</a>`;
           }
           return `[${display}]`;
         },

@@ -4,13 +4,14 @@ import {
   DangerButtonComponent,
   EntityRefComponent,
   GhostButtonComponent,
+  TagComponent,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent, TagComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -18,12 +19,7 @@ import { TimelineEvent } from '../data-access/event.types';
     >
       <div class="flex items-start justify-between gap-2">
         <h3 class="m-0 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
-        <span
-          class="rounded bg-amber-500 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white"
-          aria-label="Event entry"
-        >
-          Event
-        </span>
+        <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
       </div>
 
       @if (formattedDate(); as d) {
@@ -45,7 +41,7 @@ import { TimelineEvent } from '../data-access/event.types';
             <app-entity-ref [ref]="p" />
           }
           @for (d of event().relatedDates; track d) {
-            <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
+            <app-tag>{{ d }}</app-tag>
           }
         </div>
       }

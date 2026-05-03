@@ -3,12 +3,13 @@ import {
   DangerButtonComponent,
   EntityRefComponent,
   GhostButtonComponent,
+  TagComponent,
 } from '@shared/ui';
 import { CodexEntry } from '../data-access/codex-entry.types';
 
 @Component({
   selector: 'app-codex-entry-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent, TagComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -17,9 +18,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
       <div class="flex items-start justify-between gap-2">
         <h3 class="m-0 text-lg font-semibold text-slate-900">{{ entry().title }}</h3>
         @if (entry().category; as c) {
-          <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
-            {{ c }}
-          </span>
+          <app-tag>{{ c }}</app-tag>
         }
       </div>
 

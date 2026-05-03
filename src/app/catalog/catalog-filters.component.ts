@@ -99,13 +99,13 @@ export class CatalogFiltersComponent {
   protected readonly characterOptions = computed<ComboboxOption[]>(() =>
     this.charactersService
       .characters()
-      .map((c) => ({ id: c.id, label: c.name }))
+      .map((c) => ({ id: c.id, label: c.name, kind: 'character' as const }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
   protected readonly placeOptions = computed<ComboboxOption[]>(() =>
     this.placesService
       .places()
-      .map((p) => ({ id: p.id, label: p.name }))
+      .map((p) => ({ id: p.id, label: p.name, kind: 'place' as const }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
   protected readonly hasActive = computed(() => {

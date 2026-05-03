@@ -7,7 +7,12 @@ import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { Story, StoriesService } from '@features/stories';
 import { isInGameDateEmpty } from '@shared/models';
-import { EntityRefComponent, GhostButtonComponent, MarkdownTextComponent } from '@shared/ui';
+import {
+  EntityRefComponent,
+  GhostButtonComponent,
+  MarkdownTextComponent,
+  TagComponent,
+} from '@shared/ui';
 import { formatInGameDate, InlineRefOption } from '@shared/utils';
 
 const BTN_BASE =
@@ -28,6 +33,7 @@ const BTN_SECONDARY =
     MarkdownTextComponent,
     GhostButtonComponent,
     EntityRefComponent,
+    TagComponent,
   ],
   host: { class: 'block h-full' },
   template: `
@@ -64,10 +70,8 @@ const BTN_SECONDARY =
           </span>
         </span>
         @if (story().draft) {
-          <span
-            class="absolute left-2 top-2 rounded bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white"
-          >
-            DRAFT
+          <span class="absolute left-2 top-2">
+            <app-tag tone="amber">DRAFT</app-tag>
           </span>
         }
       </a>
@@ -87,13 +91,19 @@ const BTN_SECONDARY =
         @if (tagsVisible()) {
           <div class="mt-auto flex flex-wrap gap-1.5 pt-1">
             @if (formattedDate(); as d) {
-              <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
+              <app-tag>{{ d }}</app-tag>
             }
             @for (c of story().mainCharacters; track c.id) {
               <app-entity-ref [ref]="c" />
             }
             @for (p of story().places; track p.id) {
               <app-entity-ref [ref]="p" />
+            }
+            @for (g of story().genreTags ?? []; track g) {
+              <app-tag>{{ g }}</app-tag>
+            }
+            @for (t of story().toneTags ?? []; track t) {
+              <app-tag>{{ t }}</app-tag>
             }
           </div>
         }
@@ -184,6 +194,12 @@ export class CatalogCardComponent {
 
   protected readonly tagsVisible = computed(() => {
     const s = this.story();
-    return !isInGameDateEmpty(s.inGameDate) || s.mainCharacters.length > 0 || s.places.length > 0;
+    return (
+      !isInGameDateEmpty(s.inGameDate) ||
+      s.mainCharacters.length > 0 ||
+      s.places.length > 0 ||
+      (s.genreTags ?? []).length > 0 ||
+      (s.toneTags ?? []).length > 0
+    );
   });
 }

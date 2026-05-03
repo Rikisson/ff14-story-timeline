@@ -160,41 +160,49 @@ export class CodexEntryFormComponent {
       id: refKey({ kind: 'character', id: c.id }),
       label: c.name,
       hint: KIND_LABEL.character,
+      kind: 'character' as const,
     })),
     ...this.places.places().map((p) => ({
       id: refKey({ kind: 'place', id: p.id }),
       label: p.name,
       hint: KIND_LABEL.place,
+      kind: 'place' as const,
     })),
     ...this.events.events().map((e) => ({
       id: refKey({ kind: 'event', id: e.id }),
       label: e.name,
       hint: KIND_LABEL.event,
+      kind: 'event' as const,
     })),
     ...this.stories.publishedStories().map((s) => ({
       id: refKey({ kind: 'story', id: s.id }),
       label: s.title,
       hint: KIND_LABEL.story,
+      kind: 'story' as const,
     })),
     ...this.plotlines.plotlines().map((p) => ({
       id: refKey({ kind: 'plotline', id: p.id }),
       label: p.title,
       hint: KIND_LABEL.plotline,
+      kind: 'plotline' as const,
     })),
     ...this.items.items().map((i) => ({
       id: refKey({ kind: 'item', id: i.id }),
       label: i.name,
       hint: KIND_LABEL.item,
+      kind: 'item' as const,
     })),
     ...this.factions.factions().map((f) => ({
       id: refKey({ kind: 'faction', id: f.id }),
       label: f.name,
       hint: KIND_LABEL.faction,
+      kind: 'faction' as const,
     })),
     ...this.codex.entries().map((e) => ({
       id: refKey({ kind: 'codexEntry', id: e.id }),
       label: e.title,
       hint: KIND_LABEL.codexEntry,
+      kind: 'codexEntry' as const,
     })),
   ]);
 

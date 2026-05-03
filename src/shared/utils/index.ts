@@ -22,3 +22,10 @@ export type { MarkdownRefOption } from './markdown';
 export { markdownToTiptapHtml, tiptapJsonToMarkdown } from './tiptap-markdown';
 export { compareInGameDate, formatInGameDate } from './in-game-date';
 export type { EraOrdinalLookup, FormatInGameDateOptions } from './in-game-date';
+export {
+  INLINE_REF_BASE_CLASS,
+  KIND_PICKER_CLASS,
+  KIND_TEXT_CLASS,
+  KIND_UI_CLASS,
+  TAG_NEUTRAL_CLASS,
+} from './entity-kind-palette';

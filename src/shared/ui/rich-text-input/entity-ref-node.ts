@@ -1,14 +1,12 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { EntityKind } from '@shared/models';
+import { INLINE_REF_BASE_CLASS, KIND_TEXT_CLASS } from '@shared/utils';
 
 export interface EntityRefAttrs {
   kind: EntityKind;
   id: string;
   displayText: string;
 }
-
-const CHIP_CLASS =
-  'inline-block rounded bg-indigo-100 px-1 py-0.5 text-indigo-800 text-sm font-medium align-baseline';
 
 export const EntityRefNode = Node.create({
   name: 'entityRef',
@@ -43,11 +41,12 @@ export const EntityRefNode = Node.create({
 
   renderHTML({ node, HTMLAttributes }) {
     const display = (node.attrs['displayText'] as string) || '';
+    const kind = (node.attrs['kind'] as EntityKind) ?? 'character';
     return [
       'span',
       mergeAttributes(HTMLAttributes, {
         'data-entity-ref': '',
-        class: CHIP_CLASS,
+        class: `${INLINE_REF_BASE_CLASS} ${KIND_TEXT_CLASS[kind]}`,
       }),
       display,
     ];

@@ -234,10 +234,20 @@ export class StoryMetaPanelComponent {
   });
 
   protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
-    this.characterOptions().map((o) => ({ id: o.id, label: o.label, hint: o.slug })),
+    this.characterOptions().map((o) => ({
+      id: o.id,
+      label: o.label,
+      hint: o.slug,
+      kind: 'character' as const,
+    })),
   );
   protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
-    this.placeOptions().map((o) => ({ id: o.id, label: o.label, hint: o.slug })),
+    this.placeOptions().map((o) => ({
+      id: o.id,
+      label: o.label,
+      hint: o.slug,
+      kind: 'place' as const,
+    })),
   );
   protected readonly characterIds = computed(() => this.meta()?.mainCharacters.map((r) => r.id) ?? []);
   protected readonly placeIds = computed(() => this.meta()?.places.map((r) => r.id) ?? []);
