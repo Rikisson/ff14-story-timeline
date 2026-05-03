@@ -20,7 +20,8 @@ they ship.
 
 Findings from a sweep across all 8 entity types
 (`Character`, `Place`, `TimelineEvent`, `Story`, `CodexEntry`, `Faction`,
-`Item`, `Plotline`) plus `Universe`. Ordered by impact.
+`Item`, `Plotline`) plus `Universe`. Ordered by impact. Items below are
+shipped except where noted as **OPEN**.
 
 - **Event form silently drops half of `TimelineEvent` on save.**
   `event.types.ts` defines `type`, `summary`, `sortOrder`, `consequences`,
@@ -54,32 +55,31 @@ Findings from a sweep across all 8 entity types
 - **`UniversesService.create()` drops `coverImage` and `tags`.**
   `UniverseDraft` advertises them, but only `slug/name/description/
   ownerUid` is persisted. Either wire them or remove them from the draft.
-- **`authorUid` is stored on every entity but never enforced.** Every
+- **OPEN: `authorUid` is stored on every entity but never enforced.** Every
   page's `canEdit(entity)` returns `this.canCreate()`, so any universe
-  member can edit any record regardless of who authored it. Either honor
-  `authorUid` for per-record edit gating or stop storing it.
-- **Concurrent-write protection only exists for stories.**
+  member can edit any record regardless of who authored it. Policy
+  decision pending: honor `authorUid` for per-record edit gating, or
+  drop the parameter and accept "any member edits anything" (current
+  reality, matches Firestore rules).
+- **OPEN: Concurrent-write protection only exists for stories.**
   `StoriesService.saveStory` uses `runTransaction` + `version`.
   Characters/events/items/etc. have the same multi-editor risk
   (`editorUids`) but use plain `updateDoc({ ...patch })` — last write
-  wins silently.
-- **Effect-driven refresh has no cancellation / sequence guard.** Each
-  service's constructor fires `refresh(id)` whenever `activeUniverseId`
-  changes. Rapid switches can let an older promise resolve last and
-  overwrite newer state. CLAUDE.md prescribes `rxMethod` + `tapResponse`
-  for this; none of the services use it.
-- **`Place.factions: string[]` is now visibly asymmetric.**
-  `Faction.relatedPlaces` is `EntityRef<'place'>[]`, but the inverse on
-  `Place` is free strings. `docs/narrative-engine-impl.md` locks this as
-  descriptive, so it's intentional — but it deserves a one-line comment
-  on the field pointing at the doc.
-- **`CodexEntry.relatedRefs?: EntityRef[]` is the only `EntityKind`-untyped
-  related field.** Every other "related" field narrows the kind union;
-  this allows nonsensical refs (e.g. codex entry → itself).
-- **List-page Mode/busy/error state machine is duplicated** across every
-  page component (`Mode = idle | create | edit`, `confirmRemove` with
-  `confirm()`, identical `onSubmit`/`startEdit` flow). A small
-  `useEntityListPage()`-style helper would dedupe.
+  wins silently. Probably acceptable since non-story forms are
+  short-lived round trips, but flagged.
+- **Effect-driven refresh sequence guard.** Each service's constructor
+  fires `refresh(id)` whenever `activeUniverseId` changes. Now uses a
+  monotonic `refreshSeq` in `UniverseEntityService` so older in-flight
+  refreshes silently no-op when a newer one starts.
+- **`Place.factions: string[]` is intentionally asymmetric.** Annotated
+  inline with a doc-pointer comment.
+- **`CodexEntry.relatedRefs?: EntityRef[]` is intentionally untyped.**
+  Codex can reference any kind by design. Annotated inline.
+- **OPEN: List-page Mode/busy/error state machine is duplicated** across
+  every page component (`Mode = idle | create | edit`, `confirmRemove`
+  with `confirm()`, identical `onSubmit`/`startEdit` flow). A small
+  `useEntityListPage()`-style helper would dedupe — pending green-light
+  for the refactor scope.
 
 ## 2. New feature avenues
 

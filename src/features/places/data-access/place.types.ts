@@ -5,6 +5,7 @@ export interface Place {
   slug: string;
   name: string;
   geoPosition: string;
+  // Descriptive labels, not EntityRef<'faction'>[] — see docs/narrative-engine-impl.md "Scope locks".
   factions: string[];
   description?: string;
   type?: string;

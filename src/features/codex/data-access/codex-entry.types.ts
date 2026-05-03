@@ -6,6 +6,7 @@ export interface CodexEntry {
   title: string;
   category?: string;
   body: string;
+  // Intentionally untyped across all EntityKinds — a codex entry can reference anything in the world.
   relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;

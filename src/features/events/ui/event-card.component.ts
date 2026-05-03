@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { TimelineEvent } from '../data-access/event.types';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { CharactersService } from '@features/characters';
+import { PlacesService } from '@features/places';
 import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-card',
@@ -29,14 +31,14 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
       }
 
       @if (
-        event().mainCharacters.length || event().places.length || event().relatedDates.length
+        characterNames().length || placeNames().length || event().relatedDates.length
       ) {
         <div class="flex flex-wrap gap-1.5">
-          @for (c of event().mainCharacters; track c.id) {
-            <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c.id }}</span>
+          @for (c of characterNames(); track $index) {
+            <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
           }
-          @for (p of event().places; track p.id) {
-            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ p.id }}</span>
+          @for (p of placeNames(); track $index) {
+            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ p }}</span>
           }
           @for (d of event().relatedDates; track d) {
             <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
@@ -59,4 +61,21 @@ export class EventCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
+
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+
+  protected readonly characterNames = computed(() => {
+    const refs = this.event().mainCharacters;
+    if (refs.length === 0) return [];
+    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
+    return refs.map((r) => lookup.get(r.id) ?? '?');
+  });
+
+  protected readonly placeNames = computed(() => {
+    const refs = this.event().places;
+    if (refs.length === 0) return [];
+    const lookup = new Map(this.places.places().map((p) => [p.id, p.name]));
+    return refs.map((r) => lookup.get(r.id) ?? '?');
+  });
 }

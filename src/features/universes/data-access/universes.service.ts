@@ -14,17 +14,11 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
+import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { StoredUniverse, Universe, UniverseDraft } from './universe.types';
 
 const PAGE_SIZE = 50;
-
-export class SlugTakenError extends Error {
-  constructor(public readonly slug: string) {
-    super(`Universe slug "${slug}" is already taken.`);
-    this.name = 'SlugTakenError';
-  }
-}
 
 @Injectable({ providedIn: 'root' })
 export class UniversesService {
@@ -58,13 +52,11 @@ export class UniversesService {
 
   async create(draft: UniverseDraft, ownerUid: string): Promise<string> {
     const existing = await this.findBySlug(draft.slug);
-    if (existing) throw new SlugTakenError(draft.slug);
+    if (existing) throw new SlugTakenError('universe', draft.slug);
 
     const id = crypto.randomUUID();
     const data: StoredUniverse = {
-      slug: draft.slug,
-      name: draft.name,
-      description: draft.description,
+      ...draft,
       ownerUid,
       editorUids: [],
       createdAt: Date.now(),

@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthStore } from '@features/auth';
-import { SlugTakenError, UniversesService } from '../data-access/universes.service';
+import { SlugTakenError } from '@shared/models';
+import { UniversesService } from '../data-access/universes.service';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseDraft } from '../data-access/universe.types';
 import { UniverseFormComponent } from './universe-form.component';

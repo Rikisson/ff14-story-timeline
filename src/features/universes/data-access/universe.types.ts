@@ -17,6 +17,4 @@ export interface UniverseDraft {
   slug: string;
   name: string;
   description?: string;
-  coverImage?: string;
-  tags?: string[];
 }
