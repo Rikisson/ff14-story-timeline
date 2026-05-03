@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EntityKind } from '@shared/models';
 import { InlineRefOption, renderMarkdown, renderMarkdownInline } from '@shared/utils';
 import { EntityRefHoverService } from '../entity-ref/entity-ref-hover.service';
@@ -52,12 +53,14 @@ export class MarkdownTextComponent {
   readonly inline = input<boolean>(false);
 
   private readonly hover = inject(EntityRefHoverService);
+  private readonly sanitizer = inject(DomSanitizer);
 
-  protected readonly html = computed(() => {
+  protected readonly html = computed<SafeHtml>(() => {
     const opts = this.options().map((o) => ({ kind: o.kind, id: o.id, label: o.label }));
-    return this.inline()
+    const raw = this.inline()
       ? renderMarkdownInline(this.text(), opts)
       : renderMarkdown(this.text(), opts);
+    return this.sanitizer.bypassSecurityTrustHtml(raw);
   });
 
   protected onPointer(event: Event): void {
