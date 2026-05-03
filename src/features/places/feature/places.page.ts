@@ -1,55 +1,67 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
 import { createEntityListController } from '@shared/data-access';
-import { PrimaryButtonComponent } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
 
 @Component({
   selector: 'app-places-page',
-  imports: [PrimaryButtonComponent, PlaceCardComponent, PlaceFormComponent],
+  imports: [EntityListPaneComponent, PlaceCardComponent, PlaceFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <div class="flex items-center justify-between gap-3">
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">Places</h1>
-        @if (ctrl.canCreate() && ctrl.mode().kind === 'idle') {
-          <button uiPrimary type="button" (click)="ctrl.startCreate()">+ Add place</button>
-        }
-      </div>
+      <h1 class="m-0 text-2xl font-semibold text-slate-900">Places</h1>
 
-      @if (ctrl.mode().kind !== 'idle') {
-        <app-place-form
-          [initial]="ctrl.editingDraft()"
-          [busy]="ctrl.busy()"
-          [errorMessage]="ctrl.errorMessage()"
-          (submitted)="ctrl.submit($event)"
-          (cancelled)="ctrl.cancel()"
+      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+        <app-entity-list-pane
+          [items]="listItems()"
+          [selectedId]="ctrl.selectedId()"
+          [hasMore]="service.hasMore()"
+          [loadingMore]="service.loadingMore()"
+          [canCreate]="ctrl.canCreate()"
+          createLabel="+ Add place"
+          emptyMessage="No places yet."
+          ariaLabel="Places list"
+          (select)="onSelect($event)"
+          (create)="ctrl.startCreate()"
+          (loadMore)="service.loadMore()"
         />
-      }
 
-      @if (places().length === 0) {
-        <p class="text-slate-600">No places yet.</p>
-      } @else {
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] justify-start gap-4">
-          @for (p of places(); track p.id) {
-            <li>
-              <app-place-card
-                [place]="p"
-                [canEdit]="ctrl.canCreate()"
-                (edit)="ctrl.startEdit(p)"
-                (remove)="ctrl.confirmRemove(p)"
-              />
-            </li>
+        <section class="flex flex-col gap-3" aria-label="Place details">
+          @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
+            <app-place-form
+              [initial]="ctrl.editingDraft()"
+              [busy]="ctrl.busy()"
+              [errorMessage]="ctrl.errorMessage()"
+              (submitted)="ctrl.submit($event)"
+              (cancelled)="ctrl.cancel()"
+            />
+          } @else if (ctrl.selected(); as p) {
+            <app-place-card
+              [place]="p"
+              [canEdit]="ctrl.canCreate()"
+              (edit)="ctrl.startEdit(p)"
+              (remove)="ctrl.confirmRemove(p)"
+            />
+          } @else {
+            <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
+              Select a place to view details.
+            </p>
           }
-        </ul>
-      }
+        </section>
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlacesPage {
-  private readonly service = inject(PlacesService);
+  protected readonly service = inject(PlacesService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly places = this.service.places;
+  private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
   protected readonly ctrl = createEntityListController<Place, PlaceDraft>({
     entities: this.places,
@@ -62,4 +74,33 @@ export class PlacesPage {
     }),
     removeLabel: (p) => p.name,
   });
+
+  protected readonly listItems = computed<ListPaneItem[]>(() =>
+    this.places().map((p) => ({
+      id: p.id,
+      label: p.name,
+      secondary: p.geoPosition || undefined,
+    })),
+  );
+
+  constructor() {
+    effect(() => {
+      const id = this.routeId().get('id');
+      this.ctrl.select(id ?? null);
+    });
+
+    effect(() => {
+      const id = this.ctrl.selectedId();
+      const current = this.routeId().get('id') ?? null;
+      if (id !== current) {
+        void this.router.navigate(id ? ['/places', id] : ['/places'], {
+          replaceUrl: true,
+        });
+      }
+    });
+  }
+
+  protected onSelect(id: string): void {
+    void this.router.navigate(['/places', id]);
+  }
 }

@@ -25,7 +25,6 @@ function setup() {
   const mockStories = {
     getStory: vi.fn(async () => structuredClone(sampleStory)),
     saveStory: vi.fn(),
-    getAuthorStories: vi.fn(),
     createDraftStory: vi.fn(),
     deleteStory: vi.fn(),
     refreshPublished: vi.fn(),

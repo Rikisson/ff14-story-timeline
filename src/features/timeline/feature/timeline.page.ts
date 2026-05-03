@@ -26,7 +26,6 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
 
       <app-catalog-filters
         [value]="filters()"
-        [showMineFilter]="!!user()"
         [showPlotlineFilter]="true"
         [showSortControl]="true"
         [sortDirection]="sortDirection()"
@@ -77,18 +76,11 @@ export class TimelinePage {
     plotlines: [],
   }));
 
-  protected readonly filteredStories = computed<Story[]>(() => {
-    const f = this.itemFilters();
-    const uid = this.user()?.uid ?? null;
-    return this.published().filter((s) => {
-      if (f.mineOnly && (!uid || s.authorUid !== uid)) return false;
-      return matchesStory(s, f);
-    });
-  });
+  protected readonly filteredStories = computed<Story[]>(() =>
+    this.published().filter((s) => matchesStory(s, this.itemFilters())),
+  );
 
-  protected readonly filteredEvents = computed<TimelineEvent[]>(() => {
-    const f = this.itemFilters();
-    const uid = this.user()?.uid ?? null;
-    return this.allEvents().filter((e) => matchesEvent(e, f, uid));
-  });
+  protected readonly filteredEvents = computed<TimelineEvent[]>(() =>
+    this.allEvents().filter((e) => matchesEvent(e, this.itemFilters())),
+  );
 }

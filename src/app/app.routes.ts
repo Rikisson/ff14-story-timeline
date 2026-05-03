@@ -7,6 +7,10 @@ export const routes: Routes = [
     loadComponent: () => import('./catalog/catalog.page').then((m) => m.CatalogPage),
   },
   {
+    path: 'library/:id',
+    loadComponent: () => import('./catalog/catalog.page').then((m) => m.CatalogPage),
+  },
+  {
     path: 'play',
     canActivate: [universeGuard],
     loadChildren: () => import('@features/player').then((m) => m.PLAYER_ROUTES),

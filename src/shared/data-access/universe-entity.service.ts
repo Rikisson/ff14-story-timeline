@@ -8,7 +8,9 @@ import {
   limit,
   orderBy,
   query,
+  QueryDocumentSnapshot,
   setDoc,
+  startAfter,
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
@@ -16,7 +18,7 @@ import { UniverseStore } from '@features/universes';
 import { EntityKind, SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../app/firebase/firebase.service';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? `${err.name}: ${err.message}` : String(err);
@@ -39,6 +41,13 @@ export abstract class UniverseEntityService<
   private readonly _refreshError = signal<string | null>(null);
   readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
 
+  private readonly _hasMore = signal(false);
+  readonly hasMore: Signal<boolean> = this._hasMore.asReadonly();
+
+  private readonly _loadingMore = signal(false);
+  readonly loadingMore: Signal<boolean> = this._loadingMore.asReadonly();
+
+  private cursor: QueryDocumentSnapshot | null = null;
   private refreshSeq = 0;
 
   constructor() {
@@ -47,6 +56,8 @@ export abstract class UniverseEntityService<
         const id = this.universes.activeUniverseId();
         if (!id) {
           this._entities.set([]);
+          this._hasMore.set(false);
+          this.cursor = null;
           this._refreshError.set(null);
           return;
         }
@@ -64,6 +75,8 @@ export abstract class UniverseEntityService<
     const seq = ++this.refreshSeq;
     if (!id) {
       this._entities.set([]);
+      this._hasMore.set(false);
+      this.cursor = null;
       return;
     }
     const q = query(
@@ -73,9 +86,37 @@ export abstract class UniverseEntityService<
     );
     const snap = await getDocs(q);
     if (seq !== this.refreshSeq) return;
+    this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+    this._hasMore.set(snap.docs.length === PAGE_SIZE);
     this._entities.set(
       snap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as TEntity),
     );
+  }
+
+  async loadMore(): Promise<void> {
+    const id = this.universes.activeUniverseId();
+    if (!id || !this.cursor || !this._hasMore() || this._loadingMore()) return;
+    this._loadingMore.set(true);
+    const seq = this.refreshSeq;
+    try {
+      const q = query(
+        fsCollection(this.firebase.firestore, 'universes', id, this.collectionName),
+        orderBy('createdAt', 'desc'),
+        startAfter(this.cursor),
+        limit(PAGE_SIZE),
+      );
+      const snap = await getDocs(q);
+      if (seq !== this.refreshSeq) return;
+      this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : this.cursor;
+      this._hasMore.set(snap.docs.length === PAGE_SIZE);
+      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as TEntity);
+      this._entities.update((curr) => [...curr, ...next]);
+    } catch (err) {
+      console.error(`${this.collectionName} loadMore failed`, err);
+      this._refreshError.set(errorMessage(err));
+    } finally {
+      this._loadingMore.set(false);
+    }
   }
 
   async create(draft: TDraft, authorUid: string): Promise<string> {

@@ -7,7 +7,6 @@ function setup() {
   const mockStories = {
     getStory: vi.fn(),
     saveStory: vi.fn(),
-    getAuthorStories: vi.fn(),
     createDraftStory: vi.fn(),
     deleteStory: vi.fn(),
     refreshPublished: vi.fn(),

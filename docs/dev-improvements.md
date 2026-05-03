@@ -10,9 +10,12 @@ they ship.
 
 - **No Firebase API key restriction** — domain restriction in Cloud Console
   still pending. No code change required; pairs with the GitHub Pages deploy.
-- **No pagination cursor / "Load more" UI** — list queries cap at 50 via
-  `limit(50)`, but there's no UI or service method to fetch the next page.
-  Pair with a "Load more" button when collections grow.
+- **List filters run client-side over the loaded page.** Master-detail list
+  pages paginate via Firestore cursors, but filters (characters, places,
+  plotlines) are applied to the already-loaded set. Selecting a tight filter
+  on a large collection may show very few matches until the user clicks
+  "View more" enough times. Server-side filtering needs composite indexes
+  per filter combination — meaningful per-feature work, not blanket.
 - **Test coverage is thin.** Editor and player stores have basic specs;
   services, guards, and components are still uncovered.
 
@@ -38,6 +41,10 @@ they ship.
 
 ### World-building
 
+- **Entity media — image per entity.** Characters, places, items, factions,
+  events, plotlines, codex entries should accept an uploaded image (cover or
+  portrait). Storage layout mirrors the existing per-character portrait
+  uploads; surface in the detail pane.
 - **Detail pages for Characters, Places, Events** (today they're list-only).
 - **Map view of places** — store lat/lon, render with leaflet/maplibre.
 - **Relationship graph** — Rete is already in the bundle; reuse it.

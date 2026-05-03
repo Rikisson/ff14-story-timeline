@@ -1,27 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthStore } from '@features/auth';
-import { StoriesService, Story } from '@features/stories';
+import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import { PrimaryButtonComponent } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PrimaryButtonComponent } from '@shared/ui';
 import {
   CatalogFiltersComponent,
   CatalogFilters,
   EMPTY_FILTERS,
   matchesStory,
 } from './catalog-filters.component';
-import { CatalogListComponent } from './catalog-list.component';
+import { CatalogCardComponent } from './catalog-card.component';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [CatalogFiltersComponent, CatalogListComponent, PrimaryButtonComponent],
+  imports: [
+    CatalogCardComponent,
+    CatalogFiltersComponent,
+    EntityListPaneComponent,
+    PrimaryButtonComponent,
+  ],
   template: `
     <div class="flex flex-col gap-4">
       <h1 class="sr-only">Stories</h1>
       <div class="flex flex-wrap items-end justify-between gap-3">
         <app-catalog-filters
           [value]="filters()"
-          [showMineFilter]="!!user()"
           (filtersChange)="filters.set($event)"
           (reset)="filters.set(EMPTY_FILTERS)"
         />
@@ -37,30 +42,41 @@ import { CatalogListComponent } from './catalog-list.component';
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
-      @if (sourceStories().length === 0) {
-        <p class="text-slate-600">
-          @if (filters().mineOnly) {
-            You haven't created any stories yet.
-          } @else {
-            No stories published yet.
-          }
-        </p>
-      } @else if (filteredStories().length === 0) {
-        <p class="text-slate-600">No stories match the current filters.</p>
-      } @else {
-        <app-catalog-list
-          [stories]="filteredStories()"
-          [canManage]="canCreate()"
-          (remove)="deleteStory($event)"
+      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+        <app-entity-list-pane
+          [items]="listItems()"
+          [selectedId]="selectedId()"
+          [hasMore]="stories.hasMore()"
+          [loadingMore]="stories.loadingMore()"
+          [canCreate]="false"
+          emptyMessage="No stories match the current filters."
+          ariaLabel="Stories list"
+          (select)="onSelect($event)"
+          (loadMore)="stories.loadMorePublished()"
         />
-      }
+
+        <section class="flex flex-col" aria-label="Story details">
+          @if (selected(); as s) {
+            <app-catalog-card
+              [story]="s"
+              [canEdit]="canCreate()"
+              (remove)="deleteStory($event)"
+            />
+          } @else {
+            <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
+              Select a story to view details.
+            </p>
+          }
+        </section>
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalogPage {
-  private readonly stories = inject(StoriesService);
+  protected readonly stories = inject(StoriesService);
   private readonly universes = inject(UniverseStore);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly user = inject(AuthStore).user;
 
@@ -68,40 +84,44 @@ export class CatalogPage {
     () => !!this.user() && this.universes.isMemberOfActive(),
   );
 
-  readonly mineOnly = input<string | undefined>();
-
   protected readonly published = this.stories.publishedStories;
-  protected readonly myStories = signal<Story[]>([]);
   protected readonly filters = signal<CatalogFilters>(EMPTY_FILTERS);
   protected readonly creating = signal(false);
   protected readonly actionError = signal<string | null>(null);
   protected readonly EMPTY_FILTERS = EMPTY_FILTERS;
-
-  protected readonly sourceStories = computed<Story[]>(() =>
-    this.filters().mineOnly ? this.myStories() : this.published(),
-  );
+  private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
+  private readonly _selectedId = signal<string | null>(null);
+  protected readonly selectedId = this._selectedId.asReadonly();
 
   protected readonly filteredStories = computed(() => {
     const f = this.filters();
-    return this.sourceStories().filter((s) => matchesStory(s, f));
+    return this.published().filter((s) => matchesStory(s, f));
   });
+
+  protected readonly selected = computed(() => {
+    const id = this.selectedId();
+    return id ? this.published().find((s) => s.id === id) ?? null : null;
+  });
+
+  protected readonly listItems = computed<ListPaneItem[]>(() =>
+    this.filteredStories().map((s) => ({
+      id: s.id,
+      label: s.title || 'Untitled',
+      secondary: s.summary || undefined,
+      thumbnailUrl: s.coverImage || undefined,
+      badge: s.draft ? { text: 'Draft', tone: 'amber' } : undefined,
+    })),
+  );
 
   constructor() {
     effect(() => {
-      if (this.mineOnly() === 'true') {
-        this.filters.update((f) => (f.mineOnly ? f : { ...f, mineOnly: true }));
-      }
+      const id = this.routeId().get('id');
+      this._selectedId.set(id ?? null);
     });
+  }
 
-    effect(() => {
-      const u = this.user();
-      if (!u) {
-        this.myStories.set([]);
-        if (this.filters().mineOnly) this.filters.set({ ...this.filters(), mineOnly: false });
-        return;
-      }
-      void this.stories.getAuthorStories(u.uid).then((list) => this.myStories.set(list));
-    });
+  protected onSelect(id: string): void {
+    void this.router.navigate(['/library', id]);
   }
 
   protected async createStory(): Promise<void> {
@@ -111,7 +131,6 @@ export class CatalogPage {
     this.actionError.set(null);
     try {
       const id = await this.stories.createDraftStory(u.uid);
-      void this.stories.getAuthorStories(u.uid).then((list) => this.myStories.set(list));
       await this.router.navigate(['/edit', id]);
     } catch (err) {
       this.actionError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
@@ -121,15 +140,15 @@ export class CatalogPage {
   }
 
   protected async deleteStory(id: string): Promise<void> {
-    const u = this.user();
-    if (!u) return;
     try {
       await this.stories.deleteStory(id);
     } catch (err) {
       this.actionError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
       return;
     }
-    this.myStories.update((list) => list.filter((s) => s.id !== id));
+    if (this.selectedId() === id) {
+      void this.router.navigate(['/']);
+    }
     void this.stories.refreshPublished();
   }
 }

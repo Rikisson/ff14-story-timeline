@@ -10,14 +10,12 @@ export interface CatalogFilters {
   characters: string[];
   places: string[];
   plotlines: string[];
-  mineOnly: boolean;
 }
 
 export const EMPTY_FILTERS: CatalogFilters = {
   characters: [],
   places: [],
   plotlines: [],
-  mineOnly: false,
 };
 
 export type SortDirection = 'asc' | 'desc';
@@ -41,12 +39,7 @@ export function matchesStory(story: Story, f: CatalogFilters): boolean {
   return true;
 }
 
-export function matchesEvent(
-  event: TimelineEvent,
-  f: CatalogFilters,
-  uid: string | null,
-): boolean {
-  if (f.mineOnly && (!uid || event.authorUid !== uid)) return false;
+export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
   if (
     f.characters.length &&
     !event.mainCharacters.some((r) => f.characters.includes(r.id))
@@ -117,19 +110,6 @@ export function matchesEvent(
         </label>
       }
 
-      @if (showMineFilter()) {
-        <label
-          class="flex h-10 items-center gap-2 self-end rounded-md border border-slate-300 bg-white px-3 text-sm"
-        >
-          <input
-            type="checkbox"
-            [checked]="value().mineOnly"
-            (change)="emitMine($event)"
-          />
-          My stories
-        </label>
-      }
-
       @if (hasActive()) {
         <button uiGhost type="button" class="self-end" (click)="reset.emit()">
           Clear filters
@@ -141,7 +121,6 @@ export function matchesEvent(
 })
 export class CatalogFiltersComponent {
   readonly value = input.required<CatalogFilters>();
-  readonly showMineFilter = input<boolean>(false);
   readonly showSortControl = input<boolean>(false);
   readonly showPlotlineFilter = input<boolean>(false);
   readonly sortDirection = input<SortDirection>('asc');
@@ -173,23 +152,11 @@ export class CatalogFiltersComponent {
   );
   protected readonly hasActive = computed(() => {
     const v = this.value();
-    return (
-      v.characters.length > 0 ||
-      v.places.length > 0 ||
-      v.plotlines.length > 0 ||
-      v.mineOnly
-    );
+    return v.characters.length > 0 || v.places.length > 0 || v.plotlines.length > 0;
   });
 
   protected setKey(key: ArrayKey, next: string[]): void {
     this.filtersChange.emit({ ...this.value(), [key]: next });
-  }
-
-  protected emitMine(event: Event): void {
-    this.filtersChange.emit({
-      ...this.value(),
-      mineOnly: (event.target as HTMLInputElement).checked,
-    });
   }
 
   protected emitSort(event: Event): void {

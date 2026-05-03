@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { CalendarService } from '@features/calendar';
 import {
   EventCardComponent,
   EventsService,
@@ -6,54 +9,67 @@ import {
   TimelineEventDraft,
 } from '@features/events';
 import { createEntityListController } from '@shared/data-access';
-import { PrimaryButtonComponent } from '@shared/ui';
+import { isInGameDateEmpty } from '@shared/models';
+import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { formatInGameDate } from '@shared/utils';
 import { EventFormComponent } from '../ui/event-form.component';
 
 @Component({
   selector: 'app-events-page',
-  imports: [PrimaryButtonComponent, EventCardComponent, EventFormComponent],
+  imports: [EntityListPaneComponent, EventCardComponent, EventFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <div class="flex items-center justify-between gap-3">
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">Events</h1>
-        @if (ctrl.canCreate() && ctrl.mode().kind === 'idle') {
-          <button uiPrimary type="button" (click)="ctrl.startCreate()">+ Add event</button>
-        }
-      </div>
+      <h1 class="m-0 text-2xl font-semibold text-slate-900">Events</h1>
 
-      @if (ctrl.mode().kind !== 'idle') {
-        <app-event-form
-          [initial]="ctrl.editingDraft()"
-          [busy]="ctrl.busy()"
-          [errorMessage]="ctrl.errorMessage()"
-          (submitted)="ctrl.submit($event)"
-          (cancelled)="ctrl.cancel()"
+      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+        <app-entity-list-pane
+          [items]="listItems()"
+          [selectedId]="ctrl.selectedId()"
+          [hasMore]="service.hasMore()"
+          [loadingMore]="service.loadingMore()"
+          [canCreate]="ctrl.canCreate()"
+          createLabel="+ Add event"
+          emptyMessage="No events yet."
+          ariaLabel="Events list"
+          (select)="onSelect($event)"
+          (create)="ctrl.startCreate()"
+          (loadMore)="service.loadMore()"
         />
-      }
 
-      @if (events().length === 0) {
-        <p class="text-slate-600">No events yet.</p>
-      } @else {
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] justify-start gap-4">
-          @for (e of events(); track e.id) {
-            <li>
-              <app-event-card
-                [event]="e"
-                [canEdit]="ctrl.canCreate()"
-                (edit)="ctrl.startEdit(e)"
-                (remove)="ctrl.confirmRemove(e)"
-              />
-            </li>
+        <section class="flex flex-col gap-3" aria-label="Event details">
+          @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
+            <app-event-form
+              [initial]="ctrl.editingDraft()"
+              [busy]="ctrl.busy()"
+              [errorMessage]="ctrl.errorMessage()"
+              (submitted)="ctrl.submit($event)"
+              (cancelled)="ctrl.cancel()"
+            />
+          } @else if (ctrl.selected(); as e) {
+            <app-event-card
+              [event]="e"
+              [canEdit]="ctrl.canCreate()"
+              (edit)="ctrl.startEdit(e)"
+              (remove)="ctrl.confirmRemove(e)"
+            />
+          } @else {
+            <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
+              Select an event to view details.
+            </p>
           }
-        </ul>
-      }
+        </section>
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventsPage {
-  private readonly service = inject(EventsService);
+  protected readonly service = inject(EventsService);
+  private readonly calendar = inject(CalendarService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly events = this.service.events;
+  private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
   protected readonly ctrl = createEntityListController<TimelineEvent, TimelineEventDraft>({
     entities: this.events,
@@ -77,4 +93,45 @@ export class EventsPage {
     }),
     removeLabel: (e) => e.name,
   });
+
+  protected readonly listItems = computed<ListPaneItem[]>(() =>
+    this.events().map((e) => ({
+      id: e.id,
+      label: e.name,
+      secondary: this.formatDateLabel(e),
+    })),
+  );
+
+  constructor() {
+    effect(() => {
+      const id = this.routeId().get('id');
+      this.ctrl.select(id ?? null);
+    });
+
+    effect(() => {
+      const id = this.ctrl.selectedId();
+      const current = this.routeId().get('id') ?? null;
+      if (id !== current) {
+        void this.router.navigate(id ? ['/events', id] : ['/events'], {
+          replaceUrl: true,
+        });
+      }
+    });
+  }
+
+  protected onSelect(id: string): void {
+    void this.router.navigate(['/events', id]);
+  }
+
+  private formatDateLabel(e: TimelineEvent): string | undefined {
+    if (isInGameDateEmpty(e.inGameDate)) return undefined;
+    return (
+      formatInGameDate(e.inGameDate, {
+        eraName: e.inGameDate.era ? this.calendar.eraNameLookup(e.inGameDate.era) : undefined,
+        monthName: e.inGameDate.month
+          ? this.calendar.monthNameLookup(e.inGameDate.month)
+          : undefined,
+      }) || undefined
+    );
+  }
 }

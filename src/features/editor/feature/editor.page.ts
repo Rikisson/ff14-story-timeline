@@ -42,7 +42,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <p>Loading...</p>
     } @else if (store.error(); as err) {
       <p class="error">{{ err }}</p>
-      <p><a routerLink="/" [queryParams]="{ mineOnly: 'true' }">Back to my stories</a></p>
+      <p><a routerLink="/">Back to stories</a></p>
     } @else if (store.storyId()) {
       <header class="bar">
         <h1>
