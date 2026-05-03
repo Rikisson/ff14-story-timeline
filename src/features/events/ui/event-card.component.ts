@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CalendarService } from '@features/calendar';
-import { CharactersService } from '@features/characters';
-import { PlacesService } from '@features/places';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import {
+  DangerButtonComponent,
+  EntityRefComponent,
+  GhostButtonComponent,
+} from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -33,14 +35,14 @@ import { TimelineEvent } from '../data-access/event.types';
       }
 
       @if (
-        characterNames().length || placeNames().length || event().relatedDates.length
+        event().mainCharacters.length || event().places.length || event().relatedDates.length
       ) {
         <div class="flex flex-wrap gap-1.5">
-          @for (c of characterNames(); track $index) {
-            <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
+          @for (c of event().mainCharacters; track c.id) {
+            <app-entity-ref [ref]="c" />
           }
-          @for (p of placeNames(); track $index) {
-            <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{{ p }}</span>
+          @for (p of event().places; track p.id) {
+            <app-entity-ref [ref]="p" />
           }
           @for (d of event().relatedDates; track d) {
             <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
@@ -64,8 +66,6 @@ export class EventCardComponent {
   readonly edit = output<void>();
   readonly remove = output<void>();
 
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
   private readonly calendar = inject(CalendarService);
 
   protected readonly formattedDate = computed(() => {
@@ -74,19 +74,5 @@ export class EventCardComponent {
       eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
       monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
     });
-  });
-
-  protected readonly characterNames = computed(() => {
-    const refs = this.event().mainCharacters;
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
-  });
-
-  protected readonly placeNames = computed(() => {
-    const refs = this.event().places;
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.places.places().map((p) => [p.id, p.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
   });
 }

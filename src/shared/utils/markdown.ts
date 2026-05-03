@@ -56,7 +56,7 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
           const match = lookup.get(`${kind}:${t.id}`);
           const display = escapeHtml(t.displayText || match?.label || '');
           if (match) {
-            return `<a class="${ANCHOR_CLASS}" title="${escapeHtml(match.label)}">${display}</a>`;
+            return `<a class="${ANCHOR_CLASS}" data-entity-ref-kind="${kind}" data-entity-ref-id="${escapeHtml(t.id)}" tabindex="0" title="${escapeHtml(match.label)}">${display}</a>`;
           }
           return `[${display}]`;
         },

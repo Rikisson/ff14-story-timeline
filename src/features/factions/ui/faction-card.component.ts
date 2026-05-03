@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { CharactersService } from '@features/characters';
-import { PlacesService } from '@features/places';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  DangerButtonComponent,
+  EntityRefComponent,
+  GhostButtonComponent,
+} from '@shared/ui';
 import { Faction } from '../data-access/faction.types';
 
 @Component({
   selector: 'app-faction-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -23,18 +25,26 @@ import { Faction } from '../data-access/faction.types';
         <p class="m-0 line-clamp-3 text-sm text-slate-700">{{ d }}</p>
       }
 
-      <dl class="grid grid-cols-[max-content_1fr] gap-x-2 text-xs text-slate-600">
-        @if (hqName(); as n) {
+      <dl class="grid grid-cols-[max-content_1fr] items-baseline gap-x-2 gap-y-1 text-xs text-slate-600">
+        @if (faction().headquarters; as hq) {
           <dt class="font-medium text-slate-500">HQ</dt>
-          <dd class="m-0">{{ n }}</dd>
+          <dd class="m-0"><app-entity-ref [ref]="hq" /></dd>
         }
-        @if (memberNames().length > 0) {
+        @if ((faction().relatedCharacters ?? []).length > 0) {
           <dt class="font-medium text-slate-500">Members</dt>
-          <dd class="m-0">{{ memberNames().join(', ') }}</dd>
+          <dd class="m-0 flex flex-wrap gap-1">
+            @for (c of faction().relatedCharacters ?? []; track c.id) {
+              <app-entity-ref [ref]="c" />
+            }
+          </dd>
         }
-        @if (placeNames().length > 0) {
+        @if ((faction().relatedPlaces ?? []).length > 0) {
           <dt class="font-medium text-slate-500">Places</dt>
-          <dd class="m-0">{{ placeNames().join(', ') }}</dd>
+          <dd class="m-0 flex flex-wrap gap-1">
+            @for (p of faction().relatedPlaces ?? []; track p.id) {
+              <app-entity-ref [ref]="p" />
+            }
+          </dd>
         }
       </dl>
 
@@ -53,27 +63,4 @@ export class FactionCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
-
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-
-  protected readonly hqName = computed(() => {
-    const ref = this.faction().headquarters;
-    if (!ref) return null;
-    return this.places.places().find((p) => p.id === ref.id)?.name ?? null;
-  });
-
-  protected readonly memberNames = computed(() => {
-    const refs = this.faction().relatedCharacters ?? [];
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
-  });
-
-  protected readonly placeNames = computed(() => {
-    const refs = this.faction().relatedPlaces ?? [];
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.places.places().map((p) => [p.id, p.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
-  });
 }

@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { CharactersService } from '@features/characters';
-import { PlacesService } from '@features/places';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  DangerButtonComponent,
+  EntityRefComponent,
+  GhostButtonComponent,
+} from '@shared/ui';
 import { Item } from '../data-access/item.types';
 
 @Component({
   selector: 'app-item-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -32,18 +34,22 @@ import { Item } from '../data-access/item.types';
         <p class="m-0 line-clamp-3 text-sm text-slate-700">{{ d }}</p>
       }
 
-      <dl class="grid grid-cols-[max-content_1fr] gap-x-2 text-xs text-slate-600">
-        @if (ownerName(); as n) {
+      <dl class="grid grid-cols-[max-content_1fr] items-baseline gap-x-2 gap-y-1 text-xs text-slate-600">
+        @if (item().owner; as o) {
           <dt class="font-medium text-slate-500">Owner</dt>
-          <dd class="m-0">{{ n }}</dd>
+          <dd class="m-0"><app-entity-ref [ref]="o" /></dd>
         }
-        @if (placeName(); as n) {
+        @if (item().place; as p) {
           <dt class="font-medium text-slate-500">Place</dt>
-          <dd class="m-0">{{ n }}</dd>
+          <dd class="m-0"><app-entity-ref [ref]="p" /></dd>
         }
-        @if (relatedNames().length > 0) {
+        @if ((item().relatedCharacters ?? []).length > 0) {
           <dt class="font-medium text-slate-500">Related</dt>
-          <dd class="m-0">{{ relatedNames().join(', ') }}</dd>
+          <dd class="m-0 flex flex-wrap gap-1">
+            @for (c of item().relatedCharacters ?? []; track c.id) {
+              <app-entity-ref [ref]="c" />
+            }
+          </dd>
         }
       </dl>
 
@@ -62,26 +68,4 @@ export class ItemCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
-
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-
-  protected readonly ownerName = computed(() => {
-    const ref = this.item().owner;
-    if (!ref) return null;
-    return this.characters.characters().find((c) => c.id === ref.id)?.name ?? null;
-  });
-
-  protected readonly placeName = computed(() => {
-    const ref = this.item().place;
-    if (!ref) return null;
-    return this.places.places().find((p) => p.id === ref.id)?.name ?? null;
-  });
-
-  protected readonly relatedNames = computed(() => {
-    const refs = this.item().relatedCharacters ?? [];
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?').filter(Boolean);
-  });
 }

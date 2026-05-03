@@ -7,7 +7,7 @@ import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { Story, StoriesService } from '@features/stories';
 import { isInGameDateEmpty } from '@shared/models';
-import { GhostButtonComponent, MarkdownTextComponent } from '@shared/ui';
+import { EntityRefComponent, GhostButtonComponent, MarkdownTextComponent } from '@shared/ui';
 import { formatInGameDate, InlineRefOption } from '@shared/utils';
 
 const BTN_BASE =
@@ -22,7 +22,13 @@ const BTN_SECONDARY =
 
 @Component({
   selector: 'app-catalog-card',
-  imports: [RouterLink, NgOptimizedImage, MarkdownTextComponent, GhostButtonComponent],
+  imports: [
+    RouterLink,
+    NgOptimizedImage,
+    MarkdownTextComponent,
+    GhostButtonComponent,
+    EntityRefComponent,
+  ],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -83,13 +89,11 @@ const BTN_SECONDARY =
             @if (formattedDate(); as d) {
               <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
             }
-            @for (c of characterNames(); track $index) {
-              <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
+            @for (c of story().mainCharacters; track c.id) {
+              <app-entity-ref [ref]="c" />
             }
-            @for (p of placeNames(); track $index) {
-              <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
-                {{ p }}
-              </span>
+            @for (p of story().places; track p.id) {
+              <app-entity-ref [ref]="p" />
             }
           </div>
         }
@@ -176,20 +180,6 @@ export class CatalogCardComponent {
       eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
       monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
     });
-  });
-
-  protected readonly characterNames = computed(() => {
-    const refs = this.story().mainCharacters;
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
-  });
-
-  protected readonly placeNames = computed(() => {
-    const refs = this.story().places;
-    if (refs.length === 0) return [];
-    const lookup = new Map(this.places.places().map((p) => [p.id, p.name]));
-    return refs.map((r) => lookup.get(r.id) ?? '?');
   });
 
   protected readonly tagsVisible = computed(() => {
