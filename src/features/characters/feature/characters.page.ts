@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthStore } from '@features/auth';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
+import { UniverseStore } from '@features/universes';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
@@ -20,7 +21,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Characters</h1>
-        @if (user() && mode().kind === 'idle') {
+        @if (canCreate() && mode().kind === 'idle') {
           <button uiPrimary type="button" (click)="startCreate()">+ Add character</button>
         }
       </div>
@@ -64,12 +65,17 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class CharactersPage {
   private readonly service = inject(CharactersService);
+  private readonly universes = inject(UniverseStore);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly characters = this.service.characters;
   protected readonly mode = signal<Mode>({ kind: 'idle' });
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly canCreate = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
 
   protected readonly editing = computed<Character | null>(() => {
     const m = this.mode();

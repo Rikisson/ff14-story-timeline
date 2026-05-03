@@ -7,6 +7,7 @@ import {
   TimelineEventDraft,
 } from '@features/events';
 import { StoriesService } from '@features/stories';
+import { UniverseStore } from '@features/universes';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { EventFormComponent } from '../ui/event-form.component';
 
@@ -19,7 +20,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Events</h1>
-        @if (user() && mode().kind === 'idle') {
+        @if (canCreate() && mode().kind === 'idle') {
           <button uiPrimary type="button" (click)="startCreate()">+ Add event</button>
         }
       </div>
@@ -58,12 +59,17 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 export class EventsPage {
   private readonly service = inject(EventsService);
   private readonly storiesService = inject(StoriesService);
+  private readonly universes = inject(UniverseStore);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly events = this.service.events;
   protected readonly mode = signal<Mode>({ kind: 'idle' });
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly canCreate = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
 
   protected readonly editingDraft = computed<TimelineEventDraft | null>(() => {
     const m = this.mode();

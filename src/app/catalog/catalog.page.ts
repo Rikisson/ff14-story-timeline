@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthStore } from '@features/auth';
 import { EventsService, TimelineEvent } from '@features/events';
 import { StoriesService, Story } from '@features/stories';
+import { UniverseStore } from '@features/universes';
 import { GhostButtonComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import {
   CatalogFiltersComponent,
@@ -41,7 +42,7 @@ type ViewMode = 'list' | 'timeline';
         />
 
         <div class="flex items-center gap-2">
-          @if (user()) {
+          @if (canCreate()) {
             <button uiPrimary type="button" [loading]="creating()" (click)="createStory()">
               + New story
             </button>
@@ -101,8 +102,13 @@ type ViewMode = 'list' | 'timeline';
 export class CatalogPage {
   private readonly stories = inject(StoriesService);
   private readonly events = inject(EventsService);
+  private readonly universes = inject(UniverseStore);
   private readonly router = inject(Router);
   protected readonly user = inject(AuthStore).user;
+
+  protected readonly canCreate = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
 
   readonly mineOnly = input<string | undefined>();
 

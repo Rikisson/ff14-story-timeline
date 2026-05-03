@@ -13,17 +13,17 @@ export const routes: Routes = [
   },
   {
     path: 'characters',
-    canActivate: [editorGuard],
+    canActivate: [universeGuard],
     loadChildren: () => import('@features/characters').then((m) => m.CHARACTERS_ROUTES),
   },
   {
     path: 'places',
-    canActivate: [editorGuard],
+    canActivate: [universeGuard],
     loadChildren: () => import('@features/places').then((m) => m.PLACES_ROUTES),
   },
   {
     path: 'events',
-    canActivate: [editorGuard],
+    canActivate: [universeGuard],
     loadChildren: () => import('@features/events').then((m) => m.EVENTS_ROUTES),
   },
   {

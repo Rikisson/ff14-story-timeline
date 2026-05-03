@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthStore } from '@features/auth';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
+import { UniverseStore } from '@features/universes';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
@@ -14,7 +15,7 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Places</h1>
-        @if (user() && mode().kind === 'idle') {
+        @if (canCreate() && mode().kind === 'idle') {
           <button uiPrimary type="button" (click)="startCreate()">+ Add place</button>
         }
       </div>
@@ -51,12 +52,17 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class PlacesPage {
   private readonly service = inject(PlacesService);
+  private readonly universes = inject(UniverseStore);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly places = this.service.places;
   protected readonly mode = signal<Mode>({ kind: 'idle' });
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly canCreate = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
 
   protected readonly editingDraft = computed<PlaceDraft | null>(() => {
     const m = this.mode();
