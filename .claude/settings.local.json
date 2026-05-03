@@ -18,7 +18,8 @@
       "Bash(git *)",
       "Bash(pnpm exec *)",
       "Bash(echo \"started $!\")",
-      "PowerShell(Get-NetTCPConnection *)"
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(npm test *)"
     ]
   }
 }

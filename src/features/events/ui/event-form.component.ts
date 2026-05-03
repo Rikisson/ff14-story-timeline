@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
+import { FactionsService } from '@features/factions';
+import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
+import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
 import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
@@ -34,7 +37,7 @@ import { TimelineEventDraft } from '../data-access/event.types';
         {{ initial() ? 'Edit event' : 'Add event' }}
       </h3>
 
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Name</span>
           <input
@@ -52,25 +55,55 @@ import { TimelineEventDraft } from '../data-access/event.types';
             class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
             placeholder="e.g. seventh-umbral-calamity"
           />
-          <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
+          <span class="text-xs text-slate-500">Lowercase, digits, hyphens. Unique within universe.</span>
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Type</span>
+          <input
+            type="text"
+            formControlName="type"
+            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            placeholder="e.g. Battle, Treaty, Cataclysm"
+          />
+        </label>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">In-game date</span>
+          <input
+            type="text"
+            formControlName="inGameDate"
+            list="event-date-suggestions"
+            autocomplete="off"
+            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            placeholder="Year 1, Spring of the Wolf, 1577 6AE…"
+          />
+          <datalist id="event-date-suggestions">
+            @for (d of dateSuggestions(); track d) {
+              <option [value]="d"></option>
+            }
+          </datalist>
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Sort order</span>
+          <input
+            type="number"
+            formControlName="sortOrder"
+            class="h-10 w-28 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            placeholder="0"
+          />
         </label>
       </div>
 
       <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">In-game date</span>
-        <input
-          type="text"
-          formControlName="inGameDate"
-          list="event-date-suggestions"
-          autocomplete="off"
-          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-          placeholder="Year 1, Spring of the Wolf, 1577 6AE…"
-        />
-        <datalist id="event-date-suggestions">
-          @for (d of dateSuggestions(); track d) {
-            <option [value]="d"></option>
-          }
-        </datalist>
+        <span class="font-medium text-slate-700">Summary</span>
+        <textarea
+          formControlName="summary"
+          rows="2"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          placeholder="One-line headline shown in lists."
+        ></textarea>
       </label>
 
       <div class="flex flex-col gap-1 text-sm">
@@ -83,6 +116,16 @@ import { TimelineEventDraft } from '../data-access/event.types';
           (valueChange)="onDescription($event)"
         />
       </div>
+
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Consequences</span>
+        <textarea
+          formControlName="consequences"
+          rows="3"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          placeholder="What changes after this event."
+        ></textarea>
+      </label>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="flex flex-col gap-1 text-sm">
@@ -103,6 +146,52 @@ import { TimelineEventDraft } from '../data-access/event.types';
             placeholder="Search places…"
             emptyMessage="No places in this universe yet."
             (valueChange)="onPlaceIds($event)"
+          />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Related events</span>
+          <app-combobox-picker
+            [options]="eventCombobox()"
+            [value]="relatedEventIds()"
+            placeholder="Search events…"
+            emptyMessage="No other events yet."
+            (valueChange)="onRelatedEventIds($event)"
+          />
+        </div>
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Plotlines</span>
+          <app-combobox-picker
+            [options]="plotlineCombobox()"
+            [value]="plotlineIds()"
+            placeholder="Search plotlines…"
+            emptyMessage="No plotlines yet."
+            (valueChange)="onPlotlineIds($event)"
+          />
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Items</span>
+          <app-combobox-picker
+            [options]="itemCombobox()"
+            [value]="itemIds()"
+            placeholder="Search items…"
+            emptyMessage="No items yet."
+            (valueChange)="onItemIds($event)"
+          />
+        </div>
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Factions</span>
+          <app-combobox-picker
+            [options]="factionCombobox()"
+            [value]="factionIds()"
+            placeholder="Search factions…"
+            emptyMessage="No factions yet."
+            (valueChange)="onFactionIds($event)"
           />
         </div>
       </div>
@@ -150,6 +239,9 @@ export class EventFormComponent {
   private readonly placesService = inject(PlacesService);
   private readonly eventsService = inject(EventsService);
   private readonly storiesService = inject(StoriesService);
+  private readonly plotlinesService = inject(PlotlinesService);
+  private readonly itemsService = inject(ItemsService);
+  private readonly factionsService = inject(FactionsService);
 
   protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
     this.charactersService
@@ -158,6 +250,20 @@ export class EventFormComponent {
   );
   protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
     this.placesService.places().map((p) => ({ id: p.id, label: p.name, hint: p.slug })),
+  );
+  protected readonly eventCombobox = computed<ComboboxOption[]>(() =>
+    this.eventsService.events().map((e) => ({ id: e.id, label: e.name, hint: e.slug })),
+  );
+  protected readonly plotlineCombobox = computed<ComboboxOption[]>(() =>
+    this.plotlinesService
+      .plotlines()
+      .map((p) => ({ id: p.id, label: p.title, hint: p.slug })),
+  );
+  protected readonly itemCombobox = computed<ComboboxOption[]>(() =>
+    this.itemsService.items().map((i) => ({ id: i.id, label: i.name, hint: i.slug })),
+  );
+  protected readonly factionCombobox = computed<ComboboxOption[]>(() =>
+    this.factionsService.factions().map((f) => ({ id: f.id, label: f.name, hint: f.slug })),
   );
   protected readonly dateCombobox = computed<ComboboxOption[]>(() =>
     this.dateSuggestions().map((d) => ({ id: d, label: d })),
@@ -191,16 +297,28 @@ export class EventFormComponent {
 
   protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
   protected readonly places = signal<EntityRef<'place'>[]>([]);
+  protected readonly relatedEvents = signal<EntityRef<'event'>[]>([]);
+  protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
+  protected readonly itemRefs = signal<EntityRef<'item'>[]>([]);
+  protected readonly factionRefs = signal<EntityRef<'faction'>[]>([]);
   protected readonly relatedDates = signal<string[]>([]);
   protected readonly description = signal<string>('');
 
   protected readonly characterIds = computed(() => this.mainCharacters().map((r) => r.id));
   protected readonly placeIds = computed(() => this.places().map((r) => r.id));
+  protected readonly relatedEventIds = computed(() => this.relatedEvents().map((r) => r.id));
+  protected readonly plotlineIds = computed(() => this.plotlineRefs().map((r) => r.id));
+  protected readonly itemIds = computed(() => this.itemRefs().map((r) => r.id));
+  protected readonly factionIds = computed(() => this.factionRefs().map((r) => r.id));
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
+    type: ['', [Validators.maxLength(60)]],
+    summary: ['', [Validators.maxLength(280)]],
+    sortOrder: [null as number | null],
+    consequences: ['', [Validators.maxLength(2000)]],
   });
 
   constructor() {
@@ -210,9 +328,17 @@ export class EventFormComponent {
         slug: init?.slug ?? '',
         name: init?.name ?? '',
         inGameDate: init?.inGameDate ?? '',
+        type: init?.type ?? '',
+        summary: init?.summary ?? '',
+        sortOrder: init?.sortOrder ?? null,
+        consequences: init?.consequences ?? '',
       });
       this.mainCharacters.set(init?.mainCharacters ?? []);
       this.places.set(init?.places ?? []);
+      this.relatedEvents.set(init?.relatedEvents ?? []);
+      this.plotlineRefs.set(init?.plotlineRefs ?? []);
+      this.itemRefs.set(init?.itemRefs ?? []);
+      this.factionRefs.set(init?.factionRefs ?? []);
       this.relatedDates.set(init?.relatedDates ?? []);
       this.description.set(init?.description ?? '');
     });
@@ -226,6 +352,22 @@ export class EventFormComponent {
     this.places.set(ids.map((id) => ({ kind: 'place', id })));
   }
 
+  protected onRelatedEventIds(ids: string[]): void {
+    this.relatedEvents.set(ids.map((id) => ({ kind: 'event', id })));
+  }
+
+  protected onPlotlineIds(ids: string[]): void {
+    this.plotlineRefs.set(ids.map((id) => ({ kind: 'plotline', id })));
+  }
+
+  protected onItemIds(ids: string[]): void {
+    this.itemRefs.set(ids.map((id) => ({ kind: 'item', id })));
+  }
+
+  protected onFactionIds(ids: string[]): void {
+    this.factionRefs.set(ids.map((id) => ({ kind: 'faction', id })));
+  }
+
   protected onRelatedDates(dates: string[]): void {
     this.relatedDates.set(dates);
   }
@@ -237,6 +379,13 @@ export class EventFormComponent {
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
+    const type = v.type.trim();
+    const summary = v.summary.trim();
+    const consequences = v.consequences.trim();
+    const relatedEvents = this.relatedEvents();
+    const plotlineRefs = this.plotlineRefs();
+    const itemRefs = this.itemRefs();
+    const factionRefs = this.factionRefs();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
@@ -245,6 +394,14 @@ export class EventFormComponent {
       mainCharacters: this.mainCharacters(),
       places: this.places(),
       relatedDates: this.relatedDates(),
+      type: type || undefined,
+      summary: summary || undefined,
+      sortOrder: v.sortOrder == null ? undefined : v.sortOrder,
+      consequences: consequences || undefined,
+      relatedEvents: relatedEvents.length > 0 ? relatedEvents : undefined,
+      plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
+      itemRefs: itemRefs.length > 0 ? itemRefs : undefined,
+      factionRefs: factionRefs.length > 0 ? factionRefs : undefined,
     });
   }
 }

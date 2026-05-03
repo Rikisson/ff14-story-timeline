@@ -30,7 +30,8 @@
       "@features/editor": ["src/features/editor/index.ts"],
       "@shared/ui": ["src/shared/ui/index.ts"],
       "@shared/utils": ["src/shared/utils/index.ts"],
-      "@shared/models": ["src/shared/models/index.ts"]
+      "@shared/models": ["src/shared/models/index.ts"],
+      "@shared/data-access": ["src/shared/data-access/index.ts"]
     }
   },
   "angularCompilerOptions": {

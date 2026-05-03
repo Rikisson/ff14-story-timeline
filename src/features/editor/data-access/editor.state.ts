@@ -13,9 +13,23 @@ export type StoryMeta = Pick<
   | 'publishedAt'
 >;
 
+// Fields the editor doesn't author yet but must preserve on save so they
+// don't get wiped from existing stories.
+export type StoryPassthrough = Pick<
+  Story,
+  | 'description'
+  | 'genreTags'
+  | 'toneTags'
+  | 'relatedEvents'
+  | 'plotlineRefs'
+  | 'itemRefs'
+  | 'factionRefs'
+>;
+
 export type EditorState = {
   storyId: string | null;
   meta: StoryMeta | null;
+  passthrough: StoryPassthrough;
   authorUid: string | null;
   startSceneId: string | null;
   scenes: Record<string, Scene>;
@@ -30,6 +44,7 @@ export type EditorState = {
 export const initialEditorState: EditorState = {
   storyId: null,
   meta: null,
+  passthrough: {},
   authorUid: null,
   startSceneId: null,
   scenes: {},

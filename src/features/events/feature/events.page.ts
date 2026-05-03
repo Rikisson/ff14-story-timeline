@@ -84,6 +84,14 @@ export class EventsPage {
           places: e.places,
           inGameDate: e.inGameDate,
           relatedDates: e.relatedDates,
+          type: e.type,
+          summary: e.summary,
+          sortOrder: e.sortOrder,
+          consequences: e.consequences,
+          relatedEvents: e.relatedEvents,
+          plotlineRefs: e.plotlineRefs,
+          itemRefs: e.itemRefs,
+          factionRefs: e.factionRefs,
         }
       : null;
   });

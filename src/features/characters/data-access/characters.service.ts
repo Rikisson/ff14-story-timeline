@@ -1,128 +1,16 @@
-import { effect, inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  setDoc,
-  updateDoc,
-  where,
-} from 'firebase/firestore/lite';
-import { UniverseStore } from '@features/universes';
-import { SlugTakenError } from '@shared/models';
-import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { Character, CharacterDraft, CharacterPortrait, StoredCharacter } from './character.types';
-
-const PAGE_SIZE = 50;
+import { Injectable } from '@angular/core';
+import { EntityKind } from '@shared/models';
+import { UniverseEntityService } from '@shared/data-access';
+import { Character, CharacterDraft, CharacterPortrait } from './character.types';
 
 @Injectable({ providedIn: 'root' })
-export class CharactersService {
-  private readonly firebase = inject(FirebaseService);
-  private readonly universes = inject(UniverseStore);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+export class CharactersService extends UniverseEntityService<Character, CharacterDraft> {
+  protected readonly collectionName = 'characters';
+  protected readonly kind: EntityKind = 'character';
 
-  private readonly _characters = signal<Character[]>([]);
-  readonly characters: Signal<Character[]> = this._characters.asReadonly();
-
-  private readonly _refreshError = signal<string | null>(null);
-  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
-
-  constructor() {
-    if (this.isBrowser) {
-      effect(() => {
-        const id = this.universes.activeUniverseId();
-        if (!id) {
-          this._characters.set([]);
-          this._refreshError.set(null);
-          return;
-        }
-        this._refreshError.set(null);
-        this.refresh(id).catch((err) => {
-          console.error('CharactersService.refresh failed', err);
-          this._refreshError.set(
-            err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-          );
-        });
-      });
-    }
-  }
-
-  async refresh(universeId?: string): Promise<void> {
-    const id = universeId ?? this.universes.activeUniverseId();
-    if (!id) {
-      this._characters.set([]);
-      return;
-    }
-    const q = query(
-      collection(this.firebase.firestore, 'universes', id, 'characters'),
-      orderBy('createdAt', 'desc'),
-      limit(PAGE_SIZE),
-    );
-    const snap = await getDocs(q);
-    this._characters.set(snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredCharacter) })));
-  }
-
-  async create(draft: CharacterDraft, authorUid: string): Promise<string> {
-    const universeId = this.requireUniverseId();
-    await this.assertSlugAvailable(universeId, draft.slug);
-    const id = crypto.randomUUID();
-    const data: StoredCharacter = {
-      ...draft,
-      authorUid,
-      createdAt: Date.now(),
-    };
-    await setDoc(doc(this.firebase.firestore, 'universes', universeId, 'characters', id), data);
-    await this.refresh(universeId);
-    return id;
-  }
-
-  async update(id: string, patch: CharacterDraft): Promise<void> {
-    const universeId = this.requireUniverseId();
-    await this.assertSlugAvailable(universeId, patch.slug, id);
-    await updateDoc(
-      doc(this.firebase.firestore, 'universes', universeId, 'characters', id),
-      { ...patch },
-    );
-    await this.refresh(universeId);
-  }
-
-  async remove(id: string): Promise<void> {
-    const universeId = this.requireUniverseId();
-    await deleteDoc(doc(this.firebase.firestore, 'universes', universeId, 'characters', id));
-    await this.refresh(universeId);
-  }
+  readonly characters = this.entitiesSignal;
 
   async updatePortraits(id: string, portraits: CharacterPortrait[]): Promise<void> {
-    const universeId = this.requireUniverseId();
-    await updateDoc(
-      doc(this.firebase.firestore, 'universes', universeId, 'characters', id),
-      { portraits },
-    );
-    await this.refresh(universeId);
-  }
-
-  private async assertSlugAvailable(
-    universeId: string,
-    slug: string,
-    excludeId?: string,
-  ): Promise<void> {
-    const q = query(
-      collection(this.firebase.firestore, 'universes', universeId, 'characters'),
-      where('slug', '==', slug),
-      limit(2),
-    );
-    const snap = await getDocs(q);
-    const taken = snap.docs.some((d) => d.id !== excludeId);
-    if (taken) throw new SlugTakenError('character', slug);
-  }
-
-  private requireUniverseId(): string {
-    const id = this.universes.activeUniverseId();
-    if (!id) throw new Error('No active universe selected.');
-    return id;
+    await this.patchFields(id, { portraits });
   }
 }
