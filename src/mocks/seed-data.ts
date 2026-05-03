@@ -692,3 +692,34 @@ export const SEED_STORY: Story = {
     },
   },
 };
+
+// Filler stories for pagination testing — minimal valid Story shape with
+// strictly older publishedAt than SEED_STORY so the meaningful one ranks first.
+export const SEED_STORIES: Story[] = [
+  SEED_STORY,
+  ...Array.from({ length: 26 }, (_, i): Story => {
+    const idx = i + 1;
+    const startSceneId = `s01_opening`;
+    return {
+      id: `story-filler-${String(idx).padStart(2, '0')}`,
+      slug: `filler-story-${String(idx).padStart(2, '0')}`,
+      title: `Filler story ${idx}`,
+      mainCharacters: [],
+      places: [],
+      inGameDate: {},
+      startSceneId,
+      scenes: {
+        [startSceneId]: {
+          text: `Auto-generated filler story #${idx} for pagination testing.`,
+          position: { x: 0, y: 0 },
+          characters: [],
+          next: [],
+        },
+      },
+      authorUid: SEED_AUTHOR_UID,
+      draft: false,
+      publishedAt: SEED_CREATED_AT - idx * 1000,
+      version: 1,
+    };
+  }),
+];

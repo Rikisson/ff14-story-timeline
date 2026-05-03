@@ -11,7 +11,7 @@ import {
   SEED_ITEMS,
   SEED_PLACES,
   SEED_PLOTLINES,
-  SEED_STORY,
+  SEED_STORIES,
 } from './seed-data';
 
 export const DEFAULT_UNIVERSE_ID = 'universe-default';
@@ -41,12 +41,8 @@ export class SeederService {
     await this.seedCollection('places', SEED_PLACES, authorUid);
   }
 
-  async seedStory(authorUid: string): Promise<void> {
-    const { id, ...data } = SEED_STORY;
-    await setDoc(doc(this.firebase.firestore, 'universes', DEFAULT_UNIVERSE_ID, 'stories', id), {
-      ...data,
-      authorUid,
-    });
+  async seedStories(authorUid: string): Promise<void> {
+    await this.seedCollection('stories', SEED_STORIES, authorUid);
   }
 
   async seedEvents(authorUid: string): Promise<void> {
@@ -85,7 +81,7 @@ export class SeederService {
       this.seedItems(authorUid),
       this.seedFactions(authorUid),
       this.seedCodexEntries(authorUid),
-      this.seedStory(authorUid),
+      this.seedStories(authorUid),
       this.seedEvents(authorUid),
       this.seedCalendar(),
     ]);
