@@ -9,16 +9,18 @@ import { PlaceFormComponent } from '../ui/place-form.component';
 
 @Component({
   selector: 'app-places-page',
+  host: { class: 'block h-full' },
   imports: [EntityListPaneComponent, PageHeaderComponent, PlaceCardComponent, PlaceFormComponent],
   template: `
-    <div class="flex flex-col gap-4">
+    <div class="flex h-full flex-col gap-4">
       <app-page-header
         title="Places"
         subtitle="Locations where stories unfold and events occur."
       />
 
-      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <app-entity-list-pane
+          class="md:w-80 md:shrink-0"
           [items]="listItems()"
           [selectedId]="ctrl.selectedId()"
           [hasMore]="service.hasMore()"
@@ -32,22 +34,26 @@ import { PlaceFormComponent } from '../ui/place-form.component';
           (loadMore)="service.loadMore()"
         />
 
-        <section class="flex flex-col gap-3" aria-label="Place details">
+        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Place details">
           @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
-            <app-place-form
-              [initial]="ctrl.editingDraft()"
-              [busy]="ctrl.busy()"
-              [errorMessage]="ctrl.errorMessage()"
-              (submitted)="ctrl.submit($event)"
-              (cancelled)="ctrl.cancel()"
-            />
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <app-place-form
+                [initial]="ctrl.editingDraft()"
+                [busy]="ctrl.busy()"
+                [errorMessage]="ctrl.errorMessage()"
+                (submitted)="ctrl.submit($event)"
+                (cancelled)="ctrl.cancel()"
+              />
+            </div>
           } @else if (ctrl.selected(); as p) {
-            <app-place-card
-              [place]="p"
-              [canEdit]="ctrl.canCreate()"
-              (edit)="ctrl.startEdit(p)"
-              (remove)="ctrl.confirmRemove(p)"
-            />
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <app-place-card
+                [place]="p"
+                [canEdit]="ctrl.canCreate()"
+                (edit)="ctrl.startEdit(p)"
+                (remove)="ctrl.confirmRemove(p)"
+              />
+            </div>
           } @else {
             <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
               Select a place to view details.

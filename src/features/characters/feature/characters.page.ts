@@ -10,6 +10,7 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
 
 @Component({
   selector: 'app-characters-page',
+  host: { class: 'block h-full' },
   imports: [
     CharacterCardComponent,
     CharacterFormComponent,
@@ -18,14 +19,15 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
     PortraitLibraryComponent,
   ],
   template: `
-    <div class="flex flex-col gap-4">
+    <div class="flex h-full flex-col gap-4">
       <app-page-header
         title="Characters"
         subtitle="People who recur across this universe's stories and events."
       />
 
-      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <app-entity-list-pane
+          class="md:w-80 md:shrink-0"
           [items]="listItems()"
           [selectedId]="ctrl.selectedId()"
           [hasMore]="service.hasMore()"
@@ -39,32 +41,36 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
           (loadMore)="service.loadMore()"
         />
 
-        <section class="flex flex-col gap-3" aria-label="Character details">
+        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Character details">
           @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
-            <app-character-form
-              [initial]="ctrl.editingDraft()"
-              [busy]="ctrl.busy()"
-              [errorMessage]="ctrl.errorMessage()"
-              (submitted)="ctrl.submit($event)"
-              (cancelled)="ctrl.cancel()"
-            />
-            @if (ctrl.editing(); as c) {
+            <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              <app-character-form
+                [initial]="ctrl.editingDraft()"
+                [busy]="ctrl.busy()"
+                [errorMessage]="ctrl.errorMessage()"
+                (submitted)="ctrl.submit($event)"
+                (cancelled)="ctrl.cancel()"
+              />
+              @if (ctrl.editing(); as c) {
+                <app-character-portrait-library
+                  [characterId]="c.id"
+                  [portraits]="c.portraits ?? []"
+                />
+              }
+            </div>
+          } @else if (ctrl.selected(); as c) {
+            <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              <app-character-card
+                [character]="c"
+                [canEdit]="ctrl.canCreate()"
+                (edit)="ctrl.startEdit(c)"
+                (remove)="ctrl.confirmRemove(c)"
+              />
               <app-character-portrait-library
                 [characterId]="c.id"
                 [portraits]="c.portraits ?? []"
               />
-            }
-          } @else if (ctrl.selected(); as c) {
-            <app-character-card
-              [character]="c"
-              [canEdit]="ctrl.canCreate()"
-              (edit)="ctrl.startEdit(c)"
-              (remove)="ctrl.confirmRemove(c)"
-            />
-            <app-character-portrait-library
-              [characterId]="c.id"
-              [portraits]="c.portraits ?? []"
-            />
+            </div>
           } @else {
             <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
               Select a character to view details.

@@ -16,13 +16,19 @@ import { CodexEntry } from '../data-access/codex-entry.types';
       class="flex h-full flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
     >
       <div class="flex items-start justify-between gap-2">
-        <h3 class="m-0 text-lg font-semibold text-slate-900">{{ entry().title }}</h3>
-        @if (entry().category; as c) {
-          <app-tag>{{ c }}</app-tag>
-        }
+        <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ entry().title }}</h3>
+        <div class="flex shrink-0 items-center gap-2">
+          @if (entry().category; as c) {
+            <app-tag>{{ c }}</app-tag>
+          }
+          @if (canEdit()) {
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          }
+        </div>
       </div>
 
-      <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700">
+      <p class="m-0 whitespace-pre-line text-sm text-slate-700">
         {{ entry().body }}
       </p>
 
@@ -36,12 +42,6 @@ import { CodexEntry } from '../data-access/codex-entry.types';
         </ul>
       }
 
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
-      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

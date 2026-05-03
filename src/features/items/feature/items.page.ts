@@ -10,16 +10,18 @@ import { ItemFormComponent } from '../ui/item-form.component';
 
 @Component({
   selector: 'app-items-page',
+  host: { class: 'block h-full' },
   imports: [EntityListPaneComponent, ItemCardComponent, ItemFormComponent, PageHeaderComponent],
   template: `
-    <div class="flex flex-col gap-4">
+    <div class="flex h-full flex-col gap-4">
       <app-page-header
         title="Items"
         subtitle="Objects and artifacts referenced throughout this universe."
       />
 
-      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <app-entity-list-pane
+          class="md:w-80 md:shrink-0"
           [items]="listItems()"
           [selectedId]="ctrl.selectedId()"
           [hasMore]="service.hasMore()"
@@ -33,22 +35,26 @@ import { ItemFormComponent } from '../ui/item-form.component';
           (loadMore)="service.loadMore()"
         />
 
-        <section class="flex flex-col gap-3" aria-label="Item details">
+        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Item details">
           @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
-            <app-item-form
-              [initial]="ctrl.editingDraft()"
-              [busy]="ctrl.busy()"
-              [errorMessage]="ctrl.errorMessage()"
-              (submitted)="ctrl.submit($event)"
-              (cancelled)="ctrl.cancel()"
-            />
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <app-item-form
+                [initial]="ctrl.editingDraft()"
+                [busy]="ctrl.busy()"
+                [errorMessage]="ctrl.errorMessage()"
+                (submitted)="ctrl.submit($event)"
+                (cancelled)="ctrl.cancel()"
+              />
+            </div>
           } @else if (ctrl.selected(); as i) {
-            <app-item-card
-              [item]="i"
-              [canEdit]="ctrl.canCreate()"
-              (edit)="ctrl.startEdit(i)"
-              (remove)="ctrl.confirmRemove(i)"
-            />
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <app-item-card
+                [item]="i"
+                [canEdit]="ctrl.canCreate()"
+                (edit)="ctrl.startEdit(i)"
+                (remove)="ctrl.confirmRemove(i)"
+              />
+            </div>
           } @else {
             <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
               Select an item to view details.

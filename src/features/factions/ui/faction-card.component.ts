@@ -14,15 +14,23 @@ import { Faction } from '../data-access/faction.types';
     <article
       class="flex h-full flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
     >
-      <div class="flex flex-col gap-0.5">
-        <h3 class="m-0 text-lg font-semibold text-slate-900">{{ faction().name }}</h3>
-        @if (faction().type; as t) {
-          <span class="text-xs uppercase tracking-wide text-slate-500">{{ t }}</span>
+      <div class="flex items-start gap-2">
+        <div class="flex flex-1 flex-col gap-0.5">
+          <h3 class="m-0 text-lg font-semibold text-slate-900">{{ faction().name }}</h3>
+          @if (faction().type; as t) {
+            <span class="text-xs uppercase tracking-wide text-slate-500">{{ t }}</span>
+          }
+        </div>
+        @if (canEdit()) {
+          <div class="flex shrink-0 gap-1">
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          </div>
         }
       </div>
 
       @if (faction().description; as d) {
-        <p class="m-0 line-clamp-3 text-sm text-slate-700">{{ d }}</p>
+        <p class="m-0 whitespace-pre-line text-sm text-slate-700">{{ d }}</p>
       }
 
       <dl class="grid grid-cols-[max-content_1fr] items-baseline gap-x-2 gap-y-1 text-xs text-slate-600">
@@ -48,12 +56,6 @@ import { Faction } from '../data-access/faction.types';
         }
       </dl>
 
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
-      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

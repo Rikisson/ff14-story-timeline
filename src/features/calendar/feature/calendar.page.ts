@@ -69,8 +69,8 @@ import {
       }
 
       <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-6">
-      <section class="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
-        <div class="flex items-center justify-between gap-3">
+      <section class="flex min-h-0 flex-1 flex-col gap-3">
+        <div class="flex shrink-0 items-center justify-between gap-3">
           <h2 class="m-0 text-lg font-semibold text-slate-900">Eras</h2>
           @if (canEdit()) {
             <button uiSecondary type="button" (click)="addEra()">+ Add era</button>
@@ -80,7 +80,7 @@ import {
         @if (eras().length === 0) {
           <p class="text-sm text-slate-600">No eras yet.</p>
         } @else {
-          <ul cdkDropList class="flex flex-col gap-2 lg:flex-1 lg:overflow-y-auto lg:pr-1" (cdkDropListDropped)="dropEra($event)">
+          <ul cdkDropList class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1" (cdkDropListDropped)="dropEra($event)">
             @for (era of eras(); track era.id; let i = $index) {
               <li
                 cdkDrag
@@ -193,8 +193,8 @@ import {
         }
       </section>
 
-      <section class="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
-        <div class="flex items-center justify-between gap-3">
+      <section class="flex min-h-0 flex-1 flex-col gap-3">
+        <div class="flex shrink-0 items-center justify-between gap-3">
           <h2 class="m-0 text-lg font-semibold text-slate-900">Months</h2>
           @if (canEdit()) {
             <button uiSecondary type="button" (click)="addMonth()">+ Add month</button>
@@ -204,7 +204,7 @@ import {
         @if (months().length === 0) {
           <p class="text-sm text-slate-600">No months yet.</p>
         } @else {
-          <ul cdkDropList class="flex flex-col gap-2 lg:flex-1 lg:overflow-y-auto lg:pr-1" (cdkDropListDropped)="dropMonth($event)">
+          <ul cdkDropList class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1" (cdkDropListDropped)="dropMonth($event)">
             @for (month of months(); track month.id; let i = $index) {
               <li
                 cdkDrag

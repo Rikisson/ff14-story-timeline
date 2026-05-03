@@ -15,6 +15,7 @@ import { CatalogDetailComponent } from './catalog-detail.component';
 
 @Component({
   selector: 'app-catalog-page',
+  host: { class: 'block h-full' },
   imports: [
     CatalogDetailComponent,
     CatalogFiltersComponent,
@@ -22,7 +23,7 @@ import { CatalogDetailComponent } from './catalog-detail.component';
     PageHeaderComponent,
   ],
   template: `
-    <div class="flex flex-col gap-4">
+    <div class="flex h-full flex-col gap-4">
       <app-page-header
         title="Stories"
         subtitle="Branching scenes you can play through, scoped to this universe."
@@ -38,8 +39,9 @@ import { CatalogDetailComponent } from './catalog-detail.component';
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
-      <div class="grid gap-4 md:grid-cols-[320px_1fr]">
+      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <app-entity-list-pane
+          class="md:w-80 md:shrink-0"
           [items]="listItems()"
           [selectedId]="selectedId()"
           [hasMore]="stories.hasMore()"
@@ -53,13 +55,15 @@ import { CatalogDetailComponent } from './catalog-detail.component';
           (loadMore)="stories.loadMorePublished()"
         />
 
-        <section class="flex flex-col" aria-label="Story details">
+        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Story details">
           @if (selected(); as s) {
-            <app-catalog-detail
-              [story]="s"
-              [canEdit]="canCreate()"
-              (remove)="deleteStory($event)"
-            />
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <app-catalog-detail
+                [story]="s"
+                [canEdit]="canCreate()"
+                (remove)="deleteStory($event)"
+              />
+            </div>
           } @else {
             <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
               Select a story to view details.

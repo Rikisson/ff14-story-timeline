@@ -28,10 +28,16 @@ import { Item } from '../data-access/item.types';
             <span class="text-xs uppercase tracking-wide text-slate-500">{{ t }}</span>
           }
         </div>
+        @if (canEdit()) {
+          <div class="flex shrink-0 gap-1">
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          </div>
+        }
       </div>
 
       @if (item().description; as d) {
-        <p class="m-0 line-clamp-3 text-sm text-slate-700">{{ d }}</p>
+        <p class="m-0 whitespace-pre-line text-sm text-slate-700">{{ d }}</p>
       }
 
       <dl class="grid grid-cols-[max-content_1fr] items-baseline gap-x-2 gap-y-1 text-xs text-slate-600">
@@ -53,12 +59,6 @@ import { Item } from '../data-access/item.types';
         }
       </dl>
 
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
-      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

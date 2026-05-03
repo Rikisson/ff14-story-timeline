@@ -10,7 +10,15 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
     <article
       class="flex h-full flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
     >
-      <h3 class="m-0 text-lg font-semibold text-slate-900">{{ character().name }}</h3>
+      <div class="flex items-start justify-between gap-2">
+        <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ character().name }}</h3>
+        @if (canEdit()) {
+          <div class="flex shrink-0 gap-1">
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          </div>
+        }
+      </div>
       <dl class="m-0 flex flex-col gap-1 text-sm text-slate-700">
         <div class="flex gap-2">
           <dt class="w-12 font-medium text-slate-500">Race</dt>
@@ -21,12 +29,6 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
           <dd class="m-0">{{ character().job }}</dd>
         </div>
       </dl>
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
-      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

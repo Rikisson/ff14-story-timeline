@@ -25,8 +25,14 @@ import { TimelineEvent } from '../data-access/event.types';
       [style.borderLeftColor]="accentColor()"
     >
       <div class="flex items-start justify-between gap-2">
-        <h3 class="m-0 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
-        <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
+        <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
+        <div class="flex shrink-0 items-center gap-2">
+          <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
+          @if (canEdit()) {
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          }
+        </div>
       </div>
 
       @if (formattedDate(); as d) {
@@ -67,12 +73,6 @@ import { TimelineEvent } from '../data-access/event.types';
         </ul>
       }
 
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
-      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

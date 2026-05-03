@@ -31,18 +31,18 @@ const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
           ></span>
         }
         <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ plotline().title }}</h3>
-        @if (statusInfo(); as s) {
-          <app-tag [tone]="s.tone">{{ s.label }}</app-tag>
-        }
+        <div class="flex shrink-0 items-center gap-2">
+          @if (statusInfo(); as s) {
+            <app-tag [tone]="s.tone">{{ s.label }}</app-tag>
+          }
+          @if (canEdit()) {
+            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+          }
+        </div>
       </div>
       @if (plotline().summary; as s) {
-        <p class="m-0 line-clamp-3 text-sm text-slate-700">{{ s }}</p>
-      }
-      @if (canEdit()) {
-        <div class="mt-auto flex gap-2 pt-2">
-          <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-          <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-        </div>
+        <p class="m-0 whitespace-pre-line text-sm text-slate-700">{{ s }}</p>
       }
     </article>
   `,
