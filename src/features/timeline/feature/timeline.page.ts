@@ -44,6 +44,10 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
           [selectedPlotlineIds]="filters().plotlines"
           [sortDirection]="sortDirection()"
           [canManage]="canCreate()"
+          [storiesHasMore]="storiesService.hasMore()"
+          [eventsHasMore]="eventsService.hasMore()"
+          (loadMoreStories)="storiesService.loadMorePublished()"
+          (loadMoreEvents)="eventsService.loadMore()"
         />
       }
     </div>
@@ -51,8 +55,8 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelinePage {
-  private readonly stories = inject(StoriesService);
-  private readonly events = inject(EventsService);
+  protected readonly storiesService = inject(StoriesService);
+  protected readonly eventsService = inject(EventsService);
   private readonly plotlinesService = inject(PlotlinesService);
   private readonly universes = inject(UniverseStore);
   protected readonly user = inject(AuthStore).user;
@@ -62,8 +66,8 @@ export class TimelinePage {
     () => !!this.user() && this.universes.isMemberOfActive(),
   );
 
-  protected readonly published = this.stories.publishedStories;
-  protected readonly allEvents = this.events.events;
+  protected readonly published = this.storiesService.publishedStories;
+  protected readonly allEvents = this.eventsService.events;
   protected readonly filters = signal<CatalogFilters>(EMPTY_FILTERS);
   protected readonly sortDirection = signal<SortDirection>('desc');
   protected readonly EMPTY_FILTERS = EMPTY_FILTERS;

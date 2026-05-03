@@ -124,6 +124,7 @@ export class TimelineLaneComponent {
   readonly sortDirection = input<SortDirection>('asc');
   readonly canManage = input<boolean>(false);
   readonly pageSize = input.required<number>();
+  readonly serverHasMore = input<boolean>(false);
 
   readonly loadMore = output<void>();
 
@@ -141,7 +142,7 @@ export class TimelineLaneComponent {
 
   protected readonly hasMore = computed(() => {
     const total = this.lane().dated.length + this.lane().undated.length;
-    return this.pageSize() < total;
+    return this.pageSize() < total || this.serverHasMore();
   });
 
   protected onRailKey(event: KeyboardEvent): void {

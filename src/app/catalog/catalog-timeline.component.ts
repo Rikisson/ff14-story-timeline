@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { CalendarService } from '@features/calendar';
@@ -39,6 +40,7 @@ const PAGE_STEP = 25;
           [sortDirection]="sortDirection()"
           [canManage]="canManage()"
           [pageSize]="pageSizeFor(lane.key)"
+          [serverHasMore]="serverHasMore()"
           (loadMore)="loadMoreLane(lane.key)"
         />
       }
@@ -53,12 +55,21 @@ export class CatalogTimelineComponent {
   readonly selectedPlotlineIds = input<string[]>([]);
   readonly sortDirection = input<SortDirection>('asc');
   readonly canManage = input<boolean>(false);
+  readonly storiesHasMore = input<boolean>(false);
+  readonly eventsHasMore = input<boolean>(false);
+
+  readonly loadMoreStories = output<void>();
+  readonly loadMoreEvents = output<void>();
 
   private readonly calendar = inject(CalendarService);
 
   protected readonly showUnassigned = signal(true);
   private readonly pageSizes = signal<Record<string, number>>({});
   private resetSignature = '';
+
+  protected readonly serverHasMore = computed(
+    () => this.storiesHasMore() || this.eventsHasMore(),
+  );
 
   protected readonly lanes = computed(() =>
     buildTimelineLanes({
@@ -73,13 +84,14 @@ export class CatalogTimelineComponent {
   );
 
   constructor() {
+    // Reset per-lane page sizes when the user changes filters, sort, or the
+    // unassigned-lane toggle — but NOT when the source arrays grow due to a
+    // server-side loadMore (which we want to preserve accumulated pageSize for).
     effect(() => {
       const sig = [
         this.selectedPlotlineIds().join('|'),
         this.sortDirection(),
         this.showUnassigned() ? '1' : '0',
-        this.stories().length,
-        this.events().length,
       ].join('::');
       if (sig !== this.resetSignature) {
         this.resetSignature = sig;
@@ -97,6 +109,8 @@ export class CatalogTimelineComponent {
       ...m,
       [key]: (m[key] ?? PAGE_STEP) + PAGE_STEP,
     }));
+    if (this.eventsHasMore()) this.loadMoreEvents.emit();
+    if (this.storiesHasMore()) this.loadMoreStories.emit();
   }
 
   protected toggleUnassigned(event: Event): void {
