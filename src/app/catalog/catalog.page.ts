@@ -138,7 +138,7 @@ export class CatalogPage {
       return;
     }
     if (this.selectedId() === id) {
-      void this.router.navigate(['/']);
+      void this.router.navigate(['/library']);
     }
     void this.stories.refreshPublished();
   }

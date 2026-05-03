@@ -28,7 +28,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
         <p class="text-slate-600">Loading...</p>
       } @else if (store.error(); as err) {
         <p class="text-red-700">{{ err }}</p>
-        <p><a routerLink="/" class="text-indigo-700 hover:underline">Back to catalog</a></p>
+        <p><a routerLink="/library" class="text-indigo-700 hover:underline">Back to catalog</a></p>
       } @else if (store.story(); as story) {
         <header class="flex flex-wrap items-center gap-3">
           <h1 class="m-0 text-2xl font-semibold text-slate-900">{{ story.title }}</h1>
@@ -41,7 +41,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
             >
               ← Back
             </button>
-            <a routerLink="/" class="text-sm text-slate-600 hover:underline">Catalog</a>
+            <a routerLink="/library" class="text-sm text-slate-600 hover:underline">Catalog</a>
           </div>
         </header>
 
@@ -76,7 +76,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
             <div class="flex flex-wrap items-center gap-3">
               <p class="m-0 italic text-slate-600">The end.</p>
               <button uiPrimary type="button" (click)="store.restart()">Restart</button>
-              <a routerLink="/" class="text-sm text-indigo-700 hover:underline">
+              <a routerLink="/library" class="text-sm text-indigo-700 hover:underline">
                 Back to catalog
               </a>
             </div>

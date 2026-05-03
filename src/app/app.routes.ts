@@ -4,6 +4,11 @@ import { editorGuard, universeGuard } from '@features/universes';
 export const routes: Routes = [
   {
     path: '',
+    pathMatch: 'full',
+    redirectTo: 'timeline',
+  },
+  {
+    path: 'library',
     loadComponent: () => import('./catalog/catalog.page').then((m) => m.CatalogPage),
   },
   {
