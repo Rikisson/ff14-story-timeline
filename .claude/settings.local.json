@@ -21,7 +21,8 @@
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(npm test *)",
       "Bash(npm install *)",
-      "Bash(npx firebase *)"
+      "Bash(npx firebase *)",
+      "Bash(grep -E \"Initial chunk|kB$|MB$\")"
     ]
   }
 }
