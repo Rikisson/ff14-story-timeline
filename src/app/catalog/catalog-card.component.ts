@@ -2,10 +2,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CalendarService } from '@features/calendar';
-import { CharactersService } from '@features/characters';
-import { EventsService } from '@features/events';
-import { PlacesService } from '@features/places';
-import { Story, StoriesService } from '@features/stories';
+import { Story } from '@features/stories';
+import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
   EntityRefComponent,
@@ -13,7 +11,7 @@ import {
   MarkdownTextComponent,
   TagComponent,
 } from '@shared/ui';
-import { formatInGameDate, InlineRefOption } from '@shared/utils';
+import { formatInGameDate } from '@shared/utils';
 
 const BTN_BASE =
   'inline-flex h-10 flex-1 items-center justify-center rounded-md px-4 text-sm font-medium ' +
@@ -134,10 +132,7 @@ export class CatalogCardComponent {
 
   readonly remove = output<string>();
 
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly events = inject(EventsService);
-  private readonly stories = inject(StoriesService);
+  private readonly entityResolver = inject(EntityResolverService);
   private readonly calendar = inject(CalendarService);
 
   protected confirmDelete(): void {
@@ -151,32 +146,7 @@ export class CatalogCardComponent {
   protected readonly primaryClass = BTN_PRIMARY;
   protected readonly secondaryClass = BTN_SECONDARY;
 
-  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      kind: 'character' as const,
-      id: c.id,
-      label: c.name,
-      slug: c.slug,
-    })),
-    ...this.places.places().map((p) => ({
-      kind: 'place' as const,
-      id: p.id,
-      label: p.name,
-      slug: p.slug,
-    })),
-    ...this.events.events().map((e) => ({
-      kind: 'event' as const,
-      id: e.id,
-      label: e.name,
-      slug: e.slug,
-    })),
-    ...this.stories.publishedStories().map((s) => ({
-      kind: 'story' as const,
-      id: s.id,
-      label: s.title,
-      slug: s.slug,
-    })),
-  ]);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly background = computed(() => {
     const s = this.story();

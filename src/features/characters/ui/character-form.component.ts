@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
   inject,
   input,
@@ -9,18 +8,14 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { EventsService } from '@features/events';
-import { PlacesService } from '@features/places';
-import { StoriesService } from '@features/stories';
-import { CharactersService } from '../data-access/characters.service';
 import { CharacterDraft } from '../data-access/character.types';
+import { EntityResolverService } from '@shared/data-access';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   GhostButtonComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
 
 @Component({
   selector: 'app-character-form',
@@ -120,38 +115,10 @@ export class CharacterFormComponent {
   readonly submitted = output<CharacterDraft>();
   readonly cancelled = output<void>();
 
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly events = inject(EventsService);
-  private readonly stories = inject(StoriesService);
+  private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly description = signal<string>('');
-  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      kind: 'character' as const,
-      id: c.id,
-      label: c.name,
-      slug: c.slug,
-    })),
-    ...this.places.places().map((p) => ({
-      kind: 'place' as const,
-      id: p.id,
-      label: p.name,
-      slug: p.slug,
-    })),
-    ...this.events.events().map((e) => ({
-      kind: 'event' as const,
-      id: e.id,
-      label: e.name,
-      slug: e.slug,
-    })),
-    ...this.stories.publishedStories().map((s) => ({
-      kind: 'story' as const,
-      id: s.id,
-      label: s.title,
-      slug: s.slug,
-    })),
-  ]);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],

@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, Signal } from '@angular/core';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
@@ -8,6 +8,7 @@ import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
 import { EntityKind, EntityRef } from '@shared/models';
+import { InlineRefOption } from '@shared/utils';
 
 export interface ResolvedEntity {
   kind: EntityKind;
@@ -39,6 +40,57 @@ export class EntityResolverService {
   private readonly items = inject(ItemsService);
   private readonly factions = inject(FactionsService);
   private readonly codex = inject(CodexEntriesService);
+
+  readonly allInlineRefOptions: Signal<InlineRefOption[]> = computed(() => [
+    ...this.characters.characters().map((c) => ({
+      kind: 'character' as const,
+      id: c.id,
+      label: c.name,
+      slug: c.slug,
+    })),
+    ...this.places.places().map((p) => ({
+      kind: 'place' as const,
+      id: p.id,
+      label: p.name,
+      slug: p.slug,
+    })),
+    ...this.events.events().map((e) => ({
+      kind: 'event' as const,
+      id: e.id,
+      label: e.name,
+      slug: e.slug,
+    })),
+    ...this.stories.publishedStories().map((s) => ({
+      kind: 'story' as const,
+      id: s.id,
+      label: s.title,
+      slug: s.slug,
+    })),
+    ...this.plotlines.plotlines().map((p) => ({
+      kind: 'plotline' as const,
+      id: p.id,
+      label: p.title,
+      slug: p.slug,
+    })),
+    ...this.items.items().map((i) => ({
+      kind: 'item' as const,
+      id: i.id,
+      label: i.name,
+      slug: i.slug,
+    })),
+    ...this.factions.factions().map((f) => ({
+      kind: 'faction' as const,
+      id: f.id,
+      label: f.name,
+      slug: f.slug,
+    })),
+    ...this.codex.entries().map((e) => ({
+      kind: 'codexEntry' as const,
+      id: e.id,
+      label: e.title,
+      slug: e.slug,
+    })),
+  ]);
 
   resolve(ref: EntityRef): ResolvedEntity | null {
     switch (ref.kind) {

@@ -14,7 +14,7 @@ import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
+import { EntityResolverService } from '@shared/data-access';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
@@ -233,6 +233,7 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
+  private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly isSelectedStart = computed(
     () => this.store.selectedSceneId() !== null
@@ -259,32 +260,7 @@ export class EditorPage implements HasUnsavedChanges {
     }
     return map;
   });
-  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      kind: 'character' as const,
-      id: c.id,
-      label: c.name,
-      slug: c.slug,
-    })),
-    ...this.places.places().map((p) => ({
-      kind: 'place' as const,
-      id: p.id,
-      label: p.name,
-      slug: p.slug,
-    })),
-    ...this.events.events().map((e) => ({
-      kind: 'event' as const,
-      id: e.id,
-      label: e.name,
-      slug: e.slug,
-    })),
-    ...this.stories.publishedStories().map((s) => ({
-      kind: 'story' as const,
-      id: s.id,
-      label: s.title,
-      slug: s.slug,
-    })),
-  ]);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   constructor() {
     this.store.bindLoad(this.id);

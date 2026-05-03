@@ -15,7 +15,7 @@ import {
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
+import { EntityResolverService } from '@shared/data-access';
 import { EventsService } from '../data-access/events.service';
 import { TimelineEventDraft } from '../data-access/event.types';
 
@@ -232,6 +232,7 @@ export class EventFormComponent {
   private readonly plotlinesService = inject(PlotlinesService);
   private readonly itemsService = inject(ItemsService);
   private readonly factionsService = inject(FactionsService);
+  private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
     this.charactersService
@@ -263,32 +264,7 @@ export class EventFormComponent {
       .factions()
       .map((f) => ({ id: f.id, label: f.name, hint: f.slug, kind: 'faction' as const })),
   );
-  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
-    ...this.charactersService.characters().map((c) => ({
-      kind: 'character' as const,
-      id: c.id,
-      label: c.name,
-      slug: c.slug,
-    })),
-    ...this.placesService.places().map((p) => ({
-      kind: 'place' as const,
-      id: p.id,
-      label: p.name,
-      slug: p.slug,
-    })),
-    ...this.eventsService.events().map((e) => ({
-      kind: 'event' as const,
-      id: e.id,
-      label: e.name,
-      slug: e.slug,
-    })),
-    ...this.storiesService.publishedStories().map((s) => ({
-      kind: 'story' as const,
-      id: s.id,
-      label: s.title,
-      slug: s.slug,
-    })),
-  ]);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
   protected readonly places = signal<EntityRef<'place'>[]>([]);

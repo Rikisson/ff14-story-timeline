@@ -1,15 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CharactersService } from '@features/characters';
-import { EventsService } from '@features/events';
-import { PlacesService } from '@features/places';
-import { StoriesService } from '@features/stories';
+import { EntityResolverService } from '@shared/data-access';
 import {
   GhostButtonComponent,
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
@@ -96,36 +93,9 @@ export class PlayerPage {
   readonly id = input.required<string>();
   protected readonly store = inject(PlayerStore);
   private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly events = inject(EventsService);
-  private readonly stories = inject(StoriesService);
+  private readonly entityResolver = inject(EntityResolverService);
 
-  protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      kind: 'character' as const,
-      id: c.id,
-      label: c.name,
-      slug: c.slug,
-    })),
-    ...this.places.places().map((p) => ({
-      kind: 'place' as const,
-      id: p.id,
-      label: p.name,
-      slug: p.slug,
-    })),
-    ...this.events.events().map((e) => ({
-      kind: 'event' as const,
-      id: e.id,
-      label: e.name,
-      slug: e.slug,
-    })),
-    ...this.stories.publishedStories().map((s) => ({
-      kind: 'story' as const,
-      id: s.id,
-      label: s.title,
-      slug: s.slug,
-    })),
-  ]);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly speakerLabel = computed<string | undefined>(() => {
     const sp = this.store.currentScene()?.speaker;
