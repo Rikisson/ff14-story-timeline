@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AuthStore } from '@features/auth';
 import { EventsService, TimelineEvent } from '@features/events';
+import { PlotlinesService } from '@features/plotlines';
 import { StoriesService, Story } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import {
@@ -26,6 +27,7 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
       <app-catalog-filters
         [value]="filters()"
         [showMineFilter]="!!user()"
+        [showPlotlineFilter]="true"
         [showSortControl]="true"
         [sortDirection]="sortDirection()"
         (filtersChange)="filters.set($event)"
@@ -39,6 +41,8 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
         <app-catalog-timeline
           [stories]="filteredStories()"
           [events]="filteredEvents()"
+          [plotlines]="plotlines()"
+          [selectedPlotlineIds]="filters().plotlines"
           [sortDirection]="sortDirection()"
           [canManage]="canCreate()"
         />
@@ -50,8 +54,10 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
 export class TimelinePage {
   private readonly stories = inject(StoriesService);
   private readonly events = inject(EventsService);
+  private readonly plotlinesService = inject(PlotlinesService);
   private readonly universes = inject(UniverseStore);
   protected readonly user = inject(AuthStore).user;
+  protected readonly plotlines = this.plotlinesService.plotlines;
 
   protected readonly canCreate = computed(
     () => !!this.user() && this.universes.isMemberOfActive(),
@@ -63,8 +69,16 @@ export class TimelinePage {
   protected readonly sortDirection = signal<SortDirection>('desc');
   protected readonly EMPTY_FILTERS = EMPTY_FILTERS;
 
+  // The plotline filter selects which lanes the timeline renders, not which
+  // items are kept — so it's intentionally stripped before per-item filtering.
+  // The lane builder consumes `selectedPlotlineIds` separately.
+  private readonly itemFilters = computed<CatalogFilters>(() => ({
+    ...this.filters(),
+    plotlines: [],
+  }));
+
   protected readonly filteredStories = computed<Story[]>(() => {
-    const f = this.filters();
+    const f = this.itemFilters();
     const uid = this.user()?.uid ?? null;
     return this.published().filter((s) => {
       if (f.mineOnly && (!uid || s.authorUid !== uid)) return false;
@@ -73,7 +87,7 @@ export class TimelinePage {
   });
 
   protected readonly filteredEvents = computed<TimelineEvent[]>(() => {
-    const f = this.filters();
+    const f = this.itemFilters();
     const uid = this.user()?.uid ?? null;
     return this.allEvents().filter((e) => matchesEvent(e, f, uid));
   });

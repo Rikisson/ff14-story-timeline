@@ -22,7 +22,8 @@
       "Bash(npm test *)",
       "Bash(npm install *)",
       "Bash(npx firebase *)",
-      "Bash(grep -E \"Initial chunk|kB$|MB$\")"
+      "Bash(grep -E \"Initial chunk|kB$|MB$\")",
+      "Bash(node *)"
     ]
   }
 }

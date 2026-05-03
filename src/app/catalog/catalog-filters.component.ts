@@ -2,24 +2,27 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { CharactersService } from '@features/characters';
 import { TimelineEvent } from '@features/events';
 import { PlacesService } from '@features/places';
+import { PlotlinesService } from '@features/plotlines';
 import { Story } from '@features/stories';
 import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
 
 export interface CatalogFilters {
   characters: string[];
   places: string[];
+  plotlines: string[];
   mineOnly: boolean;
 }
 
 export const EMPTY_FILTERS: CatalogFilters = {
   characters: [],
   places: [],
+  plotlines: [],
   mineOnly: false,
 };
 
 export type SortDirection = 'asc' | 'desc';
 
-type ArrayKey = 'characters' | 'places';
+type ArrayKey = 'characters' | 'places' | 'plotlines';
 
 export function matchesStory(story: Story, f: CatalogFilters): boolean {
   if (
@@ -29,6 +32,12 @@ export function matchesStory(story: Story, f: CatalogFilters): boolean {
     return false;
   }
   if (f.places.length && !story.places.some((r) => f.places.includes(r.id))) return false;
+  if (
+    f.plotlines.length &&
+    !(story.plotlineRefs ?? []).some((r) => f.plotlines.includes(r.id))
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -45,6 +54,12 @@ export function matchesEvent(
     return false;
   }
   if (f.places.length && !event.places.some((r) => f.places.includes(r.id))) return false;
+  if (
+    f.plotlines.length &&
+    !(event.plotlineRefs ?? []).some((r) => f.plotlines.includes(r.id))
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -74,6 +89,19 @@ export function matchesEvent(
           (valueChange)="setKey('places', $event)"
         />
       </label>
+
+      @if (showPlotlineFilter()) {
+        <label class="flex w-60 flex-col gap-1 text-sm">
+          <span class="font-medium text-slate-700">Plotline</span>
+          <app-combobox-picker
+            [options]="plotlineOptions()"
+            [value]="value().plotlines"
+            placeholder="Search plotlines…"
+            emptyMessage="No plotlines yet."
+            (valueChange)="setKey('plotlines', $event)"
+          />
+        </label>
+      }
 
       @if (showSortControl()) {
         <label class="flex flex-col gap-1 text-sm">
@@ -115,6 +143,7 @@ export class CatalogFiltersComponent {
   readonly value = input.required<CatalogFilters>();
   readonly showMineFilter = input<boolean>(false);
   readonly showSortControl = input<boolean>(false);
+  readonly showPlotlineFilter = input<boolean>(false);
   readonly sortDirection = input<SortDirection>('asc');
   readonly filtersChange = output<CatalogFilters>();
   readonly sortDirectionChange = output<SortDirection>();
@@ -122,6 +151,7 @@ export class CatalogFiltersComponent {
 
   private readonly charactersService = inject(CharactersService);
   private readonly placesService = inject(PlacesService);
+  private readonly plotlinesService = inject(PlotlinesService);
 
   protected readonly characterOptions = computed<ComboboxOption[]>(() =>
     this.charactersService
@@ -135,9 +165,20 @@ export class CatalogFiltersComponent {
       .map((p) => ({ id: p.id, label: p.name, kind: 'place' as const }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
+  protected readonly plotlineOptions = computed<ComboboxOption[]>(() =>
+    this.plotlinesService
+      .plotlines()
+      .map((p) => ({ id: p.id, label: p.title, kind: 'plotline' as const }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  );
   protected readonly hasActive = computed(() => {
     const v = this.value();
-    return v.characters.length > 0 || v.places.length > 0 || v.mineOnly;
+    return (
+      v.characters.length > 0 ||
+      v.places.length > 0 ||
+      v.plotlines.length > 0 ||
+      v.mineOnly
+    );
   });
 
   protected setKey(key: ArrayKey, next: string[]): void {

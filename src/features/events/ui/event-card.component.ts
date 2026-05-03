@@ -15,7 +15,14 @@ import { TimelineEvent } from '../data-access/event.types';
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/40 p-4 shadow-sm"
+      class="flex h-full flex-col gap-3 rounded-lg bg-amber-50/40 p-4 shadow-sm"
+      [class.border]="!accentColor()"
+      [class.border-amber-200]="!accentColor()"
+      [class.border-l-4]="!!accentColor()"
+      [class.border-y]="!!accentColor()"
+      [class.border-r]="!!accentColor()"
+      [class.border-amber-100]="!!accentColor()"
+      [style.borderLeftColor]="accentColor()"
     >
       <div class="flex items-start justify-between gap-2">
         <h3 class="m-0 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
@@ -46,6 +53,20 @@ import { TimelineEvent } from '../data-access/event.types';
         </div>
       }
 
+      @if (plotlineChips().length > 0) {
+        <ul class="m-0 flex list-none flex-wrap gap-1 p-0">
+          @for (p of plotlineChips(); track p.id) {
+            <li>
+              <span
+                class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                [style.borderColor]="p.color ?? '#94a3b8'"
+                [style.color]="p.color ?? '#475569'"
+              >{{ p.label }}</span>
+            </li>
+          }
+        </ul>
+      }
+
       @if (canEdit()) {
         <div class="mt-auto flex gap-2 pt-2">
           <button uiGhost type="button" (click)="edit.emit()">Edit</button>
@@ -59,6 +80,8 @@ import { TimelineEvent } from '../data-access/event.types';
 export class EventCardComponent {
   readonly event = input.required<TimelineEvent>();
   readonly canEdit = input<boolean>(false);
+  readonly accentColor = input<string | null>(null);
+  readonly plotlineChips = input<{ id: string; label: string; color?: string }[]>([]);
   readonly edit = output<void>();
   readonly remove = output<void>();
 

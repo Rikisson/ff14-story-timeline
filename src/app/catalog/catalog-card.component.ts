@@ -36,7 +36,14 @@ const BTN_SECONDARY =
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm"
+      [class.border]="!accentColor()"
+      [class.border-slate-200]="!accentColor()"
+      [class.border-l-4]="!!accentColor()"
+      [class.border-y]="!!accentColor()"
+      [class.border-r]="!!accentColor()"
+      [class.border-slate-100]="!!accentColor()"
+      [style.borderLeftColor]="accentColor()"
     >
       <a
         [routerLink]="['/play', story().id]"
@@ -105,6 +112,19 @@ const BTN_SECONDARY =
             }
           </div>
         }
+        @if (plotlineChips().length > 0) {
+          <ul class="m-0 flex list-none flex-wrap gap-1 p-0 pt-1">
+            @for (p of plotlineChips(); track p.id) {
+              <li>
+                <span
+                  class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                  [style.borderColor]="p.color ?? '#94a3b8'"
+                  [style.color]="p.color ?? '#475569'"
+                >{{ p.label }}</span>
+              </li>
+            }
+          </ul>
+        }
       </div>
 
       <div class="flex gap-2 border-t border-slate-100 px-4 py-3">
@@ -129,6 +149,8 @@ const BTN_SECONDARY =
 export class CatalogCardComponent {
   readonly story = input.required<Story>();
   readonly canEdit = input<boolean>(false);
+  readonly accentColor = input<string | null>(null);
+  readonly plotlineChips = input<{ id: string; label: string; color?: string }[]>([]);
 
   readonly remove = output<string>();
 
