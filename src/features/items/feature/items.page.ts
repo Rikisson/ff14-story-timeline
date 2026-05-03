@@ -1,13 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { AuthStore } from '@features/auth';
-import { UniverseStore } from '@features/universes';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { createEntityListController } from '@shared/data-access';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { ItemsService } from '../data-access/items.service';
 import { Item, ItemDraft } from '../data-access/item.types';
 import { ItemCardComponent } from '../ui/item-card.component';
 import { ItemFormComponent } from '../ui/item-form.component';
-
-type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string };
 
 @Component({
   selector: 'app-items-page',
@@ -16,18 +13,18 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Items</h1>
-        @if (canCreate() && mode().kind === 'idle') {
-          <button uiPrimary type="button" (click)="startCreate()">+ Add item</button>
+        @if (ctrl.canCreate() && ctrl.mode().kind === 'idle') {
+          <button uiPrimary type="button" (click)="ctrl.startCreate()">+ Add item</button>
         }
       </div>
 
-      @if (mode().kind !== 'idle') {
+      @if (ctrl.mode().kind !== 'idle') {
         <app-item-form
-          [initial]="editingDraft()"
-          [busy]="busy()"
-          [errorMessage]="errorMessage()"
-          (submitted)="onSubmit($event)"
-          (cancelled)="cancel()"
+          [initial]="ctrl.editingDraft()"
+          [busy]="ctrl.busy()"
+          [errorMessage]="ctrl.errorMessage()"
+          (submitted)="ctrl.submit($event)"
+          (cancelled)="ctrl.cancel()"
         />
       }
 
@@ -39,9 +36,9 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
             <li>
               <app-item-card
                 [item]="i"
-                [canEdit]="canEdit(i)"
-                (edit)="startEdit(i)"
-                (remove)="confirmRemove(i)"
+                [canEdit]="ctrl.canCreate()"
+                (edit)="ctrl.startEdit(i)"
+                (remove)="ctrl.confirmRemove(i)"
               />
             </li>
           }
@@ -53,78 +50,21 @@ type Mode = { kind: 'idle' } | { kind: 'create' } | { kind: 'edit'; id: string }
 })
 export class ItemsPage {
   private readonly service = inject(ItemsService);
-  private readonly universes = inject(UniverseStore);
-  protected readonly user = inject(AuthStore).user;
-
   protected readonly items = this.service.items;
-  protected readonly mode = signal<Mode>({ kind: 'idle' });
-  protected readonly busy = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
 
-  protected readonly canCreate = computed(
-    () => !!this.user() && this.universes.isMemberOfActive(),
-  );
-
-  protected readonly editingDraft = computed<ItemDraft | null>(() => {
-    const m = this.mode();
-    if (m.kind !== 'edit') return null;
-    const i = this.items().find((x) => x.id === m.id);
-    return i
-      ? {
-          slug: i.slug,
-          name: i.name,
-          type: i.type,
-          description: i.description,
-          image: i.image,
-          owner: i.owner,
-          place: i.place,
-          relatedCharacters: i.relatedCharacters,
-        }
-      : null;
+  protected readonly ctrl = createEntityListController<Item, ItemDraft>({
+    entities: this.items,
+    service: this.service,
+    toDraft: (i) => ({
+      slug: i.slug,
+      name: i.name,
+      type: i.type,
+      description: i.description,
+      image: i.image,
+      owner: i.owner,
+      place: i.place,
+      relatedCharacters: i.relatedCharacters,
+    }),
+    removeLabel: (i) => i.name,
   });
-
-  protected canEdit(_i: Item): boolean {
-    return this.canCreate();
-  }
-
-  protected startCreate(): void {
-    this.errorMessage.set(null);
-    this.mode.set({ kind: 'create' });
-  }
-
-  protected startEdit(i: Item): void {
-    this.errorMessage.set(null);
-    this.mode.set({ kind: 'edit', id: i.id });
-  }
-
-  protected cancel(): void {
-    this.errorMessage.set(null);
-    this.mode.set({ kind: 'idle' });
-  }
-
-  protected async onSubmit(draft: ItemDraft): Promise<void> {
-    const u = this.user();
-    if (!u) return;
-    const m = this.mode();
-    this.busy.set(true);
-    this.errorMessage.set(null);
-    try {
-      if (m.kind === 'create') await this.service.create(draft, u.uid);
-      else if (m.kind === 'edit') await this.service.update(m.id, draft);
-      this.mode.set({ kind: 'idle' });
-    } catch (err) {
-      this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  protected async confirmRemove(i: Item): Promise<void> {
-    if (!confirm(`Delete "${i.name}"? This can't be undone.`)) return;
-    try {
-      await this.service.remove(i.id);
-    } catch (err) {
-      this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
-    }
-  }
 }
