@@ -377,7 +377,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
     slug: 'fall-of-doma',
     name: 'Fall of Doma',
     description:
-      'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
+      'Garlean forces overrun ${pl:place-doma}[Doma], scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the ${fa:faction-doman-liberation-front}[Doman Liberation Front] for years to come.',
     type: 'Battle',
     summary: 'Garlemald takes Doma; the resistance scatters.',
     consequences:
@@ -397,7 +397,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
     slug: 'brann-house-attack',
     name: "Attack on Brann's house",
     description:
-      "The night Sakuya's blade ended Brann's reign — and nearly Ingrid's existence. Survivors fled toward the Black Shroud; Ingrid's path to Ul'dah began here.",
+      "The night ${ch:char-sakuya}[Sakuya]'s blade ended ${ch:char-brann}[Brann]'s reign — and nearly ${ch:char-ingrid}[Ingrid]'s existence. Survivors fled toward the ${pl:place-gridania-northern-shroud}[Black Shroud]; Ingrid's path to ${pl:place-uldah-pearl-lane}[Ul'dah] began here. Five years on, the attack is still felt — see ${ev:event-seventh-umbral-calamity}[the Calamity] for the era it closed.",
     type: 'Assault',
     summary: "A single night ends a Syndicate-aligned voidwalker's reign.",
     consequences:
@@ -437,7 +437,7 @@ export const SEED_STORY: Story = {
   summary:
     "Three years after fleeing the destruction of her former master's house, Ingrid meets an old contact in Ul'dah's Pearl Lane to arrange provisions for a journey east — and to ask a question she has never dared voice aloud.",
   description:
-    "A short, character-driven scene set five years after the Calamity. Ingrid surfaces just long enough to ask the question that has haunted her since the night Sakuya's blade fell — whether Zahir, the only person who ever taught her anything worth keeping, survived the same fire she did.",
+    "A short, character-driven scene set five years after ${ev:event-seventh-umbral-calamity}[the Calamity]. ${ch:char-ingrid}[Ingrid] surfaces just long enough to ask the question that has haunted her since ${ev:event-brann-house-attack}[the night the blade fell] — whether ${ch:char-zahir}[Zahir], the only person who ever taught her anything worth keeping, survived the same fire she did. Part of the ${pt:plotline-ingrid-flight}[Ingrid's Flight] arc.",
   genreTags: ['drama', 'mystery', 'low fantasy'],
   toneTags: ['melancholic', 'slow-burn', 'character-driven'],
   mainCharacters: [
@@ -469,13 +469,13 @@ export const SEED_STORY: Story = {
   publishedAt: SEED_CREATED_AT,
   scenes: {
     s01_opening: {
-      text: "The amber glow of Ul'dah's sun cast long shadows through the Pearl Lane, and Ingrid found herself unconsciously seeking them as she moved between the market stalls. The late afternoon light made her skin prickle with discomfort, though she endured it better than most of her kind — a small mercy from her former master's tainted blood.",
+      text: "The amber glow of Ul'dah's sun cast long shadows through the ${pl:place-uldah-pearl-lane}[Pearl Lane], and ${ch:char-ingrid}[Ingrid] found herself unconsciously seeking them as she moved between the market stalls. The late afternoon light made her skin prickle with discomfort, though she endured it better than most of her kind — a small mercy from her former master's tainted blood.",
       position: { x: 0, y: 0 },
       characters: [],
       next: [{ sceneId: 's02_intro' }],
     },
     s02_intro: {
-      text: "Her dark hair caught the light as she paused before a spice merchant's stall, amber eyes — carefully maintained in their human hue — scanning the exotic imports. Three years had passed since Sakuya's blade had ended Brann's reign and nearly ended Ingrid's existence as well. Only her mistress's unexpected mercy had spared her.",
+      text: "Her dark hair caught the light as she paused before a spice merchant's stall, amber eyes — carefully maintained in their human hue — scanning the exotic imports. Three years had passed since ${ch:char-sakuya}[Sakuya]'s blade had ended ${ch:char-brann}[Brann]'s reign and nearly ended ${ch:char-ingrid}[Ingrid]'s existence as well. Only her mistress's unexpected mercy had spared her.",
       position: { x: 320, y: 0 },
       characters: [],
       next: [{ sceneId: 's03_voice' }],
@@ -545,7 +545,7 @@ export const SEED_STORY: Story = {
     },
     s11_provisions: {
       speaker: 'Ingrid',
-      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey — the finest quality, nothing that will spoil. About half a dozen people. And I need something else — Doman tea, the genuine article from the Far East. The best quality you can acquire.",
+      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey — the finest quality, nothing that will spoil. About half a dozen people. And I need something else — ${it:item-doman-tea}[Doman tea], the genuine article from ${pl:place-doma}[the Far East]. The best quality you can acquire.",
       position: { x: 3200, y: 0 },
       characters: [],
       next: [{ sceneId: 's12_warn_routes' }],
@@ -565,14 +565,14 @@ export const SEED_STORY: Story = {
     },
     s14_ask: {
       speaker: 'Ingrid',
-      text: "Information, Marcus. About what happened that night three years ago. There was another in Brann's service — Zahir. An older man, been with the house for a long time. I need to know if he... if anyone survived.",
+      text: "Information, ${ch:char-marcus}[Marcus]. About what happened that night three years ago. There was another in ${ch:char-brann}[Brann]'s service — ${ch:char-zahir}[Zahir]. An older man, been with the house for a long time. I need to know if he... if anyone survived.",
       position: { x: 4160, y: 0 },
       characters: [],
       next: [{ sceneId: 's15_marcus_recall' }],
     },
     s15_marcus_recall: {
       speaker: 'Marcus',
-      text: 'Zahir. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network — Brann had fingers in several Syndicate dealings.',
+      text: '${ch:char-zahir}[Zahir]. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network — ${ch:char-brann}[Brann] had fingers in several ${fa:faction-syndicate}[Syndicate] dealings.',
       position: { x: 4480, y: 0 },
       characters: [],
       next: [{ sceneId: 's16_you_knew' }],
@@ -586,7 +586,7 @@ export const SEED_STORY: Story = {
     },
     s17_marcus_whispers: {
       speaker: 'Marcus',
-      text: "Of him — never met the man. The attack that night... it was thorough. Most of the household didn't survive. But there were whispers afterward — someone seen fleeing into the night, heading toward the Black Shroud. The descriptions could match your friend.",
+      text: "Of him — never met the man. The attack that night... it was thorough. Most of the household didn't survive. But there were whispers afterward — someone seen fleeing into the night, heading toward the ${pl:place-gridania-northern-shroud}[Black Shroud]. The descriptions could match your friend.",
       position: { x: 5120, y: 0 },
       characters: [],
       next: [{ sceneId: 's18_could_match' }],
@@ -661,7 +661,7 @@ export const SEED_STORY: Story = {
     },
     s27_warning: {
       speaker: 'Marcus',
-      text: 'One more thing. About that journey you\'re preparing for — especially if it\'s heading toward Doman territories. The roads aren\'t just dangerous because of bandits or wild beasts. There have been reports of specialized hunters operating along the eastern routes. The kind who ask uncomfortable questions and carry very specific tools. Whatever business takes you that direction, be extremely careful about who you trust and where you stop for the night.',
+      text: 'One more thing. About that journey you\'re preparing for — especially if it\'s heading toward ${pl:place-doma}[Doman territories]. The roads aren\'t just dangerous because of bandits or wild beasts. There have been reports of specialized hunters operating along the eastern routes. The kind who ask uncomfortable questions and carry very specific tools. Whatever business takes you that direction, be extremely careful about who you trust and where you stop for the night.',
       position: { x: 8640, y: 0 },
       characters: [],
       next: [{ sceneId: 's28_closing' }],

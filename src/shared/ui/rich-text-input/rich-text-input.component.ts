@@ -15,12 +15,10 @@ import {
 } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
-import BulletList from '@tiptap/extension-bullet-list';
 import Document from '@tiptap/extension-document';
 import HardBreak from '@tiptap/extension-hard-break';
 import History from '@tiptap/extension-history';
 import Italic from '@tiptap/extension-italic';
-import ListItem from '@tiptap/extension-list-item';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
@@ -61,16 +59,6 @@ import { RefSuggestion } from './ref-suggestion.extension';
         >
           I
         </button>
-        <button
-          type="button"
-          class="rounded px-2 py-1 text-sm hover:bg-slate-100"
-          [class.bg-slate-200]="bulletListActive()"
-          [attr.aria-pressed]="bulletListActive()"
-          aria-label="Bullet list"
-          (click)="toggleBulletList()"
-        >
-          • List
-        </button>
         <span class="ml-auto text-xs text-slate-500">
           Type <code>$&#123;</code> for entity refs
         </span>
@@ -98,11 +86,6 @@ import { RefSuggestion } from './ref-suggestion.extension';
     }
     .rich-text-host .ProseMirror p:last-child {
       margin-bottom: 0;
-    }
-    .rich-text-host .ProseMirror ul {
-      margin: 0 0 0.5em;
-      padding-left: 1.25rem;
-      list-style: disc;
     }
     .rich-text-host .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
@@ -133,7 +116,6 @@ export class RichTextInputComponent {
   protected readonly ready = signal(false);
   protected readonly boldActive = signal(false);
   protected readonly italicActive = signal(false);
-  protected readonly bulletListActive = signal(false);
 
   constructor() {
     if (this.isBrowser) {
@@ -164,10 +146,6 @@ export class RichTextInputComponent {
     this.editor?.chain().focus().toggleItalic().run();
   }
 
-  protected toggleBulletList(): void {
-    this.editor?.chain().focus().toggleBulletList().run();
-  }
-
   private initEditor(): void {
     const initialMd = this.value();
     this.editor = new Editor({
@@ -179,8 +157,6 @@ export class RichTextInputComponent {
         HardBreak,
         Bold,
         Italic,
-        BulletList,
-        ListItem,
         History,
         Placeholder.configure({ placeholder: this.placeholder() }),
         EntityRefNode,
@@ -207,6 +183,5 @@ export class RichTextInputComponent {
   private refreshToolbar(editor: Editor): void {
     this.boldActive.set(editor.isActive('bold'));
     this.italicActive.set(editor.isActive('italic'));
-    this.bulletListActive.set(editor.isActive('bulletList'));
   }
 }
