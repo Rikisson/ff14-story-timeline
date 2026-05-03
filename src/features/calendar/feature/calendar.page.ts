@@ -5,6 +5,7 @@ import { UniverseStore } from '@features/universes';
 import {
   DangerButtonComponent,
   GhostButtonComponent,
+  PageHeaderComponent,
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
@@ -30,6 +31,7 @@ import {
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
+    PageHeaderComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
@@ -37,13 +39,10 @@ import {
   ],
   template: `
     <div class="flex h-full flex-col gap-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="m-0 text-2xl font-semibold text-slate-900">Calendar</h1>
-          <p class="m-0 mt-1 text-sm text-slate-600">
-            Define eras and months for this universe. Drag to reorder — order is the sort key.
-          </p>
-        </div>
+      <app-page-header
+        title="Calendar"
+        subtitle="Define eras and months for this universe. Drag to reorder — order is the sort key."
+      >
         <div class="flex flex-wrap items-center gap-2">
           @if (canEdit()) {
             <button uiSecondary type="button" (click)="applyPreset('earth')">Earth preset</button>
@@ -63,7 +62,7 @@ import {
             Save
           </button>
         </div>
-      </div>
+      </app-page-header>
 
       @if (errorMessage(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>

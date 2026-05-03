@@ -61,8 +61,8 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
   imports: [GhostButtonComponent, ComboboxPickerComponent],
   template: `
     <div class="flex flex-wrap items-start gap-4">
-      <label class="flex w-60 flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Main character</span>
+      <label class="flex w-60 flex-col text-sm">
+        <span class="sr-only">Main character</span>
         <app-combobox-picker
           [options]="characterOptions()"
           [value]="value().characters"
@@ -72,8 +72,8 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
         />
       </label>
 
-      <label class="flex w-60 flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Place</span>
+      <label class="flex w-60 flex-col text-sm">
+        <span class="sr-only">Place</span>
         <app-combobox-picker
           [options]="placeOptions()"
           [value]="value().places"
@@ -84,8 +84,8 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
       </label>
 
       @if (showPlotlineFilter()) {
-        <label class="flex w-60 flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Plotline</span>
+        <label class="flex w-60 flex-col text-sm">
+          <span class="sr-only">Plotline</span>
           <app-combobox-picker
             [options]="plotlineOptions()"
             [value]="value().plotlines"
@@ -97,12 +97,13 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
       }
 
       @if (showSortControl()) {
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Sort by date</span>
+        <label class="flex flex-col text-sm">
+          <span class="sr-only">Sort by date</span>
           <select
             class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
             [value]="sortDirection()"
             (change)="emitSort($event)"
+            aria-label="Sort by date"
           >
             <option value="asc">Oldest first</option>
             <option value="desc">Newest first</option>

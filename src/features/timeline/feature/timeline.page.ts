@@ -4,6 +4,7 @@ import { EventsService, TimelineEvent } from '@features/events';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService, Story } from '@features/stories';
 import { UniverseStore } from '@features/universes';
+import { PageHeaderComponent } from '@shared/ui';
 import {
   CatalogFilters,
   CatalogFiltersComponent,
@@ -16,23 +17,23 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
 
 @Component({
   selector: 'app-timeline-page',
-  imports: [CatalogFiltersComponent, CatalogTimelineComponent],
+  imports: [CatalogFiltersComponent, CatalogTimelineComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Timeline</h1>
-      <p class="m-0 text-sm text-slate-600">
-        Stories and events placed on the universe's calendar.
-      </p>
-
-      <app-catalog-filters
-        [value]="filters()"
-        [showPlotlineFilter]="true"
-        [showSortControl]="true"
-        [sortDirection]="sortDirection()"
-        (filtersChange)="filters.set($event)"
-        (sortDirectionChange)="sortDirection.set($event)"
-        (reset)="filters.set(EMPTY_FILTERS)"
-      />
+      <app-page-header
+        title="Timeline"
+        subtitle="Stories and events placed on the universe's calendar."
+      >
+        <app-catalog-filters
+          [value]="filters()"
+          [showPlotlineFilter]="true"
+          [showSortControl]="true"
+          [sortDirection]="sortDirection()"
+          (filtersChange)="filters.set($event)"
+          (sortDirectionChange)="sortDirection.set($event)"
+          (reset)="filters.set(EMPTY_FILTERS)"
+        />
+      </app-page-header>
 
       @if (filteredStories().length === 0 && filteredEvents().length === 0) {
         <p class="text-slate-600">Nothing to show on the timeline.</p>

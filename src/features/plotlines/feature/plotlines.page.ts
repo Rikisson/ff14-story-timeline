@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { createEntityListController } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
 import { Plotline, PlotlineDraft } from '../data-access/plotline.types';
 import { PlotlineCardComponent } from '../ui/plotline-card.component';
@@ -10,10 +10,10 @@ import { PlotlineFormComponent } from '../ui/plotline-form.component';
 
 @Component({
   selector: 'app-plotlines-page',
-  imports: [EntityListPaneComponent, PlotlineCardComponent, PlotlineFormComponent],
+  imports: [EntityListPaneComponent, PageHeaderComponent, PlotlineCardComponent, PlotlineFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Plotlines</h1>
+      <app-page-header title="Plotlines" />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

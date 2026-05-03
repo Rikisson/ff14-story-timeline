@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
 import { createEntityListController } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
 import { PortraitLibraryComponent } from '../ui/portrait-library.component';
@@ -14,11 +14,12 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
     CharacterCardComponent,
     CharacterFormComponent,
     EntityListPaneComponent,
+    PageHeaderComponent,
     PortraitLibraryComponent,
   ],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Characters</h1>
+      <app-page-header title="Characters" />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

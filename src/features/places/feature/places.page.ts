@@ -3,16 +3,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
 import { createEntityListController } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
 
 @Component({
   selector: 'app-places-page',
-  imports: [EntityListPaneComponent, PlaceCardComponent, PlaceFormComponent],
+  imports: [EntityListPaneComponent, PageHeaderComponent, PlaceCardComponent, PlaceFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Places</h1>
+      <app-page-header title="Places" />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

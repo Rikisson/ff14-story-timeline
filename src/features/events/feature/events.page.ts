@@ -10,16 +10,16 @@ import {
 } from '@features/events';
 import { createEntityListController } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { EventFormComponent } from '../ui/event-form.component';
 
 @Component({
   selector: 'app-events-page',
-  imports: [EntityListPaneComponent, EventCardComponent, EventFormComponent],
+  imports: [EntityListPaneComponent, EventCardComponent, EventFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Events</h1>
+      <app-page-header title="Events" />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

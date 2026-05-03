@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthStore } from '@features/auth';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import {
   CatalogFiltersComponent,
   CatalogFilters,
@@ -15,17 +15,21 @@ import { CatalogDetailComponent } from './catalog-detail.component';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [CatalogDetailComponent, CatalogFiltersComponent, EntityListPaneComponent],
+  imports: [
+    CatalogDetailComponent,
+    CatalogFiltersComponent,
+    EntityListPaneComponent,
+    PageHeaderComponent,
+  ],
   template: `
     <div class="flex flex-col gap-4">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">Stories</h1>
+      <app-page-header title="Stories">
         <app-catalog-filters
           [value]="filters()"
           (filtersChange)="filters.set($event)"
           (reset)="filters.set(EMPTY_FILTERS)"
         />
-      </div>
+      </app-page-header>
 
       @if (actionError(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>

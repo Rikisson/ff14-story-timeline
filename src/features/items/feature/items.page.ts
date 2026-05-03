@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { createEntityListController } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { ItemsService } from '../data-access/items.service';
 import { Item, ItemDraft } from '../data-access/item.types';
 import { ItemCardComponent } from '../ui/item-card.component';
@@ -10,10 +10,10 @@ import { ItemFormComponent } from '../ui/item-form.component';
 
 @Component({
   selector: 'app-items-page',
-  imports: [EntityListPaneComponent, ItemCardComponent, ItemFormComponent],
+  imports: [EntityListPaneComponent, ItemCardComponent, ItemFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="m-0 text-2xl font-semibold text-slate-900">Items</h1>
+      <app-page-header title="Items" />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane
