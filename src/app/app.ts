@@ -99,7 +99,7 @@ export class App {
     const u = this.user();
     if (!u || !this.canSeed()) return;
     const ok = window.confirm(
-      'Seed test data? This will overwrite the default universe and any existing seeded characters, places, events, and stories.',
+      'Seed test data? This overwrites the default universe and its seeded entities (calendar, characters, places, events, stories, plotlines, items, factions, codex entries) by ID.',
     );
     if (!ok) return;
     this.seeding.set(true);

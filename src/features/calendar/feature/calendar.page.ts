@@ -10,6 +10,11 @@ import {
 } from '@shared/ui';
 import { CalendarService } from '../data-access/calendar.service';
 import {
+  EARTH_CALENDAR_PRESET,
+  FF14_CALENDAR_PRESET,
+  withFreshCalendarIds,
+} from '../data-access/calendar.presets';
+import {
   Calendar,
   CalendarEra,
   CalendarMonth,
@@ -328,7 +333,8 @@ export class CalendarPage {
     );
     if (!ok) return;
     this.errorMessage.set(null);
-    this.draft.set(kind === 'earth' ? earthCalendarPreset() : ff14CalendarPreset());
+    const base = kind === 'earth' ? EARTH_CALENDAR_PRESET : FF14_CALENDAR_PRESET;
+    this.draft.set(withFreshCalendarIds(base));
   }
 
   protected addEra(): void {
@@ -425,71 +431,3 @@ function sameCalendar(a: Calendar, b: Calendar): boolean {
   );
 }
 
-function earthCalendarPreset(): Calendar {
-  return {
-    eras: [
-      {
-        id: crypto.randomUUID(),
-        slug: 'common-era',
-        name: 'Common Era',
-        hoursPerDay: 24,
-        minutesPerHour: 60,
-        secondsPerMinute: 60,
-      },
-    ],
-    months: [
-      { id: crypto.randomUUID(), name: 'January', days: 31 },
-      { id: crypto.randomUUID(), name: 'February', days: 28 },
-      { id: crypto.randomUUID(), name: 'March', days: 31 },
-      { id: crypto.randomUUID(), name: 'April', days: 30 },
-      { id: crypto.randomUUID(), name: 'May', days: 31 },
-      { id: crypto.randomUUID(), name: 'June', days: 30 },
-      { id: crypto.randomUUID(), name: 'July', days: 31 },
-      { id: crypto.randomUUID(), name: 'August', days: 31 },
-      { id: crypto.randomUUID(), name: 'September', days: 30 },
-      { id: crypto.randomUUID(), name: 'October', days: 31 },
-      { id: crypto.randomUUID(), name: 'November', days: 30 },
-      { id: crypto.randomUUID(), name: 'December', days: 31 },
-    ],
-  };
-}
-
-function ff14CalendarPreset(): Calendar {
-  return {
-    eras: [
-      {
-        id: crypto.randomUUID(),
-        slug: 'sixth-astral',
-        name: 'Sixth Astral Era',
-        maxYears: 1577,
-        hoursPerDay: 24,
-        minutesPerHour: 60,
-        secondsPerMinute: 60,
-        description: 'The age that ended with the Calamity.',
-      },
-      {
-        id: crypto.randomUUID(),
-        slug: 'seventh-umbral',
-        name: 'Seventh Umbral Era',
-        hoursPerDay: 24,
-        minutesPerHour: 60,
-        secondsPerMinute: 60,
-        description: 'Born from the fall of Dalamud.',
-      },
-    ],
-    months: [
-      { id: crypto.randomUUID(), name: '1st Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '1st Umbral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '2nd Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '2nd Umbral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '3rd Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '3rd Umbral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '4th Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '4th Umbral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '5th Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '5th Umbral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '6th Astral Moon', days: 32 },
-      { id: crypto.randomUUID(), name: '6th Umbral Moon', days: 32 },
-    ],
-  };
-}

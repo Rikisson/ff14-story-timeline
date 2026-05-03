@@ -20,7 +20,8 @@
       "Bash(echo \"started $!\")",
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(npm test *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npx firebase *)"
     ]
   }
 }

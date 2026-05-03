@@ -1,51 +1,23 @@
-import { Calendar } from '@features/calendar';
+import {
+  Calendar,
+  FF14_CALENDAR_PRESET,
+  FF14_ERA_SEVENTH_UMBRAL_ID,
+  FF14_ERA_SIXTH_ASTRAL_ID,
+} from '@features/calendar';
 import { Character } from '@features/characters';
+import { CodexEntry } from '@features/codex';
 import { TimelineEvent } from '@features/events';
+import { Faction } from '@features/factions';
+import { Item } from '@features/items';
 import { Place } from '@features/places';
+import { Plotline } from '@features/plotlines';
 import { Story } from '@features/stories';
 import { SEED_AUTHOR_UID } from './seed-author';
 
 const SEED_CREATED_AT = 1777593600000;
 
-const ERA_SIXTH_ASTRAL_ID = 'era-sixth-astral';
-const ERA_SEVENTH_UMBRAL_ID = 'era-seventh-umbral';
-
 export const SEED_CALENDAR: Calendar = {
-  eras: [
-    {
-      id: ERA_SIXTH_ASTRAL_ID,
-      slug: 'sixth-astral',
-      name: 'Sixth Astral Era',
-      maxYears: 1577,
-      hoursPerDay: 24,
-      minutesPerHour: 60,
-      secondsPerMinute: 60,
-      description: 'The age that ended with the Calamity.',
-    },
-    {
-      id: ERA_SEVENTH_UMBRAL_ID,
-      slug: 'seventh-umbral',
-      name: 'Seventh Umbral Era',
-      hoursPerDay: 24,
-      minutesPerHour: 60,
-      secondsPerMinute: 60,
-      description: 'Born from the fall of Dalamud.',
-    },
-  ],
-  months: [
-    { id: 'month-1-astral', name: '1st Astral Moon', days: 32 },
-    { id: 'month-1-umbral', name: '1st Umbral Moon', days: 32 },
-    { id: 'month-2-astral', name: '2nd Astral Moon', days: 32 },
-    { id: 'month-2-umbral', name: '2nd Umbral Moon', days: 32 },
-    { id: 'month-3-astral', name: '3rd Astral Moon', days: 32 },
-    { id: 'month-3-umbral', name: '3rd Umbral Moon', days: 32 },
-    { id: 'month-4-astral', name: '4th Astral Moon', days: 32 },
-    { id: 'month-4-umbral', name: '4th Umbral Moon', days: 32 },
-    { id: 'month-5-astral', name: '5th Astral Moon', days: 32 },
-    { id: 'month-5-umbral', name: '5th Umbral Moon', days: 32 },
-    { id: 'month-6-astral', name: '6th Astral Moon', days: 32 },
-    { id: 'month-6-umbral', name: '6th Umbral Moon', days: 32 },
-  ],
+  ...FF14_CALENDAR_PRESET,
   updatedAt: SEED_CREATED_AT,
 };
 
@@ -136,6 +108,147 @@ export const SEED_PLACES: Place[] = [
   },
 ];
 
+export const SEED_PLOTLINES: Plotline[] = [
+  {
+    id: 'plotline-ingrid-flight',
+    slug: 'ingrid-flight',
+    title: "Ingrid's Flight",
+    summary:
+      'Ingrid escapes the destruction of her former master and rebuilds a quiet life in Ul’dah, all while searching for what remains of those nights.',
+    color: '#6366f1',
+    status: 'active',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'plotline-doman-liberation',
+    slug: 'doman-liberation',
+    title: 'Doman Liberation',
+    summary: 'The Doman resistance regroups in exile and prepares to retake the homeland.',
+    color: '#10b981',
+    status: 'planned',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'plotline-calamity-aftermath',
+    slug: 'calamity-aftermath',
+    title: 'Calamity Aftermath',
+    summary: 'The years immediately following Bahamut’s release and the realm’s slow recovery.',
+    color: '#f59e0b',
+    status: 'resolved',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+];
+
+export const SEED_ITEMS: Item[] = [
+  {
+    id: 'item-doman-tea',
+    slug: 'doman-tea',
+    name: 'Doman Tea',
+    type: 'Trade good',
+    description: 'Genuine leaf from the Far East. Harder to obtain since the Garlean withdrawal.',
+    place: { kind: 'place', id: 'place-doma' },
+    relatedCharacters: [{ kind: 'character', id: 'char-marcus' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'item-ingrid-daggers',
+    slug: 'ingrid-daggers',
+    name: "Ingrid's Daggers",
+    type: 'Weapon',
+    description: 'A matched pair carried since the night she fled Ishgard.',
+    owner: { kind: 'character', id: 'char-ingrid' },
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'item-brann-signet',
+    slug: 'brann-signet',
+    name: "Brann's Signet",
+    type: 'Relic',
+    description: 'A heavy silver signet bearing the mark of his house. Lost on the night of the attack.',
+    owner: { kind: 'character', id: 'char-brann' },
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+];
+
+export const SEED_FACTIONS: Faction[] = [
+  {
+    id: 'faction-syndicate',
+    slug: 'syndicate',
+    name: 'Syndicate',
+    type: 'Cabal',
+    description: 'The shadow council that quietly steers Ul’dahn commerce.',
+    headquarters: { kind: 'place', id: 'place-uldah-pearl-lane' },
+    relatedCharacters: [{ kind: 'character', id: 'char-marcus' }],
+    relatedPlaces: [{ kind: 'place', id: 'place-uldah-pearl-lane' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'faction-doman-liberation-front',
+    slug: 'doman-liberation-front',
+    name: 'Doman Liberation Front',
+    type: 'Resistance',
+    description: 'Survivors of fallen Doma, scattered but unbroken.',
+    headquarters: { kind: 'place', id: 'place-doma' },
+    relatedCharacters: [{ kind: 'character', id: 'char-sakuya' }],
+    relatedPlaces: [{ kind: 'place', id: 'place-doma' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'faction-house-fortemps',
+    slug: 'house-fortemps',
+    name: 'House Fortemps',
+    type: 'Noble house',
+    description: 'A high house of Ishgard, keepers of long oaths.',
+    headquarters: { kind: 'place', id: 'place-ishgard' },
+    relatedPlaces: [{ kind: 'place', id: 'place-ishgard' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+];
+
+export const SEED_CODEX_ENTRIES: CodexEntry[] = [
+  {
+    id: 'codex-voidsent-taint',
+    slug: 'voidsent-taint',
+    title: 'Voidsent Taint',
+    category: 'Lore',
+    body: 'A lingering corruption left by prolonged contact with voidsent kin. Survivors carry sensitivity to sunlight, faintly altered eye color, and an instinctive drift toward shadow.',
+    relatedRefs: [
+      { kind: 'character', id: 'char-ingrid' },
+      { kind: 'character', id: 'char-brann' },
+    ],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-the-echo',
+    slug: 'the-echo',
+    title: 'The Echo',
+    category: 'Lore',
+    body: 'A rare gift that lets the bearer glimpse memories not their own. Those who carry it are drawn into greater currents of fate whether they wish it or not.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-calamity',
+    slug: 'seventh-umbral-calamity',
+    title: 'The Seventh Umbral Calamity',
+    category: 'History',
+    body: 'The cataclysm that ended the Sixth Astral Era and reshaped Eorzea. Five years on, the realm still measures its losses.',
+    relatedRefs: [{ kind: 'event', id: 'event-seventh-umbral-calamity' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+];
+
 export const SEED_EVENTS: TimelineEvent[] = [
   {
     id: 'event-seventh-umbral-calamity',
@@ -148,8 +261,9 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'place', id: 'place-uldah-pearl-lane' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
     ],
-    inGameDate: { era: ERA_SIXTH_ASTRAL_ID, year: 1572 },
+    inGameDate: { era: FF14_ERA_SIXTH_ASTRAL_ID, year: 1572 },
     relatedDates: ['1577 6AE'],
+    plotlineRefs: [{ kind: 'plotline', id: 'plotline-calamity-aftermath' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -161,8 +275,10 @@ export const SEED_EVENTS: TimelineEvent[] = [
       'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
     mainCharacters: [{ kind: 'character', id: 'char-sakuya' }],
     places: [{ kind: 'place', id: 'place-doma' }],
-    inGameDate: { era: ERA_SIXTH_ASTRAL_ID, year: 1557 },
+    inGameDate: { era: FF14_ERA_SIXTH_ASTRAL_ID, year: 1557 },
     relatedDates: ['1582 6AE'],
+    plotlineRefs: [{ kind: 'plotline', id: 'plotline-doman-liberation' }],
+    factionRefs: [{ kind: 'faction', id: 'faction-doman-liberation-front' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -182,8 +298,14 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'place', id: 'place-ishgard' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
     ],
-    inGameDate: { era: ERA_SEVENTH_UMBRAL_ID, year: 5 },
+    inGameDate: { era: FF14_ERA_SEVENTH_UMBRAL_ID, year: 5 },
     relatedDates: ['Year 8 of the Seventh Umbral Era, late afternoon'],
+    plotlineRefs: [
+      { kind: 'plotline', id: 'plotline-ingrid-flight' },
+      { kind: 'plotline', id: 'plotline-calamity-aftermath' },
+    ],
+    itemRefs: [{ kind: 'item', id: 'item-brann-signet' }],
+    factionRefs: [{ kind: 'faction', id: 'faction-syndicate' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -209,11 +331,15 @@ export const SEED_STORY: Story = {
     { kind: 'place', id: 'place-gridania-northern-shroud' },
   ],
   inGameDate: {
-    era: ERA_SEVENTH_UMBRAL_ID,
+    era: FF14_ERA_SEVENTH_UMBRAL_ID,
     year: 8,
     hour: 17,
     display: 'Year 8 of the Seventh Umbral Era, late afternoon',
   },
+  plotlineRefs: [{ kind: 'plotline', id: 'plotline-ingrid-flight' }],
+  itemRefs: [{ kind: 'item', id: 'item-doman-tea' }],
+  factionRefs: [{ kind: 'faction', id: 'faction-syndicate' }],
+  relatedEvents: [{ kind: 'event', id: 'event-brann-house-attack' }],
   startSceneId: 's01_opening',
   authorUid: SEED_AUTHOR_UID,
   draft: false,

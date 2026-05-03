@@ -2,7 +2,17 @@ import { inject, Injectable } from '@angular/core';
 import { doc, setDoc } from 'firebase/firestore/lite';
 import { StoredUniverse } from '@features/universes';
 import { FirebaseService } from '../app/firebase/firebase.service';
-import { SEED_CALENDAR, SEED_CHARACTERS, SEED_EVENTS, SEED_PLACES, SEED_STORY } from './seed-data';
+import {
+  SEED_CALENDAR,
+  SEED_CHARACTERS,
+  SEED_CODEX_ENTRIES,
+  SEED_EVENTS,
+  SEED_FACTIONS,
+  SEED_ITEMS,
+  SEED_PLACES,
+  SEED_PLOTLINES,
+  SEED_STORY,
+} from './seed-data';
 
 export const DEFAULT_UNIVERSE_ID = 'universe-default';
 export const DEFAULT_UNIVERSE_SLUG = 'default-universe';
@@ -24,27 +34,11 @@ export class SeederService {
   }
 
   async seedCharacters(authorUid: string): Promise<void> {
-    const db = this.firebase.firestore;
-    await Promise.all(
-      SEED_CHARACTERS.map(({ id, ...data }) =>
-        setDoc(doc(db, 'universes', DEFAULT_UNIVERSE_ID, 'characters', id), {
-          ...data,
-          authorUid,
-        }),
-      ),
-    );
+    await this.seedCollection('characters', SEED_CHARACTERS, authorUid);
   }
 
   async seedPlaces(authorUid: string): Promise<void> {
-    const db = this.firebase.firestore;
-    await Promise.all(
-      SEED_PLACES.map(({ id, ...data }) =>
-        setDoc(doc(db, 'universes', DEFAULT_UNIVERSE_ID, 'places', id), {
-          ...data,
-          authorUid,
-        }),
-      ),
-    );
+    await this.seedCollection('places', SEED_PLACES, authorUid);
   }
 
   async seedStory(authorUid: string): Promise<void> {
@@ -56,15 +50,23 @@ export class SeederService {
   }
 
   async seedEvents(authorUid: string): Promise<void> {
-    const db = this.firebase.firestore;
-    await Promise.all(
-      SEED_EVENTS.map(({ id, ...data }) =>
-        setDoc(doc(db, 'universes', DEFAULT_UNIVERSE_ID, 'events', id), {
-          ...data,
-          authorUid,
-        }),
-      ),
-    );
+    await this.seedCollection('events', SEED_EVENTS, authorUid);
+  }
+
+  async seedPlotlines(authorUid: string): Promise<void> {
+    await this.seedCollection('plotlines', SEED_PLOTLINES, authorUid);
+  }
+
+  async seedItems(authorUid: string): Promise<void> {
+    await this.seedCollection('items', SEED_ITEMS, authorUid);
+  }
+
+  async seedFactions(authorUid: string): Promise<void> {
+    await this.seedCollection('factions', SEED_FACTIONS, authorUid);
+  }
+
+  async seedCodexEntries(authorUid: string): Promise<void> {
+    await this.seedCollection('codexEntries', SEED_CODEX_ENTRIES, authorUid);
   }
 
   async seedCalendar(): Promise<void> {
@@ -79,9 +81,29 @@ export class SeederService {
     await Promise.all([
       this.seedCharacters(authorUid),
       this.seedPlaces(authorUid),
+      this.seedPlotlines(authorUid),
+      this.seedItems(authorUid),
+      this.seedFactions(authorUid),
+      this.seedCodexEntries(authorUid),
       this.seedStory(authorUid),
       this.seedEvents(authorUid),
       this.seedCalendar(),
     ]);
+  }
+
+  private async seedCollection<T extends { id: string }>(
+    collectionName: string,
+    items: T[],
+    authorUid: string,
+  ): Promise<void> {
+    const db = this.firebase.firestore;
+    await Promise.all(
+      items.map(({ id, ...data }) =>
+        setDoc(doc(db, 'universes', DEFAULT_UNIVERSE_ID, collectionName, id), {
+          ...data,
+          authorUid,
+        }),
+      ),
+    );
   }
 }
