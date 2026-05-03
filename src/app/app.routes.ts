@@ -12,6 +12,11 @@ export const routes: Routes = [
     loadChildren: () => import('@features/player').then((m) => m.PLAYER_ROUTES),
   },
   {
+    path: 'timeline',
+    canActivate: [universeGuard],
+    loadChildren: () => import('@features/timeline').then((m) => m.TIMELINE_ROUTES),
+  },
+  {
     path: 'characters',
     canActivate: [universeGuard],
     loadChildren: () => import('@features/characters').then((m) => m.CHARACTERS_ROUTES),

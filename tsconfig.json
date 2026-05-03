@@ -27,6 +27,7 @@
       "@features/factions": ["src/features/factions/index.ts"],
       "@features/codex": ["src/features/codex/index.ts"],
       "@features/calendar": ["src/features/calendar/index.ts"],
+      "@features/timeline": ["src/features/timeline/index.ts"],
       "@features/player": ["src/features/player/index.ts"],
       "@features/editor": ["src/features/editor/index.ts"],
       "@shared/ui": ["src/shared/ui/index.ts"],

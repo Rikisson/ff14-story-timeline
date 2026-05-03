@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CharactersService } from '@features/characters';
+import { TimelineEvent } from '@features/events';
 import { PlacesService } from '@features/places';
 import { Story } from '@features/stories';
 import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
@@ -19,6 +20,33 @@ export const EMPTY_FILTERS: CatalogFilters = {
 export type SortDirection = 'asc' | 'desc';
 
 type ArrayKey = 'characters' | 'places';
+
+export function matchesStory(story: Story, f: CatalogFilters): boolean {
+  if (
+    f.characters.length &&
+    !story.mainCharacters.some((r) => f.characters.includes(r.id))
+  ) {
+    return false;
+  }
+  if (f.places.length && !story.places.some((r) => f.places.includes(r.id))) return false;
+  return true;
+}
+
+export function matchesEvent(
+  event: TimelineEvent,
+  f: CatalogFilters,
+  uid: string | null,
+): boolean {
+  if (f.mineOnly && (!uid || event.authorUid !== uid)) return false;
+  if (
+    f.characters.length &&
+    !event.mainCharacters.some((r) => f.characters.includes(r.id))
+  ) {
+    return false;
+  }
+  if (f.places.length && !event.places.some((r) => f.places.includes(r.id))) return false;
+  return true;
+}
 
 @Component({
   selector: 'app-catalog-filters',
@@ -84,7 +112,6 @@ type ArrayKey = 'characters' | 'places';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalogFiltersComponent {
-  readonly stories = input.required<Story[]>();
   readonly value = input.required<CatalogFilters>();
   readonly showMineFilter = input<boolean>(false);
   readonly showSortControl = input<boolean>(false);
