@@ -4,38 +4,27 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthStore } from '@features/auth';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import { EntityListPaneComponent, ListPaneItem, PrimaryButtonComponent } from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem } from '@shared/ui';
 import {
   CatalogFiltersComponent,
   CatalogFilters,
   EMPTY_FILTERS,
   matchesStory,
 } from './catalog-filters.component';
-import { CatalogCardComponent } from './catalog-card.component';
+import { CatalogDetailComponent } from './catalog-detail.component';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [
-    CatalogCardComponent,
-    CatalogFiltersComponent,
-    EntityListPaneComponent,
-    PrimaryButtonComponent,
-  ],
+  imports: [CatalogDetailComponent, CatalogFiltersComponent, EntityListPaneComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <h1 class="sr-only">Stories</h1>
       <div class="flex flex-wrap items-end justify-between gap-3">
+        <h1 class="m-0 text-2xl font-semibold text-slate-900">Stories</h1>
         <app-catalog-filters
           [value]="filters()"
           (filtersChange)="filters.set($event)"
           (reset)="filters.set(EMPTY_FILTERS)"
         />
-
-        @if (canCreate()) {
-          <button uiPrimary type="button" [loading]="creating()" (click)="createStory()">
-            + New story
-          </button>
-        }
       </div>
 
       @if (actionError(); as e) {
@@ -48,16 +37,18 @@ import { CatalogCardComponent } from './catalog-card.component';
           [selectedId]="selectedId()"
           [hasMore]="stories.hasMore()"
           [loadingMore]="stories.loadingMore()"
-          [canCreate]="false"
+          [canCreate]="canCreate()"
+          createLabel="+ New story"
           emptyMessage="No stories match the current filters."
           ariaLabel="Stories list"
           (select)="onSelect($event)"
+          (create)="createStory()"
           (loadMore)="stories.loadMorePublished()"
         />
 
         <section class="flex flex-col" aria-label="Story details">
           @if (selected(); as s) {
-            <app-catalog-card
+            <app-catalog-detail
               [story]="s"
               [canEdit]="canCreate()"
               (remove)="deleteStory($event)"
@@ -126,7 +117,7 @@ export class CatalogPage {
 
   protected async createStory(): Promise<void> {
     const u = this.user();
-    if (!u) return;
+    if (!u || this.creating()) return;
     this.creating.set(true);
     this.actionError.set(null);
     try {
