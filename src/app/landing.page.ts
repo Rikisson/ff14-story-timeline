@@ -13,25 +13,24 @@ import { UniverseStore } from '@features/universes';
           aria-hidden="true"
         ></span>
         <p class="m-0 text-slate-600">Loading universes…</p>
-      } @else if (!user()) {
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">Welcome</h1>
-        <p class="m-0 text-slate-600">
-          Sign in with the button in the top-right to begin.
-        </p>
       } @else if (universes().length === 0) {
         <h1 class="m-0 text-2xl font-semibold text-slate-900">No universes available</h1>
         <p class="m-0 text-slate-600">
-          You aren't a member of any universe yet.
           @if (canCreate()) {
             Use the universe menu in the top-left to create one.
+          } @else if (user()) {
+            Nothing to read yet — check back once a universe has been published.
           } @else {
-            Ask a universe owner to add you.
+            Nothing to read yet. Sign in if you'd like to author your own stories.
           }
         </p>
       } @else {
         <h1 class="m-0 text-2xl font-semibold text-slate-900">Pick a universe</h1>
         <p class="m-0 text-slate-600">
-          Use the universe menu in the top-left to choose where to work.
+          Use the universe menu in the top-left to choose what to read.
+          @if (!user()) {
+            Sign in if you'd like to author or edit.
+          }
         </p>
       }
     </div>
