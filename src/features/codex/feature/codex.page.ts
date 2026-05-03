@@ -13,7 +13,10 @@ import { CodexEntryFormComponent } from '../ui/codex-entry-form.component';
   imports: [EntityListPaneComponent, CodexEntryCardComponent, CodexEntryFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Codex" />
+      <app-page-header
+        title="Codex"
+        subtitle="Encyclopedic entries — anything that doesn't fit the other categories."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

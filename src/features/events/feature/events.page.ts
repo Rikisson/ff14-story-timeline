@@ -19,7 +19,10 @@ import { EventFormComponent } from '../ui/event-form.component';
   imports: [EntityListPaneComponent, EventCardComponent, EventFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Events" />
+      <app-page-header
+        title="Events"
+        subtitle="Timeline-anchored happenings — battles, treaties, calamities, personal turning points."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

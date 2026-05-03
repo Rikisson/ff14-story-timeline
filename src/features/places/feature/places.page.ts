@@ -12,7 +12,10 @@ import { PlaceFormComponent } from '../ui/place-form.component';
   imports: [EntityListPaneComponent, PageHeaderComponent, PlaceCardComponent, PlaceFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Places" />
+      <app-page-header
+        title="Places"
+        subtitle="Locations where stories unfold and events occur."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

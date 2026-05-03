@@ -13,7 +13,10 @@ import { FactionFormComponent } from '../ui/faction-form.component';
   imports: [EntityListPaneComponent, FactionCardComponent, FactionFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Factions" />
+      <app-page-header
+        title="Factions"
+        subtitle="Organizations, houses, and powers acting across this universe."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

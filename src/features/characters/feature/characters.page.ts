@@ -19,7 +19,10 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
   ],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Characters" />
+      <app-page-header
+        title="Characters"
+        subtitle="People who recur across this universe's stories and events."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

@@ -13,7 +13,10 @@ import { ItemFormComponent } from '../ui/item-form.component';
   imports: [EntityListPaneComponent, ItemCardComponent, ItemFormComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Items" />
+      <app-page-header
+        title="Items"
+        subtitle="Objects and artifacts referenced throughout this universe."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane

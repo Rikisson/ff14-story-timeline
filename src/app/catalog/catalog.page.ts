@@ -23,7 +23,10 @@ import { CatalogDetailComponent } from './catalog-detail.component';
   ],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Stories">
+      <app-page-header
+        title="Stories"
+        subtitle="Branching scenes you can play through, scoped to this universe."
+      >
         <app-catalog-filters
           [value]="filters()"
           (filtersChange)="filters.set($event)"

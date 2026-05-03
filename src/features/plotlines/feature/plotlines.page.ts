@@ -13,7 +13,10 @@ import { PlotlineFormComponent } from '../ui/plotline-form.component';
   imports: [EntityListPaneComponent, PageHeaderComponent, PlotlineCardComponent, PlotlineFormComponent],
   template: `
     <div class="flex flex-col gap-4">
-      <app-page-header title="Plotlines" />
+      <app-page-header
+        title="Plotlines"
+        subtitle="Narrative arcs that group related stories and events together."
+      />
 
       <div class="grid gap-4 md:grid-cols-[320px_1fr]">
         <app-entity-list-pane
