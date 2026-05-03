@@ -32,15 +32,6 @@ export function withEditorMethods() {
               draft: story.draft,
               publishedAt: story.publishedAt,
             },
-            passthrough: {
-              description: story.description,
-              genreTags: story.genreTags,
-              toneTags: story.toneTags,
-              relatedEvents: story.relatedEvents,
-              plotlineRefs: story.plotlineRefs,
-              itemRefs: story.itemRefs,
-              factionRefs: story.factionRefs,
-            },
             authorUid: story.authorUid,
             startSceneId: story.startSceneId,
             scenes: story.scenes,
@@ -74,7 +65,6 @@ export function withEditorMethods() {
           try {
             const story: Story = {
               id,
-              ...store.passthrough(),
               ...meta,
               authorUid,
               startSceneId,
