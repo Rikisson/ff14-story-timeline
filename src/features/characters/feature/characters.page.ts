@@ -88,9 +88,8 @@ export class CharactersPage {
     return c ? { slug: c.slug, name: c.name, race: c.race, job: c.job } : null;
   });
 
-  protected canEdit(c: Character): boolean {
-    const u = this.user();
-    return !!u && u.uid === c.authorUid;
+  protected canEdit(_c: Character): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

@@ -83,9 +83,8 @@ export class ItemsPage {
       : null;
   });
 
-  protected canEdit(i: Item): boolean {
-    const u = this.user();
-    return !!u && u.uid === i.authorUid;
+  protected canEdit(_i: Item): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

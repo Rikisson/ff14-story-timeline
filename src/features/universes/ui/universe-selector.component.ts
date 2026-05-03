@@ -13,10 +13,11 @@ import { SlugTakenError, UniversesService } from '../data-access/universes.servi
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseDraft } from '../data-access/universe.types';
 import { UniverseFormComponent } from './universe-form.component';
+import { UniverseMembersComponent } from './universe-members.component';
 
 @Component({
   selector: 'app-universe-selector',
-  imports: [UniverseFormComponent],
+  imports: [UniverseFormComponent, UniverseMembersComponent],
   template: `
     <div class="relative">
       <button
@@ -71,14 +72,24 @@ import { UniverseFormComponent } from './universe-form.component';
               }
             </ul>
           }
-          @if (canCreate()) {
-            <div class="border-t border-slate-200 p-1">
-              <button
-                type="button"
-                role="menuitem"
-                class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                (click)="openCreate()"
-              >+ Create universe</button>
+          @if (isOwnerOfActive() || canCreate()) {
+            <div class="flex flex-col gap-1 border-t border-slate-200 p-1">
+              @if (isOwnerOfActive()) {
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  (click)="openMembers()"
+                >Manage members</button>
+              }
+              @if (canCreate()) {
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  (click)="openCreate()"
+                >+ Create universe</button>
+              }
             </div>
           }
         </div>
@@ -101,6 +112,19 @@ import { UniverseFormComponent } from './universe-form.component';
         />
       </div>
     </dialog>
+
+    <dialog
+      #membersDialog
+      class="rounded-lg p-0 backdrop:bg-slate-900/40"
+      aria-label="Manage members"
+      (click)="onMembersBackdropClick($event)"
+    >
+      <div class="w-[min(32rem,92vw)] p-4">
+        @if (activeUniverse(); as u) {
+          <app-universe-members [universe]="u" (closed)="closeMembers()" />
+        }
+      </div>
+    </dialog>
   `,
   host: {
     '(document:click)': 'onDocumentClick($event)',
@@ -116,10 +140,13 @@ export class UniverseSelectorComponent {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly createDialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
+  private readonly membersDialog = viewChild.required<ElementRef<HTMLDialogElement>>('membersDialog');
 
   protected readonly universes = this.store.universes;
   protected readonly activeId = this.store.activeUniverseId;
+  protected readonly activeUniverse = this.store.activeUniverse;
   protected readonly canCreate = this.store.canCreateUniverse;
+  protected readonly isOwnerOfActive = this.store.isOwnerOfActive;
   protected readonly open = signal(false);
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -161,6 +188,21 @@ export class UniverseSelectorComponent {
   protected onDialogBackdropClick(event: MouseEvent): void {
     if (event.target === this.createDialog().nativeElement) {
       this.closeCreate();
+    }
+  }
+
+  protected openMembers(): void {
+    this.close();
+    this.membersDialog().nativeElement.showModal();
+  }
+
+  protected closeMembers(): void {
+    this.membersDialog().nativeElement.close();
+  }
+
+  protected onMembersBackdropClick(event: MouseEvent): void {
+    if (event.target === this.membersDialog().nativeElement) {
+      this.closeMembers();
     }
   }
 

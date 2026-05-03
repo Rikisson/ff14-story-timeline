@@ -1,5 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -9,6 +11,7 @@ import {
   orderBy,
   query,
   setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore/lite';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
@@ -72,5 +75,19 @@ export class UniversesService {
 
   async remove(id: string): Promise<void> {
     await deleteDoc(doc(this.firebase.firestore, 'universes', id));
+  }
+
+  async addEditor(universeId: string, uid: string): Promise<void> {
+    await updateDoc(doc(this.firebase.firestore, 'universes', universeId), {
+      editorUids: arrayUnion(uid),
+      updatedAt: Date.now(),
+    });
+  }
+
+  async removeEditor(universeId: string, uid: string): Promise<void> {
+    await updateDoc(doc(this.firebase.firestore, 'universes', universeId), {
+      editorUids: arrayRemove(uid),
+      updatedAt: Date.now(),
+    });
   }
 }

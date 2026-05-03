@@ -82,9 +82,8 @@ export class FactionsPage {
       : null;
   });
 
-  protected canEdit(f: Faction): boolean {
-    const u = this.user();
-    return !!u && u.uid === f.authorUid;
+  protected canEdit(_f: Faction): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

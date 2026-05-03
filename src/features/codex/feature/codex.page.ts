@@ -80,9 +80,8 @@ export class CodexPage {
       : null;
   });
 
-  protected canEdit(e: CodexEntry): boolean {
-    const u = this.user();
-    return !!u && u.uid === e.authorUid;
+  protected canEdit(_e: CodexEntry): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

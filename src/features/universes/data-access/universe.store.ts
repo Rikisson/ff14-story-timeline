@@ -69,6 +69,13 @@ export const UniverseStore = signalStore(
       if (!u) return false;
       return u.ownerUid === uid || u.editorUids.includes(uid);
     }),
+    isOwnerOfActive: computed<boolean>(() => {
+      const uid = auth.user()?.uid;
+      const id = store.activeUniverseId();
+      if (!uid || !id) return false;
+      const u = store.universes().find((x) => x.id === id);
+      return !!u && u.ownerUid === uid;
+    }),
     canCreateUniverse: computed<boolean>(() => {
       const uid = auth.user()?.uid;
       return !!uid && UNIVERSE_CREATOR_UIDS.includes(uid);

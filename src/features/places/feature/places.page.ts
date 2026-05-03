@@ -73,9 +73,8 @@ export class PlacesPage {
       : null;
   });
 
-  protected canEdit(p: Place): boolean {
-    const u = this.user();
-    return !!u && u.uid === p.authorUid;
+  protected canEdit(_p: Place): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

@@ -101,9 +101,8 @@ export class EventsPage {
     );
   });
 
-  protected canEdit(e: TimelineEvent): boolean {
-    const u = this.user();
-    return !!u && u.uid === e.authorUid;
+  protected canEdit(_e: TimelineEvent): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

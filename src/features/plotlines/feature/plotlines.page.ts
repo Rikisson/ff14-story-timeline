@@ -80,9 +80,8 @@ export class PlotlinesPage {
       : null;
   });
 
-  protected canEdit(p: Plotline): boolean {
-    const u = this.user();
-    return !!u && u.uid === p.authorUid;
+  protected canEdit(_p: Plotline): boolean {
+    return this.canCreate();
   }
 
   protected startCreate(): void {

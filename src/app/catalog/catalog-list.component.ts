@@ -13,7 +13,7 @@ import { CatalogCardComponent } from './catalog-card.component';
         <li>
           <app-catalog-card
             [story]="story"
-            [canEdit]="canEdit(story)"
+            [canEdit]="canManage()"
             (remove)="remove.emit($event)"
           />
         </li>
@@ -24,12 +24,7 @@ import { CatalogCardComponent } from './catalog-card.component';
 })
 export class CatalogListComponent {
   readonly stories = input.required<Story[]>();
-  readonly currentUserUid = input<string | null>(null);
+  readonly canManage = input<boolean>(false);
 
   readonly remove = output<string>();
-
-  protected canEdit(story: Story): boolean {
-    const uid = this.currentUserUid();
-    return !!uid && uid === story.authorUid;
-  }
 }

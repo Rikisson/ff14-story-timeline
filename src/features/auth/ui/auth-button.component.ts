@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
 
@@ -12,6 +12,13 @@ import { AuthStore } from '../data-access/auth.store';
       <span class="text-sm text-slate-700">
         Signed in as {{ u.displayName ?? u.email }}
       </span>
+      <button
+        uiGhost
+        type="button"
+        [attr.aria-label]="'Copy your UID to clipboard'"
+        [title]="copied() ? 'Copied!' : ('Your UID: ' + u.uid)"
+        (click)="copyUid(u.uid)"
+      >{{ copied() ? 'UID copied' : 'Copy UID' }}</button>
       <button uiGhost type="button" (click)="auth.logout()">Sign out</button>
     } @else {
       <button uiSecondary type="button" (click)="auth.login()">
@@ -27,4 +34,15 @@ import { AuthStore } from '../data-access/auth.store';
 })
 export class AuthButtonComponent {
   protected readonly auth = inject(AuthStore);
+  protected readonly copied = signal(false);
+
+  protected async copyUid(uid: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(uid);
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 1500);
+    } catch {
+      window.prompt('Copy your UID:', uid);
+    }
+  }
 }

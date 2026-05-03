@@ -84,7 +84,7 @@ type ViewMode = 'list' | 'timeline';
       } @else if (view() === 'list') {
         <app-catalog-list
           [stories]="filteredStories()"
-          [currentUserUid]="user()?.uid ?? null"
+          [canManage]="canCreate()"
           (remove)="deleteStory($event)"
         />
       } @else {
@@ -92,7 +92,7 @@ type ViewMode = 'list' | 'timeline';
           [stories]="filteredStories()"
           [events]="filteredEvents()"
           [sortDirection]="sortDirection()"
-          [currentUserUid]="user()?.uid ?? null"
+          [canManage]="canCreate()"
         />
       }
     </div>

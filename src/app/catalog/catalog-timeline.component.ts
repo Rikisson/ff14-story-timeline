@@ -36,7 +36,7 @@ const UNDATED_LABEL = 'Undated';
             }
             @for (story of group.stories; track story.id) {
               <li>
-                <app-catalog-card [story]="story" [canEdit]="canEditStory(story)" />
+                <app-catalog-card [story]="story" [canEdit]="canManage()" />
               </li>
             }
           </ul>
@@ -50,7 +50,7 @@ export class CatalogTimelineComponent {
   readonly stories = input.required<Story[]>();
   readonly events = input<TimelineEvent[]>([]);
   readonly sortDirection = input<SortDirection>('asc');
-  readonly currentUserUid = input<string | null>(null);
+  readonly canManage = input<boolean>(false);
 
   protected readonly groups = computed<TimelineGroup[]>(() => {
     const buckets = new Map<string, TimelineGroup>();
@@ -72,10 +72,6 @@ export class CatalogTimelineComponent {
     return Array.from(buckets.values()).sort((a, b) => compareDates(a.date, b.date, direction));
   });
 
-  protected canEditStory(story: Story): boolean {
-    const uid = this.currentUserUid();
-    return !!uid && uid === story.authorUid;
-  }
 }
 
 function compareDates(a: string, b: string, direction: SortDirection): number {
