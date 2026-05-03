@@ -5,7 +5,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'timeline',
+    loadComponent: () => import('./landing.page').then((m) => m.LandingPage),
   },
   {
     path: 'library',

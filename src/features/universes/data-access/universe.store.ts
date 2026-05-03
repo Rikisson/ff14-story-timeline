@@ -104,13 +104,21 @@ export const UniverseStore = signalStore(
   })),
   withHooks((store) => {
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+    const auth = inject(AuthStore);
     return {
       onInit() {
         if (!isBrowser) return;
         const stored = readStoredActiveId(isBrowser);
         if (stored) patchState(store, { activeUniverseId: stored });
 
-        void store.refresh();
+        let lastUid: string | null | undefined = undefined;
+        effect(() => {
+          if (auth.loading()) return;
+          const uid = auth.user()?.uid ?? null;
+          if (uid === lastUid) return;
+          lastUid = uid;
+          void store.refresh();
+        });
 
         effect(() => {
           writeStoredActiveId(isBrowser, store.activeUniverseId());

@@ -428,6 +428,24 @@ export const SEED_EVENTS: TimelineEvent[] = [
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
+  // Filler events for pagination testing — keep the meaningful 3 above by
+  // using strictly older createdAt values so orderBy('createdAt','desc') ranks
+  // them last.
+  ...Array.from(
+    { length: 72 },
+    (_, i): TimelineEvent => ({
+      id: `event-filler-${String(i + 1).padStart(2, '0')}`,
+      slug: `filler-event-${String(i + 1).padStart(2, '0')}`,
+      name: `Filler event ${i + 1}`,
+      description: `Auto-generated filler entry #${i + 1} for pagination testing.`,
+      mainCharacters: [],
+      places: [],
+      inGameDate: {},
+      relatedDates: [],
+      authorUid: SEED_AUTHOR_UID,
+      createdAt: SEED_CREATED_AT - (i + 1) * 1000,
+    }),
+  ),
 ];
 
 export const SEED_STORY: Story = {

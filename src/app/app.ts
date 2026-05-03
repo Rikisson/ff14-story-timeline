@@ -55,6 +55,7 @@ export class App {
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
+  protected readonly hasActiveUniverse = computed(() => !!this.universes.activeUniverse());
 
   protected readonly isNavigating = toSignal(
     this.router.events.pipe(

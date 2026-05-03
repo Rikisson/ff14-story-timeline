@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
 
@@ -19,7 +20,7 @@ import { AuthStore } from '../data-access/auth.store';
         [title]="copied() ? 'Copied!' : ('Your UID: ' + u.uid)"
         (click)="copyUid(u.uid)"
       >{{ copied() ? 'UID copied' : 'Copy UID' }}</button>
-      <button uiGhost type="button" (click)="auth.logout()">Sign out</button>
+      <button uiGhost type="button" (click)="signOut()">Sign out</button>
     } @else {
       <button uiSecondary type="button" (click)="auth.login()">
         Sign in with Google
@@ -34,7 +35,13 @@ import { AuthStore } from '../data-access/auth.store';
 })
 export class AuthButtonComponent {
   protected readonly auth = inject(AuthStore);
+  private readonly router = inject(Router);
   protected readonly copied = signal(false);
+
+  protected async signOut(): Promise<void> {
+    await this.auth.logout();
+    await this.router.navigate(['/']);
+  }
 
   protected async copyUid(uid: string): Promise<void> {
     try {
