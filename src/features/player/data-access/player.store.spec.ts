@@ -9,7 +9,7 @@ const sampleStory: Story = {
   title: 'Test',
   mainCharacters: [],
   places: [],
-  inGameDate: '',
+  inGameDate: {},
   startSceneId: 'a',
   scenes: {
     a: { text: 'A', characters: [], position: { x: 0, y: 0 }, next: [{ sceneId: 'b' }, { sceneId: 'c' }] },

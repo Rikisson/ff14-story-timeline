@@ -12,6 +12,7 @@ import {
 } from '@angular/router';
 import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
+import { CalendarService } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
@@ -50,6 +51,7 @@ export class App {
   private readonly items = inject(ItemsService);
   private readonly factions = inject(FactionsService);
   private readonly codex = inject(CodexEntriesService);
+  private readonly calendar = inject(CalendarService);
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
@@ -88,6 +90,8 @@ export class App {
     if (fa) errors.push({ label: 'Factions', message: fa });
     const cx = this.codex.refreshError();
     if (cx) errors.push({ label: 'Codex', message: cx });
+    const ca = this.calendar.refreshError();
+    if (ca) errors.push({ label: 'Calendar', message: ca });
     return errors;
   });
 

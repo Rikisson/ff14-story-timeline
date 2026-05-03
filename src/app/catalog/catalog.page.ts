@@ -193,7 +193,6 @@ function matches(story: Story, f: CatalogFilters): boolean {
     return false;
   }
   if (f.places.length && !story.places.some((r) => f.places.includes(r.id))) return false;
-  if (f.inGameDates.length && !f.inGameDates.includes(story.inGameDate)) return false;
   return true;
 }
 
@@ -206,6 +205,5 @@ function matchesEvent(event: TimelineEvent, f: CatalogFilters, uid: string | nul
     return false;
   }
   if (f.places.length && !event.places.some((r) => f.places.includes(r.id))) return false;
-  if (f.inGameDates.length && !f.inGameDates.includes(event.inGameDate)) return false;
   return true;
 }

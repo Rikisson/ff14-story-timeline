@@ -1,12 +1,13 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { StoryAssetsService } from '@features/stories';
-import { SLUG_PATTERN } from '@shared/models';
+import { InGameDate, SLUG_PATTERN } from '@shared/models';
 import {
   ComboboxOption,
   ComboboxPickerComponent,
   EntityPickerOption,
   GhostButtonComponent,
+  InGameDateInputComponent,
   RichTextInputComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
@@ -17,6 +18,7 @@ import { StoryMeta } from '../data-access/editor.state';
   selector: 'app-story-meta-panel',
   imports: [
     ComboboxPickerComponent,
+    InGameDateInputComponent,
     RichTextInputComponent,
     GhostButtonComponent,
     SecondaryButtonComponent,
@@ -124,23 +126,11 @@ import { StoryMeta } from '../data-access/editor.state';
       </div>
 
       <div class="field">
-        <label for="meta-date">In-game date</label>
-        <input
-          id="meta-date"
-          type="text"
-          list="meta-date-suggestions"
-          autocomplete="off"
+        <app-in-game-date-input
+          label="In-game date"
           [value]="m.inGameDate"
-          (input)="onDate($event)"
+          (valueChanged)="onDate($event)"
         />
-        <datalist id="meta-date-suggestions">
-          @for (d of dateSuggestions(); track d) {
-            <option [value]="d"></option>
-          }
-        </datalist>
-        <span class="hint">
-          Pick from existing dates or type a new one — universe authors set the convention.
-        </span>
       </div>
 
       <div class="field checkbox">
@@ -230,7 +220,6 @@ export class StoryMetaPanelComponent {
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
-  readonly dateSuggestions = input<string[]>([]);
   readonly update = output<Partial<StoryMeta>>();
 
   private readonly assets = inject(StoryAssetsService);
@@ -277,8 +266,8 @@ export class StoryMetaPanelComponent {
     });
   }
 
-  protected onDate(event: Event): void {
-    this.update.emit({ inGameDate: (event.target as HTMLInputElement).value });
+  protected onDate(value: InGameDate): void {
+    this.update.emit({ inGameDate: value });
   }
 
   protected onDraft(event: Event): void {

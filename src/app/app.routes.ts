@@ -47,6 +47,11 @@ export const routes: Routes = [
     loadChildren: () => import('@features/codex').then((m) => m.CODEX_ROUTES),
   },
   {
+    path: 'calendar',
+    canActivate: [universeGuard],
+    loadChildren: () => import('@features/calendar').then((m) => m.CALENDAR_ROUTES),
+  },
+  {
     path: 'edit',
     canActivate: [editorGuard],
     loadChildren: () => import('@features/editor').then((m) => m.EDITOR_ROUTES),

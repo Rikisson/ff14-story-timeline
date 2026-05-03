@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { CalendarService } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { PlacesService } from '@features/places';
 import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
@@ -22,7 +24,7 @@ import { TimelineEvent } from '../data-access/event.types';
         </span>
       </div>
 
-      @if (event().inGameDate; as d) {
+      @if (formattedDate(); as d) {
         <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700">{{ d }}</p>
       }
 
@@ -64,6 +66,15 @@ export class EventCardComponent {
 
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
+  private readonly calendar = inject(CalendarService);
+
+  protected readonly formattedDate = computed(() => {
+    const d = this.event().inGameDate;
+    return formatInGameDate(d, {
+      eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
+      monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
+    });
+  });
 
   protected readonly characterNames = computed(() => {
     const refs = this.event().mainCharacters;

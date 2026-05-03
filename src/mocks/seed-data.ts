@@ -1,3 +1,4 @@
+import { Calendar } from '@features/calendar';
 import { Character } from '@features/characters';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
@@ -5,6 +6,48 @@ import { Story } from '@features/stories';
 import { SEED_AUTHOR_UID } from './seed-author';
 
 const SEED_CREATED_AT = 1777593600000;
+
+const ERA_SIXTH_ASTRAL_ID = 'era-sixth-astral';
+const ERA_SEVENTH_UMBRAL_ID = 'era-seventh-umbral';
+
+export const SEED_CALENDAR: Calendar = {
+  eras: [
+    {
+      id: ERA_SIXTH_ASTRAL_ID,
+      slug: 'sixth-astral',
+      name: 'Sixth Astral Era',
+      maxYears: 1577,
+      hoursPerDay: 24,
+      minutesPerHour: 60,
+      secondsPerMinute: 60,
+      description: 'The age that ended with the Calamity.',
+    },
+    {
+      id: ERA_SEVENTH_UMBRAL_ID,
+      slug: 'seventh-umbral',
+      name: 'Seventh Umbral Era',
+      hoursPerDay: 24,
+      minutesPerHour: 60,
+      secondsPerMinute: 60,
+      description: 'Born from the fall of Dalamud.',
+    },
+  ],
+  months: [
+    { id: 'month-1-astral', name: '1st Astral Moon', days: 32 },
+    { id: 'month-1-umbral', name: '1st Umbral Moon', days: 32 },
+    { id: 'month-2-astral', name: '2nd Astral Moon', days: 32 },
+    { id: 'month-2-umbral', name: '2nd Umbral Moon', days: 32 },
+    { id: 'month-3-astral', name: '3rd Astral Moon', days: 32 },
+    { id: 'month-3-umbral', name: '3rd Umbral Moon', days: 32 },
+    { id: 'month-4-astral', name: '4th Astral Moon', days: 32 },
+    { id: 'month-4-umbral', name: '4th Umbral Moon', days: 32 },
+    { id: 'month-5-astral', name: '5th Astral Moon', days: 32 },
+    { id: 'month-5-umbral', name: '5th Umbral Moon', days: 32 },
+    { id: 'month-6-astral', name: '6th Astral Moon', days: 32 },
+    { id: 'month-6-umbral', name: '6th Umbral Moon', days: 32 },
+  ],
+  updatedAt: SEED_CREATED_AT,
+};
 
 export const SEED_CHARACTERS: Character[] = [
   {
@@ -105,7 +148,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'place', id: 'place-uldah-pearl-lane' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
     ],
-    inGameDate: '1572 6AE',
+    inGameDate: { era: ERA_SIXTH_ASTRAL_ID, year: 1572 },
     relatedDates: ['1577 6AE'],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
@@ -118,7 +161,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
       'Garlean forces overrun Doma, scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the Doman Liberation Front for years to come.',
     mainCharacters: [{ kind: 'character', id: 'char-sakuya' }],
     places: [{ kind: 'place', id: 'place-doma' }],
-    inGameDate: '1557 6AE',
+    inGameDate: { era: ERA_SIXTH_ASTRAL_ID, year: 1557 },
     relatedDates: ['1582 6AE'],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
@@ -139,8 +182,8 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'place', id: 'place-ishgard' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
     ],
-    inGameDate: '1582 6AE',
-    relatedDates: ['1585 6AE, late afternoon'],
+    inGameDate: { era: ERA_SEVENTH_UMBRAL_ID, year: 5 },
+    relatedDates: ['Year 8 of the Seventh Umbral Era, late afternoon'],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -165,7 +208,12 @@ export const SEED_STORY: Story = {
     { kind: 'place', id: 'place-doma' },
     { kind: 'place', id: 'place-gridania-northern-shroud' },
   ],
-  inGameDate: '1585 6AE, late afternoon',
+  inGameDate: {
+    era: ERA_SEVENTH_UMBRAL_ID,
+    year: 8,
+    hour: 17,
+    display: 'Year 8 of the Seventh Umbral Era, late afternoon',
+  },
   startSceneId: 's01_opening',
   authorUid: SEED_AUTHOR_UID,
   draft: false,

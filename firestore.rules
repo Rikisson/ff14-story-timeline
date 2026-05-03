@@ -70,6 +70,11 @@ service cloud.firestore {
         allow read: if true;
         allow create, update, delete: if isMember(universeId);
       }
+
+      match /_meta/{docId} {
+        allow read: if true;
+        allow create, update, delete: if isMember(universeId);
+      }
     }
   }
 }

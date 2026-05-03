@@ -1,4 +1,4 @@
-import { EntityRef } from '@shared/models';
+import { EntityRef, InGameDate } from '@shared/models';
 
 export interface StagedCharacter {
   entity: EntityRef<'character'>;
@@ -32,7 +32,7 @@ export interface Story {
   coverImage?: string;
   mainCharacters: EntityRef<'character'>[];
   places: EntityRef<'place'>[];
-  inGameDate: string;
+  inGameDate: InGameDate;
   startSceneId: string;
   scenes: Record<string, Scene>;
   genreTags?: string[];

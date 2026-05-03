@@ -6,11 +6,12 @@ import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
-import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   ComboboxOption,
   ComboboxPickerComponent,
   GhostButtonComponent,
+  InGameDateInputComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
@@ -25,6 +26,7 @@ import { TimelineEventDraft } from '../data-access/event.types';
     PrimaryButtonComponent,
     GhostButtonComponent,
     ComboboxPickerComponent,
+    InGameDateInputComponent,
     RichTextInputComponent,
   ],
   template: `
@@ -69,22 +71,11 @@ import { TimelineEventDraft } from '../data-access/event.types';
       </div>
 
       <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">In-game date</span>
-          <input
-            type="text"
-            formControlName="inGameDate"
-            list="event-date-suggestions"
-            autocomplete="off"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="Year 1, Spring of the Wolf, 1577 6AE…"
-          />
-          <datalist id="event-date-suggestions">
-            @for (d of dateSuggestions(); track d) {
-              <option [value]="d"></option>
-            }
-          </datalist>
-        </label>
+        <app-in-game-date-input
+          label="In-game date"
+          [value]="inGameDate()"
+          (valueChanged)="onDate($event)"
+        />
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Sort order</span>
           <input
@@ -199,10 +190,10 @@ import { TimelineEventDraft } from '../data-access/event.types';
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Related dates</span>
         <app-combobox-picker
-          [options]="dateCombobox()"
+          [options]="[]"
           [value]="relatedDates()"
           [allowCreate]="true"
-          placeholder="Pick or type a date…"
+          placeholder="Type a date label…"
           emptyMessage="No dates yet — type one to add."
           (valueChange)="onRelatedDates($event)"
         />
@@ -231,7 +222,6 @@ export class EventFormComponent {
   readonly initial = input<TimelineEventDraft | null>(null);
   readonly busy = input<boolean>(false);
   readonly errorMessage = input<string | null>(null);
-  readonly dateSuggestions = input<string[]>([]);
   readonly submitted = output<TimelineEventDraft>();
   readonly cancelled = output<void>();
 
@@ -264,9 +254,6 @@ export class EventFormComponent {
   );
   protected readonly factionCombobox = computed<ComboboxOption[]>(() =>
     this.factionsService.factions().map((f) => ({ id: f.id, label: f.name, hint: f.slug })),
-  );
-  protected readonly dateCombobox = computed<ComboboxOption[]>(() =>
-    this.dateSuggestions().map((d) => ({ id: d, label: d })),
   );
   protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => [
     ...this.charactersService.characters().map((c) => ({
@@ -311,10 +298,11 @@ export class EventFormComponent {
   protected readonly itemIds = computed(() => this.itemRefs().map((r) => r.id));
   protected readonly factionIds = computed(() => this.factionRefs().map((r) => r.id));
 
+  protected readonly inGameDate = signal<InGameDate>({});
+
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
-    inGameDate: ['', [Validators.required, Validators.maxLength(80)]],
     type: ['', [Validators.maxLength(60)]],
     summary: ['', [Validators.maxLength(280)]],
     sortOrder: [null as number | null],
@@ -327,7 +315,6 @@ export class EventFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         name: init?.name ?? '',
-        inGameDate: init?.inGameDate ?? '',
         type: init?.type ?? '',
         summary: init?.summary ?? '',
         sortOrder: init?.sortOrder ?? null,
@@ -341,7 +328,12 @@ export class EventFormComponent {
       this.factionRefs.set(init?.factionRefs ?? []);
       this.relatedDates.set(init?.relatedDates ?? []);
       this.description.set(init?.description ?? '');
+      this.inGameDate.set(init?.inGameDate ?? {});
     });
+  }
+
+  protected onDate(value: InGameDate): void {
+    this.inGameDate.set(value);
   }
 
   protected onCharacterIds(ids: string[]): void {
@@ -389,7 +381,7 @@ export class EventFormComponent {
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
-      inGameDate: v.inGameDate.trim(),
+      inGameDate: this.inGameDate(),
       description: this.description().trim(),
       mainCharacters: this.mainCharacters(),
       places: this.places(),

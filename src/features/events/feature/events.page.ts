@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   EventCardComponent,
   EventsService,
   TimelineEvent,
   TimelineEventDraft,
 } from '@features/events';
-import { StoriesService } from '@features/stories';
 import { createEntityListController } from '@shared/data-access';
 import { PrimaryButtonComponent } from '@shared/ui';
 import { EventFormComponent } from '../ui/event-form.component';
@@ -27,7 +26,6 @@ import { EventFormComponent } from '../ui/event-form.component';
           [initial]="ctrl.editingDraft()"
           [busy]="ctrl.busy()"
           [errorMessage]="ctrl.errorMessage()"
-          [dateSuggestions]="dateSuggestions()"
           (submitted)="ctrl.submit($event)"
           (cancelled)="ctrl.cancel()"
         />
@@ -55,8 +53,6 @@ import { EventFormComponent } from '../ui/event-form.component';
 })
 export class EventsPage {
   private readonly service = inject(EventsService);
-  private readonly storiesService = inject(StoriesService);
-
   protected readonly events = this.service.events;
 
   protected readonly ctrl = createEntityListController<TimelineEvent, TimelineEventDraft>({
@@ -80,18 +76,5 @@ export class EventsPage {
       factionRefs: e.factionRefs,
     }),
     removeLabel: (e) => e.name,
-  });
-
-  protected readonly dateSuggestions = computed<string[]>(() => {
-    const dates = new Set<string>();
-    for (const s of this.storiesService.publishedStories()) {
-      if (s.inGameDate) dates.add(s.inGameDate);
-    }
-    for (const e of this.events()) {
-      if (e.inGameDate) dates.add(e.inGameDate);
-    }
-    return Array.from(dates).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }),
-    );
   });
 }

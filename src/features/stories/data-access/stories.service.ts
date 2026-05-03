@@ -115,7 +115,7 @@ export class StoriesService {
       title: 'Untitled story',
       mainCharacters: [],
       places: [],
-      inGameDate: '',
+      inGameDate: {},
       startSceneId,
       scenes: { [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] } },
       authorUid,

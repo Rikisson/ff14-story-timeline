@@ -7,20 +7,18 @@ import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@
 export interface CatalogFilters {
   characters: string[];
   places: string[];
-  inGameDates: string[];
   mineOnly: boolean;
 }
 
 export const EMPTY_FILTERS: CatalogFilters = {
   characters: [],
   places: [],
-  inGameDates: [],
   mineOnly: false,
 };
 
 export type SortDirection = 'asc' | 'desc';
 
-type ArrayKey = 'characters' | 'places' | 'inGameDates';
+type ArrayKey = 'characters' | 'places';
 
 @Component({
   selector: 'app-catalog-filters',
@@ -46,17 +44,6 @@ type ArrayKey = 'characters' | 'places' | 'inGameDates';
           placeholder="Search places…"
           emptyMessage="No places yet."
           (valueChange)="setKey('places', $event)"
-        />
-      </label>
-
-      <label class="flex w-60 flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">In-game date</span>
-        <app-combobox-picker
-          [options]="dateOptions()"
-          [value]="value().inGameDates"
-          placeholder="Search dates…"
-          emptyMessage="No dates yet."
-          (valueChange)="setKey('inGameDates', $event)"
         />
       </label>
 
@@ -121,17 +108,9 @@ export class CatalogFiltersComponent {
       .map((p) => ({ id: p.id, label: p.name }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
-  protected readonly dateOptions = computed<ComboboxOption[]>(() =>
-    distinctSorted(this.stories().map((s) => s.inGameDate)).map((d) => ({ id: d, label: d })),
-  );
   protected readonly hasActive = computed(() => {
     const v = this.value();
-    return (
-      v.characters.length > 0 ||
-      v.places.length > 0 ||
-      v.inGameDates.length > 0 ||
-      v.mineOnly
-    );
+    return v.characters.length > 0 || v.places.length > 0 || v.mineOnly;
   });
 
   protected setKey(key: ArrayKey, next: string[]): void {
@@ -149,8 +128,4 @@ export class CatalogFiltersComponent {
     const next = (event.target as HTMLSelectElement).value as SortDirection;
     this.sortDirectionChange.emit(next);
   }
-}
-
-function distinctSorted(values: string[]): string[] {
-  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }

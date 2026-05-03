@@ -1,12 +1,14 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CalendarService } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { Story, StoriesService } from '@features/stories';
+import { isInGameDateEmpty } from '@shared/models';
 import { GhostButtonComponent, MarkdownTextComponent } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
+import { formatInGameDate, InlineRefOption } from '@shared/utils';
 
 const BTN_BASE =
   'inline-flex h-10 flex-1 items-center justify-center rounded-md px-4 text-sm font-medium ' +
@@ -78,15 +80,15 @@ const BTN_SECONDARY =
         }
         @if (tagsVisible()) {
           <div class="mt-auto flex flex-wrap gap-1.5 pt-1">
-            @if (story().inGameDate; as d) {
+            @if (formattedDate(); as d) {
               <span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{{ d }}</span>
             }
-            @for (c of story().mainCharacters; track c.id) {
-              <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c.id }}</span>
+            @for (c of characterNames(); track $index) {
+              <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ c }}</span>
             }
-            @for (p of story().places; track p.id) {
+            @for (p of placeNames(); track $index) {
               <span class="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
-                {{ p.id }}
+                {{ p }}
               </span>
             }
           </div>
@@ -122,6 +124,7 @@ export class CatalogCardComponent {
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
+  private readonly calendar = inject(CalendarService);
 
   protected confirmDelete(): void {
     const s = this.story();
@@ -166,8 +169,31 @@ export class CatalogCardComponent {
     return s.coverImage ?? s.scenes[s.startSceneId]?.background;
   });
 
+  protected readonly formattedDate = computed(() => {
+    const d = this.story().inGameDate;
+    if (isInGameDateEmpty(d)) return '';
+    return formatInGameDate(d, {
+      eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
+      monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
+    });
+  });
+
+  protected readonly characterNames = computed(() => {
+    const refs = this.story().mainCharacters;
+    if (refs.length === 0) return [];
+    const lookup = new Map(this.characters.characters().map((c) => [c.id, c.name]));
+    return refs.map((r) => lookup.get(r.id) ?? '?');
+  });
+
+  protected readonly placeNames = computed(() => {
+    const refs = this.story().places;
+    if (refs.length === 0) return [];
+    const lookup = new Map(this.places.places().map((p) => [p.id, p.name]));
+    return refs.map((r) => lookup.get(r.id) ?? '?');
+  });
+
   protected readonly tagsVisible = computed(() => {
     const s = this.story();
-    return !!(s.inGameDate || s.mainCharacters.length || s.places.length);
+    return !isInGameDateEmpty(s.inGameDate) || s.mainCharacters.length > 0 || s.places.length > 0;
   });
 }

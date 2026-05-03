@@ -1,4 +1,4 @@
-import { EntityRef } from '@shared/models';
+import { EntityRef, InGameDate } from '@shared/models';
 
 export interface TimelineEvent {
   id: string;
@@ -7,7 +7,7 @@ export interface TimelineEvent {
   description: string;
   mainCharacters: EntityRef<'character'>[];
   places: EntityRef<'place'>[];
-  inGameDate: string;
+  inGameDate: InGameDate;
   relatedDates: string[];
   type?: string;
   summary?: string;
@@ -30,7 +30,7 @@ export interface TimelineEventDraft {
   description: string;
   mainCharacters: EntityRef<'character'>[];
   places: EntityRef<'place'>[];
-  inGameDate: string;
+  inGameDate: InGameDate;
   relatedDates: string[];
   type?: string;
   summary?: string;
