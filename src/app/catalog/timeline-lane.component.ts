@@ -48,7 +48,7 @@ const SCROLL_STEP = 320;
         <div
           #rail
           tabindex="0"
-          class="flex gap-4 overflow-x-auto rounded-md pb-2 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="flex items-stretch gap-4 overflow-x-auto rounded-md pb-2 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           (keydown)="onRailKey($event)"
           (focusin)="onFocusIn($event)"
         >
@@ -72,13 +72,13 @@ const SCROLL_STEP = 320;
             </div>
           }
 
-          @if (lane().undated.length > 0) {
+          @if (visibleUndated().length > 0) {
             <div class="ml-2 flex shrink-0 flex-col gap-2 border-l-2 border-dashed border-slate-300 pl-4">
               <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Undated
               </p>
               <div class="flex gap-3">
-                @for (card of lane().undated; track card.id) {
+                @for (card of visibleUndated(); track card.id) {
                   <div class="w-[260px] shrink-0">
                     @if (card.kind === 'story' && card.story) {
                       <app-catalog-card
@@ -102,15 +102,14 @@ const SCROLL_STEP = 320;
           }
 
           @if (hasMore()) {
-            <div class="flex shrink-0 items-center">
-              <button
-                type="button"
-                class="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                (click)="loadMore.emit()"
-              >
-                Load more
-              </button>
-            </div>
+            <button
+              type="button"
+              class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-slate-300 bg-white text-3xl font-light text-slate-600 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              [attr.aria-label]="'Load 25 more items into ' + (lane().label || 'lane')"
+              (click)="loadMore.emit()"
+            >
+              <span class="flex items-center">›</span>
+            </button>
           }
         </div>
 
@@ -135,9 +134,15 @@ export class TimelineLaneComponent {
     this.lane().dated.slice(0, this.pageSize()),
   );
 
-  protected readonly hasMore = computed(
-    () => this.pageSize() < this.lane().dated.length,
-  );
+  protected readonly visibleUndated = computed<TimelineCard[]>(() => {
+    const remaining = Math.max(0, this.pageSize() - this.lane().dated.length);
+    return this.lane().undated.slice(0, remaining);
+  });
+
+  protected readonly hasMore = computed(() => {
+    const total = this.lane().dated.length + this.lane().undated.length;
+    return this.pageSize() < total;
+  });
 
   protected onRailKey(event: KeyboardEvent): void {
     const el = this.rail()?.nativeElement;

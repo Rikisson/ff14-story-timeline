@@ -15,7 +15,7 @@ import { SortDirection } from './catalog-filters.component';
 import { buildTimelineLanes } from './catalog-timeline-lanes';
 import { TimelineLaneComponent } from './timeline-lane.component';
 
-const PAGE_STEP = 12;
+const PAGE_STEP = 25;
 
 @Component({
   selector: 'app-catalog-timeline',
