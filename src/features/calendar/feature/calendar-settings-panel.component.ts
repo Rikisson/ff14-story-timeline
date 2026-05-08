@@ -70,7 +70,7 @@ import {
       }
 
       <details
-        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200"
         [open]="erasOpen()"
         (toggle)="onErasToggle($event)"
       >
@@ -239,7 +239,7 @@ import {
       </details>
 
       <details
-        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200"
         [open]="monthsOpen()"
         (toggle)="onMonthsToggle($event)"
       >
@@ -346,7 +346,7 @@ import {
       </details>
 
       <details
-        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200"
         [open]="weekdaysOpen()"
         (toggle)="onWeekdaysToggle($event)"
       >
