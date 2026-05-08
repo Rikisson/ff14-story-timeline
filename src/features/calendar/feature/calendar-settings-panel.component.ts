@@ -69,16 +69,44 @@ import {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
-      <section class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="m-0 text-base font-semibold text-slate-900">Eras</h3>
-          @if (canEdit()) {
-            <button uiSecondary type="button" (click)="addEra()">+ Add era</button>
-          }
-        </div>
+      <details
+        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        [open]="erasOpen()"
+        (toggle)="onErasToggle($event)"
+      >
+        <summary
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+        >
+          <h3 class="m-0 text-base font-semibold text-slate-900">
+            Eras <span class="text-sm font-normal text-slate-500">({{ eras().length }})</span>
+          </h3>
+          <span class="ml-auto flex items-center gap-2">
+            @if (canEdit()) {
+              <button
+                uiSecondary
+                type="button"
+                (click)="$event.stopPropagation(); addEra()"
+              >+ Add era</button>
+            }
+            <svg
+              class="size-4 shrink-0 text-slate-500 transition-transform"
+              [class.rotate-180]="erasOpen()"
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="5 8 10 13 15 8" />
+            </svg>
+          </span>
+        </summary>
 
+        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
         @if (eras().length === 0) {
-          <p class="text-sm text-slate-600">No eras yet.</p>
+          <p class="m-0 text-sm text-slate-600">No eras yet.</p>
         } @else {
           <ul cdkDropList class="flex flex-col gap-2" (cdkDropListDropped)="dropEra($event)">
             @for (era of eras(); track era.id; let i = $index) {
@@ -207,18 +235,47 @@ import {
             }
           </ul>
         }
-      </section>
-
-      <section class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="m-0 text-base font-semibold text-slate-900">Months</h3>
-          @if (canEdit()) {
-            <button uiSecondary type="button" (click)="addMonth()">+ Add month</button>
-          }
         </div>
+      </details>
 
+      <details
+        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        [open]="monthsOpen()"
+        (toggle)="onMonthsToggle($event)"
+      >
+        <summary
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+        >
+          <h3 class="m-0 text-base font-semibold text-slate-900">
+            Months <span class="text-sm font-normal text-slate-500">({{ months().length }})</span>
+          </h3>
+          <span class="ml-auto flex items-center gap-2">
+            @if (canEdit()) {
+              <button
+                uiSecondary
+                type="button"
+                (click)="$event.stopPropagation(); addMonth()"
+              >+ Add month</button>
+            }
+            <svg
+              class="size-4 shrink-0 text-slate-500 transition-transform"
+              [class.rotate-180]="monthsOpen()"
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="5 8 10 13 15 8" />
+            </svg>
+          </span>
+        </summary>
+
+        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
         @if (months().length === 0) {
-          <p class="text-sm text-slate-600">No months yet.</p>
+          <p class="m-0 text-sm text-slate-600">No months yet.</p>
         } @else {
           <ul
             cdkDropList
@@ -285,23 +342,52 @@ import {
             }
           </ul>
         }
-      </section>
+        </div>
+      </details>
 
-      <section class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="m-0 text-base font-semibold text-slate-900">Weekdays</h3>
+      <details
+        class="flex flex-col gap-3 rounded-md border border-slate-200"
+        [open]="weekdaysOpen()"
+        (toggle)="onWeekdaysToggle($event)"
+      >
+        <summary
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+        >
+          <div class="flex flex-col">
+            <h3 class="m-0 text-base font-semibold text-slate-900">
+              Weekdays <span class="text-sm font-normal text-slate-500">({{ weekdays().length }})</span>
+            </h3>
             <p class="m-0 mt-0.5 text-xs text-slate-500">
-              Order the cycle. The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
+              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
             </p>
           </div>
-          @if (canEdit()) {
-            <button uiSecondary type="button" (click)="addWeekday()">+ Add weekday</button>
-          }
-        </div>
+          <span class="ml-auto flex items-center gap-2">
+            @if (canEdit()) {
+              <button
+                uiSecondary
+                type="button"
+                (click)="$event.stopPropagation(); addWeekday()"
+              >+ Add weekday</button>
+            }
+            <svg
+              class="size-4 shrink-0 text-slate-500 transition-transform"
+              [class.rotate-180]="weekdaysOpen()"
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="5 8 10 13 15 8" />
+            </svg>
+          </span>
+        </summary>
 
+        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
         @if (weekdays().length === 0) {
-          <p class="text-sm text-slate-600">No weekdays defined. Dates will render without a weekday.</p>
+          <p class="m-0 text-sm text-slate-600">No weekdays defined. Dates will render without a weekday.</p>
         } @else {
           <ul
             cdkDropList
@@ -356,9 +442,14 @@ import {
             }
           </ul>
         }
-      </section>
+        </div>
+      </details>
     </section>
   `,
+  styles: [`
+    summary::-webkit-details-marker { display: none; }
+    summary { list-style: none; }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarSettingsPanelComponent {
@@ -381,6 +472,23 @@ export class CalendarSettingsPanelComponent {
 
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly erasOpen = signal(this.draft().eras.length === 0);
+  protected readonly monthsOpen = signal(this.draft().months.length === 0);
+  protected readonly weekdaysOpen = signal((this.draft().weekdays ?? []).length === 0);
+
+  protected onErasToggle(event: Event): void {
+    const el = event.target as HTMLDetailsElement;
+    if (el.open !== this.erasOpen()) this.erasOpen.set(el.open);
+  }
+  protected onMonthsToggle(event: Event): void {
+    const el = event.target as HTMLDetailsElement;
+    if (el.open !== this.monthsOpen()) this.monthsOpen.set(el.open);
+  }
+  protected onWeekdaysToggle(event: Event): void {
+    const el = event.target as HTMLDetailsElement;
+    if (el.open !== this.weekdaysOpen()) this.weekdaysOpen.set(el.open);
+  }
 
   protected readonly dirty = computed(
     () => !sameCalendar(this.draft(), this.service.calendar()),
@@ -440,6 +548,7 @@ export class CalendarSettingsPanelComponent {
       };
       return { ...c, eras: [...c.eras, era] };
     });
+    this.erasOpen.set(true);
   }
 
   protected updateEra(index: number, patch: Partial<CalendarEra>): void {
@@ -473,6 +582,7 @@ export class CalendarSettingsPanelComponent {
       };
       return { ...c, months: [...c.months, month] };
     });
+    this.monthsOpen.set(true);
   }
 
   protected updateMonth(index: number, patch: Partial<CalendarMonth>): void {
@@ -505,6 +615,7 @@ export class CalendarSettingsPanelComponent {
       };
       return { ...c, weekdays: [...wds, wd] };
     });
+    this.weekdaysOpen.set(true);
   }
 
   protected updateWeekday(index: number, patch: Partial<CalendarWeekday>): void {
