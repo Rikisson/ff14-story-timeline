@@ -159,6 +159,7 @@ export class StoriesService {
     const id = crypto.randomUUID();
     const startSceneId = crypto.randomUUID();
     const slug = await this.allocateUntitledSlug(universeId);
+    const now = Date.now();
     const story: Story = {
       id,
       slug,
@@ -170,8 +171,9 @@ export class StoriesService {
       scenes: { [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] } },
       authorUid,
       draft: true,
+      createdAt: now,
       version: 1,
-      updatedAt: Date.now(),
+      updatedAt: now,
     };
     const { id: _id, ...data } = story;
     await setDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id), data);

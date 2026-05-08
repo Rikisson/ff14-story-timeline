@@ -38,6 +38,6 @@ export const KIND_TEXT_CLASS: Record<EntityKind, string> = {
 
 export const INLINE_REF_BASE_CLASS = 'cursor-help font-medium px-0.5 transition-colors';
 
-// Generic non-entity tag. Free-text labels (genreTags, factions strings, etc.)
+// Generic non-entity tag. Free-text labels (Place.factions strings, etc.)
 export const TAG_NEUTRAL_CLASS =
   'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700';

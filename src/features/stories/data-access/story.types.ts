@@ -17,8 +17,6 @@ export interface Scene {
   audio?: string;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
-  mood?: string;
-  timeOfDay?: string;
   itemRefs?: EntityRef<'item'>[];
   factionRefs?: EntityRef<'faction'>[];
 }
@@ -35,14 +33,12 @@ export interface Story {
   inGameDate: InGameDate;
   startSceneId: string;
   scenes: Record<string, Scene>;
-  genreTags?: string[];
-  toneTags?: string[];
-  relatedEvents?: EntityRef<'event'>[];
   plotlineRefs?: EntityRef<'plotline'>[];
   itemRefs?: EntityRef<'item'>[];
   factionRefs?: EntityRef<'faction'>[];
   authorUid: string;
   draft: boolean;
+  createdAt: number;
   publishedAt?: number;
   updatedAt?: number;
   version?: number;
