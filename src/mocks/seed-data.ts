@@ -38,11 +38,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-ingrid',
     slug: 'ingrid',
     name: 'Ingrid',
-    aliases: ['The Pearl-Lane Maid'],
-    title: 'Survivor',
-    gender: 'Female',
-    age: '28',
-    affiliation: 'Independent (formerly House Brann)',
     description:
       'Bound to House Brann as a girl and nearly destroyed when Sakuya cut the household down. Carries the marks of her former master — sun-shy, amber-eyed, careful with shadows.',
     relatedRefs: [
@@ -60,10 +55,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-marcus',
     slug: 'marcus',
     name: 'Marcus',
-    aliases: ['Old Marc'],
-    gender: 'Male',
-    age: 'Near 80',
-    affiliation: 'Spice Merchants of Pearl Lane',
     description:
       "Has run the Pearl Lane stall for forty years. Knows everyone worth knowing in Ul'dah and a great many who would rather not be known.",
     relatedRefs: [
@@ -78,11 +69,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-brann',
     slug: 'brann',
     name: 'Brann',
-    aliases: ['Lord Brann of Ishgard'],
-    title: 'Voidwalker',
-    gender: 'Male',
-    age: 'Late 50s at death',
-    affiliation: 'House Brann (defunct), Syndicate',
     description:
       'Built a manse at the edge of Ishgard on quiet Syndicate dealings. Drew the notice of the Far East with one bargain too many.',
     relatedRefs: [
@@ -97,11 +83,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-sakuya',
     slug: 'sakuya',
     name: 'Sakuya',
-    aliases: ['The Blade of Doma'],
-    title: 'Samurai',
-    gender: 'Female',
-    age: '32',
-    affiliation: 'Doman Liberation Front',
     description:
       'Survived the fall of Doma as a child. Trained in exile. Came west following a trail that ended in House Brann.',
     relatedRefs: [
@@ -115,10 +96,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-zahir',
     slug: 'zahir',
     name: 'Zahir',
-    aliases: ['The Tutor'],
-    gender: 'Male',
-    age: 'Late 60s',
-    affiliation: 'Formerly House Brann; current allegiance unknown',
     description:
       "Served the house long before Brann turned to the void. Disappeared the night of the attack; whispers place him near the Northern Shroud.",
     relatedRefs: [

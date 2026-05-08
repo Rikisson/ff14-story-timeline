@@ -12,11 +12,6 @@ export interface Character {
   name: string;
   description?: string;
   portraits?: CharacterPortrait[];
-  aliases?: string[];
-  title?: string;
-  gender?: string;
-  age?: string;
-  affiliation?: string;
   relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;
@@ -29,10 +24,5 @@ export interface CharacterDraft {
   slug: string;
   name: string;
   description?: string;
-  aliases?: string[];
-  title?: string;
-  gender?: string;
-  age?: string;
-  affiliation?: string;
   relatedRefs?: EntityRef[];
 }
