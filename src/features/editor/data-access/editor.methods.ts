@@ -26,7 +26,7 @@ export function withEditorMethods() {
               slug: story.slug,
               title: story.title,
               description: story.description,
-              coverImage: story.coverImage,
+              coverAssetId: story.coverAssetId,
               relatedRefs: story.relatedRefs,
               plotlineRefs: story.plotlineRefs,
               inGameDate: story.inGameDate,

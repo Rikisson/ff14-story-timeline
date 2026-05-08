@@ -3,7 +3,7 @@ export interface Universe {
   slug: string;
   name: string;
   description?: string;
-  coverImage?: string;
+  coverAssetId?: string;
   ownerUid: string;
   editorUids: string[];
   createdAt: number;

@@ -56,7 +56,5 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 Open changes. Remove items as they ship.
 
-- Build the central `_assets/{assetId}` collection per universe and the upload service that writes the doc and binary atomically. Reshape `Character.sprites`, scene background/audio fields, and any `coverImage` URL fields into asset-ID references (no media data exists yet — code-only change).
-- Rename the `portrait` kind to `sprite` across schema, storage path, and code (currently `Character.portraits`, `StagedCharacter.portraitId`, storage path `portrait/`, all editor labels). Aligns with the v1 kind set.
 - Universe asset library picker: thumbnail grid for images, list view for audio, filter by `kind` and tags. Reused on every owner-entity edit page.
 - Cover image upload across all entity kinds (Universe, Story, Characters, Places, Events, Plotlines, Codex), driven by the picker above.

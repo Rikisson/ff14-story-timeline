@@ -8,7 +8,7 @@ export interface StagedView {
   name: string;
   position: string;
   order?: number;
-  portraitUrl?: string;
+  spriteUrl?: string;
   isSpeaker: boolean;
 }
 
@@ -37,7 +37,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                   class="m-0 flex flex-col items-center gap-1 transition-opacity"
                   [class.opacity-40]="!s.isSpeaker"
                 >
-                  @if (s.portraitUrl; as url) {
+                  @if (s.spriteUrl; as url) {
                     <img
                       [ngSrc]="url"
                       [alt]="s.name"
@@ -49,7 +49,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                     <div
                       class="flex size-24 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400"
                     >
-                      no portrait
+                      no sprite
                     </div>
                   }
                   <figcaption class="text-xs font-medium text-slate-700">
@@ -63,7 +63,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                   [class.opacity-40]="!s.isSpeaker"
                   [title]="'Position: ' + s.position"
                 >
-                  @if (s.portraitUrl; as url) {
+                  @if (s.spriteUrl; as url) {
                     <img
                       [ngSrc]="url"
                       [alt]="s.name"
@@ -75,7 +75,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                     <div
                       class="flex size-24 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400"
                     >
-                      no portrait
+                      no sprite
                     </div>
                   }
                   <figcaption class="text-xs font-medium text-slate-700">

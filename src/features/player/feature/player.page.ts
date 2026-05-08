@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CharactersService } from '@features/characters';
+import { MediaAssetsService } from '@features/media';
 import { EntityResolverService } from '@shared/data-access';
 import {
   GhostButtonComponent,
@@ -66,8 +67,8 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
           <app-scene-view
             [text]="scene.text"
             [speaker]="speakerLabel()"
-            [background]="scene.background"
-            [audio]="scene.audio"
+            [background]="backgroundUrl()"
+            [audio]="audioUrl()"
             [staged]="stagedView()"
             [inlineRefOptions]="inlineRefOptions()"
           />
@@ -93,9 +94,17 @@ export class PlayerPage {
   readonly id = input.required<string>();
   protected readonly store = inject(PlayerStore);
   private readonly characters = inject(CharactersService);
+  private readonly media = inject(MediaAssetsService);
   private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
+
+  protected readonly backgroundUrl = computed(() =>
+    this.media.urlFor(this.store.currentScene()?.backgroundAssetId),
+  );
+  protected readonly audioUrl = computed(() =>
+    this.media.urlFor(this.store.currentScene()?.audioAssetId),
+  );
 
   protected readonly speakerLabel = computed<string | undefined>(() => {
     const sp = this.store.currentScene()?.speaker;
@@ -112,16 +121,14 @@ export class PlayerPage {
     const charList = this.characters.characters();
     return scene.characters.map((sc) => {
       const char = charList.find((c) => c.id === sc.entity.id);
-      const portraits = char?.portraits ?? [];
-      const portrait = sc.portraitId
-        ? portraits.find((p) => p.id === sc.portraitId) ?? portraits[0]
-        : portraits[0];
+      const sprites = char?.sprites ?? [];
+      const spriteId = sc.spriteId && sprites.includes(sc.spriteId) ? sc.spriteId : sprites[0];
       return {
         id: sc.entity.id,
         name: char?.name ?? sc.entity.id,
         position: sc.position,
         order: sc.order,
-        portraitUrl: portrait?.url,
+        spriteUrl: this.media.urlFor(spriteId),
         isSpeaker: speakerId === sc.entity.id,
       };
     });

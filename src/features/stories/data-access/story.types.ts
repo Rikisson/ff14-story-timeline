@@ -4,17 +4,17 @@ export interface StagedCharacter {
   entity: EntityRef<'character'>;
   position: string;
   order?: number;
-  portraitId?: string;
+  spriteId?: string;
 }
 
 export interface Scene {
   text: string;
   label?: string;
   speaker?: EntityRef<'character'> | string;
-  background?: string;
+  backgroundAssetId?: string;
   characters: StagedCharacter[];
   place?: EntityRef<'place'>;
-  audio?: string;
+  audioAssetId?: string;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
 }
@@ -24,7 +24,7 @@ export interface Story {
   slug: string;
   title: string;
   description?: string;
-  coverImage?: string;
+  coverAssetId?: string;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];

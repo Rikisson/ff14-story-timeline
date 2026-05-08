@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { EntityKind } from '@shared/models';
 import { UniverseEntityService } from '@shared/data-access';
-import { Character, CharacterDraft, CharacterPortrait } from './character.types';
+import { Character, CharacterDraft } from './character.types';
 
 @Injectable({ providedIn: 'root' })
 export class CharactersService extends UniverseEntityService<Character, CharacterDraft> {
@@ -10,7 +10,7 @@ export class CharactersService extends UniverseEntityService<Character, Characte
 
   readonly characters = this.entitiesSignal;
 
-  async updatePortraits(id: string, portraits: CharacterPortrait[]): Promise<void> {
-    await this.patchFields(id, { portraits });
+  async updateSprites(id: string, sprites: string[]): Promise<void> {
+    await this.patchFields(id, { sprites });
   }
 }

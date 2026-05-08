@@ -1,6 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
-import { Scene, StoryAssetsService } from '@features/stories';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { AuthStore } from '@features/auth';
+import { MediaAssetsService } from '@features/media';
+import { Scene } from '@features/stories';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 
 @Component({
@@ -18,7 +20,7 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
         <label class="text-xs font-medium uppercase tracking-wide text-slate-500">
           Background
         </label>
-        @if (background(); as bg) {
+        @if (backgroundUrl(); as bg) {
           <div class="relative aspect-video w-full overflow-hidden rounded border border-slate-200">
             <img [ngSrc]="bg" alt="Scene background" fill class="object-cover" />
           </div>
@@ -46,7 +48,7 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
         <input
           #bgInput
           type="file"
-          accept="image/*"
+          accept="image/webp"
           class="hidden"
           (change)="onPick($event, 'background')"
         />
@@ -54,7 +56,7 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 
       <div class="flex flex-col gap-2">
         <label class="text-xs font-medium uppercase tracking-wide text-slate-500">Audio</label>
-        @if (audio(); as a) {
+        @if (audioUrl(); as a) {
           <audio class="w-full" controls preload="none" [src]="a"></audio>
           <div class="flex gap-2">
             <button
@@ -82,7 +84,7 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
           type="file"
           accept="audio/*"
           class="hidden"
-          (change)="onPick($event, 'audio')"
+          (change)="onPick($event, 'ambient')"
         />
       </div>
     </section>
@@ -90,12 +92,11 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SceneAssetsPanelComponent {
-  private readonly assets = inject(StoryAssetsService);
+  private readonly media = inject(MediaAssetsService);
+  private readonly auth = inject(AuthStore);
 
-  readonly storyId = input.required<string>();
-  readonly sceneId = input.required<string>();
-  readonly background = input<string | undefined>();
-  readonly audio = input<string | undefined>();
+  readonly backgroundAssetId = input<string | undefined>();
+  readonly audioAssetId = input<string | undefined>();
 
   readonly update = output<Partial<Scene>>();
 
@@ -103,19 +104,24 @@ export class SceneAssetsPanelComponent {
   protected readonly busyAudio = signal(false);
   protected readonly uploadError = signal<string | null>(null);
 
-  protected async onPick(event: Event, kind: 'background' | 'audio'): Promise<void> {
+  protected readonly backgroundUrl = computed(() => this.media.urlFor(this.backgroundAssetId()));
+  protected readonly audioUrl = computed(() => this.media.urlFor(this.audioAssetId()));
+
+  protected async onPick(event: Event, kind: 'background' | 'ambient'): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
 
     const busy = kind === 'background' ? this.busyBackground : this.busyAudio;
     busy.set(true);
     this.uploadError.set(null);
     try {
-      const url = await this.assets.upload(this.storyId(), this.sceneId(), kind, file);
-      if (kind === 'background') this.update.emit({ background: url });
-      else this.update.emit({ audio: url });
+      const asset = await this.media.upload({ kind, file }, uid);
+      if (kind === 'background') this.update.emit({ backgroundAssetId: asset.id });
+      else this.update.emit({ audioAssetId: asset.id });
     } catch (err) {
       this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
@@ -124,10 +130,10 @@ export class SceneAssetsPanelComponent {
   }
 
   protected clearBackground(): void {
-    this.update.emit({ background: undefined });
+    this.update.emit({ backgroundAssetId: undefined });
   }
 
   protected clearAudio(): void {
-    this.update.emit({ audio: undefined });
+    this.update.emit({ audioAssetId: undefined });
   }
 }

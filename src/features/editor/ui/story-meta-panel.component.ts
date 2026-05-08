@@ -1,10 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { AuthStore } from '@features/auth';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
+import { MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
-import { StoryAssetsService } from '@features/stories';
 import { EntityKind, EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
 import { EntityResolverService } from '@shared/data-access';
 import {
@@ -75,7 +76,7 @@ function parseRefKey(key: string): EntityRef | null {
         @if (uploadError(); as e) {
           <span class="error">{{ e }}</span>
         }
-        @if (m.coverImage; as url) {
+        @if (coverUrl(); as url) {
           <div class="cover-preview">
             <img [ngSrc]="url" alt="Story cover" fill class="cover-img" />
           </div>
@@ -102,13 +103,13 @@ function parseRefKey(key: string): EntityRef | null {
             Upload cover
           </button>
           <span class="hint">
-            Used for the catalog card. Falls back to the start scene's background.
+            Used for the catalog card. WebP only.
           </span>
         }
         <input
           #coverInput
           type="file"
-          accept="image/*"
+          accept="image/webp"
           class="hidden"
           (change)="onPick($event)"
         />
@@ -241,7 +242,8 @@ export class StoryMetaPanelComponent {
   readonly storyId = input<string>('');
   readonly update = output<Partial<StoryMeta>>();
 
-  private readonly assets = inject(StoryAssetsService);
+  private readonly media = inject(MediaAssetsService);
+  private readonly auth = inject(AuthStore);
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
   private readonly codex = inject(CodexEntriesService);
@@ -252,6 +254,8 @@ export class StoryMetaPanelComponent {
   protected readonly uploadError = signal<string | null>(null);
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
+
+  protected readonly coverUrl = computed(() => this.media.urlFor(this.meta()?.coverAssetId));
 
   protected readonly slugValid = computed(() => {
     const m = this.meta();
@@ -328,14 +332,14 @@ export class StoryMetaPanelComponent {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    const id = this.storyId();
-    if (!id) return;
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
 
     this.busy.set(true);
     this.uploadError.set(null);
     try {
-      const url = await this.assets.uploadCover(id, file);
-      this.update.emit({ coverImage: url });
+      const asset = await this.media.upload({ kind: 'cover', file }, uid);
+      this.update.emit({ coverAssetId: asset.id });
     } catch (err) {
       this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
@@ -344,6 +348,6 @@ export class StoryMetaPanelComponent {
   }
 
   protected clearCover(): void {
-    this.update.emit({ coverImage: undefined });
+    this.update.emit({ coverAssetId: undefined });
   }
 }

@@ -6,7 +6,7 @@ import { createEntityListController, EntityResolverService } from '@shared/data-
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
-import { PortraitLibraryComponent } from '../ui/portrait-library.component';
+import { SpriteLibraryComponent } from '../ui/sprite-library.component';
 
 @Component({
   selector: 'app-characters-page',
@@ -16,7 +16,7 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
     CharacterFormComponent,
     EntityListPaneComponent,
     PageHeaderComponent,
-    PortraitLibraryComponent,
+    SpriteLibraryComponent,
   ],
   template: `
     <div class="flex h-full flex-col gap-4">
@@ -52,9 +52,9 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
                 (cancelled)="ctrl.cancel()"
               />
               @if (ctrl.editing(); as c) {
-                <app-character-portrait-library
+                <app-character-sprite-library
                   [characterId]="c.id"
-                  [portraits]="c.portraits ?? []"
+                  [sprites]="c.sprites ?? []"
                 />
               }
             </div>
@@ -66,9 +66,9 @@ import { PortraitLibraryComponent } from '../ui/portrait-library.component';
                 (edit)="ctrl.startEdit(c)"
                 (remove)="ctrl.confirmRemove(c)"
               />
-              <app-character-portrait-library
+              <app-character-sprite-library
                 [characterId]="c.id"
-                [portraits]="c.portraits ?? []"
+                [sprites]="c.sprites ?? []"
               />
             </div>
           } @else {

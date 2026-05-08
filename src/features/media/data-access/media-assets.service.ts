@@ -1,4 +1,5 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, effect, inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   collection as fsCollection,
   deleteDoc,
@@ -55,6 +56,58 @@ const MAX_DIMENSIONS: Record<'cover' | 'sprite' | 'background', { w: number; h: 
 export class MediaAssetsService {
   private readonly firebase = inject(FirebaseService);
   private readonly universes = inject(UniverseStore);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  private readonly _assets = signal<AssetDoc[]>([]);
+  readonly assets: Signal<AssetDoc[]> = this._assets.asReadonly();
+
+  private readonly _byId = computed<Record<string, AssetDoc>>(() => {
+    const map: Record<string, AssetDoc> = {};
+    for (const a of this._assets()) map[a.id] = a;
+    return map;
+  });
+
+  private refreshSeq = 0;
+
+  constructor() {
+    if (this.isBrowser) {
+      effect(() => {
+        const id = this.universes.activeUniverseId();
+        if (!id) {
+          this._assets.set([]);
+          return;
+        }
+        void this.refresh(id);
+      });
+    }
+  }
+
+  byId(assetId: string | undefined | null): AssetDoc | undefined {
+    if (!assetId) return undefined;
+    return this._byId()[assetId];
+  }
+
+  urlFor(assetId: string | undefined | null): string | undefined {
+    return this.byId(assetId)?.url;
+  }
+
+  async refresh(universeId?: string): Promise<void> {
+    const id = universeId ?? this.universes.activeUniverseId();
+    const seq = ++this.refreshSeq;
+    if (!id) {
+      this._assets.set([]);
+      return;
+    }
+    const q = query(
+      fsCollection(this.firebase.firestore, 'universes', id, ASSETS_COLLECTION),
+      orderBy('createdAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    if (seq !== this.refreshSeq) return;
+    this._assets.set(
+      snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredAsset) })),
+    );
+  }
 
   async upload(input: AssetUploadInput, authorUid: string): Promise<AssetDoc> {
     const universeId = this.requireUniverseId();
@@ -93,7 +146,9 @@ export class MediaAssetsService {
       await deleteObject(objectRef).catch(() => undefined);
       throw err;
     }
-    return { id: assetId, ...stored };
+    const created: AssetDoc = { id: assetId, ...stored };
+    this._assets.update((curr) => [created, ...curr]);
+    return created;
   }
 
   async list(filter: AssetListFilter = {}): Promise<AssetDoc[]> {
@@ -112,9 +167,13 @@ export class MediaAssetsService {
 
   async rename(assetId: string, label: string): Promise<void> {
     const universeId = this.requireUniverseId();
+    const trimmed = label.trim();
     await updateDoc(
       doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, assetId),
-      { label: label.trim(), updatedAt: Date.now() },
+      { label: trimmed, updatedAt: Date.now() },
+    );
+    this._assets.update((curr) =>
+      curr.map((a) => (a.id === assetId ? { ...a, label: trimmed, updatedAt: Date.now() } : a)),
     );
   }
 
@@ -129,6 +188,7 @@ export class MediaAssetsService {
     await deleteDoc(
       doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, asset.id),
     );
+    this._assets.update((curr) => curr.filter((a) => a.id !== asset.id));
   }
 
   private requireUniverseId(): string {

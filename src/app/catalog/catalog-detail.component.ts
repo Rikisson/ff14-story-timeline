@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CalendarService } from '@features/calendar';
+import { MediaAssetsService } from '@features/media';
 import { Story } from '@features/stories';
 import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
@@ -119,13 +120,14 @@ export class CatalogDetailComponent {
 
   private readonly entityResolver = inject(EntityResolverService);
   private readonly calendar = inject(CalendarService);
+  private readonly media = inject(MediaAssetsService);
 
   protected readonly primaryClass = BTN_PRIMARY;
   protected readonly secondaryClass = BTN_SECONDARY;
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
-  protected readonly background = computed(() => this.story().coverImage);
+  protected readonly background = computed(() => this.media.urlFor(this.story().coverAssetId));
 
   protected readonly formattedDate = computed(() => {
     const d = this.story().inGameDate;

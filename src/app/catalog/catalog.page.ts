@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
+import { MediaAssetsService } from '@features/media';
 import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { isInGameDateEmpty } from '@shared/models';
@@ -84,6 +85,7 @@ export class CatalogPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly calendar = inject(CalendarService);
+  private readonly media = inject(MediaAssetsService);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly canCreate = computed(
@@ -114,7 +116,7 @@ export class CatalogPage {
       id: s.id,
       label: s.title || 'Untitled',
       secondary: this.formatDateLabel(s),
-      thumbnailUrl: s.coverImage || undefined,
+      thumbnailUrl: this.media.urlFor(s.coverAssetId),
       badge: s.draft ? { text: 'Draft', tone: 'amber' } : undefined,
     })),
   );

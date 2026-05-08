@@ -9,8 +9,9 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CharacterPortrait, CharactersService } from '@features/characters';
+import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
+import { MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
@@ -106,10 +107,9 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
           [sceneId]="store.selectedSceneId()"
           [scene]="store.selectedScene()"
           [isStartScene]="isSelectedStart()"
-          [storyId]="store.storyId() ?? ''"
           [characterOptions]="characterOptions()"
           [placeOptions]="placeOptions()"
-          [characterPortraits]="characterPortraits()"
+          [characterSprites]="characterSprites()"
           [inlineRefOptions]="inlineRefOptions()"
           [sceneLabels]="sceneLabels()"
           (update)="onUpdate($event)"
@@ -230,6 +230,7 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
+  private readonly media = inject(MediaAssetsService);
   private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly isSelectedStart = computed(
@@ -243,13 +244,21 @@ export class EditorPage implements HasUnsavedChanges {
   protected readonly placeOptions = computed(() =>
     this.places.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
   );
-  protected readonly characterPortraits = computed<Record<string, CharacterPortrait[]>>(() => {
-    const map: Record<string, CharacterPortrait[]> = {};
-    for (const c of this.characters.characters()) {
-      if (c.portraits?.length) map[c.id] = c.portraits;
-    }
-    return map;
-  });
+  protected readonly characterSprites = computed<Record<string, { id: string; label: string }[]>>(
+    () => {
+      const map: Record<string, { id: string; label: string }[]> = {};
+      for (const c of this.characters.characters()) {
+        const ids = c.sprites ?? [];
+        if (ids.length === 0) continue;
+        const resolved = ids
+          .map((id) => this.media.byId(id))
+          .filter((a): a is NonNullable<typeof a> => !!a)
+          .map((a) => ({ id: a.id, label: a.label }));
+        if (resolved.length) map[c.id] = resolved;
+      }
+      return map;
+    },
+  );
   protected readonly sceneLabels = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const [id, scene] of Object.entries(this.store.scenes())) {

@@ -5,7 +5,8 @@ export interface Place {
   slug: string;
   name: string;
   description?: string;
-  image?: string;
+  backgrounds?: string[];
+  ambientAudio?: string[];
   relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;
@@ -18,6 +19,5 @@ export interface PlaceDraft {
   slug: string;
   name: string;
   description?: string;
-  image?: string;
   relatedRefs?: EntityRef[];
 }

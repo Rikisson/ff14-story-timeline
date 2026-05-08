@@ -1,17 +1,11 @@
 import { EntityRef } from '@shared/models';
 
-export interface CharacterPortrait {
-  id: string;
-  label: string;
-  url: string;
-}
-
 export interface Character {
   id: string;
   slug: string;
   name: string;
   description?: string;
-  portraits?: CharacterPortrait[];
+  sprites?: string[];
   relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;

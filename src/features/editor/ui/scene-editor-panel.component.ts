@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { CharacterPortrait } from '@features/characters';
 import { Scene, StagedCharacter } from '@features/stories';
 import { EntityRef } from '@shared/models';
 import {
@@ -139,13 +138,13 @@ type SpeakerMode = 'none' | 'character' | 'custom';
                       <option [value]="p">{{ p }}</option>
                     }
                   </select>
-                  @if (portraitOptions(sc.entity.id).length > 1) {
+                  @if (spriteOptions(sc.entity.id).length > 1) {
                     <select
-                      [value]="sc.portraitId ?? ''"
-                      [attr.aria-label]="'Portrait for ' + characterName(sc.entity.id)"
-                      (change)="onPortraitChange($event, id, sc.entity.id)"
+                      [value]="sc.spriteId ?? ''"
+                      [attr.aria-label]="'Sprite for ' + characterName(sc.entity.id)"
+                      (change)="onSpriteChange($event, id, sc.entity.id)"
                     >
-                      @for (po of portraitOptions(sc.entity.id); track po.id) {
+                      @for (po of spriteOptions(sc.entity.id); track po.id) {
                         <option [value]="po.id">{{ po.label }}</option>
                       }
                     </select>
@@ -228,10 +227,8 @@ type SpeakerMode = 'none' | 'character' | 'custom';
         <hr />
 
         <app-scene-assets-panel
-          [storyId]="storyId()"
-          [sceneId]="id"
-          [background]="s.background"
-          [audio]="s.audio"
+          [backgroundAssetId]="s.backgroundAssetId"
+          [audioAssetId]="s.audioAssetId"
           (update)="update.emit({ id, patch: $event })"
         />
 
@@ -461,10 +458,9 @@ export class SceneEditorPanelComponent {
   readonly sceneId = input.required<string | null>();
   readonly scene = input.required<Scene | null>();
   readonly isStartScene = input.required<boolean>();
-  readonly storyId = input.required<string>();
   readonly characterOptions = input<EntityPickerOption[]>([]);
   readonly placeOptions = input<EntityPickerOption[]>([]);
-  readonly characterPortraits = input<Record<string, CharacterPortrait[]>>({});
+  readonly characterSprites = input<Record<string, { id: string; label: string }[]>>({});
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly sceneLabels = input<Record<string, string>>({});
 
@@ -523,10 +519,10 @@ export class SceneEditorPanelComponent {
     return this.characterOptions().find((o) => o.id === id)?.label ?? id;
   }
 
-  protected portraitOptions(characterId: string): { id: string; label: string }[] {
-    const list = this.characterPortraits()[characterId] ?? [];
+  protected spriteOptions(characterId: string): { id: string; label: string }[] {
+    const list = this.characterSprites()[characterId] ?? [];
     if (list.length === 0) return [];
-    return [{ id: '', label: '(default)' }, ...list.map((p) => ({ id: p.id, label: p.label }))];
+    return [{ id: '', label: '(default)' }, ...list];
   }
 
   protected emitTextValue(id: string, value: string): void {
@@ -589,12 +585,12 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { characters: next } });
   }
 
-  protected onPortraitChange(event: Event, id: string, characterId: string): void {
+  protected onSpriteChange(event: Event, id: string, characterId: string): void {
     const value = (event.target as HTMLSelectElement).value;
-    const portraitId = value || undefined;
+    const spriteId = value || undefined;
     const current = this.scene()?.characters ?? [];
     const next = current.map((c) =>
-      c.entity.id === characterId ? { ...c, portraitId } : c,
+      c.entity.id === characterId ? { ...c, spriteId } : c,
     );
     this.update.emit({ id, patch: { characters: next } });
   }
