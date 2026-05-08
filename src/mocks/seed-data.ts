@@ -34,13 +34,8 @@ export const SEED_CHARACTERS: Character[] = [
     age: '28',
     affiliation: 'Independent (formerly House Brann)',
     residence: { kind: 'place', id: 'place-uldah-pearl-lane' },
-    shortDescription: "Voidsent-tainted Hyur rogue carving out a quiet life in Ul'dah.",
     description:
       'Bound to House Brann as a girl and nearly destroyed when Sakuya cut the household down. Carries the marks of her former master — sun-shy, amber-eyed, careful with shadows.',
-    personality: 'Cautious, observant, slow to trust. Carries the small habits of someone who has learned to disappear at need.',
-    motivation: 'Find Zahir. Repay old debts. Stay alive long enough to see what comes next.',
-    backstory:
-      "Sold into House Brann's service before she could remember another life. Survived the night Sakuya's blade ended her master's reign and fled west with the clothes on her back.",
     relatedCharacters: [
       {
         character: { kind: 'character', id: 'char-marcus' },
@@ -67,13 +62,8 @@ export const SEED_CHARACTERS: Character[] = [
     age: 'Near 80',
     affiliation: 'Spice Merchants of Pearl Lane',
     residence: { kind: 'place', id: 'place-uldah-pearl-lane' },
-    shortDescription: 'An aging Hyur merchant whose ledger keeps more secrets than coin.',
     description:
       "Has run the Pearl Lane stall for forty years. Knows everyone worth knowing in Ul'dah and a great many who would rather not be known.",
-    personality: 'Warm, shrewd, willing to spend an old favor for an old friend.',
-    motivation: 'Quiet repayment of debts only he remembers.',
-    backstory:
-      "Came to Ul'dah young, with little but a knack for languages and a willingness to ask the right questions. The stall came later, the Syndicate dealings later still.",
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -89,13 +79,8 @@ export const SEED_CHARACTERS: Character[] = [
     age: 'Late 50s at death',
     affiliation: 'House Brann (defunct), Syndicate',
     residence: { kind: 'place', id: 'place-ishgard' },
-    shortDescription: 'A Hyur lord who trafficked with voidsent and paid for it.',
     description:
       'Built a manse at the edge of Ishgard on quiet Syndicate dealings. Drew the notice of the Far East with one bargain too many.',
-    personality: 'Cold, ambitious, careless of those bound to him.',
-    motivation: 'Power, by whatever contract would grant it.',
-    backstory:
-      'A minor scion of a forgotten house who climbed the Ishgard ledgers by trading favors no other house dared keep.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -110,13 +95,8 @@ export const SEED_CHARACTERS: Character[] = [
     gender: 'Female',
     age: '32',
     affiliation: 'Doman Liberation Front',
-    shortDescription: "A Doman samurai who took Brann's head and walked unscathed into the snow.",
     description:
       'Survived the fall of Doma as a child. Trained in exile. Came west following a trail that ended in House Brann.',
-    personality: 'Disciplined, exact, slow to anger. Slow, when angered, to forgive.',
-    motivation: 'Free Doma. Settle the count of voidsent debts.',
-    backstory:
-      'Smuggled out of Yanxia in the months after the fall. Raised in the highland camps. Took the blade at fifteen and the Liberation oath at twenty.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -130,13 +110,8 @@ export const SEED_CHARACTERS: Character[] = [
     gender: 'Male',
     age: 'Late 60s',
     affiliation: 'Formerly House Brann; current allegiance unknown',
-    shortDescription: 'An old hand of House Brann. Believed dead, perhaps not.',
     description:
       "Served the house long before Brann turned to the void. Disappeared the night of the attack; whispers place him near the Northern Shroud.",
-    personality: 'Patient, watchful, fond of indirect speech.',
-    motivation: 'Atonement, if the rumors are true.',
-    backstory:
-      'A blade-for-hire who took service with House Brann when the work paid better than questions. Stayed even as the master soured.',
     relatedCharacters: [
       {
         character: { kind: 'character', id: 'char-ingrid' },
@@ -157,10 +132,8 @@ export const SEED_PLACES: Place[] = [
     geoPosition: "Ul'dah - Steps of Thal, Thanalan",
     factions: ['Syndicate', 'Immortal Flames'],
     type: 'Marketplace',
-    shortDescription: "A narrow run of stalls under Ul'dah's amber light.",
     description:
       "Where official commerce thins and the back-channel trade thickens. Marcus's spice stall holds the corner closest to the alley.",
-    atmosphere: 'Warm dust, saffron and clove, the constant murmur of bartering.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -171,10 +144,8 @@ export const SEED_PLACES: Place[] = [
     geoPosition: 'Coerthas Central Highlands',
     factions: ['House Fortemps', 'Temple Knights'],
     type: 'City',
-    shortDescription: 'A cathedral city locked in the long winter.',
     description:
       'High-house seats and stone-vaulted halls. Bells from the cathedrals still mark the hours over the snow.',
-    atmosphere: 'Cold, snow-still, the scent of wax and old stone.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -185,10 +156,8 @@ export const SEED_PLACES: Place[] = [
     geoPosition: 'Yanxia, Far East',
     factions: ['Doman Liberation Front'],
     type: 'Region',
-    shortDescription: 'Yanxian homeland, fallen but not silent.',
     description:
       'Once a kingdom, now a contested province. The Liberation Front operates from its high villages and rice-terrace hamlets.',
-    atmosphere: 'Mountain mist, paddy water, the distant clatter of Garlean patrols.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -199,10 +168,8 @@ export const SEED_PLACES: Place[] = [
     geoPosition: 'Black Shroud',
     factions: ['Order of the Twin Adder', 'Wood Wailers'],
     type: 'City and forest',
-    shortDescription: 'Forest-warded city with deep wood beyond.',
     description:
       "Gridania holds the south; the Northern Shroud climbs into wilds where the elementals' grip loosens. Travelers who slip past the wood wailers can vanish for years.",
-    atmosphere: "Loam and pine, canopy light, the chime of distant voidsent wards.",
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -213,7 +180,7 @@ export const SEED_PLOTLINES: Plotline[] = [
     id: 'plotline-ingrid-flight',
     slug: 'ingrid-flight',
     title: "Ingrid's Flight",
-    summary:
+    description:
       'Ingrid escapes the destruction of her former master and rebuilds a quiet life in Ul’dah, all while searching for what remains of those nights.',
     color: '#6366f1',
     status: 'active',
@@ -224,7 +191,7 @@ export const SEED_PLOTLINES: Plotline[] = [
     id: 'plotline-doman-liberation',
     slug: 'doman-liberation',
     title: 'Doman Liberation',
-    summary: 'The Doman resistance regroups in exile and prepares to retake the homeland.',
+    description: 'The Doman resistance regroups in exile and prepares to retake the homeland.',
     color: '#10b981',
     status: 'planned',
     authorUid: SEED_AUTHOR_UID,
@@ -234,7 +201,7 @@ export const SEED_PLOTLINES: Plotline[] = [
     id: 'plotline-calamity-aftermath',
     slug: 'calamity-aftermath',
     title: 'Calamity Aftermath',
-    summary: 'The years immediately following Bahamut’s release and the realm’s slow recovery.',
+    description: 'The years immediately following Bahamut’s release and the realm’s slow recovery.',
     color: '#f59e0b',
     status: 'resolved',
     authorUid: SEED_AUTHOR_UID,
@@ -320,7 +287,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'voidsent-taint',
     title: 'Voidsent Taint',
     category: 'Lore',
-    body: 'A lingering corruption left by prolonged contact with voidsent kin. Survivors carry sensitivity to sunlight, faintly altered eye color, and an instinctive drift toward shadow.',
+    description: 'A lingering corruption left by prolonged contact with voidsent kin. Survivors carry sensitivity to sunlight, faintly altered eye color, and an instinctive drift toward shadow.',
     relatedRefs: [
       { kind: 'character', id: 'char-ingrid' },
       { kind: 'character', id: 'char-brann' },
@@ -333,7 +300,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'the-echo',
     title: 'The Echo',
     category: 'Lore',
-    body: 'A rare gift that lets the bearer glimpse memories not their own. Those who carry it are drawn into greater currents of fate whether they wish it or not.',
+    description: 'A rare gift that lets the bearer glimpse memories not their own. Those who carry it are drawn into greater currents of fate whether they wish it or not.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -342,7 +309,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'seventh-umbral-calamity',
     title: 'The Seventh Umbral Calamity',
     category: 'History',
-    body: 'The cataclysm that ended the Sixth Astral Era and reshaped Eorzea. Five years on, the realm still measures its losses.',
+    description: 'The cataclysm that ended the Sixth Astral Era and reshaped Eorzea. Five years on, the realm still measures its losses.',
     relatedRefs: [{ kind: 'event', id: 'event-seventh-umbral-calamity' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
@@ -357,9 +324,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
     description:
       'Dalamud crashes into Eorzea, releasing Bahamut and devastating the realm. Marks the close of the Sixth Astral Era and the start of the Seventh Umbral Era.',
     type: 'Cataclysm',
-    summary: 'Dalamud falls. Bahamut wakes. The Sixth Astral Era ends.',
-    consequences:
-      'Five years of slow recovery. The realm renames its calendar; entire households cease to exist.',
     sortOrder: 0,
     mainCharacters: [],
     places: [
@@ -379,9 +343,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
     description:
       'Garlean forces overrun ${pl:place-doma}[Doma], scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the ${fa:faction-doman-liberation-front}[Doman Liberation Front] for years to come.',
     type: 'Battle',
-    summary: 'Garlemald takes Doma; the resistance scatters.',
-    consequences:
-      'Two decades of Doman exile. The Liberation Front takes shape in the highlands; survivors carry blades and old grudges west.',
     sortOrder: 1,
     mainCharacters: [{ kind: 'character', id: 'char-sakuya' }],
     places: [{ kind: 'place', id: 'place-doma' }],
@@ -399,9 +360,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
     description:
       "The night ${ch:char-sakuya}[Sakuya]'s blade ended ${ch:char-brann}[Brann]'s reign — and nearly ${ch:char-ingrid}[Ingrid]'s existence. Survivors fled toward the ${pl:place-gridania-northern-shroud}[Black Shroud]; Ingrid's path to ${pl:place-uldah-pearl-lane}[Ul'dah] began here. Five years on, the attack is still felt — see ${ev:event-seventh-umbral-calamity}[the Calamity] for the era it closed.",
     type: 'Assault',
-    summary: "A single night ends a Syndicate-aligned voidwalker's reign.",
-    consequences:
-      "Ingrid's flight to Ul'dah. Zahir's disappearance. The closure of House Brann and the slow unwinding of its Syndicate ledgers.",
     sortOrder: 2,
     mainCharacters: [
       { kind: 'character', id: 'char-ingrid' },
@@ -452,8 +410,6 @@ export const SEED_STORY: Story = {
   id: 'story-shadows-and-provisions',
   slug: 'shadows-and-provisions',
   title: 'Shadows and Provisions',
-  summary:
-    "Three years after fleeing the destruction of her former master's house, Ingrid meets an old contact in Ul'dah's Pearl Lane to arrange provisions for a journey east — and to ask a question she has never dared voice aloud.",
   description:
     "A short, character-driven scene set five years after ${ev:event-seventh-umbral-calamity}[the Calamity]. ${ch:char-ingrid}[Ingrid] surfaces just long enough to ask the question that has haunted her since ${ev:event-brann-house-attack}[the night the blade fell] — whether ${ch:char-zahir}[Zahir], the only person who ever taught her anything worth keeping, survived the same fire she did. Part of the ${pt:plotline-ingrid-flight}[Ingrid's Flight] arc.",
   mainCharacters: [

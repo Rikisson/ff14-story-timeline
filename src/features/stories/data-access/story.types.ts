@@ -25,7 +25,6 @@ export interface Story {
   id: string;
   slug: string;
   title: string;
-  summary?: string;
   description?: string;
   coverImage?: string;
   mainCharacters: EntityRef<'character'>[];

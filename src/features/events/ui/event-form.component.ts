@@ -87,16 +87,6 @@ import { TimelineEventDraft } from '../data-access/event.types';
         </label>
       </div>
 
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Summary</span>
-        <textarea
-          formControlName="summary"
-          rows="2"
-          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-          placeholder="One-line headline shown in lists."
-        ></textarea>
-      </label>
-
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
         <app-rich-text-input
@@ -107,16 +97,6 @@ import { TimelineEventDraft } from '../data-access/event.types';
           (valueChange)="onDescription($event)"
         />
       </div>
-
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Consequences</span>
-        <textarea
-          formControlName="consequences"
-          rows="3"
-          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-          placeholder="What changes after this event."
-        ></textarea>
-      </label>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="flex flex-col gap-1 text-sm">
@@ -288,9 +268,7 @@ export class EventFormComponent {
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     type: ['', [Validators.maxLength(60)]],
-    summary: ['', [Validators.maxLength(280)]],
     sortOrder: [null as number | null],
-    consequences: ['', [Validators.maxLength(2000)]],
   });
 
   constructor() {
@@ -300,9 +278,7 @@ export class EventFormComponent {
         slug: init?.slug ?? '',
         name: init?.name ?? '',
         type: init?.type ?? '',
-        summary: init?.summary ?? '',
         sortOrder: init?.sortOrder ?? null,
-        consequences: init?.consequences ?? '',
       });
       this.mainCharacters.set(init?.mainCharacters ?? []);
       this.places.set(init?.places ?? []);
@@ -356,8 +332,6 @@ export class EventFormComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     const type = v.type.trim();
-    const summary = v.summary.trim();
-    const consequences = v.consequences.trim();
     const relatedEvents = this.relatedEvents();
     const plotlineRefs = this.plotlineRefs();
     const itemRefs = this.itemRefs();
@@ -371,9 +345,7 @@ export class EventFormComponent {
       places: this.places(),
       relatedDates: this.relatedDates(),
       type: type || undefined,
-      summary: summary || undefined,
       sortOrder: v.sortOrder == null ? undefined : v.sortOrder,
-      consequences: consequences || undefined,
       relatedEvents: relatedEvents.length > 0 ? relatedEvents : undefined,
       plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
       itemRefs: itemRefs.length > 0 ? itemRefs : undefined,

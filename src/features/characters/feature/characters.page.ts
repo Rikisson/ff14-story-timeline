@@ -92,7 +92,13 @@ export class CharactersPage {
   protected readonly ctrl = createEntityListController<Character, CharacterDraft>({
     entities: this.characters,
     service: this.service,
-    toDraft: (c) => ({ slug: c.slug, name: c.name, race: c.race, job: c.job }),
+    toDraft: (c) => ({
+      slug: c.slug,
+      name: c.name,
+      race: c.race,
+      job: c.job,
+      description: c.description,
+    }),
     removeLabel: (c) => c.name,
   });
 

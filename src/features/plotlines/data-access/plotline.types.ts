@@ -4,7 +4,7 @@ export interface Plotline {
   id: string;
   slug: string;
   title: string;
-  summary?: string;
+  description?: string;
   color?: string;
   status?: PlotlineStatus;
   authorUid: string;
@@ -17,7 +17,7 @@ export type StoredPlotline = Omit<Plotline, 'id'>;
 export interface PlotlineDraft {
   slug: string;
   title: string;
-  summary?: string;
+  description?: string;
   color?: string;
   status?: PlotlineStatus;
 }

@@ -10,9 +10,7 @@ export interface TimelineEvent {
   inGameDate: InGameDate;
   relatedDates: string[];
   type?: string;
-  summary?: string;
   sortOrder?: number;
-  consequences?: string;
   relatedEvents?: EntityRef<'event'>[];
   plotlineRefs?: EntityRef<'plotline'>[];
   itemRefs?: EntityRef<'item'>[];
@@ -33,9 +31,7 @@ export interface TimelineEventDraft {
   inGameDate: InGameDate;
   relatedDates: string[];
   type?: string;
-  summary?: string;
   sortOrder?: number;
-  consequences?: string;
   relatedEvents?: EntityRef<'event'>[];
   plotlineRefs?: EntityRef<'plotline'>[];
   itemRefs?: EntityRef<'item'>[];

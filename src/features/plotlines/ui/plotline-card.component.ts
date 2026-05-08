@@ -41,8 +41,8 @@ const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
           }
         </div>
       </div>
-      @if (plotline().summary; as s) {
-        <p class="m-0 whitespace-pre-line text-sm text-slate-700">{{ s }}</p>
+      @if (plotline().description; as d) {
+        <p class="m-0 whitespace-pre-line text-sm text-slate-700">{{ d }}</p>
       }
     </article>
   `,

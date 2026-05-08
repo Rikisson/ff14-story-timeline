@@ -29,7 +29,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
       </div>
 
       <p class="m-0 whitespace-pre-line text-sm text-slate-700">
-        {{ entry().body }}
+        {{ entry().description }}
       </p>
 
       @if ((entry().relatedRefs ?? []).length > 0) {

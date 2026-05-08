@@ -10,8 +10,6 @@ export interface Place {
   description?: string;
   type?: string;
   parentPlace?: EntityRef<'place'>;
-  shortDescription?: string;
-  atmosphere?: string;
   image?: string;
   authorUid: string;
   createdAt: number;
@@ -28,7 +26,5 @@ export interface PlaceDraft {
   description?: string;
   type?: string;
   parentPlace?: EntityRef<'place'>;
-  shortDescription?: string;
-  atmosphere?: string;
   image?: string;
 }

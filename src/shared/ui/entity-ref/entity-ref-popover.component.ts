@@ -16,8 +16,8 @@ import { EntityRefHoverService } from './entity-ref-hover.service';
       </p>
       @if (resolved(); as r) {
         <p class="m-0 mt-0.5 text-sm font-semibold text-slate-900">{{ r.name }}</p>
-        @if (description(); as d) {
-          <p class="m-0 mt-2 whitespace-pre-line text-xs leading-relaxed text-slate-700">
+        @if (r.description; as d) {
+          <p class="m-0 mt-2 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-slate-700">
             {{ d }}
           </p>
         }
@@ -33,10 +33,4 @@ export class EntityRefPopoverComponent {
   readonly kindLabel = input<string>('');
 
   protected readonly hover = inject(EntityRefHoverService);
-
-  protected description(): string | undefined {
-    const r = this.resolved();
-    if (!r) return undefined;
-    return r.shortDescription ?? r.description;
-  }
 }

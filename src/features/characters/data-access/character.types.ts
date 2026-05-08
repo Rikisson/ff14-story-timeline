@@ -26,10 +26,6 @@ export interface Character {
   age?: string;
   affiliation?: string;
   residence?: EntityRef<'place'>;
-  shortDescription?: string;
-  personality?: string;
-  motivation?: string;
-  backstory?: string;
   relatedCharacters?: CharacterRelation[];
   authorUid: string;
   createdAt: number;
@@ -50,9 +46,5 @@ export interface CharacterDraft {
   age?: string;
   affiliation?: string;
   residence?: EntityRef<'place'>;
-  shortDescription?: string;
-  personality?: string;
-  motivation?: string;
-  backstory?: string;
   relatedCharacters?: CharacterRelation[];
 }

@@ -80,6 +80,7 @@ export class PlacesPage {
       name: p.name,
       geoPosition: p.geoPosition,
       factions: p.factions,
+      description: p.description,
     }),
     removeLabel: (p) => p.name,
   });

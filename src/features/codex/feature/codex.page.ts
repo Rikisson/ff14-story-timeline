@@ -80,7 +80,7 @@ export class CodexPage {
       slug: e.slug,
       title: e.title,
       category: e.category,
-      body: e.body,
+      description: e.description,
       relatedRefs: e.relatedRefs,
     }),
     removeLabel: (e) => e.title,

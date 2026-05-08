@@ -24,7 +24,7 @@ export function withEditorMethods() {
             meta: {
               slug: story.slug,
               title: story.title,
-              summary: story.summary,
+              description: story.description,
               coverImage: story.coverImage,
               mainCharacters: story.mainCharacters,
               places: story.places,

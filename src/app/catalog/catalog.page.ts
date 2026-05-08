@@ -109,7 +109,7 @@ export class CatalogPage {
     this.filteredStories().map((s) => ({
       id: s.id,
       label: s.title || 'Untitled',
-      secondary: s.summary || undefined,
+      secondary: s.description || undefined,
       thumbnailUrl: s.coverImage || undefined,
       badge: s.draft ? { text: 'Draft', tone: 'amber' } : undefined,
     })),

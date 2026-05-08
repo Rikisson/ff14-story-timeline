@@ -48,9 +48,9 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
 
       <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Summary</span>
+          <span class="font-medium text-slate-700">Description</span>
           <textarea
-            formControlName="summary"
+            formControlName="description"
             rows="3"
             class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
             placeholder="High-level arc of this plotline."
@@ -109,7 +109,7 @@ export class PlotlineFormComponent {
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     title: ['', [Validators.required, Validators.maxLength(120)]],
-    summary: [''],
+    description: [''],
     color: ['#6366f1'],
     status: ['' as '' | PlotlineStatus],
   });
@@ -120,7 +120,7 @@ export class PlotlineFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         title: init?.title ?? '',
-        summary: init?.summary ?? '',
+        description: init?.description ?? '',
         color: init?.color ?? '#6366f1',
         status: init?.status ?? '',
       });
@@ -130,12 +130,12 @@ export class PlotlineFormComponent {
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    const summary = v.summary.trim();
+    const description = v.description.trim();
     const color = v.color.trim();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
-      summary: summary || undefined,
+      description: description || undefined,
       color: color || undefined,
       status: v.status === '' ? undefined : v.status,
     });

@@ -65,10 +65,10 @@ const BTN_SECONDARY =
           <h2 class="m-0 text-2xl font-bold text-white drop-shadow-md sm:text-3xl">
             {{ story().title || 'Untitled' }}
           </h2>
-          @if (story().summary; as s) {
+          @if (story().description; as d) {
             <app-markdown-text
               class="line-clamp-3 max-w-2xl text-sm text-white/90 drop-shadow"
-              [text]="s"
+              [text]="d"
               [options]="inlineRefOptions()"
               [inline]="true"
             />

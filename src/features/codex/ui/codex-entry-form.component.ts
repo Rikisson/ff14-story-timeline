@@ -100,9 +100,9 @@ function parseRefKey(key: string): EntityRef | null {
       </div>
 
       <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Body</span>
+        <span class="font-medium text-slate-700">Description</span>
         <textarea
-          formControlName="body"
+          formControlName="description"
           rows="8"
           class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
           placeholder="The lore content of this entry."
@@ -213,7 +213,7 @@ export class CodexEntryFormComponent {
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     title: ['', [Validators.required, Validators.maxLength(120)]],
     category: [''],
-    body: ['', [Validators.required]],
+    description: ['', [Validators.required]],
   });
 
   constructor() {
@@ -223,7 +223,7 @@ export class CodexEntryFormComponent {
         slug: init?.slug ?? '',
         title: init?.title ?? '',
         category: init?.category ?? '',
-        body: init?.body ?? '',
+        description: init?.description ?? '',
       });
       this.related.set(init?.relatedRefs ?? []);
     });
@@ -247,7 +247,7 @@ export class CodexEntryFormComponent {
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
       category: category || undefined,
-      body: v.body.trim(),
+      description: v.description.trim(),
       relatedRefs: refs.length > 0 ? refs : undefined,
     });
   }

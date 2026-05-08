@@ -79,7 +79,7 @@ export class PlotlinesPage {
     toDraft: (p) => ({
       slug: p.slug,
       title: p.title,
-      summary: p.summary,
+      description: p.description,
       color: p.color,
       status: p.status,
     }),

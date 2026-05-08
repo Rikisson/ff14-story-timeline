@@ -85,10 +85,10 @@ const BTN_SECONDARY =
         <h3 class="m-0 text-lg font-semibold text-slate-900">
           {{ story().title || 'Untitled' }}
         </h3>
-        @if (story().summary; as s) {
+        @if (story().description; as d) {
           <app-markdown-text
             class="line-clamp-3 text-sm text-slate-600"
-            [text]="s"
+            [text]="d"
             [options]="inlineRefOptions()"
             [inline]="true"
           />

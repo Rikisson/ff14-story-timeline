@@ -4,7 +4,7 @@ export type StoryMeta = Pick<
   Story,
   | 'slug'
   | 'title'
-  | 'summary'
+  | 'description'
   | 'coverImage'
   | 'mainCharacters'
   | 'places'

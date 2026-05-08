@@ -93,13 +93,13 @@ import { StoryMeta } from '../data-access/editor.state';
       </div>
 
       <div class="field">
-        <label>Summary</label>
+        <label>Description</label>
         <app-rich-text-input
-          [value]="m.summary ?? ''"
+          [value]="m.description ?? ''"
           [options]="inlineRefOptions()"
-          ariaLabel="Summary"
+          ariaLabel="Description"
           placeholder="What is this story about?"
-          (valueChange)="onSummary($event)"
+          (valueChange)="onDescription($event)"
         />
       </div>
 
@@ -260,8 +260,8 @@ export class StoryMetaPanelComponent {
     this.update.emit({ slug: (event.target as HTMLInputElement).value });
   }
 
-  protected onSummary(value: string): void {
-    this.update.emit({ summary: value || undefined });
+  protected onDescription(value: string): void {
+    this.update.emit({ description: value || undefined });
   }
 
   protected onCharacterIds(ids: string[]): void {

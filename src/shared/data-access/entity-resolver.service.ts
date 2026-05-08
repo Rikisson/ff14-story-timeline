@@ -15,7 +15,6 @@ export interface ResolvedEntity {
   id: string;
   name: string;
   slug?: string;
-  shortDescription?: string;
   description?: string;
 }
 
@@ -102,7 +101,6 @@ export class EntityResolverService {
               id: c.id,
               name: c.name,
               slug: c.slug,
-              shortDescription: c.shortDescription,
               description: c.description,
             }
           : null;
@@ -115,7 +113,6 @@ export class EntityResolverService {
               id: p.id,
               name: p.name,
               slug: p.slug,
-              shortDescription: p.shortDescription,
               description: p.description,
             }
           : null;
@@ -128,7 +125,6 @@ export class EntityResolverService {
               id: e.id,
               name: e.name,
               slug: e.slug,
-              shortDescription: e.summary,
               description: e.description,
             }
           : null;
@@ -141,7 +137,6 @@ export class EntityResolverService {
               id: s.id,
               name: s.title,
               slug: s.slug,
-              shortDescription: s.summary,
               description: s.description,
             }
           : null;
@@ -154,7 +149,7 @@ export class EntityResolverService {
               id: p.id,
               name: p.title,
               slug: p.slug,
-              shortDescription: p.summary,
+              description: p.description,
             }
           : null;
       }
@@ -190,15 +185,10 @@ export class EntityResolverService {
               id: c.id,
               name: c.title,
               slug: c.slug,
-              shortDescription: truncate(c.body, 200),
+              description: c.description,
             }
           : null;
       }
     }
   }
-}
-
-function truncate(s: string | undefined, max: number): string | undefined {
-  if (!s) return undefined;
-  return s.length <= max ? s : s.slice(0, max - 1).trimEnd() + '…';
 }
