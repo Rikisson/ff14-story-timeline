@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { CalendarService } from '@features/calendar';
 import { InGameDate, isInGameDateEmpty } from '@shared/models';
-import { formatInGameDate } from '@shared/utils';
 
 @Component({
   selector: 'app-in-game-date-input',
@@ -119,7 +118,10 @@ import { formatInGameDate } from '@shared/utils';
               type="number"
               min="0"
               [max]="minuteMax()"
-              class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm"
+              class="h-9 rounded-md border bg-white px-2 text-sm"
+              [class.border-red-500]="timeErrors().minute"
+              [class.border-slate-300]="!timeErrors().minute"
+              [attr.aria-invalid]="timeErrors().minute || null"
               [value]="value()?.minute ?? ''"
               (input)="onField('minute', $event)"
             />
@@ -130,12 +132,18 @@ import { formatInGameDate } from '@shared/utils';
               type="number"
               min="0"
               [max]="secondMax()"
-              class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm"
+              class="h-9 rounded-md border bg-white px-2 text-sm"
+              [class.border-red-500]="timeErrors().second"
+              [class.border-slate-300]="!timeErrors().second"
+              [attr.aria-invalid]="timeErrors().second || null"
               [value]="value()?.second ?? ''"
               (input)="onField('second', $event)"
             />
           </label>
         </div>
+        @if (timeError(); as e) {
+          <p class="m-0 text-xs text-red-700" role="alert">{{ e }}</p>
+        }
 
         <label class="flex flex-col gap-1 text-xs text-slate-600">
           <span>Display override (optional — replaces the formatted output)</span>
@@ -175,11 +183,13 @@ export class InGameDateInputComponent {
 
   protected readonly summary = computed(() => {
     const v = this.value();
-    if (isInGameDateEmpty(v)) return null;
-    return formatInGameDate(v, {
-      eraName: v?.era ? this.calendar.eraNameLookup(v.era) : undefined,
-      monthName: v?.month ? this.calendar.monthNameLookup(v.month) : undefined,
-    });
+    if (isInGameDateEmpty(v) || !v) return null;
+    if (v.display) return v.display;
+    return formatProseDate(
+      v,
+      v.era ? this.calendar.eraNameLookup(v.era) : undefined,
+      v.month ? this.calendar.monthNameLookup(v.month) : undefined,
+    );
   });
 
   protected readonly dayMax = computed(() => {
@@ -193,6 +203,21 @@ export class InGameDateInputComponent {
   protected readonly hourMax = computed(() => (this.currentEra()?.hoursPerDay ?? 24) - 1);
   protected readonly minuteMax = computed(() => (this.currentEra()?.minutesPerHour ?? 60) - 1);
   protected readonly secondMax = computed(() => (this.currentEra()?.secondsPerMinute ?? 60) - 1);
+
+  protected readonly timeErrors = computed(() => {
+    const v = this.value();
+    return {
+      minute: !!v && v.minute !== undefined && v.hour === undefined,
+      second: !!v && v.second !== undefined && v.minute === undefined,
+    };
+  });
+
+  protected readonly timeError = computed(() => {
+    const e = this.timeErrors();
+    if (e.minute) return 'Minute requires an hour.';
+    if (e.second) return 'Second requires a minute.';
+    return null;
+  });
 
   protected onToggle(event: Event): void {
     const el = event.target as HTMLDetailsElement;
@@ -230,4 +255,61 @@ export class InGameDateInputComponent {
     else delete next.display;
     this.valueChanged.emit(next);
   }
+}
+
+function formatProseDate(
+  d: InGameDate,
+  eraName: string | undefined,
+  monthName: string | undefined,
+): string {
+  const datePart = buildProseDatePart(d, monthName);
+  const yearPart = d.year !== undefined ? String(d.year) : '';
+  const timePart = buildProseTimePart(d);
+
+  let head: string;
+  if (datePart && yearPart && eraName) {
+    head = `${datePart} of ${yearPart}, ${eraName}`;
+  } else if (datePart && yearPart) {
+    head = `${datePart} of ${yearPart}`;
+  } else if (datePart && eraName) {
+    head = `${datePart}, ${eraName}`;
+  } else if (datePart) {
+    head = datePart;
+  } else if (yearPart && eraName) {
+    head = `${yearPart} of the ${eraName}`;
+  } else if (yearPart) {
+    head = `the year ${yearPart}`;
+  } else if (eraName) {
+    head = eraName;
+  } else {
+    head = '';
+  }
+
+  if (!timePart) return head;
+  return head ? `${head} — ${timePart}` : timePart;
+}
+
+function buildProseDatePart(d: InGameDate, monthName: string | undefined): string {
+  const day = d.day;
+  const month = d.month;
+  if (day !== undefined && monthName) return `${day} ${monthName}`;
+  if (day !== undefined && month !== undefined) return `Day ${day}, month ${pad2(month)}`;
+  if (day !== undefined) return `day ${day}`;
+  if (monthName) return monthName;
+  if (month !== undefined) return `month ${pad2(month)}`;
+  return '';
+}
+
+function buildProseTimePart(d: InGameDate): string {
+  if (d.hour === undefined) return '';
+  const parts: string[] = [pad2(d.hour)];
+  if (d.minute !== undefined) {
+    parts.push(pad2(d.minute));
+    if (d.second !== undefined) parts.push(pad2(d.second));
+  }
+  return parts.join(':');
+}
+
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
 }
