@@ -206,12 +206,16 @@ export class CodexEntryFormComponent {
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    const category = v.category.trim();
+    const typedCategory = v.category.trim();
+    const matched = typedCategory
+      ? this.categoriesService.categoryByLabel().get(typedCategory.toLowerCase())
+      : undefined;
+    const category = matched?.label ?? (typedCategory || undefined);
     const refs = this.related();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
-      category: category || undefined,
+      category,
       description: v.description.trim(),
       relatedRefs: refs.length > 0 ? refs : undefined,
     });
