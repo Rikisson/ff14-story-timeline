@@ -4,8 +4,6 @@ export type EntityKind =
   | 'event'
   | 'story'
   | 'plotline'
-  | 'item'
-  | 'faction'
   | 'codexEntry';
 
 export interface EntityRef<K extends EntityKind = EntityKind> {

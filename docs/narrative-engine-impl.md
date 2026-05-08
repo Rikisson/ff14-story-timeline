@@ -198,13 +198,6 @@ Open changes. Remove items as they ship.
   through client-side filtering of the loaded page.
 - Test coverage for services, guards, and components (specs exist for
   editor and player stores).
-- Collapse Items and Factions into typed Codex categories per
-  *Entity tiers*. The unified `relatedRefs` picker on Story / Event /
-  Character / Place / Codex already accepts codex refs, so no picker
-  work remains — the scope is a Firestore data migration of item /
-  faction docs into codex entries with `category` set, and rewriting
-  `${item:…}` / `${faction:…}` tokens to `${codex:…}`. Item and
-  Faction features (forms, cards, services, pages) are then deleted.
 - Atomic slug uniqueness via denormalized index doc
   (`universes/{id}/_slugIndex/{kind}_{slug}`); current check is
   read-then-write.

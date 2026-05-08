@@ -7,8 +7,6 @@ export const KIND_UI_CLASS: Record<EntityKind, string> = {
   event: 'bg-amber-50 text-amber-800',
   story: 'bg-fuchsia-50 text-fuchsia-700',
   plotline: 'bg-sky-50 text-sky-700',
-  item: 'bg-orange-50 text-orange-800',
-  faction: 'bg-rose-50 text-rose-700',
   codexEntry: 'bg-slate-100 text-slate-700',
 };
 
@@ -19,8 +17,6 @@ export const KIND_PICKER_CLASS: Record<EntityKind, string> = {
   event: 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100',
   story: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 hover:bg-fuchsia-100',
   plotline: 'border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100',
-  item: 'border-orange-200 bg-orange-50 text-orange-900 hover:bg-orange-100',
-  faction: 'border-rose-200 bg-rose-50 text-rose-900 hover:bg-rose-100',
   codexEntry: 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200',
 };
 
@@ -31,8 +27,6 @@ export const KIND_TEXT_CLASS: Record<EntityKind, string> = {
   event: 'text-amber-800 hover:bg-amber-50',
   story: 'text-fuchsia-700 hover:bg-fuchsia-50',
   plotline: 'text-sky-700 hover:bg-sky-50',
-  item: 'text-orange-800 hover:bg-orange-50',
-  faction: 'text-rose-700 hover:bg-rose-50',
   codexEntry: 'text-slate-700 hover:bg-slate-100',
 };
 

@@ -7,8 +7,6 @@ import {
 import { Character } from '@features/characters';
 import { CodexEntry } from '@features/codex';
 import { TimelineEvent } from '@features/events';
-import { Faction } from '@features/factions';
-import { Item } from '@features/items';
 import { Place } from '@features/places';
 import { Plotline } from '@features/plotlines';
 import { Story } from '@features/stories';
@@ -195,79 +193,76 @@ export const SEED_PLOTLINES: Plotline[] = [
   },
 ];
 
-export const SEED_ITEMS: Item[] = [
-  {
-    id: 'item-doman-tea',
-    slug: 'doman-tea',
-    name: 'Doman Tea',
-    type: 'Trade good',
-    description: 'Genuine leaf from the Far East. Harder to obtain since the Garlean withdrawal.',
-    place: { kind: 'place', id: 'place-doma' },
-    relatedCharacters: [{ kind: 'character', id: 'char-marcus' }],
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-  {
-    id: 'item-ingrid-daggers',
-    slug: 'ingrid-daggers',
-    name: "Ingrid's Daggers",
-    type: 'Weapon',
-    description: 'A matched pair carried since the night she fled Ishgard.',
-    owner: { kind: 'character', id: 'char-ingrid' },
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-  {
-    id: 'item-brann-signet',
-    slug: 'brann-signet',
-    name: "Brann's Signet",
-    type: 'Relic',
-    description: 'A heavy silver signet bearing the mark of his house. Lost on the night of the attack.',
-    owner: { kind: 'character', id: 'char-brann' },
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-];
-
-export const SEED_FACTIONS: Faction[] = [
-  {
-    id: 'faction-syndicate',
-    slug: 'syndicate',
-    name: 'Syndicate',
-    type: 'Cabal',
-    description: 'The shadow council that quietly steers Ul’dahn commerce.',
-    headquarters: { kind: 'place', id: 'place-uldah-pearl-lane' },
-    relatedCharacters: [{ kind: 'character', id: 'char-marcus' }],
-    relatedPlaces: [{ kind: 'place', id: 'place-uldah-pearl-lane' }],
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-  {
-    id: 'faction-doman-liberation-front',
-    slug: 'doman-liberation-front',
-    name: 'Doman Liberation Front',
-    type: 'Resistance',
-    description: 'Survivors of fallen Doma, scattered but unbroken.',
-    headquarters: { kind: 'place', id: 'place-doma' },
-    relatedCharacters: [{ kind: 'character', id: 'char-sakuya' }],
-    relatedPlaces: [{ kind: 'place', id: 'place-doma' }],
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-  {
-    id: 'faction-house-fortemps',
-    slug: 'house-fortemps',
-    name: 'House Fortemps',
-    type: 'Noble house',
-    description: 'A high house of Ishgard, keepers of long oaths.',
-    headquarters: { kind: 'place', id: 'place-ishgard' },
-    relatedPlaces: [{ kind: 'place', id: 'place-ishgard' }],
-    authorUid: SEED_AUTHOR_UID,
-    createdAt: SEED_CREATED_AT,
-  },
-];
-
 export const SEED_CODEX_ENTRIES: CodexEntry[] = [
+  {
+    id: 'codex-item-doman-tea',
+    slug: 'doman-tea',
+    title: 'Doman Tea',
+    category: 'Item',
+    description: 'Genuine leaf from the Far East. Harder to obtain since the Garlean withdrawal.',
+    relatedRefs: [
+      { kind: 'place', id: 'place-doma' },
+      { kind: 'character', id: 'char-marcus' },
+    ],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-item-ingrid-daggers',
+    slug: 'ingrid-daggers',
+    title: "Ingrid's Daggers",
+    category: 'Item',
+    description: 'A matched pair carried since the night she fled Ishgard.',
+    relatedRefs: [{ kind: 'character', id: 'char-ingrid' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-item-brann-signet',
+    slug: 'brann-signet',
+    title: "Brann's Signet",
+    category: 'Item',
+    description: 'A heavy silver signet bearing the mark of his house. Lost on the night of the attack.',
+    relatedRefs: [{ kind: 'character', id: 'char-brann' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-faction-syndicate',
+    slug: 'syndicate',
+    title: 'Syndicate',
+    category: 'Faction',
+    description: 'The shadow council that quietly steers Ul’dahn commerce.',
+    relatedRefs: [
+      { kind: 'place', id: 'place-uldah-pearl-lane' },
+      { kind: 'character', id: 'char-marcus' },
+    ],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-faction-doman-liberation-front',
+    slug: 'doman-liberation-front',
+    title: 'Doman Liberation Front',
+    category: 'Faction',
+    description: 'Survivors of fallen Doma, scattered but unbroken.',
+    relatedRefs: [
+      { kind: 'place', id: 'place-doma' },
+      { kind: 'character', id: 'char-sakuya' },
+    ],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-faction-house-fortemps',
+    slug: 'house-fortemps',
+    title: 'House Fortemps',
+    category: 'Faction',
+    description: 'A high house of Ishgard, keepers of long oaths.',
+    relatedRefs: [{ kind: 'place', id: 'place-ishgard' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
   {
     id: 'codex-voidsent-taint',
     slug: 'voidsent-taint',
@@ -322,7 +317,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
     slug: 'fall-of-doma',
     name: 'Fall of Doma',
     description:
-      'Garlean forces overrun ${pl:place-doma}[Doma], scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the ${fa:faction-doman-liberation-front}[Doman Liberation Front] for years to come.',
+      'Garlean forces overrun ${pl:place-doma}[Doma], scattering its people and pushing the resistance into hiding. The defeat shapes the trajectory of the ${cx:codex-faction-doman-liberation-front}[Doman Liberation Front] for years to come.',
     inGameDate: { era: FF14_ERA_SIXTH_ASTRAL_ID, year: 1557 },
     relatedRefs: [
       { kind: 'character', id: 'char-sakuya' },
@@ -478,7 +473,7 @@ export const SEED_STORY: Story = {
     },
     s11_provisions: {
       speaker: 'Ingrid',
-      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey — the finest quality, nothing that will spoil. About half a dozen people. And I need something else — ${it:item-doman-tea}[Doman tea], the genuine article from ${pl:place-doma}[the Far East]. The best quality you can acquire.",
+      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey — the finest quality, nothing that will spoil. About half a dozen people. And I need something else — ${cx:codex-item-doman-tea}[Doman tea], the genuine article from ${pl:place-doma}[the Far East]. The best quality you can acquire.",
       position: { x: 3200, y: 0 },
       characters: [],
       next: [{ sceneId: 's12_warn_routes' }],
@@ -505,7 +500,7 @@ export const SEED_STORY: Story = {
     },
     s15_marcus_recall: {
       speaker: 'Marcus',
-      text: '${ch:char-zahir}[Zahir]. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network — ${ch:char-brann}[Brann] had fingers in several ${fa:faction-syndicate}[Syndicate] dealings.',
+      text: '${ch:char-zahir}[Zahir]. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network — ${ch:char-brann}[Brann] had fingers in several ${cx:codex-faction-syndicate}[Syndicate] dealings.',
       position: { x: 4480, y: 0 },
       characters: [],
       next: [{ sceneId: 's16_you_knew' }],

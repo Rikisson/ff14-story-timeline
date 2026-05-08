@@ -7,8 +7,6 @@ import {
   SEED_CHARACTERS,
   SEED_CODEX_ENTRIES,
   SEED_EVENTS,
-  SEED_FACTIONS,
-  SEED_ITEMS,
   SEED_PLACES,
   SEED_PLOTLINES,
   SEED_STORIES,
@@ -53,14 +51,6 @@ export class SeederService {
     await this.seedCollection('plotlines', SEED_PLOTLINES, authorUid);
   }
 
-  async seedItems(authorUid: string): Promise<void> {
-    await this.seedCollection('items', SEED_ITEMS, authorUid);
-  }
-
-  async seedFactions(authorUid: string): Promise<void> {
-    await this.seedCollection('factions', SEED_FACTIONS, authorUid);
-  }
-
   async seedCodexEntries(authorUid: string): Promise<void> {
     await this.seedCollection('codexEntries', SEED_CODEX_ENTRIES, authorUid);
   }
@@ -78,8 +68,6 @@ export class SeederService {
       this.seedCharacters(authorUid),
       this.seedPlaces(authorUid),
       this.seedPlotlines(authorUid),
-      this.seedItems(authorUid),
-      this.seedFactions(authorUid),
       this.seedCodexEntries(authorUid),
       this.seedStories(authorUid),
       this.seedEvents(authorUid),

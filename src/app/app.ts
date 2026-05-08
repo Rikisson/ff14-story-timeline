@@ -16,8 +16,6 @@ import { CalendarService } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
-import { FactionsService } from '@features/factions';
-import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
@@ -48,8 +46,6 @@ export class App {
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
   private readonly plotlines = inject(PlotlinesService);
-  private readonly items = inject(ItemsService);
-  private readonly factions = inject(FactionsService);
   private readonly codex = inject(CodexEntriesService);
   private readonly calendar = inject(CalendarService);
 
@@ -85,10 +81,6 @@ export class App {
     if (s) errors.push({ label: 'Stories', message: s });
     const pl = this.plotlines.refreshError();
     if (pl) errors.push({ label: 'Plotlines', message: pl });
-    const it = this.items.refreshError();
-    if (it) errors.push({ label: 'Items', message: it });
-    const fa = this.factions.refreshError();
-    if (fa) errors.push({ label: 'Factions', message: fa });
     const cx = this.codex.refreshError();
     if (cx) errors.push({ label: 'Codex', message: cx });
     const ca = this.calendar.refreshError();
@@ -100,7 +92,7 @@ export class App {
     const u = this.user();
     if (!u || !this.canSeed()) return;
     const ok = window.confirm(
-      'Seed test data? This overwrites the default universe and its seeded entities (calendar, characters, places, events, stories, plotlines, items, factions, codex entries) by ID.',
+      'Seed test data? This overwrites the default universe and its seeded entities (calendar, characters, places, events, stories, plotlines, codex entries) by ID.',
     );
     if (!ok) return;
     this.seeding.set(true);

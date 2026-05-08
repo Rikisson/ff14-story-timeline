@@ -46,16 +46,6 @@ export const routes: Routes = [
     loadChildren: () => import('@features/plotlines').then((m) => m.PLOTLINES_ROUTES),
   },
   {
-    path: 'items',
-    canActivate: [universeGuard],
-    loadChildren: () => import('@features/items').then((m) => m.ITEMS_ROUTES),
-  },
-  {
-    path: 'factions',
-    canActivate: [universeGuard],
-    loadChildren: () => import('@features/factions').then((m) => m.FACTIONS_ROUTES),
-  },
-  {
     path: 'codex',
     canActivate: [universeGuard],
     loadChildren: () => import('@features/codex').then((m) => m.CODEX_ROUTES),

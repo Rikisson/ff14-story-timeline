@@ -2,8 +2,6 @@ import { computed, inject, Injectable, Signal } from '@angular/core';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
-import { FactionsService } from '@features/factions';
-import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
@@ -24,8 +22,6 @@ export const ENTITY_KIND_LABEL: Record<EntityKind, string> = {
   event: 'Event',
   story: 'Story',
   plotline: 'Plotline',
-  item: 'Item',
-  faction: 'Faction',
   codexEntry: 'Codex',
 };
 
@@ -36,8 +32,6 @@ export class EntityResolverService {
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
   private readonly plotlines = inject(PlotlinesService);
-  private readonly items = inject(ItemsService);
-  private readonly factions = inject(FactionsService);
   private readonly codex = inject(CodexEntriesService);
 
   readonly allInlineRefOptions: Signal<InlineRefOption[]> = computed(() => [
@@ -70,18 +64,6 @@ export class EntityResolverService {
       id: p.id,
       label: p.title,
       slug: p.slug,
-    })),
-    ...this.items.items().map((i) => ({
-      kind: 'item' as const,
-      id: i.id,
-      label: i.name,
-      slug: i.slug,
-    })),
-    ...this.factions.factions().map((f) => ({
-      kind: 'faction' as const,
-      id: f.id,
-      label: f.name,
-      slug: f.slug,
     })),
     ...this.codex.entries().map((e) => ({
       kind: 'codexEntry' as const,
@@ -150,30 +132,6 @@ export class EntityResolverService {
               name: p.title,
               slug: p.slug,
               description: p.description,
-            }
-          : null;
-      }
-      case 'item': {
-        const i = this.items.items().find((x) => x.id === ref.id);
-        return i
-          ? {
-              kind: 'item',
-              id: i.id,
-              name: i.name,
-              slug: i.slug,
-              description: i.description,
-            }
-          : null;
-      }
-      case 'faction': {
-        const f = this.factions.factions().find((x) => x.id === ref.id);
-        return f
-          ? {
-              kind: 'faction',
-              id: f.id,
-              name: f.name,
-              slug: f.slug,
-              description: f.description,
             }
           : null;
       }

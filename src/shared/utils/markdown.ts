@@ -33,7 +33,7 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
         name: 'inlineRef',
         level: 'inline',
         start(src: string) {
-          const idx = src.search(/\$\{(?:ch|pl|ev|st|pt|it|fa|cx):/);
+          const idx = src.search(/\$\{(?:ch|pl|ev|st|pt|cx):/);
           return idx === -1 ? undefined : idx;
         },
         tokenizer(src: string): InlineRefToken | undefined {

@@ -138,10 +138,6 @@ function kindBadge(kind: InlineRefOption['kind']): string {
       return 'st';
     case 'plotline':
       return 'pt';
-    case 'item':
-      return 'it';
-    case 'faction':
-      return 'fa';
     case 'codexEntry':
       return 'cx';
   }
