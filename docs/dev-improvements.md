@@ -18,13 +18,18 @@ they ship.
   per filter combination — meaningful per-feature work, not blanket.
 - **Test coverage is thin.** Editor and player stores have basic specs;
   services, guards, and components are still uncovered.
+- **Items and Factions live as separate entities; should collapse into
+  Codex categories.** Per `narrative-engine-impl.md`, both are Lookup-tier
+  with no runtime role — pure reference cards. Target shape is a single
+  Codex collection with a `category` field, color-coded picker scoped by
+  category, and `EntityRef<'codex'>` replacing `itemRefs[]` / `factionRefs[]`
+  on Story, Scene, and Event. Includes a one-shot Firestore migration and
+  inline-ref token rewrite (`${item:…}` / `${faction:…}` → `${codex:…}`).
 
 ## 2. New feature avenues
 
 ### Player / reader experience
 
-- **Markdown or limited rich text** in scene body.
-- **Variables + conditional choices** — flags, inventory, branch locks.
 - **Multiple save slots** per story; cloud sync.
 - **Reading-progress badges** ("In progress" / "Completed" / "Endings N/M").
 - **Player preferences** — text speed, font size, BGM volume; persisted.
@@ -41,10 +46,11 @@ they ship.
 
 ### World-building
 
-- **Entity media — image per entity.** Characters, places, items, factions,
-  events, plotlines, codex entries should accept an uploaded image (cover or
-  portrait). Storage layout mirrors the existing per-character portrait
-  uploads; surface in the detail pane.
+- **Entity media — image per entity.** Characters, Places, Events,
+  Plotlines, and Codex entries should accept an uploaded image (cover
+  or portrait). Storage layout mirrors the existing per-character
+  portrait uploads; surface in the detail pane. (Items / Factions
+  inherit this through Codex once collapsed — see Misc tech debt.)
 - **Detail pages for Characters, Places, Events** (today they're list-only).
 - **Map view of places** — store lat/lon, render with leaflet/maplibre.
 - **Relationship graph** — Rete is already in the bundle; reuse it.
