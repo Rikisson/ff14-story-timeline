@@ -114,8 +114,6 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
 - **Descriptive tags are not `EntityRef`s.** Genre / tone labels
   ("horror", "slow-burn", "canon-divergent") have no entity behind
   them — keep as free strings, excluded from the `${…}` picker.
-  `Place.factions` stays descriptive strings; promote to codex refs
-  only when a hover-card requirement is real, not anticipated.
 - **Authoring velocity over schema purity.** A field that won't be
   reliably filled isn't queryable anyway — keep entity drafts small,
   push optional detail behind a drawer.

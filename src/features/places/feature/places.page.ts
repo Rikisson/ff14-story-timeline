@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
-import { createEntityListController } from '@shared/data-access';
+import { createEntityListController, EntityResolverService } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
@@ -78,20 +78,26 @@ export class PlacesPage {
     toDraft: (p) => ({
       slug: p.slug,
       name: p.name,
-      geoPosition: p.geoPosition,
-      factions: p.factions,
       description: p.description,
       relatedRefs: p.relatedRefs,
     }),
     removeLabel: (p) => p.name,
   });
 
+  private readonly entityResolver = inject(EntityResolverService);
+
   protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.places().map((p) => ({
-      id: p.id,
-      label: p.name,
-      secondary: p.geoPosition || undefined,
-    })),
+    this.places().map((p) => {
+      const firstPlace = (p.relatedRefs ?? []).find((r) => r.kind === 'place');
+      const secondary = firstPlace
+        ? this.entityResolver.resolve(firstPlace)?.name
+        : undefined;
+      return {
+        id: p.id,
+        label: p.name,
+        secondary,
+      };
+    }),
   );
 
   constructor() {

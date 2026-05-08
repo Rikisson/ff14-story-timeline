@@ -1,15 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Place } from '../data-access/place.types';
+import { EntityResolverService } from '@shared/data-access';
 import {
   DangerButtonComponent,
   EntityRefComponent,
   GhostButtonComponent,
-  TagComponent,
+  MarkdownTextComponent,
 } from '@shared/ui';
 
 @Component({
   selector: 'app-place-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, TagComponent, EntityRefComponent],
+  imports: [
+    GhostButtonComponent,
+    DangerButtonComponent,
+    EntityRefComponent,
+    MarkdownTextComponent,
+  ],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -24,16 +30,12 @@ import {
           </div>
         }
       </div>
-      <p class="m-0 text-sm text-slate-700">
-        <span class="font-medium text-slate-500">Position:</span>
-        {{ place().geoPosition }}
-      </p>
-      @if (place().factions.length > 0) {
-        <div class="flex flex-wrap gap-1.5">
-          @for (f of place().factions; track f) {
-            <app-tag>{{ f }}</app-tag>
-          }
-        </div>
+      @if (place().description; as d) {
+        <app-markdown-text
+          class="text-sm text-slate-700"
+          [text]="d"
+          [options]="inlineRefOptions()"
+        />
       }
       @if (relatedRefs().length > 0) {
         <div class="flex flex-wrap gap-1.5">
@@ -52,5 +54,8 @@ export class PlaceCardComponent {
   readonly edit = output<void>();
   readonly remove = output<void>();
 
+  private readonly entityResolver = inject(EntityResolverService);
+
   protected readonly relatedRefs = computed(() => this.place().relatedRefs ?? []);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 }

@@ -4,11 +4,7 @@ export interface Place {
   id: string;
   slug: string;
   name: string;
-  geoPosition: string;
-  // Descriptive labels, not EntityRef<'faction'>[] — see docs/narrative-engine-impl.md "Scope locks".
-  factions: string[];
   description?: string;
-  type?: string;
   image?: string;
   relatedRefs?: EntityRef[];
   authorUid: string;
@@ -21,10 +17,7 @@ export type StoredPlace = Omit<Place, 'id'>;
 export interface PlaceDraft {
   slug: string;
   name: string;
-  geoPosition: string;
-  factions: string[];
   description?: string;
-  type?: string;
   image?: string;
   relatedRefs?: EntityRef[];
 }

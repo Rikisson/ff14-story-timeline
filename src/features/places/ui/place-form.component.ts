@@ -83,27 +83,6 @@ function parseRefKey(key: string): EntityRef | null {
         </label>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Geographical position</span>
-          <input
-            type="text"
-            formControlName="geoPosition"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. Lower La Noscea"
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Factions (comma-separated)</span>
-          <input
-            type="text"
-            formControlName="factions"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. Maelstrom, Rogues' Guild"
-          />
-        </label>
-      </div>
-
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
         <app-rich-text-input
@@ -187,8 +166,6 @@ export class PlaceFormComponent {
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
-    geoPosition: ['', [Validators.required, Validators.maxLength(120)]],
-    factions: [''],
   });
 
   constructor() {
@@ -197,8 +174,6 @@ export class PlaceFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         name: init?.name ?? '',
-        geoPosition: init?.geoPosition ?? '',
-        factions: init?.factions.join(', ') ?? '',
       });
       this.description.set(init?.description ?? '');
       this.related.set(init?.relatedRefs ?? []);
@@ -226,11 +201,6 @@ export class PlaceFormComponent {
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
-      geoPosition: v.geoPosition.trim(),
-      factions: v.factions
-        .split(',')
-        .map((f) => f.trim())
-        .filter(Boolean),
       description: desc || undefined,
       relatedRefs: refs.length > 0 ? refs : undefined,
     });
