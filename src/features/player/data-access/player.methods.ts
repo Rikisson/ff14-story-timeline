@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
-import { StoriesService, Story } from '@features/stories';
+import { StoriesService, StoryContent } from '@features/stories';
 import { PlayerState, SavedProgress } from './player.state';
 
 const STORAGE_PREFIX = 'ff14-story-timeline:player:';
@@ -46,10 +46,10 @@ function clearProgress(storyId: string): void {
   }
 }
 
-function isUsableResume(story: Story, saved: SavedProgress): boolean {
-  if (saved.sceneId === story.startSceneId) return false;
-  if (!Object.prototype.hasOwnProperty.call(story.scenes, saved.sceneId)) return false;
-  return saved.history.every((id) => Object.prototype.hasOwnProperty.call(story.scenes, id));
+function isUsableResume(content: StoryContent, saved: SavedProgress): boolean {
+  if (saved.sceneId === content.startSceneId) return false;
+  if (!Object.prototype.hasOwnProperty.call(content.scenes, saved.sceneId)) return false;
+  return saved.history.every((id) => Object.prototype.hasOwnProperty.call(content.scenes, id));
 }
 
 export function withPlayerMethods() {
@@ -59,18 +59,20 @@ export function withPlayerMethods() {
       async loadStory(id: string) {
         patchState(store, { loading: true, error: null, pendingResume: null });
         try {
-          const story = await stories.getStory(id);
-          if (!story) {
+          const result = await stories.getStoryWithContent(id);
+          if (!result) {
             patchState(store, { loading: false, error: `Story not found: ${id}` });
             return;
           }
+          const { story, content } = result;
           const saved = loadSaved(id);
-          const pending = saved && isUsableResume(story, saved) ? saved : null;
+          const pending = saved && isUsableResume(content, saved) ? saved : null;
           if (saved && !pending) clearProgress(id);
           patchState(store, {
             story,
-            currentSceneId: story.startSceneId,
-            history: [story.startSceneId],
+            content,
+            currentSceneId: content.startSceneId,
+            history: [content.startSceneId],
             loading: false,
             pendingResume: pending,
           });
@@ -82,9 +84,9 @@ export function withPlayerMethods() {
 
       choose(sceneId: string) {
         patchState(store, (state) => {
-          if (!state.story) return state;
+          if (!state.story || !state.content) return state;
           const history = [...state.history, sceneId];
-          const isEnd = state.story.scenes[sceneId]?.next.length === 0;
+          const isEnd = state.content.scenes[sceneId]?.next.length === 0;
           if (isEnd) clearProgress(state.story.id);
           else saveProgress(state.story.id, { sceneId, history });
           return { currentSceneId: sceneId, history };
@@ -93,10 +95,10 @@ export function withPlayerMethods() {
 
       back() {
         patchState(store, (state) => {
-          if (state.history.length <= 1 || !state.story) return state;
+          if (state.history.length <= 1 || !state.story || !state.content) return state;
           const history = state.history.slice(0, -1);
           const sceneId = history[history.length - 1];
-          if (sceneId === state.story.startSceneId) clearProgress(state.story.id);
+          if (sceneId === state.content.startSceneId) clearProgress(state.story.id);
           else saveProgress(state.story.id, { sceneId, history });
           return { currentSceneId: sceneId, history };
         });
@@ -104,11 +106,11 @@ export function withPlayerMethods() {
 
       restart() {
         patchState(store, (state) => {
-          if (!state.story) return state;
+          if (!state.story || !state.content) return state;
           clearProgress(state.story.id);
           return {
-            currentSceneId: state.story.startSceneId,
-            history: [state.story.startSceneId],
+            currentSceneId: state.content.startSceneId,
+            history: [state.content.startSceneId],
             pendingResume: null,
           };
         });

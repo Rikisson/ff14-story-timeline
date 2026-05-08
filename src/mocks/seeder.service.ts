@@ -40,7 +40,19 @@ export class SeederService {
   }
 
   async seedStories(authorUid: string): Promise<void> {
-    await this.seedCollection('stories', SEED_STORIES, authorUid);
+    const db = this.firebase.firestore;
+    await Promise.all(
+      SEED_STORIES.flatMap(({ id, startSceneId, scenes, ...meta }) => [
+        setDoc(doc(db, 'universes', DEFAULT_UNIVERSE_ID, 'stories', id), {
+          ...meta,
+          authorUid,
+        }),
+        setDoc(
+          doc(db, 'universes', DEFAULT_UNIVERSE_ID, 'stories', id, '_content', 'main'),
+          { startSceneId, scenes },
+        ),
+      ]),
+    );
   }
 
   async seedEvents(authorUid: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { Story } from '@features/stories';
+import { Story, StoryContent } from '@features/stories';
 
 export interface SavedProgress {
   sceneId: string;
@@ -7,6 +7,7 @@ export interface SavedProgress {
 
 export type PlayerState = {
   story: Story | null;
+  content: StoryContent | null;
   currentSceneId: string | null;
   history: string[];
   loading: boolean;
@@ -16,6 +17,7 @@ export type PlayerState = {
 
 export const initialPlayerState: PlayerState = {
   story: null,
+  content: null,
   currentSceneId: null,
   history: [],
   loading: false,

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StoriesService, Story } from '@features/stories';
+import { StoriesService, Story, StoryContent } from '@features/stories';
 import { PlayerStore } from './player.store';
 
 const sampleStory: Story = {
@@ -8,21 +8,29 @@ const sampleStory: Story = {
   slug: 'test',
   title: 'Test',
   inGameDate: {},
+  authorUid: 'u1',
+  draft: false,
+  createdAt: 0,
+};
+
+const sampleContent: StoryContent = {
   startSceneId: 'a',
   scenes: {
     a: { text: 'A', characters: [], position: { x: 0, y: 0 }, next: [{ sceneId: 'b' }, { sceneId: 'c' }] },
     b: { text: 'B', characters: [], position: { x: 100, y: 0 }, next: [{ sceneId: 'c' }] },
     c: { text: 'C', characters: [], position: { x: 200, y: 0 }, next: [] },
   },
-  authorUid: 'u1',
-  draft: false,
-  createdAt: 0,
 };
 
 function setup() {
   localStorage.clear();
   const mockStories = {
-    getStory: vi.fn(async () => structuredClone(sampleStory)),
+    getStoryWithContent: vi.fn(async () => ({
+      story: structuredClone(sampleStory),
+      content: structuredClone(sampleContent),
+    })),
+    getStory: vi.fn(),
+    getStoryContent: vi.fn(),
     saveStory: vi.fn(),
     createDraftStory: vi.fn(),
     deleteStory: vi.fn(),

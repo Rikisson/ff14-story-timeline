@@ -8,9 +8,9 @@ export function withPlayerComputed() {
     { state: type<PlayerState>() },
     withComputed((state) => ({
       currentScene: computed<Scene | null>(() => {
-        const story = state.story();
+        const content = state.content();
         const id = state.currentSceneId();
-        return story && id ? (story.scenes[id] ?? null) : null;
+        return content && id ? (content.scenes[id] ?? null) : null;
       }),
       canGoBack: computed(() => state.history().length > 1),
     })),

@@ -9,8 +9,10 @@ import { CodexEntry } from '@features/codex';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
 import { Plotline } from '@features/plotlines';
-import { Story } from '@features/stories';
+import { Story, StoryContent } from '@features/stories';
 import { SEED_AUTHOR_UID } from './seed-author';
+
+export type SeedStory = Story & StoryContent;
 
 const SEED_CREATED_AT = 1777593600000;
 
@@ -366,7 +368,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
   ),
 ];
 
-export const SEED_STORY: Story = {
+export const SEED_STORY: SeedStory = {
   id: 'story-shadows-and-provisions',
   slug: 'shadows-and-provisions',
   title: 'Shadows and Provisions',
@@ -605,9 +607,9 @@ export const SEED_STORY: Story = {
 
 // Filler stories for pagination testing — minimal valid Story shape with
 // strictly older publishedAt than SEED_STORY so the meaningful one ranks first.
-export const SEED_STORIES: Story[] = [
+export const SEED_STORIES: SeedStory[] = [
   SEED_STORY,
-  ...Array.from({ length: 26 }, (_, i): Story => {
+  ...Array.from({ length: 26 }, (_, i): SeedStory => {
     const idx = i + 1;
     const startSceneId = `s01_opening`;
     return {

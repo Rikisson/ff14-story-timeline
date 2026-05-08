@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { patchState, signalMethod, signalStoreFeature, type, withMethods } from '@ngrx/signals';
-import { Scene, StoriesService, Story } from '@features/stories';
+import { Scene, StoriesService, Story, StoryContent } from '@features/stories';
 import { EditorState, StoryMeta } from './editor.state';
 
 export function withEditorMethods() {
@@ -13,12 +13,13 @@ export function withEditorMethods() {
         const myToken = ++loadToken;
         patchState(store, { loading: true, error: null });
         try {
-          const story = await stories.getStory(id);
+          const result = await stories.getStoryWithContent(id);
           if (myToken !== loadToken) return;
-          if (!story) {
+          if (!result) {
             patchState(store, { loading: false, error: `Story not found: ${id}` });
             return;
           }
+          const { story, content } = result;
           patchState(store, {
             storyId: story.id,
             meta: {
@@ -34,8 +35,8 @@ export function withEditorMethods() {
             },
             authorUid: story.authorUid,
             createdAt: story.createdAt,
-            startSceneId: story.startSceneId,
-            scenes: story.scenes,
+            startSceneId: content.startSceneId,
+            scenes: content.scenes,
             selectedSceneId: null,
             version: story.version ?? 0,
             dirty: false,
@@ -69,10 +70,12 @@ export function withEditorMethods() {
               ...meta,
               authorUid,
               createdAt: store.createdAt() ?? Date.now(),
+            };
+            const content: StoryContent = {
               startSceneId,
               scenes: store.scenes(),
             };
-            const nextVersion = await stories.saveStory(story, store.version());
+            const nextVersion = await stories.saveStory(story, content, store.version());
             patchState(store, { saving: false, dirty: false, version: nextVersion });
           } catch (err) {
             const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);

@@ -14,13 +14,20 @@ import {
   setDoc,
   startAfter,
   where,
+  writeBatch,
 } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { StoredStory, Story } from './story.types';
+import {
+  StoredStory,
+  StoredStoryContent,
+  Story,
+  StoryContent,
+} from './story.types';
 
 const PAGE_SIZE = 25;
+const CONTENT_DOC_PATH = ['_content', 'main'] as const;
 
 export class StaleStoryError extends Error {
   constructor(public readonly currentVersion: number, public readonly expectedVersion: number) {
@@ -129,18 +136,35 @@ export class StoriesService {
 
   async getStory(id: string): Promise<Story | undefined> {
     const universeId = this.requireUniverseId();
-    const snap = await getDoc(
-      doc(this.firebase.firestore, 'universes', universeId, 'stories', id),
-    );
+    const snap = await getDoc(this.metaDocRef(universeId, id));
     return snap.exists() ? { id: snap.id, ...(snap.data() as StoredStory) } : undefined;
   }
 
-  async saveStory(story: Story, expectedVersion: number): Promise<number> {
+  async getStoryContent(id: string): Promise<StoryContent | undefined> {
+    const universeId = this.requireUniverseId();
+    const snap = await getDoc(this.contentDocRef(universeId, id));
+    return snap.exists() ? (snap.data() as StoredStoryContent) : undefined;
+  }
+
+  async getStoryWithContent(
+    id: string,
+  ): Promise<{ story: Story; content: StoryContent } | undefined> {
+    const [story, content] = await Promise.all([this.getStory(id), this.getStoryContent(id)]);
+    if (!story || !content) return undefined;
+    return { story, content };
+  }
+
+  async saveStory(
+    story: Story,
+    content: StoryContent,
+    expectedVersion: number,
+  ): Promise<number> {
     const universeId = this.requireUniverseId();
     await this.assertSlugAvailable(universeId, story.slug, story.id);
-    const ref = doc(this.firebase.firestore, 'universes', universeId, 'stories', story.id);
+    const metaRef = this.metaDocRef(universeId, story.id);
+    const contentRef = this.contentDocRef(universeId, story.id);
     return runTransaction(this.firebase.firestore, async (tx) => {
-      const snap = await tx.get(ref);
+      const snap = await tx.get(metaRef);
       if (snap.exists()) {
         const current = (snap.data() as StoredStory).version ?? 0;
         if (current !== expectedVersion) {
@@ -148,8 +172,9 @@ export class StoriesService {
         }
       }
       const nextVersion = expectedVersion + 1;
-      const { id: _id, ...data } = story;
-      tx.set(ref, { ...data, version: nextVersion, updatedAt: Date.now() });
+      const { id: _id, ...metaData } = story;
+      tx.set(metaRef, { ...metaData, version: nextVersion, updatedAt: Date.now() });
+      tx.set(contentRef, content satisfies StoredStoryContent);
       return nextVersion;
     });
   }
@@ -160,21 +185,26 @@ export class StoriesService {
     const startSceneId = crypto.randomUUID();
     const slug = await this.allocateUntitledSlug(universeId);
     const now = Date.now();
-    const story: Story = {
-      id,
+    const metaData: StoredStory = {
       slug,
       title: 'Untitled story',
       inGameDate: {},
-      startSceneId,
-      scenes: { [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] } },
       authorUid,
       draft: true,
       createdAt: now,
       version: 1,
       updatedAt: now,
     };
-    const { id: _id, ...data } = story;
-    await setDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id), data);
+    const contentData: StoredStoryContent = {
+      startSceneId,
+      scenes: {
+        [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] },
+      },
+    };
+    const batch = writeBatch(this.firebase.firestore);
+    batch.set(this.metaDocRef(universeId, id), metaData);
+    batch.set(this.contentDocRef(universeId, id), contentData);
+    await batch.commit();
     return id;
   }
 
@@ -210,7 +240,25 @@ export class StoriesService {
 
   async deleteStory(id: string): Promise<void> {
     const universeId = this.requireUniverseId();
-    await deleteDoc(doc(this.firebase.firestore, 'universes', universeId, 'stories', id));
+    const batch = writeBatch(this.firebase.firestore);
+    batch.delete(this.contentDocRef(universeId, id));
+    batch.delete(this.metaDocRef(universeId, id));
+    await batch.commit();
+  }
+
+  private metaDocRef(universeId: string, id: string) {
+    return doc(this.firebase.firestore, 'universes', universeId, 'stories', id);
+  }
+
+  private contentDocRef(universeId: string, id: string) {
+    return doc(
+      this.firebase.firestore,
+      'universes',
+      universeId,
+      'stories',
+      id,
+      ...CONTENT_DOC_PATH,
+    );
   }
 
   private requireUniverseId(): string {

@@ -161,10 +161,7 @@ export class CatalogCardComponent {
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
-  protected readonly background = computed(() => {
-    const s = this.story();
-    return s.coverImage ?? s.scenes[s.startSceneId]?.background;
-  });
+  protected readonly background = computed(() => this.story().coverImage);
 
   protected readonly formattedDate = computed(() => {
     const d = this.story().inGameDate;

@@ -26,8 +26,6 @@ export interface Story {
   description?: string;
   coverImage?: string;
   inGameDate: InGameDate;
-  startSceneId: string;
-  scenes: Record<string, Scene>;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
   authorUid: string;
@@ -38,4 +36,10 @@ export interface Story {
   version?: number;
 }
 
+export interface StoryContent {
+  startSceneId: string;
+  scenes: Record<string, Scene>;
+}
+
 export type StoredStory = Omit<Story, 'id'>;
+export type StoredStoryContent = StoryContent;
