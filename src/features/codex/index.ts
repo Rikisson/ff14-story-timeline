@@ -1,4 +1,5 @@
 export { CODEX_ROUTES } from './codex.routes';
+export { CodexCategoriesSettingsPanelComponent } from './feature/codex-categories-settings-panel.component';
 export { CodexEntriesService } from './data-access/codex-entries.service';
 export { CodexCategoriesService } from './data-access/codex-categories.service';
 export type {

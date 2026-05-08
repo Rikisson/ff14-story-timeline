@@ -14,11 +14,10 @@ import { UniversesService } from '../data-access/universes.service';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseDraft } from '../data-access/universe.types';
 import { UniverseFormComponent } from './universe-form.component';
-import { UniverseMembersComponent } from './universe-members.component';
 
 @Component({
   selector: 'app-universe-selector',
-  imports: [UniverseFormComponent, UniverseMembersComponent],
+  imports: [UniverseFormComponent],
   template: `
     <div class="relative">
       <button
@@ -73,15 +72,15 @@ import { UniverseMembersComponent } from './universe-members.component';
               }
             </ul>
           }
-          @if (isOwnerOfActive() || canCreate()) {
+          @if (isMemberOfActive() || canCreate()) {
             <div class="flex flex-col gap-1 border-t border-slate-200 p-1">
-              @if (isOwnerOfActive()) {
+              @if (isMemberOfActive()) {
                 <button
                   type="button"
                   role="menuitem"
                   class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                  (click)="openMembers()"
-                >Manage members</button>
+                  (click)="openSettings()"
+                >Universe settings</button>
               }
               @if (canCreate()) {
                 <button
@@ -113,19 +112,6 @@ import { UniverseMembersComponent } from './universe-members.component';
         />
       </div>
     </dialog>
-
-    <dialog
-      #membersDialog
-      class="rounded-lg p-0 backdrop:bg-slate-900/40"
-      aria-label="Manage members"
-      (click)="onMembersBackdropClick($event)"
-    >
-      <div class="w-[min(32rem,92vw)] p-4">
-        @if (activeUniverse(); as u) {
-          <app-universe-members [universe]="u" (closed)="closeMembers()" />
-        }
-      </div>
-    </dialog>
   `,
   host: {
     '(document:click)': 'onDocumentClick($event)',
@@ -141,13 +127,11 @@ export class UniverseSelectorComponent {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly createDialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
-  private readonly membersDialog = viewChild.required<ElementRef<HTMLDialogElement>>('membersDialog');
 
   protected readonly universes = this.store.universes;
   protected readonly activeId = this.store.activeUniverseId;
-  protected readonly activeUniverse = this.store.activeUniverse;
   protected readonly canCreate = this.store.canCreateUniverse;
-  protected readonly isOwnerOfActive = this.store.isOwnerOfActive;
+  protected readonly isMemberOfActive = this.store.isMemberOfActive;
   protected readonly open = signal(false);
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -192,19 +176,9 @@ export class UniverseSelectorComponent {
     }
   }
 
-  protected openMembers(): void {
+  protected openSettings(): void {
     this.close();
-    this.membersDialog().nativeElement.showModal();
-  }
-
-  protected closeMembers(): void {
-    this.membersDialog().nativeElement.close();
-  }
-
-  protected onMembersBackdropClick(event: MouseEvent): void {
-    if (event.target === this.membersDialog().nativeElement) {
-      this.closeMembers();
-    }
+    void this.router.navigate(['/universe/settings']);
   }
 
   protected onDocumentClick(event: MouseEvent): void {

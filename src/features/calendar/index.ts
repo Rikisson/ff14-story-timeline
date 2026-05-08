@@ -1,4 +1,5 @@
 export { CALENDAR_ROUTES } from './calendar.routes';
+export { CalendarSettingsPanelComponent } from './feature/calendar-settings-panel.component';
 export { CalendarService } from './data-access/calendar.service';
 export type {
   Calendar,

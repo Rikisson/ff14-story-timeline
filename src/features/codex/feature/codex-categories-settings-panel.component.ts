@@ -4,7 +4,6 @@ import { UniverseStore } from '@features/universes';
 import {
   DangerButtonComponent,
   GhostButtonComponent,
-  PageHeaderComponent,
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
@@ -32,21 +31,22 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
 }
 
 @Component({
-  selector: 'app-codex-settings-page',
-  host: { class: 'block h-full' },
+  selector: 'app-codex-categories-settings-panel',
   imports: [
-    PageHeaderComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
     DangerButtonComponent,
   ],
   template: `
-    <div class="flex h-full flex-col gap-4">
-      <app-page-header
-        title="Categories"
-        subtitle="Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set."
-      >
+    <section class="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <header class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="m-0 text-lg font-semibold text-slate-900">Categories</h2>
+          <p class="m-0 mt-0.5 text-sm text-slate-600">
+            Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set.
+          </p>
+        </div>
         <div class="flex flex-wrap items-center gap-2">
           @if (canEdit()) {
             <button uiSecondary type="button" (click)="addCategory()">+ Add category</button>
@@ -65,7 +65,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
             Save
           </button>
         </div>
-      </app-page-header>
+      </header>
 
       @if (errorMessage(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
@@ -118,11 +118,11 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
           }
         </ul>
       }
-    </div>
+    </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CodexSettingsPage {
+export class CodexCategoriesSettingsPanelComponent {
   protected readonly service = inject(CodexCategoriesService);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);

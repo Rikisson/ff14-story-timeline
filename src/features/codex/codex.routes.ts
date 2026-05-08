@@ -5,10 +5,6 @@ const loadPage = () =>
 
 export const CODEX_ROUTES: Routes = [
   { path: '', loadComponent: loadPage },
-  {
-    path: 'settings',
-    loadComponent: () =>
-      import('./feature/codex-settings.page').then((m) => m.CodexSettingsPage),
-  },
+  { path: 'settings', pathMatch: 'full', redirectTo: '/universe/settings/categories' },
   { path: ':id', loadComponent: loadPage },
 ];

@@ -17,3 +17,10 @@ export interface UniverseDraft {
   name: string;
   description?: string;
 }
+
+export interface UniverseUpdate {
+  slug?: string;
+  name?: string;
+  description?: string;
+  coverAssetId?: string;
+}

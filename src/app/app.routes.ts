@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { editorGuard, universeGuard } from '@features/universes';
+import { editorGuard, universeGuard, UNIVERSE_ROUTES } from '@features/universes';
 
 export const routes: Routes = [
   {
@@ -54,6 +54,11 @@ export const routes: Routes = [
     path: 'calendar',
     canActivate: [universeGuard],
     loadChildren: () => import('@features/calendar').then((m) => m.CALENDAR_ROUTES),
+  },
+  {
+    path: 'universe',
+    canActivate: [editorGuard],
+    children: UNIVERSE_ROUTES,
   },
   {
     path: 'edit',

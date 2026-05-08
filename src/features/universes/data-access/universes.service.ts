@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore/lite';
 import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { StoredUniverse, Universe, UniverseDraft } from './universe.types';
+import { StoredUniverse, Universe, UniverseDraft, UniverseUpdate } from './universe.types';
 
 const PAGE_SIZE = 50;
 
@@ -63,6 +63,19 @@ export class UniversesService {
     };
     await setDoc(doc(this.firebase.firestore, 'universes', id), data);
     return id;
+  }
+
+  async update(id: string, patch: UniverseUpdate): Promise<void> {
+    if (patch.slug !== undefined) {
+      const existing = await this.findBySlug(patch.slug);
+      if (existing && existing.id !== id) {
+        throw new SlugTakenError('universe', patch.slug);
+      }
+    }
+    await updateDoc(doc(this.firebase.firestore, 'universes', id), {
+      ...patch,
+      updatedAt: Date.now(),
+    });
   }
 
   async remove(id: string): Promise<void> {

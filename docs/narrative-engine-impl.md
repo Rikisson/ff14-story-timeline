@@ -168,7 +168,7 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
 ## Codex categories
 
 - **Per-universe config** at `universes/{u}/_meta/codex_categories`,
-  managed via the *Categories* page (`/codex/settings`). Each entry:
+  managed via the Universe settings *Categories* section (`/universe/settings/categories`). Each entry:
   `{ id, label, color?, description? }`.
 - **Codex chip color** resolves through this config via
   case-insensitive lookup on the entry's `category` string. Entries

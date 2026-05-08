@@ -55,5 +55,3 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 # Implementation
 
 Open changes. Remove items as they ship.
-
-- Universe cover picker. The `Universe.coverAssetId` field exists, but there's no edit surface to set it (the `app-universe-form` is create-only and the universe doesn't have its own asset library yet at create time). Build a "Universe settings" surface alongside the existing "Manage members" dialog so owners can edit name, description, and cover.
