@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
+import { CoverSlotComponent } from '@features/media';
 import { PlacesService } from '@features/places';
 import { EntityKind, EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
@@ -45,6 +46,7 @@ function parseRefKey(key: string): EntityRef | null {
   selector: 'app-codex-entry-form',
   imports: [
     ReactiveFormsModule,
+    CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
     ComboboxPickerComponent,
@@ -95,6 +97,12 @@ function parseRefKey(key: string): EntityRef | null {
           </datalist>
         </label>
       </div>
+
+      <app-cover-slot
+        label="Cover image"
+        [assetId]="cover()"
+        (picked)="cover.set($event)"
+      />
 
       <label class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
@@ -172,6 +180,7 @@ export class CodexEntryFormComponent {
   ]);
 
   protected readonly related = signal<EntityRef[]>([]);
+  protected readonly cover = signal<string | undefined>(undefined);
   protected readonly relatedKeys = computed(() => this.related().map(refKey));
 
   protected readonly form = new FormBuilder().nonNullable.group({
@@ -191,6 +200,7 @@ export class CodexEntryFormComponent {
         description: init?.description ?? '',
       });
       this.related.set(init?.relatedRefs ?? []);
+      this.cover.set(init?.coverAssetId);
     });
   }
 
@@ -217,6 +227,7 @@ export class CodexEntryFormComponent {
       title: v.title.trim(),
       category,
       description: v.description.trim(),
+      coverAssetId: this.cover(),
       relatedRefs: refs.length > 0 ? refs : undefined,
     });
   }

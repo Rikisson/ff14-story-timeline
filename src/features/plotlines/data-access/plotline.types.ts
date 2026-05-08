@@ -11,6 +11,7 @@ export interface Plotline {
   slug: string;
   title: string;
   description?: string;
+  coverAssetId?: string;
   color?: string;
   status?: PlotlineStatus;
   authorUid: string;
@@ -24,6 +25,7 @@ export interface PlotlineDraft {
   slug: string;
   title: string;
   description?: string;
+  coverAssetId?: string;
   color?: string;
   status?: PlotlineStatus;
 }

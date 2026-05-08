@@ -6,6 +6,7 @@ export interface CodexEntry {
   title: string;
   category?: string;
   description: string;
+  coverAssetId?: string;
   // Intentionally untyped across all EntityKinds — a codex entry can reference anything in the world.
   relatedRefs?: EntityRef[];
   authorUid: string;
@@ -20,5 +21,6 @@ export interface CodexEntryDraft {
   title: string;
   category?: string;
   description: string;
+  coverAssetId?: string;
   relatedRefs?: EntityRef[];
 }

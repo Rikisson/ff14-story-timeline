@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
+import { CoverSlotComponent } from '@features/media';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { EntityKind, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
@@ -39,6 +40,7 @@ function parseRefKey(key: string): EntityRef | null {
   selector: 'app-event-form',
   imports: [
     ReactiveFormsModule,
+    CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
     ComboboxPickerComponent,
@@ -81,6 +83,12 @@ function parseRefKey(key: string): EntityRef | null {
         label="In-game date"
         [value]="inGameDate()"
         (valueChanged)="onDate($event)"
+      />
+
+      <app-cover-slot
+        label="Cover image"
+        [assetId]="cover()"
+        (picked)="cover.set($event)"
       />
 
       <div class="flex flex-col gap-1 text-sm">
@@ -180,6 +188,7 @@ export class EventFormComponent {
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
   protected readonly description = signal<string>('');
+  protected readonly cover = signal<string | undefined>(undefined);
 
   protected readonly relatedKeys = computed(() => this.related().map(refKey));
   protected readonly plotlineIds = computed(() => this.plotlineRefs().map((r) => r.id));
@@ -201,6 +210,7 @@ export class EventFormComponent {
       this.related.set(init?.relatedRefs ?? []);
       this.plotlineRefs.set(init?.plotlineRefs ?? []);
       this.description.set(init?.description ?? '');
+      this.cover.set(init?.coverAssetId);
       this.inGameDate.set(init?.inGameDate ?? {});
     });
   }
@@ -236,6 +246,7 @@ export class EventFormComponent {
       name: v.name.trim(),
       inGameDate: this.inGameDate(),
       description: this.description().trim(),
+      coverAssetId: this.cover(),
       relatedRefs: related.length > 0 ? related : undefined,
       plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
     });

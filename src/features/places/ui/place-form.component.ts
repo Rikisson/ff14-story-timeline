@@ -11,6 +11,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
+import { CoverSlotComponent } from '@features/media';
 import { PlaceDraft } from '../data-access/place.types';
 import { PlacesService } from '../data-access/places.service';
 import { EntityResolverService } from '@shared/data-access';
@@ -46,6 +47,7 @@ function parseRefKey(key: string): EntityRef | null {
   selector: 'app-place-form',
   imports: [
     ReactiveFormsModule,
+    CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
     RichTextInputComponent,
@@ -82,6 +84,12 @@ function parseRefKey(key: string): EntityRef | null {
           <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
         </label>
       </div>
+
+      <app-cover-slot
+        label="Cover image"
+        [assetId]="cover()"
+        (picked)="cover.set($event)"
+      />
 
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
@@ -137,6 +145,7 @@ export class PlaceFormComponent {
   private readonly codex = inject(CodexEntriesService);
 
   protected readonly description = signal<string>('');
+  protected readonly cover = signal<string | undefined>(undefined);
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
@@ -176,6 +185,7 @@ export class PlaceFormComponent {
         name: init?.name ?? '',
       });
       this.description.set(init?.description ?? '');
+      this.cover.set(init?.coverAssetId);
       this.related.set(init?.relatedRefs ?? []);
     });
   }
@@ -202,6 +212,7 @@ export class PlaceFormComponent {
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       description: desc || undefined,
+      coverAssetId: this.cover(),
       relatedRefs: refs.length > 0 ? refs : undefined,
     });
   }

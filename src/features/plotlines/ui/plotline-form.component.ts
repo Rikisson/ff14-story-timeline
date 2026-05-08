@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CoverSlotComponent } from '@features/media';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
@@ -13,7 +14,7 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
 
 @Component({
   selector: 'app-plotline-form',
-  imports: [ReactiveFormsModule, PrimaryButtonComponent, GhostButtonComponent],
+  imports: [ReactiveFormsModule, CoverSlotComponent, PrimaryButtonComponent, GhostButtonComponent],
   template: `
     <form
       [formGroup]="form"
@@ -45,6 +46,12 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
           <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
         </label>
       </div>
+
+      <app-cover-slot
+        label="Cover image"
+        [assetId]="cover()"
+        (picked)="cover.set($event)"
+      />
 
       <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <label class="flex flex-col gap-1 text-sm">
@@ -105,6 +112,7 @@ export class PlotlineFormComponent {
   readonly cancelled = output<void>();
 
   protected readonly statusOptions = STATUS_OPTIONS;
+  protected readonly cover = signal<string | undefined>(undefined);
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
@@ -124,6 +132,7 @@ export class PlotlineFormComponent {
         color: init?.color ?? '#6366f1',
         status: init?.status ?? '',
       });
+      this.cover.set(init?.coverAssetId);
     });
   }
 
@@ -136,6 +145,7 @@ export class PlotlineFormComponent {
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
       description: description || undefined,
+      coverAssetId: this.cover(),
       color: color || undefined,
       status: v.status === '' ? undefined : v.status,
     });

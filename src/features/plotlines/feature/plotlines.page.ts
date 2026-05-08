@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MediaAssetsService } from '@features/media';
 import { createEntityListController } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
@@ -75,6 +76,7 @@ export class PlotlinesPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly plotlines = this.service.plotlines;
+  private readonly media = inject(MediaAssetsService);
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
   protected readonly ctrl = createEntityListController<Plotline, PlotlineDraft>({
@@ -84,6 +86,7 @@ export class PlotlinesPage {
       slug: p.slug,
       title: p.title,
       description: p.description,
+      coverAssetId: p.coverAssetId,
       color: p.color,
       status: p.status,
     }),
@@ -95,6 +98,7 @@ export class PlotlinesPage {
       id: p.id,
       label: p.title,
       secondary: p.status ? PLOTLINE_STATUS_LABEL[p.status] : undefined,
+      thumbnailUrl: this.media.urlFor(p.coverAssetId),
     })),
   );
 

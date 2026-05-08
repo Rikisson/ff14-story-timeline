@@ -1,5 +1,7 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CalendarService } from '@features/calendar';
+import { MediaAssetsService } from '@features/media';
 import {
   DangerButtonComponent,
   EntityRefComponent,
@@ -11,11 +13,17 @@ import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent, TagComponent],
+  imports: [
+    NgOptimizedImage,
+    GhostButtonComponent,
+    DangerButtonComponent,
+    EntityRefComponent,
+    TagComponent,
+  ],
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col gap-3 rounded-lg bg-amber-50/40 p-4 shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg bg-amber-50/40 shadow-sm"
       [class.border]="!accentColor()"
       [class.border-amber-200]="!accentColor()"
       [class.border-l-4]="!!accentColor()"
@@ -24,47 +32,53 @@ import { TimelineEvent } from '../data-access/event.types';
       [class.border-amber-100]="!!accentColor()"
       [style.borderLeftColor]="accentColor()"
     >
-      <div class="flex items-start justify-between gap-2">
-        <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
-        <div class="flex shrink-0 items-center gap-2">
-          <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
-          @if (canEdit()) {
-            <button uiGhost type="button" (click)="edit.emit()">Edit</button>
-            <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-          }
+      @if (coverUrl(); as u) {
+        <div class="relative aspect-video w-full bg-amber-100/40">
+          <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
+      }
+      <div class="flex flex-1 flex-col gap-3 p-4">
+        <div class="flex items-start justify-between gap-2">
+          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
+          <div class="flex shrink-0 items-center gap-2">
+            <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
+            @if (canEdit()) {
+              <button uiGhost type="button" (click)="edit.emit()">Edit</button>
+              <button uiDanger type="button" (click)="remove.emit()">Delete</button>
+            }
+          </div>
+        </div>
+
+        @if (formattedDate(); as d) {
+          <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700">{{ d }}</p>
+        }
+
+        @if (event().description; as desc) {
+          <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700">{{ desc }}</p>
+        }
+
+        @if (relatedRefs().length > 0) {
+          <div class="flex flex-wrap gap-1.5">
+            @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+              <app-entity-ref [ref]="r" />
+            }
+          </div>
+        }
+
+        @if (plotlineChips().length > 0) {
+          <ul class="m-0 flex list-none flex-wrap gap-1 p-0">
+            @for (p of plotlineChips(); track p.id) {
+              <li>
+                <span
+                  class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                  [style.borderColor]="p.color ?? '#94a3b8'"
+                  [style.color]="p.color ?? '#475569'"
+                >{{ p.label }}</span>
+              </li>
+            }
+          </ul>
+        }
       </div>
-
-      @if (formattedDate(); as d) {
-        <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700">{{ d }}</p>
-      }
-
-      @if (event().description; as desc) {
-        <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700">{{ desc }}</p>
-      }
-
-      @if (relatedRefs().length > 0) {
-        <div class="flex flex-wrap gap-1.5">
-          @for (r of relatedRefs(); track r.kind + ':' + r.id) {
-            <app-entity-ref [ref]="r" />
-          }
-        </div>
-      }
-
-      @if (plotlineChips().length > 0) {
-        <ul class="m-0 flex list-none flex-wrap gap-1 p-0">
-          @for (p of plotlineChips(); track p.id) {
-            <li>
-              <span
-                class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                [style.borderColor]="p.color ?? '#94a3b8'"
-                [style.color]="p.color ?? '#475569'"
-              >{{ p.label }}</span>
-            </li>
-          }
-        </ul>
-      }
-
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,8 +92,10 @@ export class EventCardComponent {
   readonly remove = output<void>();
 
   private readonly calendar = inject(CalendarService);
+  private readonly media = inject(MediaAssetsService);
 
   protected readonly relatedRefs = computed(() => this.event().relatedRefs ?? []);
+  protected readonly coverUrl = computed(() => this.media.urlFor(this.event().coverAssetId));
 
   protected readonly formattedDate = computed(() => {
     const d = this.event().inGameDate;

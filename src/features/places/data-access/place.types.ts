@@ -5,6 +5,7 @@ export interface Place {
   slug: string;
   name: string;
   description?: string;
+  coverAssetId?: string;
   backgrounds?: string[];
   ambientAudio?: string[];
   relatedRefs?: EntityRef[];
@@ -19,5 +20,6 @@ export interface PlaceDraft {
   slug: string;
   name: string;
   description?: string;
+  coverAssetId?: string;
   relatedRefs?: EntityRef[];
 }

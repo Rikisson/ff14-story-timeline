@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MediaAssetsService } from '@features/media';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
 import { createEntityListController, EntityResolverService } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
@@ -79,12 +80,14 @@ export class PlacesPage {
       slug: p.slug,
       name: p.name,
       description: p.description,
+      coverAssetId: p.coverAssetId,
       relatedRefs: p.relatedRefs,
     }),
     removeLabel: (p) => p.name,
   });
 
   private readonly entityResolver = inject(EntityResolverService);
+  private readonly media = inject(MediaAssetsService);
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.places().map((p) => {
@@ -96,6 +99,7 @@ export class PlacesPage {
         id: p.id,
         label: p.name,
         secondary,
+        thumbnailUrl: this.media.urlFor(p.coverAssetId),
       };
     }),
   );

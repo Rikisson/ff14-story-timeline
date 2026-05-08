@@ -5,6 +5,7 @@ export interface Character {
   slug: string;
   name: string;
   description?: string;
+  coverAssetId?: string;
   sprites?: string[];
   relatedRefs?: EntityRef[];
   authorUid: string;
@@ -18,5 +19,6 @@ export interface CharacterDraft {
   slug: string;
   name: string;
   description?: string;
+  coverAssetId?: string;
   relatedRefs?: EntityRef[];
 }

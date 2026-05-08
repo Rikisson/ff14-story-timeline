@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MediaAssetsService } from '@features/media';
 import { createEntityListController } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
@@ -71,6 +72,7 @@ export class CodexPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly entries = this.service.entries;
+  private readonly media = inject(MediaAssetsService);
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
   protected readonly ctrl = createEntityListController<CodexEntry, CodexEntryDraft>({
@@ -81,6 +83,7 @@ export class CodexPage {
       title: e.title,
       category: e.category,
       description: e.description,
+      coverAssetId: e.coverAssetId,
       relatedRefs: e.relatedRefs,
     }),
     removeLabel: (e) => e.title,
@@ -91,6 +94,7 @@ export class CodexPage {
       id: e.id,
       label: e.title,
       secondary: e.category,
+      thumbnailUrl: this.media.urlFor(e.coverAssetId),
     })),
   );
 

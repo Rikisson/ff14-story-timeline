@@ -8,6 +8,7 @@ import {
   TimelineEvent,
   TimelineEventDraft,
 } from '@features/events';
+import { MediaAssetsService } from '@features/media';
 import { createEntityListController } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
@@ -78,6 +79,7 @@ export class EventsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly events = this.service.events;
+  private readonly media = inject(MediaAssetsService);
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
   protected readonly ctrl = createEntityListController<TimelineEvent, TimelineEventDraft>({
@@ -87,6 +89,7 @@ export class EventsPage {
       slug: e.slug,
       name: e.name,
       description: e.description,
+      coverAssetId: e.coverAssetId,
       inGameDate: e.inGameDate,
       relatedRefs: e.relatedRefs,
       plotlineRefs: e.plotlineRefs,
@@ -99,6 +102,7 @@ export class EventsPage {
       id: e.id,
       label: e.name,
       secondary: this.formatDateLabel(e),
+      thumbnailUrl: this.media.urlFor(e.coverAssetId),
     })),
   );
 

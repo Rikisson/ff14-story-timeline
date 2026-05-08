@@ -5,6 +5,7 @@ export interface TimelineEvent {
   slug: string;
   name: string;
   description: string;
+  coverAssetId?: string;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
@@ -19,6 +20,7 @@ export interface TimelineEventDraft {
   slug: string;
   name: string;
   description: string;
+  coverAssetId?: string;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
