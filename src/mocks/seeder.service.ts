@@ -5,6 +5,7 @@ import { FirebaseService } from '../app/firebase/firebase.service';
 import {
   SEED_CALENDAR,
   SEED_CHARACTERS,
+  SEED_CODEX_CATEGORIES,
   SEED_CODEX_ENTRIES,
   SEED_EVENTS,
   SEED_PLACES,
@@ -74,6 +75,13 @@ export class SeederService {
     );
   }
 
+  async seedCodexCategories(): Promise<void> {
+    await setDoc(
+      doc(this.firebase.firestore, 'universes', DEFAULT_UNIVERSE_ID, '_meta', 'codex_categories'),
+      SEED_CODEX_CATEGORIES,
+    );
+  }
+
   async seedAll(authorUid: string): Promise<void> {
     await this.seedDefaultUniverse(authorUid);
     await Promise.all([
@@ -84,6 +92,7 @@ export class SeederService {
       this.seedStories(authorUid),
       this.seedEvents(authorUid),
       this.seedCalendar(),
+      this.seedCodexCategories(),
     ]);
   }
 

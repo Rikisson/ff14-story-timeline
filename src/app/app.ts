@@ -14,7 +14,7 @@ import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
 import { CharactersService } from '@features/characters';
-import { CodexEntriesService } from '@features/codex';
+import { CodexCategoriesService, CodexEntriesService } from '@features/codex';
 import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
@@ -47,6 +47,7 @@ export class App {
   private readonly stories = inject(StoriesService);
   private readonly plotlines = inject(PlotlinesService);
   private readonly codex = inject(CodexEntriesService);
+  private readonly codexCategories = inject(CodexCategoriesService);
   private readonly calendar = inject(CalendarService);
 
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
@@ -83,6 +84,8 @@ export class App {
     if (pl) errors.push({ label: 'Plotlines', message: pl });
     const cx = this.codex.refreshError();
     if (cx) errors.push({ label: 'Codex', message: cx });
+    const ccx = this.codexCategories.refreshError();
+    if (ccx) errors.push({ label: 'Codex categories', message: ccx });
     const ca = this.calendar.refreshError();
     if (ca) errors.push({ label: 'Calendar', message: ca });
     return errors;
@@ -92,7 +95,7 @@ export class App {
     const u = this.user();
     if (!u || !this.canSeed()) return;
     const ok = window.confirm(
-      'Seed test data? This overwrites the default universe and its seeded entities (calendar, characters, places, events, stories, plotlines, codex entries) by ID.',
+      'Seed test data? This overwrites the default universe and its seeded entities (calendar, codex categories, characters, places, events, stories, plotlines, codex entries) by ID.',
     );
     if (!ok) return;
     this.seeding.set(true);

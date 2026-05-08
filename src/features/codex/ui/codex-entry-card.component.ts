@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import {
   DangerButtonComponent,
   EntityRefComponent,
   GhostButtonComponent,
-  TagComponent,
 } from '@shared/ui';
+import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntry } from '../data-access/codex-entry.types';
 
 @Component({
   selector: 'app-codex-entry-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent, TagComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -19,7 +19,11 @@ import { CodexEntry } from '../data-access/codex-entry.types';
         <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ entry().title }}</h3>
         <div class="flex shrink-0 items-center gap-2">
           @if (entry().category; as c) {
-            <app-tag>{{ c }}</app-tag>
+            <span
+              class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
+              [style.borderColor]="categoryColor() ?? '#94a3b8'"
+              [style.color]="categoryColor() ?? '#475569'"
+            >{{ c }}</span>
           }
           @if (canEdit()) {
             <button uiGhost type="button" (click)="edit.emit()">Edit</button>
@@ -51,4 +55,12 @@ export class CodexEntryCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
+
+  private readonly categories = inject(CodexCategoriesService);
+
+  protected readonly categoryColor = computed<string | undefined>(() => {
+    const cat = this.entry().category?.toLowerCase();
+    if (!cat) return undefined;
+    return this.categories.categoryByLabel().get(cat)?.color;
+  });
 }

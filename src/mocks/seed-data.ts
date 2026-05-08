@@ -5,7 +5,7 @@ import {
   FF14_ERA_SIXTH_ASTRAL_ID,
 } from '@features/calendar';
 import { Character } from '@features/characters';
-import { CodexEntry } from '@features/codex';
+import { CodexCategoriesConfig, CodexEntry } from '@features/codex';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
 import { Plotline } from '@features/plotlines';
@@ -21,13 +21,23 @@ export const SEED_CALENDAR: Calendar = {
   updatedAt: SEED_CREATED_AT,
 };
 
+export const SEED_CODEX_CATEGORIES: CodexCategoriesConfig = {
+  categories: [
+    { id: 'cat-race', label: 'Race', color: '#8b5cf6', description: 'Species or peoples.' },
+    { id: 'cat-job', label: 'Job', color: '#06b6d4', description: 'Class, profession, or trade.' },
+    { id: 'cat-lore', label: 'Lore', color: '#f59e0b', description: 'World concepts and phenomena.' },
+    { id: 'cat-item', label: 'Item', color: '#ea580c', description: 'Objects, artifacts, trade goods.' },
+    { id: 'cat-faction', label: 'Faction', color: '#e11d48', description: 'Organisations, houses, cabals.' },
+    { id: 'cat-history', label: 'History', color: '#71717a', description: 'Past events and eras.' },
+  ],
+  updatedAt: SEED_CREATED_AT,
+};
+
 export const SEED_CHARACTERS: Character[] = [
   {
     id: 'char-ingrid',
     slug: 'ingrid',
     name: 'Ingrid',
-    race: 'Hyur (voidsent-tainted)',
-    job: 'Rogue',
     aliases: ['The Pearl-Lane Maid'],
     title: 'Survivor',
     gender: 'Female',
@@ -36,6 +46,9 @@ export const SEED_CHARACTERS: Character[] = [
     description:
       'Bound to House Brann as a girl and nearly destroyed when Sakuya cut the household down. Carries the marks of her former master — sun-shy, amber-eyed, careful with shadows.',
     relatedRefs: [
+      { kind: 'codexEntry', id: 'codex-job-rogue' },
+      { kind: 'codexEntry', id: 'codex-race-hyur' },
+      { kind: 'codexEntry', id: 'codex-voidsent-taint' },
       { kind: 'character', id: 'char-marcus' },
       { kind: 'character', id: 'char-zahir' },
       { kind: 'place', id: 'place-uldah-pearl-lane' },
@@ -47,15 +60,17 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-marcus',
     slug: 'marcus',
     name: 'Marcus',
-    race: 'Hyur',
-    job: 'Merchant',
     aliases: ['Old Marc'],
     gender: 'Male',
     age: 'Near 80',
     affiliation: 'Spice Merchants of Pearl Lane',
     description:
       "Has run the Pearl Lane stall for forty years. Knows everyone worth knowing in Ul'dah and a great many who would rather not be known.",
-    relatedRefs: [{ kind: 'place', id: 'place-uldah-pearl-lane' }],
+    relatedRefs: [
+      { kind: 'codexEntry', id: 'codex-job-merchant' },
+      { kind: 'codexEntry', id: 'codex-race-hyur' },
+      { kind: 'place', id: 'place-uldah-pearl-lane' },
+    ],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -63,8 +78,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-brann',
     slug: 'brann',
     name: 'Brann',
-    race: 'Hyur',
-    job: 'Voidwalker',
     aliases: ['Lord Brann of Ishgard'],
     title: 'Voidwalker',
     gender: 'Male',
@@ -72,7 +85,11 @@ export const SEED_CHARACTERS: Character[] = [
     affiliation: 'House Brann (defunct), Syndicate',
     description:
       'Built a manse at the edge of Ishgard on quiet Syndicate dealings. Drew the notice of the Far East with one bargain too many.',
-    relatedRefs: [{ kind: 'place', id: 'place-ishgard' }],
+    relatedRefs: [
+      { kind: 'codexEntry', id: 'codex-job-voidwalker' },
+      { kind: 'codexEntry', id: 'codex-race-hyur' },
+      { kind: 'place', id: 'place-ishgard' },
+    ],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -80,8 +97,6 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-sakuya',
     slug: 'sakuya',
     name: 'Sakuya',
-    race: 'Au Ra',
-    job: 'Samurai',
     aliases: ['The Blade of Doma'],
     title: 'Samurai',
     gender: 'Female',
@@ -89,6 +104,10 @@ export const SEED_CHARACTERS: Character[] = [
     affiliation: 'Doman Liberation Front',
     description:
       'Survived the fall of Doma as a child. Trained in exile. Came west following a trail that ended in House Brann.',
+    relatedRefs: [
+      { kind: 'codexEntry', id: 'codex-job-samurai' },
+      { kind: 'codexEntry', id: 'codex-race-au-ra' },
+    ],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -96,15 +115,17 @@ export const SEED_CHARACTERS: Character[] = [
     id: 'char-zahir',
     slug: 'zahir',
     name: 'Zahir',
-    race: 'Hyur',
-    job: 'Dark Knight',
     aliases: ['The Tutor'],
     gender: 'Male',
     age: 'Late 60s',
     affiliation: 'Formerly House Brann; current allegiance unknown',
     description:
       "Served the house long before Brann turned to the void. Disappeared the night of the attack; whispers place him near the Northern Shroud.",
-    relatedRefs: [{ kind: 'character', id: 'char-ingrid' }],
+    relatedRefs: [
+      { kind: 'codexEntry', id: 'codex-job-dark-knight' },
+      { kind: 'codexEntry', id: 'codex-race-hyur' },
+      { kind: 'character', id: 'char-ingrid' },
+    ],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -262,6 +283,69 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     category: 'Faction',
     description: 'A high house of Ishgard, keepers of long oaths.',
     relatedRefs: [{ kind: 'place', id: 'place-ishgard' }],
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-race-hyur',
+    slug: 'hyur',
+    title: 'Hyur',
+    category: 'Race',
+    description: 'The most populous race of Eorzea — adaptable, ambitious, scattered across every climate and station.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-race-au-ra',
+    slug: 'au-ra',
+    title: 'Au Ra',
+    category: 'Race',
+    description: 'A scaled people of the Far East — Raen and Xaela by lineage, marked by horns and a long memory.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-job-rogue',
+    slug: 'rogue',
+    title: 'Rogue',
+    category: 'Job',
+    description: 'A blade-and-shadow trade. Rogues work in the spaces commerce and law would rather not see.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-job-merchant',
+    slug: 'merchant',
+    title: 'Merchant',
+    category: 'Job',
+    description: 'Stallholders, brokers, and the quiet middlemen of every realm. The ledger is the merchant\'s blade.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-job-voidwalker',
+    slug: 'voidwalker',
+    title: 'Voidwalker',
+    category: 'Job',
+    description: 'Practitioners who deal in voidsent contracts. The cost of the bargain is rarely paid by the bargainer.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-job-samurai',
+    slug: 'samurai',
+    title: 'Samurai',
+    category: 'Job',
+    description: 'Doman blade-discipline. A craft of stillness, exact strikes, and oaths that outlast the wielder.',
+    authorUid: SEED_AUTHOR_UID,
+    createdAt: SEED_CREATED_AT,
+  },
+  {
+    id: 'codex-job-dark-knight',
+    slug: 'dark-knight',
+    title: 'Dark Knight',
+    category: 'Job',
+    description: 'Sworn blades who pay their debts in shadow. Often hired, rarely trusted, never quite free of the bond.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },

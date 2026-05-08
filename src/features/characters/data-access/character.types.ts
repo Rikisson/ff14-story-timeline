@@ -10,8 +10,6 @@ export interface Character {
   id: string;
   slug: string;
   name: string;
-  race: string;
-  job: string;
   description?: string;
   portraits?: CharacterPortrait[];
   aliases?: string[];
@@ -30,8 +28,6 @@ export type StoredCharacter = Omit<Character, 'id'>;
 export interface CharacterDraft {
   slug: string;
   name: string;
-  race: string;
-  job: string;
   description?: string;
   aliases?: string[];
   title?: string;

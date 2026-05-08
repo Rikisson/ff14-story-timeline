@@ -18,6 +18,7 @@ import {
   GhostButtonComponent,
   PrimaryButtonComponent,
 } from '@shared/ui';
+import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntryDraft } from '../data-access/codex-entry.types';
 
@@ -84,8 +85,14 @@ function parseRefKey(key: string): EntityRef | null {
             type="text"
             formControlName="category"
             class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. Magic, Religion, Race"
+            list="codex-category-options"
+            placeholder="Pick or type a category"
           />
+          <datalist id="codex-category-options">
+            @for (cat of categoryOptions(); track cat.id) {
+              <option [value]="cat.label"></option>
+            }
+          </datalist>
         </label>
       </div>
 
@@ -139,6 +146,9 @@ export class CodexEntryFormComponent {
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
   private readonly codex = inject(CodexEntriesService);
+  private readonly categoriesService = inject(CodexCategoriesService);
+
+  protected readonly categoryOptions = this.categoriesService.categories;
 
   protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
     ...this.characters.characters().map((c) => ({

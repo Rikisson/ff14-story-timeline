@@ -159,6 +159,25 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
   `characters[]` triggers a visible editor prompt rather than silently
   mutating the array.
 
+## Story persistence
+
+- **Story metadata and content live in separate Firestore documents.**
+  Metadata (slug, title, description, refs, lifecycle) at
+  `universes/{u}/stories/{sid}`; content (`startSceneId`, `scenes`) at
+  `universes/{u}/stories/{sid}/_content/main`.
+- **Catalog and timeline list views read metadata only.** Player and
+  editor read both via `StoriesService.getStoryWithContent()`.
+- **Saves write both docs in a single transaction** with the version
+  stamp on the metadata doc. Optimistic-concurrency contract uses the
+  metadata's `version` field.
+- **The `_content/main` subdoc inherits its parent's draft visibility**
+  via a Firestore rule that reads the parent story's `draft` flag —
+  drafts stay private to members; published content is public.
+- **Pattern reuse for future entities.** If a new entity ever carries a
+  nested heavy payload that list views don't need, split it the same
+  way (`{kind}/{id}/_content/main`). Today only Story qualifies — every
+  other entity is a flat doc small enough to load whole.
+
 ## Scene rendering layers
 
 - **Three independent DOM layers.** Background, characters, and

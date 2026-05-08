@@ -1,10 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Character } from '../data-access/character.types';
-import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from '@shared/ui';
+import { EntityResolverService } from '@shared/data-access';
+import {
+  DangerButtonComponent,
+  EntityRefComponent,
+  GhostButtonComponent,
+  MarkdownTextComponent,
+} from '@shared/ui';
 
 @Component({
   selector: 'app-character-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
+  imports: [
+    GhostButtonComponent,
+    DangerButtonComponent,
+    EntityRefComponent,
+    MarkdownTextComponent,
+  ],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -19,16 +30,13 @@ import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from 
           </div>
         }
       </div>
-      <dl class="m-0 flex flex-col gap-1 text-sm text-slate-700">
-        <div class="flex gap-2">
-          <dt class="w-12 font-medium text-slate-500">Race</dt>
-          <dd class="m-0">{{ character().race }}</dd>
-        </div>
-        <div class="flex gap-2">
-          <dt class="w-12 font-medium text-slate-500">Job</dt>
-          <dd class="m-0">{{ character().job }}</dd>
-        </div>
-      </dl>
+      @if (character().description; as d) {
+        <app-markdown-text
+          class="text-sm text-slate-700"
+          [text]="d"
+          [options]="inlineRefOptions()"
+        />
+      }
       @if (relatedRefs().length > 0) {
         <div class="flex flex-wrap gap-1.5">
           @for (r of relatedRefs(); track r.kind + ':' + r.id) {
@@ -46,5 +54,8 @@ export class CharacterCardComponent {
   readonly edit = output<void>();
   readonly remove = output<void>();
 
+  private readonly entityResolver = inject(EntityResolverService);
+
   protected readonly relatedRefs = computed(() => this.character().relatedRefs ?? []);
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 }

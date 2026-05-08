@@ -5,5 +5,10 @@ const loadPage = () =>
 
 export const CODEX_ROUTES: Routes = [
   { path: '', loadComponent: loadPage },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./feature/codex-settings.page').then((m) => m.CodexSettingsPage),
+  },
   { path: ':id', loadComponent: loadPage },
 ];
