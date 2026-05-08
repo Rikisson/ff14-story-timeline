@@ -1,8 +1,14 @@
-# Narrative engine — implementation notes
+# Narrative engine — rules and implementation
 
-Pins the design rationale and edge-case behavior of the EntityRef
-narrative engine. Constrains future PRs touching entity types, picker
-UX, or inline `${kind:<guid>}` references.
+Two parts:
+- **Rules** — standing constraints. The engine works this way; PRs that
+  violate these need explicit justification.
+- **Implementation** — open changes still to ship. Items are removed
+  when shipped; this section is not a history.
+
+---
+
+# Rules
 
 ## Project scope
 
@@ -88,31 +94,111 @@ Character + Place only.
   flow lands, the editor should offer a re-resolution pass before the
   move completes.
 
-## Resolved scene model — design rationale
+## Resolved scene model
 
-Rules that need to outlive the type definition because they constrain
-future PRs:
-
-- **Speaker union.** `EntityRef<'character'>` for major characters (chip /
-  hover-card / on-stage highlight), `string` for non-essential speakers
-  (narrator, off-screen, inner thought, unnamed NPC), `undefined` for
-  descriptive scenes with no speaker block. Multi-speaker is intentionally
-  out of scope for v1; promoting to an array is backwards-compatible if a
-  real use case appears.
-- **Position is a free string, not an enum.** UI exposes `left | center |
-  right` quick-select buttons; underlying schema accepts any slot ID, so
-  future templates (`upper-left`, `background-row`, `far-left`, etc.) do
-  not need a schema migration.
+- **Speaker union.** `EntityRef<'character'>` for major characters
+  (chip / hover-card / on-stage highlight), `string` for non-essential
+  speakers (narrator, off-screen, inner thought, unnamed NPC),
+  `undefined` for descriptive scenes with no speaker block.
+  Multi-speaker is intentionally out of scope for v1; promoting to an
+  array is backwards-compatible if a real use case appears.
+- **Position is a free string, not an enum.** UI exposes `left | center
+  | right` quick-select buttons; underlying schema accepts any slot ID,
+  so future templates (`upper-left`, `background-row`, `far-left`,
+  etc.) do not need a schema migration.
 - **Scene constraints.** A given character may appear at most once in
-  `characters[]`. Multiple characters in the same `position` are allowed;
-  render order is `order` ascending, then insertion order. A speaker that
-  is an `EntityRef<'character'>` not present in `characters[]` triggers a
-  visible editor prompt rather than silently mutating the array.
+  `characters[]`. Multiple characters in the same `position` are
+  allowed; render order is `order` ascending, then insertion order.
+  A speaker that is an `EntityRef<'character'>` not present in
+  `characters[]` triggers a visible editor prompt rather than silently
+  mutating the array.
 
-## Open optimization
+## Scene rendering layers
 
-- **Slug uniqueness atomicity.** Today's check is read-then-write — there's
-  a small race window. A denormalized index doc
-  (`universes/{id}/_slugIndex/{kind}_{slug}`) gives O(1) atomic checks at
-  the cost of a second write per entity save. Either approach is fine for
-  current scale.
+- **Three independent DOM layers.** Background, characters, and
+  text-scrim are siblings, not nested. CSS filters applied to the
+  background must not affect characters; characters stay at full
+  saturation/sharpness so the visual hierarchy emerges automatically.
+- **Text scrim is the engine's job.** A gradient overlay between the
+  character layer and text guarantees readability across any
+  background. Not the author's responsibility.
+- **Audio element lives in the player shell.** The `<audio>` host
+  sits above `scene-view` so it survives scene re-renders. Cross-scene
+  ambient continuity depends on this.
+- **Background swaps use two stacked `<img>` elements with CSS opacity
+  crossfade.** Skip the crossfade when the next asset URL equals the
+  current.
+- **Image rendering uses `blurDataUrl` as an immediate placeholder.**
+  Full image fades in on load.
+- **Audio load is non-blocking.** Scene becomes readable when text and
+  background are ready; audio joins late and fades in when available.
+- **Loading indicators show progress, not a spinner, and appear only
+  after 500ms of pending load.** First scene shows the loading state
+  until its background is ready; subsequent transitions rely on
+  preload.
+
+---
+
+# Implementation
+
+Open changes. Remove items as they ship.
+
+## Tech debt
+
+- Restrict the Firebase API key to the GitHub Pages domain (Cloud
+  Console).
+- Server-side list filtering — composite indexes per filter
+  combination so tight filters don't depend on "View more" thrash
+  through client-side filtering of the loaded page.
+- Test coverage for services, guards, and components (specs exist for
+  editor and player stores).
+- Collapse Items and Factions into typed Codex categories per
+  *Entity tiers*. Migrates Firestore docs and rewrites
+  `${item:…}` / `${faction:…}` to `${codex:…}`.
+- Atomic slug uniqueness via denormalized index doc
+  (`universes/{id}/_slugIndex/{kind}_{slug}`); current check is
+  read-then-write.
+
+## Player
+
+- Multiple save slots per story; cloud sync.
+- Reading-progress badges ("In progress" / "Completed" / "Endings
+  N/M").
+- Player preferences — text speed, font size, BGM volume; persisted.
+- Layered audio — BGM track + per-scene SFX/voice line.
+- PWA / offline reading — manifest + service worker.
+
+## Catalog
+
+- Tags & genres with tag-based filtering.
+- Full-text search across stories, characters, places, events.
+- Sort by recency / popularity / length.
+- Story collections / series — explicit ordering across multiple
+  stories.
+- Public author profile pages.
+
+## World-building
+
+- Standalone detail pages for Characters, Places, Events (today they
+  surface only inside list-pane).
+- Map view of places — store lat/lon, render with leaflet/maplibre.
+- Relationship graph — Rete is already in the bundle; reuse it.
+- Canonical `inGameDate` type — era + year (+ optional time-of-day)
+  replacing free text.
+
+## Editor
+
+- Auto-save with conflict resolution.
+- Revision history / undo-redo via `revisions/` subcollection.
+- Story templates ("Linear", "Branching with reunion", "VN skeleton").
+- AI-assisted scene drafting via Claude API.
+- Co-authoring — Firestore presence + multi-cursor.
+- Import / export (JSON).
+- Print / PDF export of a story walkthrough.
+
+## Platform
+
+- i18n via `@angular/localize` (ENG/JPN).
+- Dark mode via Tailwind `dark:` variants.
+- Comments / reactions on stories.
+- Achievements — endings discovered, hidden scenes found.
