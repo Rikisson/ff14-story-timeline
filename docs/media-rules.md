@@ -17,7 +17,7 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 ## Storage
 
 - Metadata in Firestore, binaries in Firebase Storage.
-- Storage path: `universes/{u}/{entityKind}/{entityId}/{assetKind}/{assetId}/{filename}`.
+- Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. The path encodes only the universe and the asset kind; ownership is never encoded in the path. The same asset can be referenced by any number of entities.
 - Set `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP; reject or transcode other formats at upload.
@@ -25,19 +25,18 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 ## Schema
 
-- Asset libraries are inline arrays on the owning entity document.
-- Asset entry minimum shape: `{ id, label, url }`. Per-kind optional fields are additive.
-- Image asset entries carry an optional `blurDataUrl: string` for placeholder rendering.
-- Cover images are a single `coverImage?: string` field on the entity.
-- Asset tag fields are `string[]`, free-form. No enums.
+- Asset metadata lives in a central per-universe collection: `universes/{u}/_assets/{assetId}`. One doc per uploaded asset.
+- Asset doc shape: `{ id, kind, url, label, blurDataUrl?, tags?, authorUid, createdAt, updatedAt? }`. `kind` matches the value used in the storage path.
+- Entities reference assets by ID, never by URL. Per-entity collections are `string[]` of asset IDs (e.g. `Character.portraits`, `Place.backgrounds`, `Place.ambientAudio`); single-asset slots are scalar IDs (e.g. `Universe.coverAssetId`, `StagedCharacter.portraitId`).
+- Asset tags are `string[]` on the asset doc, free-form. No enums.
 
 ## Editor
 
-- Libraries are managed on the owner entity's edit page: upload, rename, reorder, delete (with confirm on delete).
+- Uploads register a new doc in `_assets` and a binary in Storage; both writes succeed or both are rolled back.
 - Uploads enforce max file size and max dimensions before write; oversize files are rejected with a clear error.
-- Scene editor picks from existing libraries — no scene-level uploads to a library.
-- Scene editor exposes a "custom" override that writes a raw URL onto `Scene.background` / `Scene.audio` for one-offs.
-- Asset pickers filter by the asset's tag list when tags are present.
+- Owner entity edit pages select from the universe asset library (filtered by kind) to populate their asset-ID arrays. Reorder and remove are local operations on the entity; rename and delete-from-library happen on the asset doc itself.
+- Scene editor picks asset references — no scene-level uploads bypass the library. Per-scene overrides (e.g. a flashback background) still register in the library; one-offs can be pruned later.
+- Asset pickers filter by `kind` and by tag.
 
 ## Loading
 
@@ -50,7 +49,6 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 Open changes. Remove items as they ship.
 
-- Cover or portrait image upload across all entity kinds (Characters,
-  Places, Events, Plotlines, Codex).
-- Cross-entity asset library — reuse uploaded backgrounds and
-  portraits across stories.
+- Build the central `_assets/{assetId}` collection per universe and the upload service that writes the doc and binary atomically. Reshape `Character.portraits`, scene background/audio fields, and any `coverImage` URL fields into asset-ID references (no media data exists yet — code-only change).
+- Universe asset library picker: thumbnail grid for images, list view for audio, filter by `kind` and tags. Reused on every owner-entity edit page.
+- Cover image upload across all entity kinds (Universe, Story, Characters, Places, Events, Plotlines, Codex), driven by the picker above.
