@@ -33,6 +33,7 @@ export function withEditorMethods() {
               publishedAt: story.publishedAt,
             },
             authorUid: story.authorUid,
+            createdAt: story.createdAt,
             startSceneId: story.startSceneId,
             scenes: story.scenes,
             selectedSceneId: null,
@@ -67,6 +68,7 @@ export function withEditorMethods() {
               id,
               ...meta,
               authorUid,
+              createdAt: store.createdAt() ?? Date.now(),
               startSceneId,
               scenes: store.scenes(),
             };

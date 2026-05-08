@@ -108,12 +108,6 @@ const BTN_SECONDARY =
           @for (p of story().places; track p.id) {
             <app-entity-ref [ref]="p" />
           }
-          @for (g of story().genreTags ?? []; track g) {
-            <app-tag>{{ g }}</app-tag>
-          }
-          @for (t of story().toneTags ?? []; track t) {
-            <app-tag>{{ t }}</app-tag>
-          }
         </div>
       }
     </article>
@@ -153,9 +147,7 @@ export class CatalogDetailComponent {
     return (
       !isInGameDateEmpty(s.inGameDate) ||
       s.mainCharacters.length > 0 ||
-      s.places.length > 0 ||
-      (s.genreTags ?? []).length > 0 ||
-      (s.toneTags ?? []).length > 0
+      s.places.length > 0
     );
   });
 

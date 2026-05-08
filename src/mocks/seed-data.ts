@@ -456,8 +456,6 @@ export const SEED_STORY: Story = {
     "Three years after fleeing the destruction of her former master's house, Ingrid meets an old contact in Ul'dah's Pearl Lane to arrange provisions for a journey east — and to ask a question she has never dared voice aloud.",
   description:
     "A short, character-driven scene set five years after ${ev:event-seventh-umbral-calamity}[the Calamity]. ${ch:char-ingrid}[Ingrid] surfaces just long enough to ask the question that has haunted her since ${ev:event-brann-house-attack}[the night the blade fell] — whether ${ch:char-zahir}[Zahir], the only person who ever taught her anything worth keeping, survived the same fire she did. Part of the ${pt:plotline-ingrid-flight}[Ingrid's Flight] arc.",
-  genreTags: ['drama', 'mystery', 'low fantasy'],
-  toneTags: ['melancholic', 'slow-burn', 'character-driven'],
   mainCharacters: [
     { kind: 'character', id: 'char-ingrid' },
     { kind: 'character', id: 'char-marcus' },
@@ -480,10 +478,10 @@ export const SEED_STORY: Story = {
   plotlineRefs: [{ kind: 'plotline', id: 'plotline-ingrid-flight' }],
   itemRefs: [{ kind: 'item', id: 'item-doman-tea' }],
   factionRefs: [{ kind: 'faction', id: 'faction-syndicate' }],
-  relatedEvents: [{ kind: 'event', id: 'event-brann-house-attack' }],
   startSceneId: 's01_opening',
   authorUid: SEED_AUTHOR_UID,
   draft: false,
+  createdAt: SEED_CREATED_AT,
   publishedAt: SEED_CREATED_AT,
   scenes: {
     s01_opening: {
@@ -718,6 +716,7 @@ export const SEED_STORIES: Story[] = [
       },
       authorUid: SEED_AUTHOR_UID,
       draft: false,
+      createdAt: SEED_CREATED_AT - idx * 1000,
       publishedAt: SEED_CREATED_AT - idx * 1000,
       version: 1,
     };
