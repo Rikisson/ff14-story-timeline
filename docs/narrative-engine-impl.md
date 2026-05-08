@@ -33,6 +33,14 @@ Codex categories are author-defined labels, color-coded for
 scan-ability. Pickers scope by category (insert "an item" → filter
 category=item) so the unified store does not feel like a junk drawer.
 
+**Lookup vs Structural is about role, not metadata presence.** Codex
+categories describe the world; readers consult them. Event and Plotline
+organize the timeline — Events anchor moments, Plotlines group those
+moments into arcs. Plotline's color and status serve its structural
+framing role; Plotline does not carry the descriptive weight that
+Lookup-tier entities do, so it stays Structural even though it has no
+`inGameDate` of its own.
+
 **Promotion rule.** Promote a Codex category to its own entity only
 when it gains one of:
 - a runtime role (must appear in `Scene.*`),
@@ -53,16 +61,48 @@ References appear on two surfaces — typed pickers and inline
 The same picker UX serves all of them, but the meanings are not
 interchangeable:
 
-| Tier        | Surface                                       | Purpose                | Drives runtime? |
-|-------------|-----------------------------------------------|------------------------|-----------------|
-| Curatorial  | Story-level fields                            | Catalog & filtering    | No              |
-| Runtime     | `Scene.characters` / `speaker` / `place`      | Staging / placement    | Yes             |
-| Factual     | `Event.*` refs, `Character.relatedCharacters` | World-building         | No              |
-| Decorative  | Inline `${…}[…]` in any rich-text body        | Tooltip / hover-card   | No              |
+| Tier        | Surface                                                       | Purpose                | Drives runtime? |
+|-------------|---------------------------------------------------------------|------------------------|-----------------|
+| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                    | Catalog & filtering    | No              |
+| Runtime     | `Scene.characters` / `speaker` / `place`                      | Staging / placement    | Yes             |
+| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs` | World-building | No              |
+| Decorative  | Inline `${…}[…]` in any rich-text body                        | Tooltip / hover-card   | No              |
 
 Codex refs (`EntityRef<'codex'>`) appear in Curatorial, Factual, and
 Decorative tiers. There is no codex-as-stage-actor — Runtime is
 Character + Place only.
+
+## Reference topology
+
+Picker scope per entity. The principle: timeline-tier entities
+(Story, Event) reference lookup-tier entities (Character, Place,
+Codex) for world-building; lookup-tier entities reference each
+other for structural relationships; nothing references timeline-tier
+through pickers — those relationships are encoded by `inGameDate`
+and (for arc grouping) by the dedicated `plotlineRefs` field.
+
+| Entity    | `relatedRefs` accepts            | `plotlineRefs` field |
+|-----------|----------------------------------|----------------------|
+| Universe  | —                                | —                    |
+| Plotline  | —                                | —                    |
+| Story     | character, place, codex          | yes (`EntityRef<'plotline'>[]`) |
+| Event     | character, place, codex          | yes (`EntityRef<'plotline'>[]`) |
+| Character | character, place, codex          | —                    |
+| Place     | character, place, codex          | —                    |
+| Codex     | character, place, codex          | —                    |
+
+- **No timeline-to-timeline picker refs.** Story → Event, Event → Story,
+  Event → Event are all derivable from `inGameDate`. Use the timeline view.
+- **No lookup-to-timeline picker refs.** Codex entries that reference
+  events/stories should do so through inline `${ev:…}` / `${st:…}`
+  tokens in description prose, not via the picker.
+- **`plotlineRefs` is the only timeline → timeline-adjacent picker we
+  keep.** Plotline arc grouping is structural metadata that the
+  timeline can't derive from dates alone, so Story/Event get a
+  dedicated typed array. Plotline itself does not reference its members
+  back — membership lives on Story/Event.
+- **Inline `${kind:<guid>}` tokens** stay decorative-tier and accept
+  all kinds — they are a separate surface from picker refs.
 
 ## Scope locks
 
@@ -79,6 +119,12 @@ Character + Place only.
 - **Authoring velocity over schema purity.** A field that won't be
   reliably filled isn't queryable anyway — keep entity drafts small,
   push optional detail behind a drawer.
+- **One descriptive prose field per entity, named `description`.**
+  Catalog cards, hover popovers, and detail surfaces all read the same
+  field and clip with `line-clamp-N`. No `summary` / `shortDescription`
+  / `body` / per-aspect (personality, motivation, atmosphere)
+  variants — authors do not reliably curate two prose surfaces, and
+  consumer-side truncation is cheap.
 
 ## Inline-ref tokens
 
@@ -153,8 +199,12 @@ Open changes. Remove items as they ship.
 - Test coverage for services, guards, and components (specs exist for
   editor and player stores).
 - Collapse Items and Factions into typed Codex categories per
-  *Entity tiers*. Migrates Firestore docs and rewrites
-  `${item:…}` / `${faction:…}` to `${codex:…}`.
+  *Entity tiers*. The unified `relatedRefs` picker on Story / Event /
+  Character / Place / Codex already accepts codex refs, so no picker
+  work remains — the scope is a Firestore data migration of item /
+  faction docs into codex entries with `category` set, and rewriting
+  `${item:…}` / `${faction:…}` tokens to `${codex:…}`. Item and
+  Faction features (forms, cards, services, pages) are then deleted.
 - Atomic slug uniqueness via denormalized index doc
   (`universes/{id}/_slugIndex/{kind}_{slug}`); current check is
   read-then-write.
