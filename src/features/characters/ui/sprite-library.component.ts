@@ -6,9 +6,9 @@ import {
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
-import { AuthStore } from '@features/auth';
-import { MediaAssetsService } from '@features/media';
+import { AssetPickerComponent, MediaAssetsService } from '@features/media';
 import {
   DangerButtonComponent,
   GhostButtonComponent,
@@ -26,6 +26,7 @@ interface ResolvedSprite {
   selector: 'app-character-sprite-library',
   imports: [
     NgOptimizedImage,
+    AssetPickerComponent,
     DangerButtonComponent,
     GhostButtonComponent,
     SecondaryButtonComponent,
@@ -54,13 +55,7 @@ interface ResolvedSprite {
                 height="48"
                 class="size-12 rounded object-cover"
               />
-              <input
-                type="text"
-                class="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm"
-                [value]="s.label"
-                (change)="onRename(s.id, $event)"
-                [attr.aria-label]="'Label for sprite ' + (i + 1)"
-              />
+              <span class="flex-1 truncate text-sm text-slate-800">{{ s.label }}</span>
               @if (i === 0) {
                 <span
                   class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800"
@@ -81,18 +76,20 @@ interface ResolvedSprite {
           uiSecondary
           type="button"
           [loading]="busy()"
-          (click)="fileInput.click()"
+          (click)="picker.open()"
         >
-          + Add sprite
+          + Add from library
         </button>
-        <input
-          #fileInput
-          type="file"
-          accept="image/webp"
-          class="hidden"
-          (change)="onPick($event)"
-        />
       </div>
+
+      <app-asset-picker
+        #picker
+        kind="sprite"
+        title="Pick sprites for this character"
+        [multiSelect]="true"
+        [currentSelection]="sprites()"
+        (picked)="onPicked($event)"
+      />
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -102,8 +99,8 @@ export class SpriteLibraryComponent {
   readonly sprites = input<string[]>([]);
 
   private readonly media = inject(MediaAssetsService);
-  private readonly auth = inject(AuthStore);
   private readonly service = inject(CharactersService);
+  protected readonly picker = viewChild.required(AssetPickerComponent);
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -117,27 +114,8 @@ export class SpriteLibraryComponent {
     return out;
   });
 
-  protected async onPick(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    const uid = this.auth.user()?.uid;
-    if (!uid) return;
-    await this.run(async () => {
-      const label = file.name.replace(/\.[^.]+$/, '') || 'Sprite';
-      const asset = await this.media.upload({ kind: 'sprite', file, label }, uid);
-      const next = [...this.sprites(), asset.id];
-      await this.service.updateSprites(this.characterId(), next);
-    });
-  }
-
-  protected async onRename(id: string, event: Event): Promise<void> {
-    const label = (event.target as HTMLInputElement).value.trim();
-    if (!label) return;
-    const current = this.media.byId(id);
-    if (!current || current.label === label) return;
-    await this.run(() => this.media.rename(id, label));
+  protected async onPicked(ids: string[]): Promise<void> {
+    await this.run(() => this.service.updateSprites(this.characterId(), ids));
   }
 
   protected async setDefault(id: string): Promise<void> {

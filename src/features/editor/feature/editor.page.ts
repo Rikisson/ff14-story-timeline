@@ -91,7 +91,6 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       <div class="layout">
         <app-story-meta-panel
           [meta]="store.meta()"
-          [storyId]="store.storyId() ?? ''"
           (update)="store.updateMeta($event)"
         />
 

@@ -1,9 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { AuthStore } from '@features/auth';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
-import { MediaAssetsService } from '@features/media';
+import { AssetPickerComponent, MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { EntityKind, EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
@@ -40,6 +39,7 @@ function parseRefKey(key: string): EntityRef | null {
 @Component({
   selector: 'app-story-meta-panel',
   imports: [
+    AssetPickerComponent,
     ComboboxPickerComponent,
     InGameDateInputComponent,
     RichTextInputComponent,
@@ -73,45 +73,28 @@ function parseRefKey(key: string): EntityRef | null {
 
       <div class="field">
         <label>Cover image</label>
-        @if (uploadError(); as e) {
-          <span class="error">{{ e }}</span>
-        }
         @if (coverUrl(); as url) {
           <div class="cover-preview">
             <img [ngSrc]="url" alt="Story cover" fill class="cover-img" />
           </div>
           <div class="cover-actions">
-            <button
-              uiSecondary
-              type="button"
-              [loading]="busy()"
-              [disabled]="!storyId()"
-              (click)="coverInput.click()"
-            >
+            <button uiSecondary type="button" (click)="coverPicker.open()">
               Replace
             </button>
             <button uiGhost type="button" (click)="clearCover()">Remove</button>
           </div>
         } @else {
-          <button
-            uiSecondary
-            type="button"
-            [loading]="busy()"
-            [disabled]="!storyId()"
-            (click)="coverInput.click()"
-          >
-            Upload cover
+          <button uiSecondary type="button" (click)="coverPicker.open()">
+            Pick cover
           </button>
-          <span class="hint">
-            Used for the catalog card. WebP only.
-          </span>
+          <span class="hint">Used for the catalog card.</span>
         }
-        <input
-          #coverInput
-          type="file"
-          accept="image/webp"
-          class="hidden"
-          (change)="onPick($event)"
+        <app-asset-picker
+          #coverPicker
+          kind="cover"
+          title="Pick a cover image"
+          [currentSelection]="coverSelection()"
+          (picked)="onCoverPicked($event)"
         />
       </div>
 
@@ -239,23 +222,22 @@ function parseRefKey(key: string): EntityRef | null {
 })
 export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
-  readonly storyId = input<string>('');
   readonly update = output<Partial<StoryMeta>>();
 
   private readonly media = inject(MediaAssetsService);
-  private readonly auth = inject(AuthStore);
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
   private readonly codex = inject(CodexEntriesService);
   private readonly plotlines = inject(PlotlinesService);
   private readonly entityResolver = inject(EntityResolverService);
 
-  protected readonly busy = signal(false);
-  protected readonly uploadError = signal<string | null>(null);
-
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly coverUrl = computed(() => this.media.urlFor(this.meta()?.coverAssetId));
+  protected readonly coverSelection = computed(() => {
+    const id = this.meta()?.coverAssetId;
+    return id ? [id] : [];
+  });
 
   protected readonly slugValid = computed(() => {
     const m = this.meta();
@@ -327,24 +309,8 @@ export class StoryMetaPanelComponent {
     this.update.emit({ draft: (event.target as HTMLInputElement).checked });
   }
 
-  protected async onPick(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    const uid = this.auth.user()?.uid;
-    if (!uid) return;
-
-    this.busy.set(true);
-    this.uploadError.set(null);
-    try {
-      const asset = await this.media.upload({ kind: 'cover', file }, uid);
-      this.update.emit({ coverAssetId: asset.id });
-    } catch (err) {
-      this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
-    } finally {
-      this.busy.set(false);
-    }
+  protected onCoverPicked(ids: string[]): void {
+    this.update.emit({ coverAssetId: ids[0] });
   }
 
   protected clearCover(): void {

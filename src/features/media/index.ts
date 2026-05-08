@@ -1,4 +1,5 @@
 export { MediaAssetsService } from './data-access/media-assets.service';
+export { AssetPickerComponent } from './ui/asset-picker.component';
 export type {
   AssetDoc,
   AssetKind,

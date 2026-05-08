@@ -56,5 +56,4 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 Open changes. Remove items as they ship.
 
-- Universe asset library picker: thumbnail grid for images, list view for audio, filter by `kind` and tags. Reused on every owner-entity edit page.
-- Cover image upload across all entity kinds (Universe, Story, Characters, Places, Events, Plotlines, Codex), driven by the picker above.
+- Cover image upload across all entity kinds (Universe, Story, Characters, Places, Events, Plotlines, Codex), driven by the asset picker.
