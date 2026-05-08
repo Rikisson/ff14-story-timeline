@@ -43,18 +43,10 @@ import { TimelineEvent } from '../data-access/event.types';
         <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700">{{ desc }}</p>
       }
 
-      @if (
-        event().mainCharacters.length || event().places.length || event().relatedDates.length
-      ) {
+      @if (relatedRefs().length > 0) {
         <div class="flex flex-wrap gap-1.5">
-          @for (c of event().mainCharacters; track c.id) {
-            <app-entity-ref [ref]="c" />
-          }
-          @for (p of event().places; track p.id) {
-            <app-entity-ref [ref]="p" />
-          }
-          @for (d of event().relatedDates; track d) {
-            <app-tag>{{ d }}</app-tag>
+          @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+            <app-entity-ref [ref]="r" />
           }
         </div>
       }
@@ -86,6 +78,8 @@ export class EventCardComponent {
   readonly remove = output<void>();
 
   private readonly calendar = inject(CalendarService);
+
+  protected readonly relatedRefs = computed(() => this.event().relatedRefs ?? []);
 
   protected readonly formattedDate = computed(() => {
     const d = this.event().inGameDate;

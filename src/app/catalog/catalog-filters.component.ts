@@ -40,13 +40,19 @@ export function matchesStory(story: Story, f: CatalogFilters): boolean {
 }
 
 export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
+  const refs = event.relatedRefs ?? [];
   if (
     f.characters.length &&
-    !event.mainCharacters.some((r) => f.characters.includes(r.id))
+    !refs.some((r) => r.kind === 'character' && f.characters.includes(r.id))
   ) {
     return false;
   }
-  if (f.places.length && !event.places.some((r) => f.places.includes(r.id))) return false;
+  if (
+    f.places.length &&
+    !refs.some((r) => r.kind === 'place' && f.places.includes(r.id))
+  ) {
+    return false;
+  }
   if (
     f.plotlines.length &&
     !(event.plotlineRefs ?? []).some((r) => f.plotlines.includes(r.id))

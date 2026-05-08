@@ -5,16 +5,9 @@ export interface TimelineEvent {
   slug: string;
   name: string;
   description: string;
-  mainCharacters: EntityRef<'character'>[];
-  places: EntityRef<'place'>[];
   inGameDate: InGameDate;
-  relatedDates: string[];
-  type?: string;
-  sortOrder?: number;
-  relatedEvents?: EntityRef<'event'>[];
+  relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
-  itemRefs?: EntityRef<'item'>[];
-  factionRefs?: EntityRef<'faction'>[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -26,14 +19,7 @@ export interface TimelineEventDraft {
   slug: string;
   name: string;
   description: string;
-  mainCharacters: EntityRef<'character'>[];
-  places: EntityRef<'place'>[];
   inGameDate: InGameDate;
-  relatedDates: string[];
-  type?: string;
-  sortOrder?: number;
-  relatedEvents?: EntityRef<'event'>[];
+  relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
-  itemRefs?: EntityRef<'item'>[];
-  factionRefs?: EntityRef<'faction'>[];
 }

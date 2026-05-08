@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
-import { FactionsService } from '@features/factions';
-import { ItemsService } from '@features/items';
+import { CodexEntriesService } from '@features/codex';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
-import { StoriesService } from '@features/stories';
-import { EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityKind, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   ComboboxOption,
   ComboboxPickerComponent,
@@ -16,8 +14,26 @@ import {
   RichTextInputComponent,
 } from '@shared/ui';
 import { EntityResolverService } from '@shared/data-access';
-import { EventsService } from '../data-access/events.service';
 import { TimelineEventDraft } from '../data-access/event.types';
+
+const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
+  character: 'Character',
+  place: 'Place',
+  codexEntry: 'Codex',
+};
+
+function refKey(ref: EntityRef): string {
+  return `${ref.kind}:${ref.id}`;
+}
+
+function parseRefKey(key: string): EntityRef | null {
+  const idx = key.indexOf(':');
+  if (idx === -1) return null;
+  const kind = key.slice(0, idx) as EntityKind;
+  const id = key.slice(idx + 1);
+  if (!id) return null;
+  return { kind, id };
+}
 
 @Component({
   selector: 'app-event-form',
@@ -39,7 +55,7 @@ import { TimelineEventDraft } from '../data-access/event.types';
         {{ initial() ? 'Edit event' : 'Add event' }}
       </h3>
 
-      <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+      <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
           <span class="font-medium text-slate-700">Name</span>
           <input
@@ -59,33 +75,13 @@ import { TimelineEventDraft } from '../data-access/event.types';
           />
           <span class="text-xs text-slate-500">Lowercase, digits, hyphens. Unique within universe.</span>
         </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Type</span>
-          <input
-            type="text"
-            formControlName="type"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="e.g. Battle, Treaty, Cataclysm"
-          />
-        </label>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <app-in-game-date-input
-          label="In-game date"
-          [value]="inGameDate()"
-          (valueChanged)="onDate($event)"
-        />
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Sort order</span>
-          <input
-            type="number"
-            formControlName="sortOrder"
-            class="h-10 w-28 rounded-md border border-slate-300 bg-white px-3 text-sm"
-            placeholder="0"
-          />
-        </label>
-      </div>
+      <app-in-game-date-input
+        label="In-game date"
+        [value]="inGameDate()"
+        (valueChanged)="onDate($event)"
+      />
 
       <div class="flex flex-col gap-1 text-sm">
         <span class="font-medium text-slate-700">Description</span>
@@ -98,84 +94,25 @@ import { TimelineEventDraft } from '../data-access/event.types';
         />
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2">
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Main characters</span>
-          <app-combobox-picker
-            [options]="characterCombobox()"
-            [value]="characterIds()"
-            placeholder="Search characters…"
-            emptyMessage="No characters in this universe yet."
-            (valueChange)="onCharacterIds($event)"
-          />
-        </div>
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Places</span>
-          <app-combobox-picker
-            [options]="placeCombobox()"
-            [value]="placeIds()"
-            placeholder="Search places…"
-            emptyMessage="No places in this universe yet."
-            (valueChange)="onPlaceIds($event)"
-          />
-        </div>
-      </div>
-
-      <div class="grid gap-3 sm:grid-cols-2">
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Related events</span>
-          <app-combobox-picker
-            [options]="eventCombobox()"
-            [value]="relatedEventIds()"
-            placeholder="Search events…"
-            emptyMessage="No other events yet."
-            (valueChange)="onRelatedEventIds($event)"
-          />
-        </div>
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Plotlines</span>
-          <app-combobox-picker
-            [options]="plotlineCombobox()"
-            [value]="plotlineIds()"
-            placeholder="Search plotlines…"
-            emptyMessage="No plotlines yet."
-            (valueChange)="onPlotlineIds($event)"
-          />
-        </div>
-      </div>
-
-      <div class="grid gap-3 sm:grid-cols-2">
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Items</span>
-          <app-combobox-picker
-            [options]="itemCombobox()"
-            [value]="itemIds()"
-            placeholder="Search items…"
-            emptyMessage="No items yet."
-            (valueChange)="onItemIds($event)"
-          />
-        </div>
-        <div class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Factions</span>
-          <app-combobox-picker
-            [options]="factionCombobox()"
-            [value]="factionIds()"
-            placeholder="Search factions…"
-            emptyMessage="No factions yet."
-            (valueChange)="onFactionIds($event)"
-          />
-        </div>
+      <div class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Related entities</span>
+        <app-combobox-picker
+          [options]="relatedOptions()"
+          [value]="relatedKeys()"
+          placeholder="Search characters, places, codex entries…"
+          emptyMessage="Nothing else in this universe yet."
+          (valueChange)="onRelatedKeys($event)"
+        />
       </div>
 
       <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Related dates</span>
+        <span class="font-medium text-slate-700">Plotlines</span>
         <app-combobox-picker
-          [options]="[]"
-          [value]="relatedDates()"
-          [allowCreate]="true"
-          placeholder="Type a date label…"
-          emptyMessage="No dates yet — type one to add."
-          (valueChange)="onRelatedDates($event)"
+          [options]="plotlineCombobox()"
+          [value]="plotlineIds()"
+          placeholder="Search plotlines…"
+          emptyMessage="No plotlines yet."
+          (valueChange)="onPlotlineIds($event)"
         />
       </div>
 
@@ -207,68 +144,51 @@ export class EventFormComponent {
 
   private readonly charactersService = inject(CharactersService);
   private readonly placesService = inject(PlacesService);
-  private readonly eventsService = inject(EventsService);
-  private readonly storiesService = inject(StoriesService);
   private readonly plotlinesService = inject(PlotlinesService);
-  private readonly itemsService = inject(ItemsService);
-  private readonly factionsService = inject(FactionsService);
+  private readonly codexService = inject(CodexEntriesService);
   private readonly entityResolver = inject(EntityResolverService);
 
-  protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
-    this.charactersService
-      .characters()
-      .map((c) => ({ id: c.id, label: c.name, hint: c.slug, kind: 'character' as const })),
-  );
-  protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
-    this.placesService
-      .places()
-      .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
-  );
-  protected readonly eventCombobox = computed<ComboboxOption[]>(() =>
-    this.eventsService
-      .events()
-      .map((e) => ({ id: e.id, label: e.name, hint: e.slug, kind: 'event' as const })),
-  );
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
+    ...this.charactersService.characters().map((c) => ({
+      id: refKey({ kind: 'character', id: c.id }),
+      label: c.name,
+      hint: RELATED_KIND_LABEL.character,
+      kind: 'character' as const,
+    })),
+    ...this.placesService.places().map((p) => ({
+      id: refKey({ kind: 'place', id: p.id }),
+      label: p.name,
+      hint: RELATED_KIND_LABEL.place,
+      kind: 'place' as const,
+    })),
+    ...this.codexService.entries().map((c) => ({
+      id: refKey({ kind: 'codexEntry', id: c.id }),
+      label: c.title,
+      hint: RELATED_KIND_LABEL.codexEntry,
+      kind: 'codexEntry' as const,
+    })),
+  ]);
+
   protected readonly plotlineCombobox = computed<ComboboxOption[]>(() =>
     this.plotlinesService
       .plotlines()
       .map((p) => ({ id: p.id, label: p.title, hint: p.slug, kind: 'plotline' as const })),
   );
-  protected readonly itemCombobox = computed<ComboboxOption[]>(() =>
-    this.itemsService
-      .items()
-      .map((i) => ({ id: i.id, label: i.name, hint: i.slug, kind: 'item' as const })),
-  );
-  protected readonly factionCombobox = computed<ComboboxOption[]>(() =>
-    this.factionsService
-      .factions()
-      .map((f) => ({ id: f.id, label: f.name, hint: f.slug, kind: 'faction' as const })),
-  );
+
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
-  protected readonly mainCharacters = signal<EntityRef<'character'>[]>([]);
-  protected readonly places = signal<EntityRef<'place'>[]>([]);
-  protected readonly relatedEvents = signal<EntityRef<'event'>[]>([]);
+  protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
-  protected readonly itemRefs = signal<EntityRef<'item'>[]>([]);
-  protected readonly factionRefs = signal<EntityRef<'faction'>[]>([]);
-  protected readonly relatedDates = signal<string[]>([]);
   protected readonly description = signal<string>('');
 
-  protected readonly characterIds = computed(() => this.mainCharacters().map((r) => r.id));
-  protected readonly placeIds = computed(() => this.places().map((r) => r.id));
-  protected readonly relatedEventIds = computed(() => this.relatedEvents().map((r) => r.id));
+  protected readonly relatedKeys = computed(() => this.related().map(refKey));
   protected readonly plotlineIds = computed(() => this.plotlineRefs().map((r) => r.id));
-  protected readonly itemIds = computed(() => this.itemRefs().map((r) => r.id));
-  protected readonly factionIds = computed(() => this.factionRefs().map((r) => r.id));
 
   protected readonly inGameDate = signal<InGameDate>({});
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
-    type: ['', [Validators.maxLength(60)]],
-    sortOrder: [null as number | null],
   });
 
   constructor() {
@@ -277,16 +197,9 @@ export class EventFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         name: init?.name ?? '',
-        type: init?.type ?? '',
-        sortOrder: init?.sortOrder ?? null,
       });
-      this.mainCharacters.set(init?.mainCharacters ?? []);
-      this.places.set(init?.places ?? []);
-      this.relatedEvents.set(init?.relatedEvents ?? []);
+      this.related.set(init?.relatedRefs ?? []);
       this.plotlineRefs.set(init?.plotlineRefs ?? []);
-      this.itemRefs.set(init?.itemRefs ?? []);
-      this.factionRefs.set(init?.factionRefs ?? []);
-      this.relatedDates.set(init?.relatedDates ?? []);
       this.description.set(init?.description ?? '');
       this.inGameDate.set(init?.inGameDate ?? {});
     });
@@ -296,32 +209,17 @@ export class EventFormComponent {
     this.inGameDate.set(value);
   }
 
-  protected onCharacterIds(ids: string[]): void {
-    this.mainCharacters.set(ids.map((id) => ({ kind: 'character', id })));
-  }
-
-  protected onPlaceIds(ids: string[]): void {
-    this.places.set(ids.map((id) => ({ kind: 'place', id })));
-  }
-
-  protected onRelatedEventIds(ids: string[]): void {
-    this.relatedEvents.set(ids.map((id) => ({ kind: 'event', id })));
+  protected onRelatedKeys(keys: string[]): void {
+    const refs: EntityRef[] = [];
+    for (const k of keys) {
+      const ref = parseRefKey(k);
+      if (ref) refs.push(ref);
+    }
+    this.related.set(refs);
   }
 
   protected onPlotlineIds(ids: string[]): void {
     this.plotlineRefs.set(ids.map((id) => ({ kind: 'plotline', id })));
-  }
-
-  protected onItemIds(ids: string[]): void {
-    this.itemRefs.set(ids.map((id) => ({ kind: 'item', id })));
-  }
-
-  protected onFactionIds(ids: string[]): void {
-    this.factionRefs.set(ids.map((id) => ({ kind: 'faction', id })));
-  }
-
-  protected onRelatedDates(dates: string[]): void {
-    this.relatedDates.set(dates);
   }
 
   protected onDescription(value: string): void {
@@ -331,25 +229,15 @@ export class EventFormComponent {
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    const type = v.type.trim();
-    const relatedEvents = this.relatedEvents();
+    const related = this.related();
     const plotlineRefs = this.plotlineRefs();
-    const itemRefs = this.itemRefs();
-    const factionRefs = this.factionRefs();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       inGameDate: this.inGameDate(),
       description: this.description().trim(),
-      mainCharacters: this.mainCharacters(),
-      places: this.places(),
-      relatedDates: this.relatedDates(),
-      type: type || undefined,
-      sortOrder: v.sortOrder == null ? undefined : v.sortOrder,
-      relatedEvents: relatedEvents.length > 0 ? relatedEvents : undefined,
+      relatedRefs: related.length > 0 ? related : undefined,
       plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
-      itemRefs: itemRefs.length > 0 ? itemRefs : undefined,
-      factionRefs: factionRefs.length > 0 ? factionRefs : undefined,
     });
   }
 }
