@@ -113,7 +113,12 @@ import { InGameDate, isInGameDateEmpty } from '@shared/models';
             />
           </label>
           <label class="flex flex-col gap-1 text-xs text-slate-600">
-            <span>Minute</span>
+            <span class="flex items-center justify-between gap-2">
+              <span>Minute</span>
+              @if (timeErrors().minute) {
+                <span class="text-red-700">needs hour</span>
+              }
+            </span>
             <input
               type="number"
               min="0"
@@ -127,7 +132,12 @@ import { InGameDate, isInGameDateEmpty } from '@shared/models';
             />
           </label>
           <label class="flex flex-col gap-1 text-xs text-slate-600">
-            <span>Second</span>
+            <span class="flex items-center justify-between gap-2">
+              <span>Second</span>
+              @if (timeErrors().second) {
+                <span class="text-red-700">needs minute</span>
+              }
+            </span>
             <input
               type="number"
               min="0"
@@ -141,9 +151,6 @@ import { InGameDate, isInGameDateEmpty } from '@shared/models';
             />
           </label>
         </div>
-        @if (timeError(); as e) {
-          <p class="m-0 text-xs text-red-700" role="alert">{{ e }}</p>
-        }
 
         <label class="flex flex-col gap-1 text-xs text-slate-600">
           <span>Display override (optional — replaces the formatted output)</span>
@@ -210,13 +217,6 @@ export class InGameDateInputComponent {
       minute: !!v && v.minute !== undefined && v.hour === undefined,
       second: !!v && v.second !== undefined && v.minute === undefined,
     };
-  });
-
-  protected readonly timeError = computed(() => {
-    const e = this.timeErrors();
-    if (e.minute) return 'Minute requires an hour.';
-    if (e.second) return 'Second requires a minute.';
-    return null;
   });
 
   protected onToggle(event: Event): void {
