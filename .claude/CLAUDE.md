@@ -5,6 +5,7 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 Before executing any request, check the `docs` folder for applicable rules:
 - `docs/dev-improvements.md` — known technical debt and new-feature backlog. Consult before starting non-trivial work to avoid duplicating planned changes or contradicting noted constraints.
 - `docs/narrative-engine-impl.md` — implementation notes for the narrative engine (EntityRef, Universe scope, storage layout, picker behavior, migration steps). Consult before touching entity types, picker UX, or inline `${kind:<guid>}` references.
+- `docs/media-rules.md` — standards for media storage paths, asset-library schema, editor flow, and player runtime (crossfade, preload, audio host). Consult before touching uploads, asset pickers, or scene background/audio handling.
 
 If a request conflicts with documented rules or architecture:
 - Point out the conflict
