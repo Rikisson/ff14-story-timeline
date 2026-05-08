@@ -124,8 +124,8 @@ import {
                   >
                     {{ i + 1 }}
                   </button>
-                  <div class="grid flex-1 gap-2 sm:grid-cols-[2fr_1fr_1fr]">
-                    <label class="flex flex-col gap-1 text-sm">
+                  <div class="flex flex-1 flex-wrap gap-2">
+                    <label class="flex min-w-[10rem] flex-[2_1_10rem] flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Name</span>
                       <input
                         type="text"
@@ -135,7 +135,7 @@ import {
                         (input)="updateEra(i, { name: text($event) })"
                       />
                     </label>
-                    <label class="flex flex-col gap-1 text-sm">
+                    <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Slug (optional)</span>
                       <input
                         type="text"
@@ -145,7 +145,7 @@ import {
                         (input)="updateEra(i, { slug: text($event) || undefined })"
                       />
                     </label>
-                    <label class="flex flex-col gap-1 text-sm">
+                    <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Max years</span>
                       <input
                         type="number"
@@ -160,8 +160,8 @@ import {
                   </div>
                 </div>
 
-                <div class="grid gap-2 pl-12 sm:grid-cols-3">
-                  <label class="flex flex-col gap-1 text-sm">
+                <div class="flex flex-wrap gap-2 pl-12">
+                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
                     <span class="font-medium text-slate-700">Hours / day</span>
                     <input
                       type="number"
@@ -173,7 +173,7 @@ import {
                       (input)="updateEra(i, { hoursPerDay: optionalInt($event) })"
                     />
                   </label>
-                  <label class="flex flex-col gap-1 text-sm">
+                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
                     <span class="font-medium text-slate-700">Minutes / hour</span>
                     <input
                       type="number"
@@ -185,7 +185,7 @@ import {
                       (input)="updateEra(i, { minutesPerHour: optionalInt($event) })"
                     />
                   </label>
-                  <label class="flex flex-col gap-1 text-sm">
+                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
                     <span class="font-medium text-slate-700">Seconds / minute</span>
                     <input
                       type="number"
@@ -297,8 +297,8 @@ import {
                   >
                     {{ i + 1 }}
                   </button>
-                  <div class="grid flex-1 gap-2 grid-cols-[2fr_1fr]">
-                    <label class="flex flex-col gap-1 text-sm">
+                  <div class="flex flex-1 flex-wrap gap-2">
+                    <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Name</span>
                       <input
                         type="text"
@@ -308,7 +308,7 @@ import {
                         (input)="updateMonth(i, { name: text($event) })"
                       />
                     </label>
-                    <label class="flex flex-col gap-1 text-sm">
+                    <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Days</span>
                       <input
                         type="number"
@@ -409,8 +409,8 @@ import {
                   >
                     {{ i + 1 }}
                   </button>
-                  <div class="grid flex-1 gap-2 grid-cols-[2fr_1fr]">
-                    <label class="flex flex-col gap-1 text-sm">
+                  <div class="flex flex-1 flex-wrap gap-2">
+                    <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Name</span>
                       <input
                         type="text"
@@ -420,7 +420,7 @@ import {
                         (input)="updateWeekday(i, { name: text($event) })"
                       />
                     </label>
-                    <label class="flex flex-col gap-1 text-sm">
+                    <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
                       <span class="font-medium text-slate-700">Short</span>
                       <input
                         type="text"
