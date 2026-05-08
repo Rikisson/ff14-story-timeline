@@ -98,11 +98,8 @@ const BTN_SECONDARY =
             @if (formattedDate(); as d) {
               <app-tag>{{ d }}</app-tag>
             }
-            @for (c of story().mainCharacters; track c.id) {
-              <app-entity-ref [ref]="c" />
-            }
-            @for (p of story().places; track p.id) {
-              <app-entity-ref [ref]="p" />
+            @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+              <app-entity-ref [ref]="r" />
             }
           </div>
         }
@@ -178,12 +175,10 @@ export class CatalogCardComponent {
     });
   });
 
+  protected readonly relatedRefs = computed(() => this.story().relatedRefs ?? []);
+
   protected readonly tagsVisible = computed(() => {
     const s = this.story();
-    return (
-      !isInGameDateEmpty(s.inGameDate) ||
-      s.mainCharacters.length > 0 ||
-      s.places.length > 0
-    );
+    return !isInGameDateEmpty(s.inGameDate) || (s.relatedRefs ?? []).length > 0;
   });
 }

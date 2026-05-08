@@ -7,8 +7,6 @@ const sampleStory: Story = {
   id: 's1',
   slug: 'test',
   title: 'Test',
-  mainCharacters: [],
-  places: [],
   inGameDate: {},
   startSceneId: 'a',
   scenes: {
@@ -18,6 +16,7 @@ const sampleStory: Story = {
   },
   authorUid: 'u1',
   draft: false,
+  createdAt: 0,
 };
 
 function setup() {

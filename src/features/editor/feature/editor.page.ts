@@ -91,9 +91,6 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
         <app-story-meta-panel
           [meta]="store.meta()"
           [storyId]="store.storyId() ?? ''"
-          [characterOptions]="characterOptions()"
-          [placeOptions]="placeOptions()"
-          [inlineRefOptions]="inlineRefOptions()"
           (update)="store.updateMeta($event)"
         />
 

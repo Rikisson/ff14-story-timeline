@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -8,14 +9,38 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CodexEntriesService } from '@features/codex';
+import { PlacesService } from '@features/places';
 import { CharacterDraft } from '../data-access/character.types';
+import { CharactersService } from '../data-access/characters.service';
 import { EntityResolverService } from '@shared/data-access';
-import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityKind, EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
+  ComboboxOption,
+  ComboboxPickerComponent,
   GhostButtonComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
+
+const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
+  character: 'Character',
+  place: 'Place',
+  codexEntry: 'Codex',
+};
+
+function refKey(ref: EntityRef): string {
+  return `${ref.kind}:${ref.id}`;
+}
+
+function parseRefKey(key: string): EntityRef | null {
+  const idx = key.indexOf(':');
+  if (idx === -1) return null;
+  const kind = key.slice(0, idx) as EntityKind;
+  const id = key.slice(idx + 1);
+  if (!id) return null;
+  return { kind, id };
+}
 
 @Component({
   selector: 'app-character-form',
@@ -24,6 +49,7 @@ import {
     PrimaryButtonComponent,
     GhostButtonComponent,
     RichTextInputComponent,
+    ComboboxPickerComponent,
   ],
   template: `
     <form
@@ -89,6 +115,17 @@ import {
         />
       </div>
 
+      <div class="flex flex-col gap-1 text-sm">
+        <span class="font-medium text-slate-700">Related entities</span>
+        <app-combobox-picker
+          [options]="relatedOptions()"
+          [value]="relatedKeys()"
+          placeholder="Search characters, places, codex entries…"
+          emptyMessage="Nothing else in this universe yet."
+          (valueChange)="onRelatedKeys($event)"
+        />
+      </div>
+
       @if (errorMessage(); as e) {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
@@ -116,9 +153,36 @@ export class CharacterFormComponent {
   readonly cancelled = output<void>();
 
   private readonly entityResolver = inject(EntityResolverService);
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+  private readonly codex = inject(CodexEntriesService);
 
   protected readonly description = signal<string>('');
+  protected readonly related = signal<EntityRef[]>([]);
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
+
+  protected readonly relatedKeys = computed(() => this.related().map(refKey));
+
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
+    ...this.characters.characters().map((c) => ({
+      id: refKey({ kind: 'character', id: c.id }),
+      label: c.name,
+      hint: RELATED_KIND_LABEL.character,
+      kind: 'character' as const,
+    })),
+    ...this.places.places().map((p) => ({
+      id: refKey({ kind: 'place', id: p.id }),
+      label: p.name,
+      hint: RELATED_KIND_LABEL.place,
+      kind: 'place' as const,
+    })),
+    ...this.codex.entries().map((e) => ({
+      id: refKey({ kind: 'codexEntry', id: e.id }),
+      label: e.title,
+      hint: RELATED_KIND_LABEL.codexEntry,
+      kind: 'codexEntry' as const,
+    })),
+  ]);
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
@@ -137,6 +201,7 @@ export class CharacterFormComponent {
         job: init?.job ?? '',
       });
       this.description.set(init?.description ?? '');
+      this.related.set(init?.relatedRefs ?? []);
     });
   }
 
@@ -144,16 +209,27 @@ export class CharacterFormComponent {
     this.description.set(value);
   }
 
+  protected onRelatedKeys(keys: string[]): void {
+    const refs: EntityRef[] = [];
+    for (const k of keys) {
+      const ref = parseRefKey(k);
+      if (ref) refs.push(ref);
+    }
+    this.related.set(refs);
+  }
+
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     const desc = this.description().trim();
+    const refs = this.related();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       race: v.race.trim(),
       job: v.job.trim(),
       description: desc || undefined,
+      relatedRefs: refs.length > 0 ? refs : undefined,
     });
   }
 }

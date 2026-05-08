@@ -81,6 +81,7 @@ export class PlacesPage {
       geoPosition: p.geoPosition,
       factions: p.factions,
       description: p.description,
+      relatedRefs: p.relatedRefs,
     }),
     removeLabel: (p) => p.name,
   });

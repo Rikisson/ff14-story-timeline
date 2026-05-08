@@ -1,10 +1,15 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Place } from '../data-access/place.types';
-import { DangerButtonComponent, GhostButtonComponent, TagComponent } from '@shared/ui';
+import {
+  DangerButtonComponent,
+  EntityRefComponent,
+  GhostButtonComponent,
+  TagComponent,
+} from '@shared/ui';
 
 @Component({
   selector: 'app-place-card',
-  imports: [GhostButtonComponent, DangerButtonComponent, TagComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, TagComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -30,6 +35,13 @@ import { DangerButtonComponent, GhostButtonComponent, TagComponent } from '@shar
           }
         </div>
       }
+      @if (relatedRefs().length > 0) {
+        <div class="flex flex-wrap gap-1.5">
+          @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+            <app-entity-ref [ref]="r" />
+          }
+        </div>
+      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,4 +51,6 @@ export class PlaceCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
+
+  protected readonly relatedRefs = computed(() => this.place().relatedRefs ?? []);
 }

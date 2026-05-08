@@ -6,12 +6,6 @@ export interface CharacterPortrait {
   url: string;
 }
 
-export interface CharacterRelation {
-  character: EntityRef<'character'>;
-  relation: string;
-  description?: string;
-}
-
 export interface Character {
   id: string;
   slug: string;
@@ -25,8 +19,7 @@ export interface Character {
   gender?: string;
   age?: string;
   affiliation?: string;
-  residence?: EntityRef<'place'>;
-  relatedCharacters?: CharacterRelation[];
+  relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -45,6 +38,5 @@ export interface CharacterDraft {
   gender?: string;
   age?: string;
   affiliation?: string;
-  residence?: EntityRef<'place'>;
-  relatedCharacters?: CharacterRelation[];
+  relatedRefs?: EntityRef[];
 }

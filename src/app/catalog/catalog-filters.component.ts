@@ -23,13 +23,19 @@ export type SortDirection = 'asc' | 'desc';
 type ArrayKey = 'characters' | 'places' | 'plotlines';
 
 export function matchesStory(story: Story, f: CatalogFilters): boolean {
+  const refs = story.relatedRefs ?? [];
   if (
     f.characters.length &&
-    !story.mainCharacters.some((r) => f.characters.includes(r.id))
+    !refs.some((r) => r.kind === 'character' && f.characters.includes(r.id))
   ) {
     return false;
   }
-  if (f.places.length && !story.places.some((r) => f.places.includes(r.id))) return false;
+  if (
+    f.places.length &&
+    !refs.some((r) => r.kind === 'place' && f.places.includes(r.id))
+  ) {
+    return false;
+  }
   if (
     f.plotlines.length &&
     !(story.plotlineRefs ?? []).some((r) => f.plotlines.includes(r.id))

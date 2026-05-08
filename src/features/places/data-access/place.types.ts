@@ -9,8 +9,8 @@ export interface Place {
   factions: string[];
   description?: string;
   type?: string;
-  parentPlace?: EntityRef<'place'>;
   image?: string;
+  relatedRefs?: EntityRef[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -25,6 +25,6 @@ export interface PlaceDraft {
   factions: string[];
   description?: string;
   type?: string;
-  parentPlace?: EntityRef<'place'>;
   image?: string;
+  relatedRefs?: EntityRef[];
 }

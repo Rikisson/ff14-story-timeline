@@ -98,6 +98,7 @@ export class CharactersPage {
       race: c.race,
       job: c.job,
       description: c.description,
+      relatedRefs: c.relatedRefs,
     }),
     removeLabel: (c) => c.name,
   });

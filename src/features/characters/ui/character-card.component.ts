@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Character } from '../data-access/character.types';
-import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
+import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-character-card',
-  imports: [GhostButtonComponent, DangerButtonComponent],
+  imports: [GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
@@ -29,6 +29,13 @@ import { DangerButtonComponent, GhostButtonComponent } from '@shared/ui';
           <dd class="m-0">{{ character().job }}</dd>
         </div>
       </dl>
+      @if (relatedRefs().length > 0) {
+        <div class="flex flex-wrap gap-1.5">
+          @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+            <app-entity-ref [ref]="r" />
+          }
+        </div>
+      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,4 +45,6 @@ export class CharacterCardComponent {
   readonly canEdit = input<boolean>(false);
   readonly edit = output<void>();
   readonly remove = output<void>();
+
+  protected readonly relatedRefs = computed(() => this.character().relatedRefs ?? []);
 }

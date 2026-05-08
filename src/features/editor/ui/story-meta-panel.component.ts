@@ -1,18 +1,40 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { CharactersService } from '@features/characters';
+import { CodexEntriesService } from '@features/codex';
+import { PlacesService } from '@features/places';
+import { PlotlinesService } from '@features/plotlines';
 import { StoryAssetsService } from '@features/stories';
-import { InGameDate, SLUG_PATTERN } from '@shared/models';
+import { EntityKind, EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
+import { EntityResolverService } from '@shared/data-access';
 import {
   ComboboxOption,
   ComboboxPickerComponent,
-  EntityPickerOption,
   GhostButtonComponent,
   InGameDateInputComponent,
   RichTextInputComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
 import { StoryMeta } from '../data-access/editor.state';
+
+const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
+  character: 'Character',
+  place: 'Place',
+  codexEntry: 'Codex',
+};
+
+function refKey(ref: EntityRef): string {
+  return `${ref.kind}:${ref.id}`;
+}
+
+function parseRefKey(key: string): EntityRef | null {
+  const idx = key.indexOf(':');
+  if (idx === -1) return null;
+  const kind = key.slice(0, idx) as EntityKind;
+  const id = key.slice(idx + 1);
+  if (!id) return null;
+  return { kind, id };
+}
 
 @Component({
   selector: 'app-story-meta-panel',
@@ -104,24 +126,24 @@ import { StoryMeta } from '../data-access/editor.state';
       </div>
 
       <div class="field">
-        <label>Main characters</label>
+        <label>Related entities</label>
         <app-combobox-picker
-          [options]="characterCombobox()"
-          [value]="characterIds()"
-          placeholder="Search characters…"
-          emptyMessage="No characters in this universe yet."
-          (valueChange)="onCharacterIds($event)"
+          [options]="relatedOptions()"
+          [value]="relatedKeys()"
+          placeholder="Search characters, places, codex entries…"
+          emptyMessage="Nothing else in this universe yet."
+          (valueChange)="onRelatedKeys($event)"
         />
       </div>
 
       <div class="field">
-        <label>Places</label>
+        <label>Plotlines</label>
         <app-combobox-picker
-          [options]="placeCombobox()"
-          [value]="placeIds()"
-          placeholder="Search places…"
-          emptyMessage="No places in this universe yet."
-          (valueChange)="onPlaceIds($event)"
+          [options]="plotlineOptions()"
+          [value]="plotlineIds()"
+          placeholder="Search plotlines…"
+          emptyMessage="No plotlines yet."
+          (valueChange)="onPlotlineIds($event)"
         />
       </div>
 
@@ -217,15 +239,19 @@ import { StoryMeta } from '../data-access/editor.state';
 export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
   readonly storyId = input<string>('');
-  readonly characterOptions = input<EntityPickerOption[]>([]);
-  readonly placeOptions = input<EntityPickerOption[]>([]);
-  readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly update = output<Partial<StoryMeta>>();
 
   private readonly assets = inject(StoryAssetsService);
+  private readonly characters = inject(CharactersService);
+  private readonly places = inject(PlacesService);
+  private readonly codex = inject(CodexEntriesService);
+  private readonly plotlines = inject(PlotlinesService);
+  private readonly entityResolver = inject(EntityResolverService);
 
   protected readonly busy = signal(false);
   protected readonly uploadError = signal<string | null>(null);
+
+  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly slugValid = computed(() => {
     const m = this.meta();
@@ -233,24 +259,35 @@ export class StoryMetaPanelComponent {
     return SLUG_PATTERN.test(m.slug);
   });
 
-  protected readonly characterCombobox = computed<ComboboxOption[]>(() =>
-    this.characterOptions().map((o) => ({
-      id: o.id,
-      label: o.label,
-      hint: o.slug,
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
+    ...this.characters.characters().map((c) => ({
+      id: refKey({ kind: 'character', id: c.id }),
+      label: c.name,
+      hint: RELATED_KIND_LABEL.character,
       kind: 'character' as const,
     })),
-  );
-  protected readonly placeCombobox = computed<ComboboxOption[]>(() =>
-    this.placeOptions().map((o) => ({
-      id: o.id,
-      label: o.label,
-      hint: o.slug,
+    ...this.places.places().map((p) => ({
+      id: refKey({ kind: 'place', id: p.id }),
+      label: p.name,
+      hint: RELATED_KIND_LABEL.place,
       kind: 'place' as const,
     })),
+    ...this.codex.entries().map((e) => ({
+      id: refKey({ kind: 'codexEntry', id: e.id }),
+      label: e.title,
+      hint: RELATED_KIND_LABEL.codexEntry,
+      kind: 'codexEntry' as const,
+    })),
+  ]);
+
+  protected readonly plotlineOptions = computed<ComboboxOption[]>(() =>
+    this.plotlines
+      .plotlines()
+      .map((p) => ({ id: p.id, label: p.title, hint: p.slug, kind: 'plotline' as const })),
   );
-  protected readonly characterIds = computed(() => this.meta()?.mainCharacters.map((r) => r.id) ?? []);
-  protected readonly placeIds = computed(() => this.meta()?.places.map((r) => r.id) ?? []);
+
+  protected readonly relatedKeys = computed(() => (this.meta()?.relatedRefs ?? []).map(refKey));
+  protected readonly plotlineIds = computed(() => (this.meta()?.plotlineRefs ?? []).map((r) => r.id));
 
   protected onTitle(event: Event): void {
     this.update.emit({ title: (event.target as HTMLInputElement).value });
@@ -264,16 +301,18 @@ export class StoryMetaPanelComponent {
     this.update.emit({ description: value || undefined });
   }
 
-  protected onCharacterIds(ids: string[]): void {
-    this.update.emit({
-      mainCharacters: ids.map((id) => ({ kind: 'character', id })),
-    });
+  protected onRelatedKeys(keys: string[]): void {
+    const refs: EntityRef[] = [];
+    for (const k of keys) {
+      const ref = parseRefKey(k);
+      if (ref) refs.push(ref);
+    }
+    this.update.emit({ relatedRefs: refs.length > 0 ? refs : undefined });
   }
 
-  protected onPlaceIds(ids: string[]): void {
-    this.update.emit({
-      places: ids.map((id) => ({ kind: 'place', id })),
-    });
+  protected onPlotlineIds(ids: string[]): void {
+    const refs: EntityRef<'plotline'>[] = ids.map((id) => ({ kind: 'plotline', id }));
+    this.update.emit({ plotlineRefs: refs.length > 0 ? refs : undefined });
   }
 
   protected onDate(value: InGameDate): void {

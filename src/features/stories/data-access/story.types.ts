@@ -17,8 +17,6 @@ export interface Scene {
   audio?: string;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
-  itemRefs?: EntityRef<'item'>[];
-  factionRefs?: EntityRef<'faction'>[];
 }
 
 export interface Story {
@@ -27,14 +25,11 @@ export interface Story {
   title: string;
   description?: string;
   coverImage?: string;
-  mainCharacters: EntityRef<'character'>[];
-  places: EntityRef<'place'>[];
   inGameDate: InGameDate;
   startSceneId: string;
   scenes: Record<string, Scene>;
+  relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
-  itemRefs?: EntityRef<'item'>[];
-  factionRefs?: EntityRef<'faction'>[];
   authorUid: string;
   draft: boolean;
   createdAt: number;

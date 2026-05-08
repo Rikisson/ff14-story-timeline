@@ -10,12 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
-import { EventsService } from '@features/events';
-import { FactionsService } from '@features/factions';
-import { ItemsService } from '@features/items';
 import { PlacesService } from '@features/places';
-import { PlotlinesService } from '@features/plotlines';
-import { StoriesService } from '@features/stories';
 import { EntityKind, EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   ComboboxOption,
@@ -26,14 +21,9 @@ import {
 import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntryDraft } from '../data-access/codex-entry.types';
 
-const KIND_LABEL: Record<EntityKind, string> = {
+const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
   character: 'Character',
   place: 'Place',
-  event: 'Event',
-  story: 'Story',
-  plotline: 'Plotline',
-  item: 'Item',
-  faction: 'Faction',
   codexEntry: 'Codex',
 };
 
@@ -114,7 +104,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
-          placeholder="Search related characters, places, events…"
+          placeholder="Search characters, places, codex entries…"
           emptyMessage="Nothing else in this universe yet."
           (valueChange)="onRelatedKeys($event)"
         />
@@ -148,60 +138,25 @@ export class CodexEntryFormComponent {
 
   private readonly characters = inject(CharactersService);
   private readonly places = inject(PlacesService);
-  private readonly events = inject(EventsService);
-  private readonly stories = inject(StoriesService);
-  private readonly plotlines = inject(PlotlinesService);
-  private readonly items = inject(ItemsService);
-  private readonly factions = inject(FactionsService);
   private readonly codex = inject(CodexEntriesService);
 
   protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
     ...this.characters.characters().map((c) => ({
       id: refKey({ kind: 'character', id: c.id }),
       label: c.name,
-      hint: KIND_LABEL.character,
+      hint: RELATED_KIND_LABEL.character,
       kind: 'character' as const,
     })),
     ...this.places.places().map((p) => ({
       id: refKey({ kind: 'place', id: p.id }),
       label: p.name,
-      hint: KIND_LABEL.place,
+      hint: RELATED_KIND_LABEL.place,
       kind: 'place' as const,
-    })),
-    ...this.events.events().map((e) => ({
-      id: refKey({ kind: 'event', id: e.id }),
-      label: e.name,
-      hint: KIND_LABEL.event,
-      kind: 'event' as const,
-    })),
-    ...this.stories.publishedStories().map((s) => ({
-      id: refKey({ kind: 'story', id: s.id }),
-      label: s.title,
-      hint: KIND_LABEL.story,
-      kind: 'story' as const,
-    })),
-    ...this.plotlines.plotlines().map((p) => ({
-      id: refKey({ kind: 'plotline', id: p.id }),
-      label: p.title,
-      hint: KIND_LABEL.plotline,
-      kind: 'plotline' as const,
-    })),
-    ...this.items.items().map((i) => ({
-      id: refKey({ kind: 'item', id: i.id }),
-      label: i.name,
-      hint: KIND_LABEL.item,
-      kind: 'item' as const,
-    })),
-    ...this.factions.factions().map((f) => ({
-      id: refKey({ kind: 'faction', id: f.id }),
-      label: f.name,
-      hint: KIND_LABEL.faction,
-      kind: 'faction' as const,
     })),
     ...this.codex.entries().map((e) => ({
       id: refKey({ kind: 'codexEntry', id: e.id }),
       label: e.title,
-      hint: KIND_LABEL.codexEntry,
+      hint: RELATED_KIND_LABEL.codexEntry,
       kind: 'codexEntry' as const,
     })),
   ]);
