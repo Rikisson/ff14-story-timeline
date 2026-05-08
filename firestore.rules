@@ -49,19 +49,16 @@ service cloud.firestore {
       match /stories/{storyId} {
         allow read: if resource.data.draft == false || isMember(universeId);
         allow create, update, delete: if isMember(universeId);
+
+        // Content subdoc: visibility tracks the parent story's draft flag.
+        match /_content/{contentDocId} {
+          allow read: if get(/databases/$(database)/documents/universes/$(universeId)/stories/$(storyId)).data.draft == false
+            || isMember(universeId);
+          allow create, update, delete: if isMember(universeId);
+        }
       }
 
       match /plotlines/{plotlineId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
-      }
-
-      match /items/{itemId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
-      }
-
-      match /factions/{factionId} {
         allow read: if true;
         allow create, update, delete: if isMember(universeId);
       }
