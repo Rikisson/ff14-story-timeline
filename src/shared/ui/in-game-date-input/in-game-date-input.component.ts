@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { CalendarService } from '@features/calendar';
 import { InGameDate, isInGameDateEmpty } from '@shared/models';
+import { formatInGameDate } from '@shared/utils';
 
 @Component({
   selector: 'app-in-game-date-input',
@@ -191,12 +192,10 @@ export class InGameDateInputComponent {
   protected readonly summary = computed(() => {
     const v = this.value();
     if (isInGameDateEmpty(v) || !v) return null;
-    if (v.display) return v.display;
-    return formatProseDate(
-      v,
-      v.era ? this.calendar.eraNameLookup(v.era) : undefined,
-      v.month ? this.calendar.monthNameLookup(v.month) : undefined,
-    );
+    return formatInGameDate(v, {
+      eraName: v.era ? this.calendar.eraNameLookup(v.era) : undefined,
+      monthName: v.month ? this.calendar.monthNameLookup(v.month) : undefined,
+    }) || null;
   });
 
   protected readonly dayMax = computed(() => {
@@ -257,59 +256,3 @@ export class InGameDateInputComponent {
   }
 }
 
-function formatProseDate(
-  d: InGameDate,
-  eraName: string | undefined,
-  monthName: string | undefined,
-): string {
-  const datePart = buildProseDatePart(d, monthName);
-  const yearPart = d.year !== undefined ? String(d.year) : '';
-  const timePart = buildProseTimePart(d);
-
-  let head: string;
-  if (datePart && yearPart && eraName) {
-    head = `${datePart} of ${yearPart}, ${eraName}`;
-  } else if (datePart && yearPart) {
-    head = `${datePart} of ${yearPart}`;
-  } else if (datePart && eraName) {
-    head = `${datePart}, ${eraName}`;
-  } else if (datePart) {
-    head = datePart;
-  } else if (yearPart && eraName) {
-    head = `${yearPart} of the ${eraName}`;
-  } else if (yearPart) {
-    head = `the year ${yearPart}`;
-  } else if (eraName) {
-    head = eraName;
-  } else {
-    head = '';
-  }
-
-  if (!timePart) return head;
-  return head ? `${head} — ${timePart}` : timePart;
-}
-
-function buildProseDatePart(d: InGameDate, monthName: string | undefined): string {
-  const day = d.day;
-  const month = d.month;
-  if (day !== undefined && monthName) return `${day} ${monthName}`;
-  if (day !== undefined && month !== undefined) return `Day ${day}, month ${pad2(month)}`;
-  if (day !== undefined) return `day ${day}`;
-  if (monthName) return monthName;
-  if (month !== undefined) return `month ${pad2(month)}`;
-  return '';
-}
-
-function buildProseTimePart(d: InGameDate): string {
-  if (d.hour === undefined) return '';
-  const parts: string[] = [pad2(d.hour)];
-  if (d.minute !== undefined) {
-    parts.push(pad2(d.minute));
-    if (d.second !== undefined) parts.push(pad2(d.second));
-  }
-  return parts.join(':');
-}
-
-function pad2(n: number): string {
-  return n < 10 ? `0${n}` : String(n);
-}

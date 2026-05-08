@@ -36,25 +36,56 @@ export function formatInGameDate(
   d: InGameDate | null | undefined,
   options: FormatInGameDateOptions = {},
 ): string {
-  if (!d) return '';
+  if (!d || isInGameDateEmpty(d)) return '';
   if (d.display) return d.display;
 
-  const parts: string[] = [];
-  const ymd: string[] = [];
-  if (d.year !== undefined) ymd.push(String(d.year));
-  if (options.monthName) ymd.push(options.monthName);
-  else if (d.month !== undefined) ymd.push(pad2(d.month));
-  if (d.day !== undefined) ymd.push(pad2(d.day));
-  if (ymd.length > 0) parts.push(ymd.join(options.monthName ? ' ' : '-'));
+  const datePart = buildDatePart(d, options.monthName);
+  const yearPart = d.year !== undefined ? String(d.year) : '';
+  const timePart = buildTimePart(d);
+  const eraName = options.eraName;
 
-  const time: number[] = [];
-  if (d.hour !== undefined) time.push(d.hour);
-  if (d.minute !== undefined) time.push(d.minute);
-  if (d.second !== undefined) time.push(d.second);
-  if (time.length > 0) parts.push(time.map(pad2).join(':'));
+  let head: string;
+  if (datePart && yearPart && eraName) {
+    head = `${datePart} of ${yearPart}, ${eraName}`;
+  } else if (datePart && yearPart) {
+    head = `${datePart} of ${yearPart}`;
+  } else if (datePart && eraName) {
+    head = `${datePart}, ${eraName}`;
+  } else if (datePart) {
+    head = datePart;
+  } else if (yearPart && eraName) {
+    head = `${yearPart} of the ${eraName}`;
+  } else if (yearPart) {
+    head = `the year ${yearPart}`;
+  } else if (eraName) {
+    head = eraName;
+  } else {
+    head = '';
+  }
 
-  if (options.eraName) parts.push(options.eraName);
-  return parts.join(' ').trim();
+  if (!timePart) return head;
+  return head ? `${head} — ${timePart}` : timePart;
+}
+
+function buildDatePart(d: InGameDate, monthName: string | undefined): string {
+  const day = d.day;
+  const month = d.month;
+  if (day !== undefined && monthName) return `${day} ${monthName}`;
+  if (day !== undefined && month !== undefined) return `Day ${day}, month ${pad2(month)}`;
+  if (day !== undefined) return `day ${day}`;
+  if (monthName) return monthName;
+  if (month !== undefined) return `month ${pad2(month)}`;
+  return '';
+}
+
+function buildTimePart(d: InGameDate): string {
+  if (d.hour === undefined) return '';
+  const parts: string[] = [pad2(d.hour)];
+  if (d.minute !== undefined) {
+    parts.push(pad2(d.minute));
+    if (d.second !== undefined) parts.push(pad2(d.second));
+  }
+  return parts.join(':');
 }
 
 function pad2(n: number): string {
