@@ -2,6 +2,59 @@ import { InGameDate, isInGameDateEmpty } from '@shared/models';
 
 export type EraOrdinalLookup = (eraId: string) => number | undefined;
 
+export interface WeekdayResolveOptions {
+  eras: ReadonlyArray<{ id: string; maxYears?: number; resetsWeek?: boolean }>;
+  months: ReadonlyArray<{ days: number }>;
+  weekdayCount: number;
+}
+
+export function getWeekdayIndex(
+  d: InGameDate | null | undefined,
+  options: WeekdayResolveOptions,
+): number | null {
+  if (!d || d.year === undefined || d.month === undefined || d.day === undefined) return null;
+  if (options.weekdayCount <= 0) return null;
+  if (options.months.length === 0) return null;
+  if (d.month < 1 || d.month > options.months.length) return null;
+  if (d.year < 1 || d.day < 1) return null;
+
+  const yearDays = options.months.reduce((sum, m) => sum + m.days, 0);
+  if (yearDays <= 0) return null;
+
+  let eraIndex: number;
+  if (d.era === undefined) {
+    eraIndex = 0;
+  } else {
+    eraIndex = options.eras.findIndex((e) => e.id === d.era);
+    if (eraIndex < 0) return null;
+  }
+  if (options.eras.length === 0) return null;
+
+  let anchorIndex = 0;
+  for (let i = eraIndex; i >= 0; i--) {
+    if (options.eras[i].resetsWeek || i === 0) {
+      anchorIndex = i;
+      break;
+    }
+  }
+
+  let dayOffset = 0;
+  for (let i = anchorIndex; i < eraIndex; i++) {
+    const maxYears = options.eras[i].maxYears;
+    if (maxYears === undefined) return null;
+    dayOffset += maxYears * yearDays;
+  }
+
+  dayOffset += (d.year - 1) * yearDays;
+  for (let m = 1; m < d.month; m++) {
+    dayOffset += options.months[m - 1].days;
+  }
+  dayOffset += d.day - 1;
+
+  const n = options.weekdayCount;
+  return ((dayOffset % n) + n) % n;
+}
+
 const SLOT_KEYS = ['year', 'month', 'day', 'hour', 'minute', 'second'] as const;
 
 export function compareInGameDate(
@@ -30,6 +83,7 @@ export function compareInGameDate(
 export interface FormatInGameDateOptions {
   eraName?: string;
   monthName?: string;
+  weekdayName?: string;
 }
 
 export function formatInGameDate(
@@ -63,8 +117,13 @@ export function formatInGameDate(
     head = '';
   }
 
-  if (!timePart) return head;
-  return head ? `${head} — ${timePart}` : timePart;
+  let body: string;
+  if (!timePart) body = head;
+  else body = head ? `${head} — ${timePart}` : timePart;
+
+  if (options.weekdayName && body) return `${options.weekdayName} — ${body}`;
+  if (options.weekdayName) return options.weekdayName;
+  return body;
 }
 
 function buildDatePart(d: InGameDate, monthName: string | undefined): string {

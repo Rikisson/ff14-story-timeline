@@ -18,6 +18,7 @@ import {
   Calendar,
   CalendarEra,
   CalendarMonth,
+  CalendarWeekday,
   DEFAULT_HOURS_PER_DAY,
   DEFAULT_MINUTES_PER_HOUR,
   DEFAULT_SECONDS_PER_MINUTE,
@@ -35,12 +36,12 @@ import {
     DangerButtonComponent,
   ],
   template: `
-    <section class="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section class="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <header class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="m-0 text-lg font-semibold text-slate-900">Calendar</h2>
           <p class="m-0 mt-0.5 text-sm text-slate-600">
-            Define eras and months for this universe. Drag to reorder — order is the sort key.
+            Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -68,205 +69,294 @@ import {
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
-      <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-6">
-        <section class="flex min-h-0 flex-1 flex-col gap-3">
-          <div class="flex shrink-0 items-center justify-between gap-3">
-            <h3 class="m-0 text-base font-semibold text-slate-900">Eras</h3>
-            @if (canEdit()) {
-              <button uiSecondary type="button" (click)="addEra()">+ Add era</button>
-            }
-          </div>
-
-          @if (eras().length === 0) {
-            <p class="text-sm text-slate-600">No eras yet.</p>
-          } @else {
-            <ul cdkDropList class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1" (cdkDropListDropped)="dropEra($event)">
-              @for (era of eras(); track era.id; let i = $index) {
-                <li
-                  cdkDrag
-                  [cdkDragDisabled]="!canEdit()"
-                  class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-                >
-                  <div class="flex items-start gap-3">
-                    <button
-                      type="button"
-                      cdkDragHandle
-                      class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-indigo-100 text-sm font-semibold text-indigo-700"
-                      [attr.aria-label]="'Era ' + (i + 1) + ', drag to reorder'"
-                    >
-                      {{ i + 1 }}
-                    </button>
-                    <div class="grid flex-1 gap-2 sm:grid-cols-[2fr_1fr_1fr]">
-                      <label class="flex flex-col gap-1 text-sm">
-                        <span class="font-medium text-slate-700">Name</span>
-                        <input
-                          type="text"
-                          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                          [value]="era.name"
-                          [disabled]="!canEdit()"
-                          (input)="updateEra(i, { name: text($event) })"
-                        />
-                      </label>
-                      <label class="flex flex-col gap-1 text-sm">
-                        <span class="font-medium text-slate-700">Slug (optional)</span>
-                        <input
-                          type="text"
-                          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                          [value]="era.slug ?? ''"
-                          [disabled]="!canEdit()"
-                          (input)="updateEra(i, { slug: text($event) || undefined })"
-                        />
-                      </label>
-                      <label class="flex flex-col gap-1 text-sm">
-                        <span class="font-medium text-slate-700">Max years</span>
-                        <input
-                          type="number"
-                          min="0"
-                          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                          [value]="era.maxYears ?? ''"
-                          [disabled]="!canEdit()"
-                          placeholder="unknown"
-                          (input)="updateEra(i, { maxYears: optionalInt($event) })"
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div class="grid gap-2 pl-12 sm:grid-cols-3">
-                    <label class="flex flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Hours / day</span>
-                      <input
-                        type="number"
-                        min="1"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                        [value]="era.hoursPerDay ?? ''"
-                        [disabled]="!canEdit()"
-                        [placeholder]="defaultHoursPerDay"
-                        (input)="updateEra(i, { hoursPerDay: optionalInt($event) })"
-                      />
-                    </label>
-                    <label class="flex flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Minutes / hour</span>
-                      <input
-                        type="number"
-                        min="1"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                        [value]="era.minutesPerHour ?? ''"
-                        [disabled]="!canEdit()"
-                        [placeholder]="defaultMinutesPerHour"
-                        (input)="updateEra(i, { minutesPerHour: optionalInt($event) })"
-                      />
-                    </label>
-                    <label class="flex flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Seconds / minute</span>
-                      <input
-                        type="number"
-                        min="1"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                        [value]="era.secondsPerMinute ?? ''"
-                        [disabled]="!canEdit()"
-                        [placeholder]="defaultSecondsPerMinute"
-                        (input)="updateEra(i, { secondsPerMinute: optionalInt($event) })"
-                      />
-                    </label>
-                  </div>
-
-                  <label class="flex flex-col gap-1 pl-12 text-sm">
-                    <span class="font-medium text-slate-700">Description</span>
-                    <textarea
-                      rows="2"
-                      class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                      [value]="era.description ?? ''"
-                      [disabled]="!canEdit()"
-                      (input)="updateEra(i, { description: text($event) || undefined })"
-                    ></textarea>
-                  </label>
-
-                  @if (canEdit()) {
-                    <div class="flex justify-end pl-12">
-                      <button uiDanger type="button" (click)="removeEra(i)">Remove</button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
+      <section class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="m-0 text-base font-semibold text-slate-900">Eras</h3>
+          @if (canEdit()) {
+            <button uiSecondary type="button" (click)="addEra()">+ Add era</button>
           }
-        </section>
+        </div>
 
-        <section class="flex min-h-0 flex-1 flex-col gap-3">
-          <div class="flex shrink-0 items-center justify-between gap-3">
-            <h3 class="m-0 text-base font-semibold text-slate-900">Months</h3>
-            @if (canEdit()) {
-              <button uiSecondary type="button" (click)="addMonth()">+ Add month</button>
-            }
-          </div>
-
-          @if (months().length === 0) {
-            <p class="text-sm text-slate-600">No months yet.</p>
-          } @else {
-            <ul cdkDropList class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1" (cdkDropListDropped)="dropMonth($event)">
-              @for (month of months(); track month.id; let i = $index) {
-                <li
-                  cdkDrag
-                  [cdkDragDisabled]="!canEdit()"
-                  class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-                >
-                  <div class="flex items-start gap-3">
-                    <button
-                      type="button"
-                      cdkDragHandle
-                      class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-emerald-100 text-sm font-semibold text-emerald-700"
-                      [attr.aria-label]="'Month ' + (i + 1) + ', drag to reorder'"
-                    >
-                      {{ i + 1 }}
-                    </button>
-                    <div class="grid flex-1 gap-2 sm:grid-cols-[2fr_1fr]">
-                      <label class="flex flex-col gap-1 text-sm">
-                        <span class="font-medium text-slate-700">Name</span>
-                        <input
-                          type="text"
-                          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                          [value]="month.name"
-                          [disabled]="!canEdit()"
-                          (input)="updateMonth(i, { name: text($event) })"
-                        />
-                      </label>
-                      <label class="flex flex-col gap-1 text-sm">
-                        <span class="font-medium text-slate-700">Days</span>
-                        <input
-                          type="number"
-                          min="1"
-                          class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                          [value]="month.days"
-                          [disabled]="!canEdit()"
-                          (input)="updateMonth(i, { days: requiredInt($event) })"
-                        />
-                      </label>
-                    </div>
+        @if (eras().length === 0) {
+          <p class="text-sm text-slate-600">No eras yet.</p>
+        } @else {
+          <ul cdkDropList class="flex flex-col gap-2" (cdkDropListDropped)="dropEra($event)">
+            @for (era of eras(); track era.id; let i = $index) {
+              <li
+                cdkDrag
+                [cdkDragDisabled]="!canEdit()"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              >
+                <div class="flex items-start gap-3">
+                  <button
+                    type="button"
+                    cdkDragHandle
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-indigo-100 text-sm font-semibold text-indigo-700"
+                    [attr.aria-label]="'Era ' + (i + 1) + ', drag to reorder'"
+                  >
+                    {{ i + 1 }}
+                  </button>
+                  <div class="grid flex-1 gap-2 sm:grid-cols-[2fr_1fr_1fr]">
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Name</span>
+                      <input
+                        type="text"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="era.name"
+                        [disabled]="!canEdit()"
+                        (input)="updateEra(i, { name: text($event) })"
+                      />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Slug (optional)</span>
+                      <input
+                        type="text"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="era.slug ?? ''"
+                        [disabled]="!canEdit()"
+                        (input)="updateEra(i, { slug: text($event) || undefined })"
+                      />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Max years</span>
+                      <input
+                        type="number"
+                        min="0"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="era.maxYears ?? ''"
+                        [disabled]="!canEdit()"
+                        placeholder="unknown"
+                        (input)="updateEra(i, { maxYears: optionalInt($event) })"
+                      />
+                    </label>
                   </div>
+                </div>
 
-                  <label class="flex flex-col gap-1 pl-12 text-sm">
-                    <span class="font-medium text-slate-700">Description</span>
-                    <textarea
-                      rows="2"
-                      class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                      [value]="month.description ?? ''"
+                <div class="grid gap-2 pl-12 sm:grid-cols-3">
+                  <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-700">Hours / day</span>
+                    <input
+                      type="number"
+                      min="1"
+                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      [value]="era.hoursPerDay ?? ''"
                       [disabled]="!canEdit()"
-                      (input)="updateMonth(i, { description: text($event) || undefined })"
-                    ></textarea>
+                      [placeholder]="defaultHoursPerDay"
+                      (input)="updateEra(i, { hoursPerDay: optionalInt($event) })"
+                    />
                   </label>
+                  <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-700">Minutes / hour</span>
+                    <input
+                      type="number"
+                      min="1"
+                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      [value]="era.minutesPerHour ?? ''"
+                      [disabled]="!canEdit()"
+                      [placeholder]="defaultMinutesPerHour"
+                      (input)="updateEra(i, { minutesPerHour: optionalInt($event) })"
+                    />
+                  </label>
+                  <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-700">Seconds / minute</span>
+                    <input
+                      type="number"
+                      min="1"
+                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      [value]="era.secondsPerMinute ?? ''"
+                      [disabled]="!canEdit()"
+                      [placeholder]="defaultSecondsPerMinute"
+                      (input)="updateEra(i, { secondsPerMinute: optionalInt($event) })"
+                    />
+                  </label>
+                </div>
 
-                  @if (canEdit()) {
-                    <div class="flex justify-end pl-12">
-                      <button uiDanger type="button" (click)="removeMonth(i)">Remove</button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
+                <label class="flex flex-col gap-1 pl-12 text-sm">
+                  <span class="font-medium text-slate-700">Description</span>
+                  <textarea
+                    rows="2"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                    [value]="era.description ?? ''"
+                    [disabled]="!canEdit()"
+                    (input)="updateEra(i, { description: text($event) || undefined })"
+                  ></textarea>
+                </label>
+
+                <label class="flex items-start gap-2 pl-12 text-sm">
+                  <input
+                    type="checkbox"
+                    class="mt-1"
+                    [checked]="!!era.resetsWeek"
+                    [disabled]="!canEdit()"
+                    (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
+                  />
+                  <span class="flex flex-col gap-0.5">
+                    <span class="font-medium text-slate-700">Resets weekday cycle</span>
+                    <span class="text-xs text-slate-500">
+                      Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.
+                    </span>
+                  </span>
+                </label>
+
+                @if (canEdit()) {
+                  <div class="flex justify-end pl-12">
+                    <button uiDanger type="button" (click)="removeEra(i)">Remove</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="m-0 text-base font-semibold text-slate-900">Months</h3>
+          @if (canEdit()) {
+            <button uiSecondary type="button" (click)="addMonth()">+ Add month</button>
           }
-        </section>
-      </div>
+        </div>
+
+        @if (months().length === 0) {
+          <p class="text-sm text-slate-600">No months yet.</p>
+        } @else {
+          <ul
+            cdkDropList
+            class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+            (cdkDropListDropped)="dropMonth($event)"
+          >
+            @for (month of months(); track month.id; let i = $index) {
+              <li
+                cdkDrag
+                [cdkDragDisabled]="!canEdit()"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              >
+                <div class="flex items-start gap-3">
+                  <button
+                    type="button"
+                    cdkDragHandle
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-emerald-100 text-sm font-semibold text-emerald-700"
+                    [attr.aria-label]="'Month ' + (i + 1) + ', drag to reorder'"
+                  >
+                    {{ i + 1 }}
+                  </button>
+                  <div class="grid flex-1 gap-2 grid-cols-[2fr_1fr]">
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Name</span>
+                      <input
+                        type="text"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="month.name"
+                        [disabled]="!canEdit()"
+                        (input)="updateMonth(i, { name: text($event) })"
+                      />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Days</span>
+                      <input
+                        type="number"
+                        min="1"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="month.days"
+                        [disabled]="!canEdit()"
+                        (input)="updateMonth(i, { days: requiredInt($event) })"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <label class="flex flex-col gap-1 pl-12 text-sm">
+                  <span class="font-medium text-slate-700">Description</span>
+                  <textarea
+                    rows="2"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                    [value]="month.description ?? ''"
+                    [disabled]="!canEdit()"
+                    (input)="updateMonth(i, { description: text($event) || undefined })"
+                  ></textarea>
+                </label>
+
+                @if (canEdit()) {
+                  <div class="flex justify-end pl-12">
+                    <button uiDanger type="button" (click)="removeMonth(i)">Remove</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="m-0 text-base font-semibold text-slate-900">Weekdays</h3>
+            <p class="m-0 mt-0.5 text-xs text-slate-500">
+              Order the cycle. The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
+            </p>
+          </div>
+          @if (canEdit()) {
+            <button uiSecondary type="button" (click)="addWeekday()">+ Add weekday</button>
+          }
+        </div>
+
+        @if (weekdays().length === 0) {
+          <p class="text-sm text-slate-600">No weekdays defined. Dates will render without a weekday.</p>
+        } @else {
+          <ul
+            cdkDropList
+            class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+            (cdkDropListDropped)="dropWeekday($event)"
+          >
+            @for (wd of weekdays(); track wd.id; let i = $index) {
+              <li
+                cdkDrag
+                [cdkDragDisabled]="!canEdit()"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              >
+                <div class="flex items-start gap-3">
+                  <button
+                    type="button"
+                    cdkDragHandle
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-amber-100 text-sm font-semibold text-amber-700"
+                    [attr.aria-label]="'Weekday ' + (i + 1) + ', drag to reorder'"
+                  >
+                    {{ i + 1 }}
+                  </button>
+                  <div class="grid flex-1 gap-2 grid-cols-[2fr_1fr]">
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Name</span>
+                      <input
+                        type="text"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="wd.name"
+                        [disabled]="!canEdit()"
+                        (input)="updateWeekday(i, { name: text($event) })"
+                      />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                      <span class="font-medium text-slate-700">Short</span>
+                      <input
+                        type="text"
+                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        [value]="wd.short ?? ''"
+                        [disabled]="!canEdit()"
+                        (input)="updateWeekday(i, { short: text($event) || undefined })"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                @if (canEdit()) {
+                  <div class="flex justify-end pl-12">
+                    <button uiDanger type="button" (click)="removeWeekday(i)">Remove</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -287,6 +377,7 @@ export class CalendarSettingsPanelComponent {
   protected readonly draft = signal<Calendar>(this.service.calendar());
   protected readonly eras = computed(() => this.draft().eras);
   protected readonly months = computed(() => this.draft().months);
+  protected readonly weekdays = computed<CalendarWeekday[]>(() => this.draft().weekdays ?? []);
 
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -405,8 +496,47 @@ export class CalendarSettingsPanelComponent {
     });
   }
 
+  protected addWeekday(): void {
+    this.draft.update((c) => {
+      const wds = c.weekdays ?? [];
+      const wd: CalendarWeekday = {
+        id: crypto.randomUUID(),
+        name: `Weekday ${wds.length + 1}`,
+      };
+      return { ...c, weekdays: [...wds, wd] };
+    });
+  }
+
+  protected updateWeekday(index: number, patch: Partial<CalendarWeekday>): void {
+    this.draft.update((c) => {
+      const next = [...(c.weekdays ?? [])];
+      next[index] = { ...next[index], ...patch };
+      return { ...c, weekdays: next };
+    });
+  }
+
+  protected removeWeekday(index: number): void {
+    this.draft.update((c) => ({
+      ...c,
+      weekdays: (c.weekdays ?? []).filter((_, i) => i !== index),
+    }));
+  }
+
+  protected dropWeekday(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    this.draft.update((c) => {
+      const next = [...(c.weekdays ?? [])];
+      moveItemInArray(next, event.previousIndex, event.currentIndex);
+      return { ...c, weekdays: next };
+    });
+  }
+
   protected text(event: Event): string {
     return (event.target as HTMLInputElement).value;
+  }
+
+  protected checked(event: Event): boolean {
+    return (event.target as HTMLInputElement).checked;
   }
 
   protected optionalInt(event: Event): number | undefined {
@@ -425,7 +555,15 @@ export class CalendarSettingsPanelComponent {
 
 function sameCalendar(a: Calendar, b: Calendar): boolean {
   return (
-    JSON.stringify({ eras: a.eras, months: a.months }) ===
-    JSON.stringify({ eras: b.eras, months: b.months })
+    JSON.stringify({
+      eras: a.eras,
+      months: a.months,
+      weekdays: a.weekdays ?? [],
+    }) ===
+    JSON.stringify({
+      eras: b.eras,
+      months: b.months,
+      weekdays: b.weekdays ?? [],
+    })
   );
 }

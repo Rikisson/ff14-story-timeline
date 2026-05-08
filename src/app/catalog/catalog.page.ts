@@ -129,6 +129,7 @@ export class CatalogPage {
         monthName: s.inGameDate.month
           ? this.calendar.monthNameLookup(s.inGameDate.month)
           : undefined,
+        weekdayName: this.calendar.weekdayLookup(s.inGameDate),
       }) || undefined
     );
   }

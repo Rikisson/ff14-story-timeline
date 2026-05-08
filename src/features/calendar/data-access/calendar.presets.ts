@@ -23,6 +23,7 @@ export const FF14_CALENDAR_PRESET: Calendar = {
       minutesPerHour: 60,
       secondsPerMinute: 60,
       description: 'Born from the fall of Dalamud.',
+      resetsWeek: true,
     },
   ],
   months: [
@@ -38,6 +39,16 @@ export const FF14_CALENDAR_PRESET: Calendar = {
     { id: 'month-ff14-5-umbral', name: '5th Umbral Moon', days: 32 },
     { id: 'month-ff14-6-astral', name: '6th Astral Moon', days: 32 },
     { id: 'month-ff14-6-umbral', name: '6th Umbral Moon', days: 32 },
+  ],
+  weekdays: [
+    { id: 'weekday-ff14-sun', name: 'Sun Day', short: 'Sun' },
+    { id: 'weekday-ff14-moon', name: 'Moon Day', short: 'Moon' },
+    { id: 'weekday-ff14-fire', name: 'Fire Day', short: 'Fire' },
+    { id: 'weekday-ff14-earth', name: 'Earth Day', short: 'Earth' },
+    { id: 'weekday-ff14-water', name: 'Water Day', short: 'Water' },
+    { id: 'weekday-ff14-wind', name: 'Wind Day', short: 'Wind' },
+    { id: 'weekday-ff14-ice', name: 'Ice Day', short: 'Ice' },
+    { id: 'weekday-ff14-lightning', name: 'Lightning Day', short: 'Lightning' },
   ],
 };
 
@@ -68,11 +79,21 @@ export const EARTH_CALENDAR_PRESET: Calendar = {
     { id: 'month-earth-nov', name: 'November', days: 30 },
     { id: 'month-earth-dec', name: 'December', days: 31 },
   ],
+  weekdays: [
+    { id: 'weekday-earth-sun', name: 'Sunday', short: 'Sun' },
+    { id: 'weekday-earth-mon', name: 'Monday', short: 'Mon' },
+    { id: 'weekday-earth-tue', name: 'Tuesday', short: 'Tue' },
+    { id: 'weekday-earth-wed', name: 'Wednesday', short: 'Wed' },
+    { id: 'weekday-earth-thu', name: 'Thursday', short: 'Thu' },
+    { id: 'weekday-earth-fri', name: 'Friday', short: 'Fri' },
+    { id: 'weekday-earth-sat', name: 'Saturday', short: 'Sat' },
+  ],
 };
 
 export function withFreshCalendarIds(calendar: Calendar): Calendar {
   return {
     eras: calendar.eras.map((e) => ({ ...e, id: crypto.randomUUID() })),
     months: calendar.months.map((m) => ({ ...m, id: crypto.randomUUID() })),
+    weekdays: calendar.weekdays?.map((w) => ({ ...w, id: crypto.randomUUID() })),
   };
 }

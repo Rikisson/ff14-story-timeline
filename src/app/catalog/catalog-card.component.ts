@@ -171,6 +171,7 @@ export class CatalogCardComponent {
     return formatInGameDate(d, {
       eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
       monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
+      weekdayName: this.calendar.weekdayLookup(d),
     });
   });
 

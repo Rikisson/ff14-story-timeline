@@ -10,8 +10,16 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { doc, getDoc, setDoc } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
+import { InGameDate } from '@shared/models';
+import { getWeekdayIndex } from '@shared/utils';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { Calendar, CalendarEra, CalendarMonth, EMPTY_CALENDAR } from './calendar.types';
+import {
+  Calendar,
+  CalendarEra,
+  CalendarMonth,
+  CalendarWeekday,
+  EMPTY_CALENDAR,
+} from './calendar.types';
 
 const CALENDAR_DOC = 'calendar';
 
@@ -30,6 +38,7 @@ export class CalendarService {
 
   readonly eras = computed<CalendarEra[]>(() => this._calendar().eras);
   readonly months = computed<CalendarMonth[]>(() => this._calendar().months);
+  readonly weekdays = computed<CalendarWeekday[]>(() => this._calendar().weekdays ?? []);
 
   readonly eraOrdinalById = computed(() => {
     const map = new Map<string, number>();
@@ -53,6 +62,18 @@ export class CalendarService {
   readonly eraNameLookup = (id: string): string | undefined => this.eraNameById().get(id);
   readonly monthNameLookup = (month: number): string | undefined =>
     this.monthNameByIndex().get(month);
+
+  readonly weekdayLookup = (d: InGameDate | null | undefined): string | undefined => {
+    const cal = this._calendar();
+    const wds = cal.weekdays ?? [];
+    if (wds.length === 0) return undefined;
+    const idx = getWeekdayIndex(d, {
+      eras: cal.eras,
+      months: cal.months,
+      weekdayCount: wds.length,
+    });
+    return idx === null ? undefined : wds[idx]?.name;
+  };
 
   private readonly _refreshError = signal<string | null>(null);
   readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();

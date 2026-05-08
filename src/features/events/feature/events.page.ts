@@ -135,6 +135,7 @@ export class EventsPage {
         monthName: e.inGameDate.month
           ? this.calendar.monthNameLookup(e.inGameDate.month)
           : undefined,
+        weekdayName: this.calendar.weekdayLookup(e.inGameDate),
       }) || undefined
     );
   }

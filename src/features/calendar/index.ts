@@ -5,6 +5,7 @@ export type {
   Calendar,
   CalendarEra,
   CalendarMonth,
+  CalendarWeekday,
 } from './data-access/calendar.types';
 export {
   EMPTY_CALENDAR,

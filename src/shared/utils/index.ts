@@ -20,8 +20,12 @@ export type {
 export { renderMarkdown, renderMarkdownInline } from './markdown';
 export type { MarkdownRefOption } from './markdown';
 export { markdownToTiptapHtml, tiptapJsonToMarkdown } from './tiptap-markdown';
-export { compareInGameDate, formatInGameDate } from './in-game-date';
-export type { EraOrdinalLookup, FormatInGameDateOptions } from './in-game-date';
+export { compareInGameDate, formatInGameDate, getWeekdayIndex } from './in-game-date';
+export type {
+  EraOrdinalLookup,
+  FormatInGameDateOptions,
+  WeekdayResolveOptions,
+} from './in-game-date';
 export {
   INLINE_REF_BASE_CLASS,
   KIND_PICKER_CLASS,

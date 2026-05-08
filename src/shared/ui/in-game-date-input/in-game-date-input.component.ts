@@ -195,6 +195,7 @@ export class InGameDateInputComponent {
     return formatInGameDate(v, {
       eraName: v.era ? this.calendar.eraNameLookup(v.era) : undefined,
       monthName: v.month ? this.calendar.monthNameLookup(v.month) : undefined,
+      weekdayName: this.calendar.weekdayLookup(v),
     }) || null;
   });
 
