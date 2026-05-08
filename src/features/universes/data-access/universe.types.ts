@@ -4,7 +4,6 @@ export interface Universe {
   name: string;
   description?: string;
   coverImage?: string;
-  tags?: string[];
   ownerUid: string;
   editorUids: string[];
   createdAt: number;
