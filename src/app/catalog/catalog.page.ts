@@ -2,9 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthStore } from '@features/auth';
-import { StoriesService } from '@features/stories';
+import { CalendarService } from '@features/calendar';
+import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
+import { isInGameDateEmpty } from '@shared/models';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import { formatInGameDate } from '@shared/utils';
 import {
   CatalogFiltersComponent,
   CatalogFilters,
@@ -80,6 +83,7 @@ export class CatalogPage {
   private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly calendar = inject(CalendarService);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly canCreate = computed(
@@ -109,11 +113,23 @@ export class CatalogPage {
     this.filteredStories().map((s) => ({
       id: s.id,
       label: s.title || 'Untitled',
-      secondary: s.description || undefined,
+      secondary: this.formatDateLabel(s),
       thumbnailUrl: s.coverImage || undefined,
       badge: s.draft ? { text: 'Draft', tone: 'amber' } : undefined,
     })),
   );
+
+  private formatDateLabel(s: Story): string | undefined {
+    if (isInGameDateEmpty(s.inGameDate)) return undefined;
+    return (
+      formatInGameDate(s.inGameDate, {
+        eraName: s.inGameDate.era ? this.calendar.eraNameLookup(s.inGameDate.era) : undefined,
+        monthName: s.inGameDate.month
+          ? this.calendar.monthNameLookup(s.inGameDate.month)
+          : undefined,
+      }) || undefined
+    );
+  }
 
   constructor() {
     effect(() => {

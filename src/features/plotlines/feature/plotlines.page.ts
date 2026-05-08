@@ -4,7 +4,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { createEntityListController } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
-import { Plotline, PlotlineDraft } from '../data-access/plotline.types';
+import {
+  PLOTLINE_STATUS_LABEL,
+  Plotline,
+  PlotlineDraft,
+} from '../data-access/plotline.types';
 import { PlotlineCardComponent } from '../ui/plotline-card.component';
 import { PlotlineFormComponent } from '../ui/plotline-form.component';
 
@@ -90,7 +94,7 @@ export class PlotlinesPage {
     this.plotlines().map((p) => ({
       id: p.id,
       label: p.title,
-      secondary: p.status,
+      secondary: p.status ? PLOTLINE_STATUS_LABEL[p.status] : undefined,
     })),
   );
 

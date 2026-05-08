@@ -88,9 +88,9 @@ export class PlacesPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.places().map((p) => {
-      const firstPlace = (p.relatedRefs ?? []).find((r) => r.kind === 'place');
-      const secondary = firstPlace
-        ? this.entityResolver.resolve(firstPlace)?.name
+      const firstRef = (p.relatedRefs ?? [])[0];
+      const secondary = firstRef
+        ? this.entityResolver.resolve(firstRef)?.name
         : undefined;
       return {
         id: p.id,

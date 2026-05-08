@@ -105,9 +105,9 @@ export class CharactersPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.characters().map((c) => {
-      const firstCodex = (c.relatedRefs ?? []).find((r) => r.kind === 'codexEntry');
-      const secondary = firstCodex
-        ? this.entityResolver.resolve(firstCodex)?.name
+      const firstRef = (c.relatedRefs ?? [])[0];
+      const secondary = firstRef
+        ? this.entityResolver.resolve(firstRef)?.name
         : undefined;
       return {
         id: c.id,

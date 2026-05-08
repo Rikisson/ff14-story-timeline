@@ -1,5 +1,11 @@
 export type PlotlineStatus = 'planned' | 'active' | 'resolved';
 
+export const PLOTLINE_STATUS_LABEL: Record<PlotlineStatus, string> = {
+  planned: 'Planned',
+  active: 'Active',
+  resolved: 'Resolved',
+};
+
 export interface Plotline {
   id: string;
   slug: string;

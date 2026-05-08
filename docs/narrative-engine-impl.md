@@ -123,6 +123,14 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
   / `body` / per-aspect (personality, motivation, atmosphere)
   variants — authors do not reliably curate two prose surfaces, and
   consumer-side truncation is cheap.
+- **List-pane secondary line is per-entity:**
+  - **Character / Place**: first `relatedRefs` entry's resolved name —
+    any kind. Author controls the slot by ordering relatedRefs in the
+    picker.
+  - **Story / Event**: formatted in-game date (resolved through the
+    calendar config).
+  - **Plotline**: capitalized `status` label.
+  - **Codex**: `category` string.
 
 ## Inline-ref tokens
 
@@ -156,6 +164,24 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
   A speaker that is an `EntityRef<'character'>` not present in
   `characters[]` triggers a visible editor prompt rather than silently
   mutating the array.
+
+## Codex categories
+
+- **Per-universe config** at `universes/{u}/_meta/codex_categories`,
+  managed via the *Categories* page (`/codex/settings`). Each entry:
+  `{ id, label, color?, description? }`.
+- **Codex chip color** resolves through this config via
+  case-insensitive lookup on the entry's `category` string. Entries
+  whose category isn't in the config render with the default chip
+  styling.
+- **Codex form snaps to canonical labels** on save. When the typed
+  category matches an existing config label case-insensitively, the
+  stored string is replaced with the canonical label. New strings pass
+  through as free-form categories — authors aren't blocked from
+  creating ad-hoc categories that aren't in the config yet.
+- **No uniqueness validation** in the constructor. Duplicate labels are
+  the author's responsibility; the visible card grid makes them easy to
+  spot.
 
 ## Story persistence
 

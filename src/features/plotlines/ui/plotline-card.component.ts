@@ -1,12 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DangerButtonComponent, GhostButtonComponent, TagComponent, TagTone } from '@shared/ui';
-import { Plotline, PlotlineStatus } from '../data-access/plotline.types';
-
-const STATUS_LABEL: Record<PlotlineStatus, string> = {
-  planned: 'Planned',
-  active: 'Active',
-  resolved: 'Resolved',
-};
+import { PLOTLINE_STATUS_LABEL, Plotline, PlotlineStatus } from '../data-access/plotline.types';
 
 const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
   planned: 'neutral',
@@ -57,6 +51,6 @@ export class PlotlineCardComponent {
   protected readonly statusInfo = computed(() => {
     const s = this.plotline().status;
     if (!s) return null;
-    return { label: STATUS_LABEL[s], tone: STATUS_TONE[s] };
+    return { label: PLOTLINE_STATUS_LABEL[s], tone: STATUS_TONE[s] };
   });
 }
