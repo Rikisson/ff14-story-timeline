@@ -44,10 +44,13 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
   template: `
     <div class="flex h-full flex-col gap-4">
       <app-page-header
-        title="Codex settings"
-        subtitle="Define the categories codex entries are organised under. Authors can still type free-form categories on the entry form; pickers surface the canonical set defined here."
+        title="Categories"
+        subtitle="Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set."
       >
         <div class="flex flex-wrap items-center gap-2">
+          @if (canEdit()) {
+            <button uiSecondary type="button" (click)="addCategory()">+ Add category</button>
+          }
           @if (dirty()) {
             <span class="text-sm text-amber-700">Unsaved changes</span>
           }
@@ -68,67 +71,53 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
         <p class="m-0 text-sm text-red-700">{{ e }}</p>
       }
 
-      <section class="flex min-h-0 flex-1 flex-col gap-3">
-        <div class="flex shrink-0 items-center justify-between gap-3">
-          <h2 class="m-0 text-lg font-semibold text-slate-900">Categories</h2>
-          @if (canEdit()) {
-            <button uiSecondary type="button" (click)="addCategory()">+ Add category</button>
-          }
-        </div>
-
-        @if (categories().length === 0) {
-          <p class="text-sm text-slate-600">No categories yet.</p>
-        } @else {
-          <ul class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
-            @for (cat of categories(); track cat.id; let i = $index) {
-              <li
-                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-              >
-                <div class="grid gap-2 sm:grid-cols-[2fr_auto_1fr_auto]">
-                  <label class="flex flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Label</span>
-                    <input
-                      type="text"
-                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                      [value]="cat.label"
-                      [disabled]="!canEdit()"
-                      placeholder="e.g. Race"
-                      (input)="updateCategory(i, { label: text($event) })"
-                    />
-                  </label>
-                  <label class="flex flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Color</span>
-                    <input
-                      type="color"
-                      class="h-10 w-16 cursor-pointer rounded-md border border-slate-300 bg-white p-1"
-                      [value]="cat.color ?? '#64748b'"
-                      [disabled]="!canEdit()"
-                      aria-label="Color"
-                      (input)="updateCategory(i, { color: text($event) })"
-                    />
-                  </label>
-                  <label class="flex flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Description (optional)</span>
-                    <input
-                      type="text"
-                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                      [value]="cat.description ?? ''"
-                      [disabled]="!canEdit()"
-                      placeholder="Author hint shown alongside the picker"
-                      (input)="updateCategory(i, { description: text($event) || undefined })"
-                    />
-                  </label>
-                  @if (canEdit()) {
-                    <div class="flex items-end">
-                      <button uiDanger type="button" (click)="removeCategory(i)">Remove</button>
-                    </div>
-                  }
+      @if (categories().length === 0) {
+        <p class="text-sm text-slate-600">No categories yet.</p>
+      } @else {
+        <ul
+          class="grid min-h-0 list-none gap-3 overflow-y-auto p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
+          @for (cat of categories(); track cat.id; let i = $index) {
+            <li
+              class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+            >
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  class="h-10 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                  [value]="cat.label"
+                  [disabled]="!canEdit()"
+                  placeholder="Label"
+                  aria-label="Label"
+                  (input)="updateCategory(i, { label: text($event) })"
+                />
+                <input
+                  type="color"
+                  class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-slate-300 bg-white p-1"
+                  [value]="cat.color ?? '#64748b'"
+                  [disabled]="!canEdit()"
+                  aria-label="Color"
+                  (input)="updateCategory(i, { color: text($event) })"
+                />
+              </div>
+              <input
+                type="text"
+                class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                [value]="cat.description ?? ''"
+                [disabled]="!canEdit()"
+                placeholder="Description (optional)"
+                aria-label="Description"
+                (input)="updateCategory(i, { description: text($event) || undefined })"
+              />
+              @if (canEdit()) {
+                <div class="mt-auto flex justify-end">
+                  <button uiDanger type="button" (click)="removeCategory(i)">Remove</button>
                 </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+              }
+            </li>
+          }
+        </ul>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
