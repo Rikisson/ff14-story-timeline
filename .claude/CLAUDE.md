@@ -11,6 +11,8 @@ If a request conflicts with documented rules or architecture:
 - Explain it briefly
 - Ask whether to proceed or adjust the request
 
+When updating these docs, rewrite affected sections naturally as if writing them for the first time. Don't append "(updated)" markers, dated change notes, or bolt-on patch bullets that read as additions — the reader should not be able to tell which sentence shipped first. This applies unless the user explicitly asks for an additive change.
+
 ## General Guidelines
 
 - Prefer minimal, scoped changes that solve the task directly

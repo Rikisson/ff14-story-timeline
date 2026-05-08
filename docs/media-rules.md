@@ -27,7 +27,14 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 - Asset metadata lives in a central per-universe collection: `universes/{u}/_assets/{assetId}`. One doc per uploaded asset.
 - Asset doc shape: `{ id, kind, url, label, blurDataUrl?, tags?, authorUid, createdAt, updatedAt? }`. `kind` matches the value used in the storage path.
-- Entities reference assets by ID, never by URL. Per-entity collections are `string[]` of asset IDs (e.g. `Character.portraits`, `Place.backgrounds`, `Place.ambientAudio`); single-asset slots are scalar IDs (e.g. `Universe.coverAssetId`, `StagedCharacter.portraitId`).
+- The v1 asset kind set:
+  - `cover` — single decorative image per entity (cards, headers).
+  - `sprite` — staged character image with alpha; swappable by mood, pose, expression, or outfit.
+  - `background` — full-frame scene backdrop.
+  - `ambient` — looping audio.
+  - `sfx` — one-shot audio (voice, barks, environmental sounds).
+- New kinds slot in additively without schema changes; pickers filter on the same field.
+- Entities reference assets by ID, never by URL. Per-entity collections are `string[]` of asset IDs (e.g. `Character.sprites`, `Place.backgrounds`, `Place.ambientAudio`); single-asset slots are scalar IDs (e.g. `Universe.coverAssetId`, `StagedCharacter.spriteId`).
 - Asset tags are `string[]` on the asset doc, free-form. No enums.
 
 ## Editor
@@ -49,6 +56,7 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 Open changes. Remove items as they ship.
 
-- Build the central `_assets/{assetId}` collection per universe and the upload service that writes the doc and binary atomically. Reshape `Character.portraits`, scene background/audio fields, and any `coverImage` URL fields into asset-ID references (no media data exists yet — code-only change).
+- Build the central `_assets/{assetId}` collection per universe and the upload service that writes the doc and binary atomically. Reshape `Character.sprites`, scene background/audio fields, and any `coverImage` URL fields into asset-ID references (no media data exists yet — code-only change).
+- Rename the `portrait` kind to `sprite` across schema, storage path, and code (currently `Character.portraits`, `StagedCharacter.portraitId`, storage path `portrait/`, all editor labels). Aligns with the v1 kind set.
 - Universe asset library picker: thumbnail grid for images, list view for audio, filter by `kind` and tags. Reused on every owner-entity edit page.
 - Cover image upload across all entity kinds (Universe, Story, Characters, Places, Events, Plotlines, Codex), driven by the picker above.
