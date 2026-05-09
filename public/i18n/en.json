@@ -67,7 +67,8 @@
       "loadingUniverses": "Loading universes…",
       "landingPickTitle": "Pick a universe",
       "landingPickHint": "Use the universe menu in the top-left to choose what to read.",
-      "landingSignInHint": "Sign in if you'd like to author or edit."
+      "landingSignInHint": "Sign in if you'd like to author or edit.",
+      "tiptapRefHint": "Type ${ for entity refs"
     },
     "empty": {
       "landingNoUniversesTitle": "No universes available",
@@ -79,11 +80,15 @@
       "searchRelated": "Search characters, places, codex entries…",
       "noRelatedAvailable": "Nothing else in this universe yet.",
       "searchPlotlines": "Search plotlines…",
-      "noPlotlines": "No plotlines yet."
+      "noPlotlines": "No plotlines yet.",
+      "tiptapNoMatches": "No matches"
     },
     "tooltip": {
       "loadingPage": "Loading page",
       "descriptionAria": "Description",
+      "tiptapToolbar": "{{ field }} formatting",
+      "tiptapBold": "Bold (Ctrl+B)",
+      "tiptapItalic": "Italic (Ctrl+I)",
       "themeAria": "Theme: {{ pref }}. Click to change.",
       "themeSystem": "System theme (click for light)",
       "themeLight": "Light theme (click for dark)",

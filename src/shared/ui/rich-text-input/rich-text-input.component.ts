@@ -3,6 +3,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -13,6 +14,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Editor } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
 import Document from '@tiptap/extension-document';
@@ -29,46 +31,49 @@ import { RefSuggestion } from './ref-suggestion.extension';
 
 @Component({
   selector: 'app-rich-text-input',
+  imports: [TranslocoDirective],
   template: `
-    <div
-      class="flex flex-col gap-1 rounded-md border border-border-strong bg-surface"
-      [class.opacity-60]="!ready()"
-    >
+    <ng-container *transloco="let t; prefix: 'general'">
       <div
-        class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1"
-        role="toolbar"
-        [attr.aria-label]="ariaLabel() ? ariaLabel() + ' formatting' : null"
+        class="flex flex-col gap-1 rounded-md border border-border-strong bg-surface"
+        [class.opacity-60]="!ready()"
       >
-        <button
-          type="button"
-          class="rounded px-2 py-1 text-sm font-semibold text-foreground hover:bg-surface-muted"
-          [class.bg-surface-strong]="boldActive()"
-          [attr.aria-pressed]="boldActive()"
-          aria-label="Bold (Ctrl+B)"
-          (click)="toggleBold()"
+        <div
+          class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1"
+          role="toolbar"
+          [attr.aria-label]="toolbarAriaLabel()"
         >
-          B
-        </button>
-        <button
-          type="button"
-          class="rounded px-2 py-1 text-sm italic text-foreground hover:bg-surface-muted"
-          [class.bg-surface-strong]="italicActive()"
-          [attr.aria-pressed]="italicActive()"
-          aria-label="Italic (Ctrl+I)"
-          (click)="toggleItalic()"
-        >
-          I
-        </button>
-        <span class="ml-auto text-xs text-foreground-faint">
-          Type <code>$&#123;</code> for entity refs
-        </span>
+          <button
+            type="button"
+            class="rounded px-2 py-1 text-sm font-semibold text-foreground hover:bg-surface-muted"
+            [class.bg-surface-strong]="boldActive()"
+            [attr.aria-pressed]="boldActive()"
+            [attr.aria-label]="t('tooltip.tiptapBold')"
+            (click)="toggleBold()"
+          >
+            B
+          </button>
+          <button
+            type="button"
+            class="rounded px-2 py-1 text-sm italic text-foreground hover:bg-surface-muted"
+            [class.bg-surface-strong]="italicActive()"
+            [attr.aria-pressed]="italicActive()"
+            [attr.aria-label]="t('tooltip.tiptapItalic')"
+            (click)="toggleItalic()"
+          >
+            I
+          </button>
+          <span class="ml-auto text-xs text-foreground-faint">
+            {{ t('message.tiptapRefHint') }}
+          </span>
+        </div>
+        <div
+          #host
+          class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-accent-ring"
+          [attr.aria-label]="ariaLabel() || null"
+        ></div>
       </div>
-      <div
-        #host
-        class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-accent-ring"
-        [attr.aria-label]="ariaLabel() || null"
-      ></div>
-    </div>
+    </ng-container>
   `,
   styles: `
     :host {
@@ -107,6 +112,7 @@ export class RichTextInputComponent {
   private readonly hostRef = viewChild.required<ElementRef<HTMLDivElement>>('host');
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly transloco = inject(TranslocoService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private editor: Editor | null = null;
@@ -116,6 +122,12 @@ export class RichTextInputComponent {
   protected readonly ready = signal(false);
   protected readonly boldActive = signal(false);
   protected readonly italicActive = signal(false);
+
+  protected readonly toolbarAriaLabel = computed(() => {
+    const field = this.ariaLabel();
+    if (!field) return null;
+    return this.transloco.translate('general.tooltip.tiptapToolbar', { field });
+  });
 
   constructor() {
     if (this.isBrowser) {
@@ -148,6 +160,9 @@ export class RichTextInputComponent {
 
   private initEditor(): void {
     const initialMd = this.value();
+    const renderer = createSuggestionRender({
+      getNoMatchesLabel: () => this.transloco.translate('general.empty.tiptapNoMatches'),
+    });
     this.editor = new Editor({
       element: this.hostRef().nativeElement,
       extensions: [
@@ -162,7 +177,7 @@ export class RichTextInputComponent {
         EntityRefNode,
         RefSuggestion.configure({
           optionsRef: this.optionsRef,
-          renderFactory: createSuggestionRender,
+          renderFactory: () => renderer,
         }),
       ],
       content: markdownToTiptapHtml(initialMd),

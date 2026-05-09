@@ -10,10 +10,13 @@ const ITEM_BASE_CLASS =
   'text-foreground hover:bg-surface-muted';
 const ITEM_ACTIVE_CLASS = 'bg-accent-soft';
 
-export function createSuggestionRender(): SuggestionOptions<
-  InlineRefOption,
-  EntityRefAttrs
->['render'] {
+export interface SuggestionRenderOptions {
+  getNoMatchesLabel: () => string;
+}
+
+export function createSuggestionRender(
+  opts: SuggestionRenderOptions,
+): SuggestionOptions<InlineRefOption, EntityRefAttrs>['render'] {
   return () => {
     let popup: HTMLDivElement | null = null;
     let items: InlineRefOption[] = [];
@@ -26,7 +29,7 @@ export function createSuggestionRender(): SuggestionOptions<
       if (items.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'm-0 px-2 py-1 italic text-foreground-faint';
-        empty.textContent = 'No matches';
+        empty.textContent = opts.getNoMatchesLabel();
         popup.appendChild(empty);
         return;
       }

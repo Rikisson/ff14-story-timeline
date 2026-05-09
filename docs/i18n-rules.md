@@ -182,13 +182,22 @@ through DOM inheritance.
 
 ## Third-party UI strings
 
-- **Tiptap** — toolbar tooltips and bubble-menu commands route through
-  transloco at the integration component, under `editor.tiptap.*`.
-- **Rete** — node and socket labels are authored by us; they translate
-  at the rendering layer under `editor.rete.*`.
-- **Firebase Auth** — error codes pass through a thin translator that
-  maps to `auth.message.*`. We never display the SDK's English strings
-  directly.
+- **Tiptap** — toolbar aria-labels, the entity-ref hint, and the
+  suggestion popup's empty-state copy live under `general.tooltip.tiptap*`
+  / `general.message.tiptapRefHint` / `general.empty.tiptapNoMatches`.
+  The widget is in `@shared/ui/rich-text-input`, so the strings sit in
+  `general` rather than the `editor` scope. The suggestion renderer
+  takes a `getNoMatchesLabel: () => string` callback so it picks up
+  the active locale on each popup render.
+- **Rete** — our scene-graph integration is data-driven (node labels
+  come from `scene.label` / `shortId`, sockets are unlabeled), so
+  there are no rete-owned chrome strings to translate today. Adopt a
+  scoped `editor.rete.*` group when we add labelled sockets or
+  inspector chrome.
+- **Firebase Auth** — error codes pass through `translateFirebaseAuthError`
+  in `@features/auth`, which maps known codes to `auth.message.*`
+  keys (with `errorGeneric` as a `{{ code }}` fallback). The SDK's
+  English `.message` is never displayed.
 
 ## Static prerender
 
@@ -274,9 +283,5 @@ When adding or refactoring translations:
 
 Open changes. Remove items as they ship.
 
-## Third-party libraries
-
-- Tiptap toolbar / bubble menu / suggestion menu strings routed
-  through transloco at the integration layer (`editor.tiptap.*`).
-- Rete node and socket labels translated at the render component
-  (`editor.rete.*`).
+*(Empty — every shipped i18n pass is currently reflected in the rules
+above.)*

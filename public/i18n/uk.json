@@ -67,7 +67,8 @@
       "loadingUniverses": "Завантаження всесвітів…",
       "landingPickTitle": "Оберіть всесвіт",
       "landingPickHint": "Скористайтеся меню всесвітів у верхньому лівому куті, щоб обрати, що читати.",
-      "landingSignInHint": "Увійдіть, щоб мати змогу створювати або редагувати."
+      "landingSignInHint": "Увійдіть, щоб мати змогу створювати або редагувати.",
+      "tiptapRefHint": "Введіть ${ для посилань на сутності"
     },
     "empty": {
       "landingNoUniversesTitle": "Немає доступних всесвітів",
@@ -79,11 +80,15 @@
       "searchRelated": "Шукати персонажів, місця, записи кодексу…",
       "noRelatedAvailable": "У цьому всесвіті більше нічого немає.",
       "searchPlotlines": "Шукати сюжетні лінії…",
-      "noPlotlines": "Поки немає сюжетних ліній."
+      "noPlotlines": "Поки немає сюжетних ліній.",
+      "tiptapNoMatches": "Немає збігів"
     },
     "tooltip": {
       "loadingPage": "Завантаження сторінки",
       "descriptionAria": "Опис",
+      "tiptapToolbar": "Форматування поля «{{ field }}»",
+      "tiptapBold": "Жирний (Ctrl+B)",
+      "tiptapItalic": "Курсив (Ctrl+I)",
       "themeAria": "Тема: {{ pref }}. Натисніть, щоб змінити.",
       "themeSystem": "Системна тема (натисніть для світлої)",
       "themeLight": "Світла тема (натисніть для темної)",
