@@ -9,39 +9,39 @@ import { UniverseDraft } from '../data-access/universe.types';
   template: `
     <form
       [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm"
+      class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
       (ngSubmit)="onSubmit()"
     >
-      <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">Create universe</h3>
+      <h3 class="m-0 text-base font-semibold text-foreground">Create universe</h3>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700 dark:text-slate-300">Slug</span>
+          <span class="font-medium text-foreground-muted">Slug</span>
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. ff14-canon"
           />
-          <span class="text-xs text-slate-500 dark:text-slate-400">Lowercase, hyphens. Globally unique.</span>
+          <span class="text-xs text-foreground-faint">Lowercase, hyphens. Globally unique.</span>
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700 dark:text-slate-300">Name</span>
+          <span class="font-medium text-foreground-muted">Name</span>
           <input
             type="text"
             formControlName="name"
-            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. FF14 Canon"
           />
         </label>
       </div>
 
       <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700 dark:text-slate-300">Description (optional)</span>
+        <span class="font-medium text-foreground-muted">Description (optional)</span>
         <textarea
           formControlName="description"
           rows="3"
-          class="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 py-2 text-sm"
+          class="rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-2 text-sm"
         ></textarea>
       </label>
 

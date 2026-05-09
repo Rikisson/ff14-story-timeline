@@ -18,11 +18,11 @@ import { AssetPickerComponent } from './asset-picker.component';
   template: `
     <div class="flex flex-col gap-2">
       @if (label(); as l) {
-        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ l }}</span>
+        <span class="text-sm font-medium text-foreground-muted">{{ l }}</span>
       }
       @if (url(); as u) {
         <div
-          class="relative aspect-video w-full overflow-hidden rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+          class="relative aspect-video w-full overflow-hidden rounded border border-border bg-surface-muted"
         >
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>

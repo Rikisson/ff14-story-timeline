@@ -7,22 +7,22 @@ import { EntityRefHoverService } from './entity-ref-hover.service';
   template: `
     <div
       role="tooltip"
-      class="pointer-events-auto max-w-xs rounded-md border border-slate-200 bg-white p-3 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900"
+      class="pointer-events-auto max-w-xs rounded-md border border-border bg-surface p-3 text-sm shadow-lg"
       (mouseenter)="hover.cancelClose()"
       (mouseleave)="hover.scheduleClose()"
     >
-      <p class="m-0 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      <p class="m-0 text-[0.65rem] font-semibold uppercase tracking-wide text-foreground-faint">
         {{ kindLabel() }}
       </p>
       @if (resolved(); as r) {
-        <p class="m-0 mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ r.name }}</p>
+        <p class="m-0 mt-0.5 text-sm font-semibold text-foreground">{{ r.name }}</p>
         @if (r.description; as d) {
-          <p class="m-0 mt-2 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+          <p class="m-0 mt-2 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-foreground-muted">
             {{ d }}
           </p>
         }
       } @else {
-        <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">Unresolved reference</p>
+        <p class="m-0 mt-1 text-sm text-foreground-faint">Unresolved reference</p>
       }
     </div>
   `,

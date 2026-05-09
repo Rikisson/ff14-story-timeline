@@ -14,14 +14,14 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
   ],
   template: `
     <section class="flex flex-col gap-4">
-      <h4 class="m-0 text-sm font-semibold text-slate-700 dark:text-slate-300">Assets</h4>
+      <h4 class="m-0 text-sm font-semibold text-foreground-muted">Assets</h4>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
           Background
         </label>
         @if (backgroundUrl(); as bg) {
-          <div class="relative aspect-video w-full overflow-hidden rounded border border-slate-200 dark:border-slate-700">
+          <div class="relative aspect-video w-full overflow-hidden rounded border border-border">
             <img [ngSrc]="bg" alt="Scene background" fill class="object-cover" />
           </div>
           <div class="flex gap-2">
@@ -43,7 +43,7 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Audio</label>
+        <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">Audio</label>
         @if (audioUrl(); as a) {
           <audio class="w-full" controls preload="none" [src]="a"></audio>
           <div class="flex gap-2">

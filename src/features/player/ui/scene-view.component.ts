@@ -20,7 +20,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
   imports: [NgOptimizedImage, MarkdownTextComponent],
   template: `
     <article
-      class="relative flex flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+      class="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
     >
       @if (background(); as bg) {
         <div class="relative aspect-video w-full">
@@ -29,7 +29,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
       }
 
       @if (staged().length > 0) {
-        <div class="grid grid-cols-3 gap-2 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div class="grid grid-cols-3 gap-2 border-b border-border px-4 py-3">
           @for (slot of slots; track slot) {
             <div class="flex flex-wrap items-end justify-center gap-2">
               @for (s of stagedFor(slot); track s.id) {
@@ -43,16 +43,16 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                       [alt]="s.name"
                       width="120"
                       height="120"
-                      class="size-24 rounded-md border border-slate-200 dark:border-slate-700 object-cover"
+                      class="size-24 rounded-md border border-border object-cover"
                     />
                   } @else {
                     <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-400 dark:text-slate-500"
+                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-slate-400 dark:text-slate-500"
                     >
                       no sprite
                     </div>
                   }
-                  <figcaption class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <figcaption class="text-xs font-medium text-foreground-muted">
                     {{ s.name }}
                   </figcaption>
                 </figure>
@@ -69,16 +69,16 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                       [alt]="s.name"
                       width="120"
                       height="120"
-                      class="size-24 rounded-md border border-slate-200 dark:border-slate-700 object-cover"
+                      class="size-24 rounded-md border border-border object-cover"
                     />
                   } @else {
                     <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-400 dark:text-slate-500"
+                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-slate-400 dark:text-slate-500"
                     >
                       no sprite
                     </div>
                   }
-                  <figcaption class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <figcaption class="text-xs font-medium text-foreground-muted">
                     {{ s.name }}
                   </figcaption>
                 </figure>
@@ -90,10 +90,10 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
 
       <div class="flex flex-col gap-2 px-5 py-4">
         @if (speaker(); as s) {
-          <p class="m-0 text-sm font-semibold text-slate-700 dark:text-slate-300">{{ s }}</p>
+          <p class="m-0 text-sm font-semibold text-foreground-muted">{{ s }}</p>
         }
         <app-markdown-text
-          class="text-base leading-relaxed text-slate-900 dark:text-slate-100"
+          class="text-base leading-relaxed text-foreground"
           [text]="text()"
           [options]="inlineRefOptions()"
         />

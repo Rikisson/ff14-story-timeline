@@ -24,7 +24,7 @@ const PAGE_STEP = 25;
   template: `
     <div class="flex flex-col gap-6">
       @if (selectedPlotlineIds().length > 0) {
-        <label class="flex items-center gap-2 self-start text-sm text-slate-700 dark:text-slate-300">
+        <label class="flex items-center gap-2 self-start text-sm text-foreground-muted">
           <input
             type="checkbox"
             [checked]="showUnassigned()"

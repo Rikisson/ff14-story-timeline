@@ -36,7 +36,7 @@ import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.
       </app-page-header>
 
       @if (filteredStories().length === 0 && filteredEvents().length === 0) {
-        <p class="text-slate-600 dark:text-slate-400">Nothing to show on the timeline.</p>
+        <p class="text-foreground-subtle">Nothing to show on the timeline.</p>
       } @else {
         <app-catalog-timeline
           [stories]="filteredStories()"

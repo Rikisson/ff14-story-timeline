@@ -18,11 +18,11 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
     DangerButtonComponent,
   ],
   template: `
-    <section class="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
       <div>
-        <h2 class="m-0 text-lg font-semibold text-slate-900 dark:text-slate-100">Access</h2>
+        <h2 class="m-0 text-lg font-semibold text-foreground">Access</h2>
         @if (universe(); as u) {
-          <p class="m-0 mt-0.5 text-sm text-slate-600 dark:text-slate-400">
+          <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
             Owner and contributors of <strong>{{ u.name }}</strong>.
           </p>
         }
@@ -31,11 +31,11 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
       @if (universe(); as u) {
         <ul class="m-0 flex list-none flex-col gap-1 p-0">
           <li
-            class="flex items-center justify-between gap-3 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm"
+            class="flex items-center justify-between gap-3 rounded border border-border bg-surface-subtle px-3 py-2 text-sm"
           >
             <div class="flex flex-col">
-              <span class="font-medium text-slate-700 dark:text-slate-300">Owner</span>
-              <code class="break-all text-xs text-slate-600 dark:text-slate-400">{{ u.ownerUid }}</code>
+              <span class="font-medium text-foreground-muted">Owner</span>
+              <code class="break-all text-xs text-foreground-subtle">{{ u.ownerUid }}</code>
             </div>
             @if (isYou(u.ownerUid)) {
               <span class="shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 text-xs text-indigo-800 dark:text-indigo-200">
@@ -45,11 +45,11 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
           </li>
           @for (uid of u.editorUids; track uid) {
             <li
-              class="flex items-center justify-between gap-3 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+              class="flex items-center justify-between gap-3 rounded border border-border bg-surface px-3 py-2 text-sm"
             >
               <div class="flex flex-col">
-                <span class="font-medium text-slate-700 dark:text-slate-300">Contributor</span>
-                <code class="break-all text-xs text-slate-600 dark:text-slate-400">{{ uid }}</code>
+                <span class="font-medium text-foreground-muted">Contributor</span>
+                <code class="break-all text-xs text-foreground-subtle">{{ uid }}</code>
               </div>
               <div class="flex items-center gap-2">
                 @if (isYou(uid)) {
@@ -68,16 +68,16 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
 
         <form [formGroup]="form" class="flex flex-col gap-2" (ngSubmit)="onAdd(u.id, u.ownerUid, u.editorUids)">
           <label class="flex flex-col gap-1 text-sm">
-            <span class="font-medium text-slate-700 dark:text-slate-300">Add contributor by UID</span>
+            <span class="font-medium text-foreground-muted">Add contributor by UID</span>
             <input
               type="text"
               formControlName="uid"
               autocomplete="off"
               spellcheck="false"
-              class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 font-mono text-xs"
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 font-mono text-xs"
               placeholder="e.g. uDRxrMxHMtNZfgbpNjbJat1BPBE3"
             />
-            <span class="text-xs text-slate-500 dark:text-slate-400">
+            <span class="text-xs text-foreground-faint">
               Ask the user to copy their UID from the auth menu and paste it here.
             </span>
           </label>
@@ -94,7 +94,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
           </div>
         </form>
       } @else {
-        <p class="m-0 text-sm italic text-slate-500 dark:text-slate-400">No active universe.</p>
+        <p class="m-0 text-sm italic text-foreground-faint">No active universe.</p>
       }
     </section>
   `,

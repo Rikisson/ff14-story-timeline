@@ -5,6 +5,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Semantic color tokens.
+ * Components reference these via utilities (bg-surface, text-foreground, …)
+ * and the .dark override redefines the variables — components don't need
+ * dark: siblings for the slate sweep.
+ *
+ * Tinted colors (amber warnings, red errors, indigo accents, entity kinds)
+ * still use direct utilities with dark: variants where they need to stay
+ * color-keyed in both modes.
+ */
+@theme {
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9; /* slate-100 */
+  --color-surface-subtle: #f8fafc; /* slate-50 */
+  --color-foreground: #0f172a; /* slate-900 */
+  --color-foreground-muted: #334155; /* slate-700 */
+  --color-foreground-subtle: #475569; /* slate-600 */
+  --color-foreground-faint: #64748b; /* slate-500 */
+  --color-border: #e2e8f0; /* slate-200 */
+  --color-border-strong: #cbd5e1; /* slate-300 */
+}
+
+.dark {
+  --color-canvas: #020617; /* slate-950 */
+  --color-surface: #0f172a; /* slate-900 */
+  --color-surface-muted: #1e293b; /* slate-800 */
+  --color-surface-subtle: rgb(30 41 59 / 0.5); /* slate-800/50 */
+  --color-foreground: #f1f5f9; /* slate-100 */
+  --color-foreground-muted: #cbd5e1; /* slate-300 */
+  --color-foreground-subtle: #94a3b8; /* slate-400 */
+  --color-foreground-faint: #94a3b8; /* slate-400 */
+  --color-border: #334155; /* slate-700 */
+  --color-border-strong: #334155; /* slate-700 */
+}
+
 html,
 body {
   height: 100%;
@@ -12,7 +48,7 @@ body {
 }
 
 body {
-  @apply bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-canvas text-foreground;
 }
 
 app-root {

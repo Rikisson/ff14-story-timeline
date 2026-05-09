@@ -12,10 +12,10 @@ import { UniverseStore } from '@features/universes';
           class="inline-block size-10 rounded-full border-4 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-300 animate-spin"
           aria-hidden="true"
         ></span>
-        <p class="m-0 text-slate-600 dark:text-slate-400">Loading universes…</p>
+        <p class="m-0 text-foreground-subtle">Loading universes…</p>
       } @else if (universes().length === 0) {
-        <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">No universes available</h1>
-        <p class="m-0 text-slate-600 dark:text-slate-400">
+        <h1 class="m-0 text-2xl font-semibold text-foreground">No universes available</h1>
+        <p class="m-0 text-foreground-subtle">
           @if (canCreate()) {
             Use the universe menu in the top-left to create one.
           } @else if (user()) {
@@ -25,8 +25,8 @@ import { UniverseStore } from '@features/universes';
           }
         </p>
       } @else {
-        <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">Pick a universe</h1>
-        <p class="m-0 text-slate-600 dark:text-slate-400">
+        <h1 class="m-0 text-2xl font-semibold text-foreground">Pick a universe</h1>
+        <p class="m-0 text-foreground-subtle">
           Use the universe menu in the top-left to choose what to read.
           @if (!user()) {
             Sign in if you'd like to author or edit.

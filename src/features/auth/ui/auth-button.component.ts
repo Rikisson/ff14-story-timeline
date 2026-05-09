@@ -8,9 +8,9 @@ import { AuthStore } from '../data-access/auth.store';
   imports: [GhostButtonComponent, SecondaryButtonComponent],
   template: `
     @if (auth.loading()) {
-      <span class="text-sm text-slate-600 dark:text-slate-400">Loading…</span>
+      <span class="text-sm text-foreground-subtle">Loading…</span>
     } @else if (auth.user(); as u) {
-      <span class="text-sm text-slate-700 dark:text-slate-300">
+      <span class="text-sm text-foreground-muted">
         Signed in as {{ u.displayName ?? u.email }}
       </span>
       <button

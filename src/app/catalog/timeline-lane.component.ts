@@ -33,7 +33,7 @@ const SCROLL_STEP = 320;
               aria-hidden="true"
             ></span>
           }
-          <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
             {{ lane().label }}
           </h3>
           <span class="text-xs text-slate-400 dark:text-slate-500">
@@ -43,7 +43,7 @@ const SCROLL_STEP = 320;
       }
 
       @if (lane().dated.length === 0 && lane().undated.length === 0) {
-        <p class="m-0 px-1 py-2 text-sm italic text-slate-500 dark:text-slate-400">No items in this lane.</p>
+        <p class="m-0 px-1 py-2 text-sm italic text-foreground-faint">No items in this lane.</p>
       } @else {
         <div
           #rail
@@ -73,8 +73,8 @@ const SCROLL_STEP = 320;
           }
 
           @if (visibleUndated().length > 0) {
-            <div class="ml-2 flex shrink-0 flex-col gap-2 border-l-2 border-dashed border-slate-300 dark:border-slate-700 pl-4">
-              <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <div class="ml-2 flex shrink-0 flex-col gap-2 border-l-2 border-dashed border-border-strong pl-4">
+              <p class="m-0 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
                 Undated
               </p>
               <div class="flex gap-3">
@@ -104,7 +104,7 @@ const SCROLL_STEP = 320;
           @if (hasMore()) {
             <button
               type="button"
-              class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-3xl font-light text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               [attr.aria-label]="'Load 25 more items into ' + (lane().label || 'lane')"
               (click)="loadMore.emit()"
             >

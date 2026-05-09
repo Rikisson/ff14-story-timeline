@@ -35,7 +35,7 @@ const BTN_SECONDARY =
   host: { class: 'block' },
   template: `
     <article
-      class="flex flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+      class="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
     >
       <div
         class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-slate-200 dark:bg-slate-700"

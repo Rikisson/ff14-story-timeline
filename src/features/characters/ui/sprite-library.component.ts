@@ -32,10 +32,10 @@ interface ResolvedSprite {
     SecondaryButtonComponent,
   ],
   template: `
-    <section class="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <section class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 shadow-sm">
       <header class="flex items-center justify-between">
-        <h4 class="m-0 text-sm font-semibold text-slate-900 dark:text-slate-100">Sprites</h4>
-        <span class="text-xs text-slate-500 dark:text-slate-400">First sprite is the default.</span>
+        <h4 class="m-0 text-sm font-semibold text-foreground">Sprites</h4>
+        <span class="text-xs text-foreground-faint">First sprite is the default.</span>
       </header>
 
       @if (error(); as e) {
@@ -43,11 +43,11 @@ interface ResolvedSprite {
       }
 
       @if (resolved().length === 0) {
-        <p class="m-0 text-sm italic text-slate-500 dark:text-slate-400">No sprites yet.</p>
+        <p class="m-0 text-sm italic text-foreground-faint">No sprites yet.</p>
       } @else {
         <ul class="flex flex-col gap-2">
           @for (s of resolved(); track s.id; let i = $index) {
-            <li class="flex items-center gap-2 rounded-md border border-slate-200 dark:border-slate-700 p-2">
+            <li class="flex items-center gap-2 rounded-md border border-border p-2">
               <img
                 [ngSrc]="s.url"
                 alt=""
@@ -55,7 +55,7 @@ interface ResolvedSprite {
                 height="48"
                 class="size-12 rounded object-cover"
               />
-              <span class="flex-1 truncate text-sm text-slate-800 dark:text-slate-200">{{ s.label }}</span>
+              <span class="flex-1 truncate text-sm text-foreground">{{ s.label }}</span>
               @if (i === 0) {
                 <span
                   class="rounded bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200"

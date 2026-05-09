@@ -63,7 +63,7 @@ import { EventFormComponent } from '../ui/event-form.component';
               />
             </div>
           } @else {
-            <p class="m-0 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+            <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
               Select an event to view details.
             </p>
           }

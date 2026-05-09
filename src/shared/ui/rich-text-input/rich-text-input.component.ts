@@ -31,17 +31,17 @@ import { RefSuggestion } from './ref-suggestion.extension';
   selector: 'app-rich-text-input',
   template: `
     <div
-      class="flex flex-col gap-1 rounded-md border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900"
+      class="flex flex-col gap-1 rounded-md border border-border-strong bg-surface"
       [class.opacity-60]="!ready()"
     >
       <div
-        class="flex flex-wrap items-center gap-1 border-b border-slate-200 px-2 py-1 dark:border-slate-700"
+        class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1"
         role="toolbar"
         [attr.aria-label]="ariaLabel() ? ariaLabel() + ' formatting' : null"
       >
         <button
           type="button"
-          class="rounded px-2 py-1 text-sm font-semibold hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          class="rounded px-2 py-1 text-sm font-semibold hover:bg-surface-muted dark:text-slate-200"
           [class.bg-slate-200]="boldActive()"
           [class.dark:bg-slate-700]="boldActive()"
           [attr.aria-pressed]="boldActive()"
@@ -52,7 +52,7 @@ import { RefSuggestion } from './ref-suggestion.extension';
         </button>
         <button
           type="button"
-          class="rounded px-2 py-1 text-sm italic hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          class="rounded px-2 py-1 text-sm italic hover:bg-surface-muted dark:text-slate-200"
           [class.bg-slate-200]="italicActive()"
           [class.dark:bg-slate-700]="italicActive()"
           [attr.aria-pressed]="italicActive()"
@@ -61,13 +61,13 @@ import { RefSuggestion } from './ref-suggestion.extension';
         >
           I
         </button>
-        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400">
+        <span class="ml-auto text-xs text-foreground-faint">
           Type <code>$&#123;</code> for entity refs
         </span>
       </div>
       <div
         #host
-        class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-slate-900 focus-within:ring-2 focus-within:ring-indigo-300 dark:text-slate-100 dark:focus-within:ring-indigo-400"
+        class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-indigo-300 dark:focus-within:ring-indigo-400"
         [attr.aria-label]="ariaLabel() || null"
       ></div>
     </div>

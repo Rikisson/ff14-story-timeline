@@ -7,25 +7,25 @@ import { formatInGameDate } from '@shared/utils';
   selector: 'app-in-game-date-input',
   template: `
     <details
-      class="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+      class="rounded-md border border-border bg-surface"
       [open]="expanded()"
       (toggle)="onToggle($event)"
     >
       <summary
-        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800"
+        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       >
         <span class="flex flex-col">
           @if (label(); as l) {
-            <span class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ l }}</span>
+            <span class="text-xs font-medium text-foreground-subtle">{{ l }}</span>
           }
           @if (summary(); as s) {
-            <span class="text-sm text-slate-900 dark:text-slate-100">{{ s }}</span>
+            <span class="text-sm text-foreground">{{ s }}</span>
           } @else {
-            <span class="text-sm italic text-slate-500 dark:text-slate-400">Set in-game date</span>
+            <span class="text-sm italic text-foreground-faint">Set in-game date</span>
           }
         </span>
         <svg
-          class="ml-auto size-4 shrink-0 text-slate-500 transition-transform dark:text-slate-400"
+          class="ml-auto size-4 shrink-0 text-foreground-faint transition-transform"
           [class.rotate-180]="expanded()"
           aria-hidden="true"
           viewBox="0 0 20 20"
@@ -39,13 +39,13 @@ import { formatInGameDate } from '@shared/utils';
         </svg>
       </summary>
 
-      <div class="flex flex-col gap-2 border-t border-slate-200 p-3 dark:border-slate-700">
+      <div class="flex flex-col gap-2 border-t border-border p-3">
         <div class="flex flex-wrap gap-2">
           @if (eras().length > 0) {
-            <label class="flex min-w-[8rem] flex-1 flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+            <label class="flex min-w-[8rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
               <span>Era</span>
               <select
-                class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
                 [value]="value()?.era ?? ''"
                 (change)="onEra($event)"
               >
@@ -56,20 +56,20 @@ import { formatInGameDate } from '@shared/utils';
               </select>
             </label>
           }
-          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
             <span>Year</span>
             <input
               type="number"
-              class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
               [value]="value()?.year ?? ''"
               (input)="onField('year', $event)"
             />
           </label>
-          <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
             <span>Month</span>
             @if (months().length > 0) {
               <select
-                class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
                 [value]="value()?.month ?? ''"
                 (change)="onField('month', $event)"
               >
@@ -82,19 +82,19 @@ import { formatInGameDate } from '@shared/utils';
               <input
                 type="number"
                 min="1"
-                class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
                 [value]="value()?.month ?? ''"
                 (input)="onField('month', $event)"
               />
             }
           </label>
-          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
             <span>Day</span>
             <input
               type="number"
               min="1"
               [max]="dayMax()"
-              class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
               [value]="value()?.day ?? ''"
               (input)="onField('day', $event)"
             />
@@ -102,18 +102,18 @@ import { formatInGameDate } from '@shared/utils';
         </div>
 
         <div class="grid grid-cols-3 gap-2">
-          <label class="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
             <span>Hour</span>
             <input
               type="number"
               min="0"
               [max]="hourMax()"
-              class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
               [value]="value()?.hour ?? ''"
               (input)="onField('hour', $event)"
             />
           </label>
-          <label class="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
             <span class="flex items-center justify-between gap-2">
               <span>Minute</span>
               @if (timeErrors().minute) {
@@ -124,16 +124,15 @@ import { formatInGameDate } from '@shared/utils';
               type="number"
               min="0"
               [max]="minuteMax()"
-              class="h-9 rounded-md border bg-white px-2 text-sm dark:bg-slate-900 dark:text-slate-100"
+              class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
               [class.border-red-500]="timeErrors().minute"
-              [class.border-slate-300]="!timeErrors().minute"
-              [class.dark:border-slate-700]="!timeErrors().minute"
+              [class.border-border-strong]="!timeErrors().minute"
               [attr.aria-invalid]="timeErrors().minute || null"
               [value]="value()?.minute ?? ''"
               (input)="onField('minute', $event)"
             />
           </label>
-          <label class="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
             <span class="flex items-center justify-between gap-2">
               <span>Second</span>
               @if (timeErrors().second) {
@@ -144,10 +143,9 @@ import { formatInGameDate } from '@shared/utils';
               type="number"
               min="0"
               [max]="secondMax()"
-              class="h-9 rounded-md border bg-white px-2 text-sm dark:bg-slate-900 dark:text-slate-100"
+              class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
               [class.border-red-500]="timeErrors().second"
-              [class.border-slate-300]="!timeErrors().second"
-              [class.dark:border-slate-700]="!timeErrors().second"
+              [class.border-border-strong]="!timeErrors().second"
               [attr.aria-invalid]="timeErrors().second || null"
               [value]="value()?.second ?? ''"
               (input)="onField('second', $event)"
@@ -155,7 +153,7 @@ import { formatInGameDate } from '@shared/utils';
           </label>
         </div>
 
-        <label class="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+        <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
           <span>Display override (optional — replaces the formatted output)</span>
           <input
             type="text"

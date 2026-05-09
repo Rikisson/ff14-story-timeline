@@ -11,12 +11,12 @@ export interface EntityPickerOption {
   selector: 'app-entity-picker',
   template: `
     @if (options().length === 0) {
-      <p class="m-0 text-sm italic text-slate-500 dark:text-slate-400">{{ emptyMessage() }}</p>
+      <p class="m-0 text-sm italic text-foreground-faint">{{ emptyMessage() }}</p>
     } @else {
       <select
         [multiple]="multiple()"
         [attr.size]="multiple() ? sizeAttr() : null"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        class="w-full rounded-md border border-border-strong bg-surface text-foreground px-3 py-2 text-sm"
         (change)="onChange($event)"
       >
         @if (!multiple()) {

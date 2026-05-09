@@ -8,9 +8,9 @@ import { ThemeService } from '@shared/services';
     <button
       type="button"
       class="inline-flex size-9 items-center justify-center rounded-md text-slate-600
-             hover:bg-slate-100 hover:text-slate-900
+             hover:bg-surface-muted hover:text-slate-900
              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400
-             dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+             dark:text-slate-300 dark:hover:text-slate-100"
       [attr.aria-label]="ariaLabel()"
       [title]="title()"
       (click)="toggle()"

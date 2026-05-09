@@ -41,7 +41,7 @@ import { TimelineEvent } from '../data-access/event.types';
       }
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-2">
-          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ event().name }}</h3>
+          <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ event().name }}</h3>
           <div class="flex shrink-0 items-center gap-2">
             <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
             @if (canEdit()) {
@@ -56,7 +56,7 @@ import { TimelineEvent } from '../data-access/event.types';
         }
 
         @if (event().description; as desc) {
-          <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ desc }}</p>
+          <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-foreground-muted">{{ desc }}</p>
         }
 
         @if (relatedRefs().length > 0) {

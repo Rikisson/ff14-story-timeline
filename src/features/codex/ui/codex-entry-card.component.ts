@@ -15,16 +15,16 @@ import { CodexEntry } from '../data-access/codex-entry.types';
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
     >
       @if (coverUrl(); as u) {
-        <div class="relative aspect-video w-full bg-slate-100 dark:bg-slate-800">
+        <div class="relative aspect-video w-full bg-surface-muted">
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
       }
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-2">
-          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ entry().title }}</h3>
+          <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ entry().title }}</h3>
           <div class="flex shrink-0 items-center gap-2">
             @if (entry().category; as c) {
               <span
@@ -40,7 +40,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
           </div>
         </div>
 
-        <p class="m-0 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">
+        <p class="m-0 whitespace-pre-line text-sm text-foreground-muted">
           {{ entry().description }}
         </p>
 

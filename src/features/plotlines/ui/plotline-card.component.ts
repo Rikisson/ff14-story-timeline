@@ -16,10 +16,10 @@ const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
     >
       @if (coverUrl(); as u) {
-        <div class="relative aspect-video w-full bg-slate-100 dark:bg-slate-800">
+        <div class="relative aspect-video w-full bg-surface-muted">
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
       }
@@ -27,12 +27,12 @@ const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
         <div class="flex items-start gap-2">
           @if (plotline().color; as c) {
             <span
-              class="mt-1 inline-block size-3 shrink-0 rounded-full border border-slate-200 dark:border-slate-700"
+              class="mt-1 inline-block size-3 shrink-0 rounded-full border border-border"
               [style.background-color]="c"
               aria-hidden="true"
             ></span>
           }
-          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ plotline().title }}</h3>
+          <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ plotline().title }}</h3>
           <div class="flex shrink-0 items-center gap-2">
             @if (statusInfo(); as s) {
               <app-tag [tone]="s.tone">{{ s.label }}</app-tag>
@@ -44,7 +44,7 @@ const STATUS_TONE: Record<PlotlineStatus, TagTone> = {
           </div>
         </div>
         @if (plotline().description; as d) {
-          <p class="m-0 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ d }}</p>
+          <p class="m-0 whitespace-pre-line text-sm text-foreground-muted">{{ d }}</p>
         }
       </div>
     </article>

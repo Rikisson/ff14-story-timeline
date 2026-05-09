@@ -39,8 +39,8 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
       (click)="onBackdropClick($event)"
     >
       <div class="flex max-h-[80vh] w-[min(48rem,92vw)] flex-col">
-        <header class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
-          <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">{{ title() }}</h3>
+        <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h3 class="m-0 text-base font-semibold text-foreground">{{ title() }}</h3>
           <button
             uiGhost
             type="button"
@@ -50,10 +50,10 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
           >×</button>
         </header>
 
-        <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
           <input
             type="text"
-            class="flex-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 py-1.5 text-sm"
+            class="flex-1 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-1.5 text-sm"
             placeholder="Filter by tag…"
             [value]="tagFilter()"
             (input)="onTagInput($event)"
@@ -79,7 +79,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
 
         <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           @if (visible().length === 0) {
-            <p class="m-0 py-8 text-center text-sm italic text-slate-500 dark:text-slate-400">
+            <p class="m-0 py-8 text-center text-sm italic text-foreground-faint">
               @if (allForKind().length === 0) {
                 No {{ kind() }} assets yet. Upload one to get started.
               } @else {
@@ -94,12 +94,11 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
                   [class.border-indigo-500]="isSelected(a.id)"
                   [class.bg-indigo-50]="isSelected(a.id)"
                   [class.dark:bg-indigo-950/60]="isSelected(a.id)"
-                  [class.border-slate-200]="!isSelected(a.id)"
-                  [class.dark:border-slate-700]="!isSelected(a.id)"
+                  [class.border-border]="!isSelected(a.id)"
                 >
                   <button
                     type="button"
-                    class="text-left text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline"
+                    class="text-left text-sm font-medium text-foreground hover:underline"
                     (click)="toggle(a.id)"
                   >{{ a.label }}</button>
                   <audio class="ml-auto" controls preload="none" [src]="a.url"></audio>
@@ -114,16 +113,15 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
             <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 md:grid-cols-4">
               @for (a of visible(); track a.id) {
                 <li
-                  class="flex flex-col gap-2 overflow-hidden rounded-md border bg-white dark:bg-slate-900"
+                  class="flex flex-col gap-2 overflow-hidden rounded-md border bg-surface"
                   [class.border-indigo-500]="isSelected(a.id)"
                   [class.ring-2]="isSelected(a.id)"
                   [class.ring-indigo-300]="isSelected(a.id)"
-                  [class.border-slate-200]="!isSelected(a.id)"
-                  [class.dark:border-slate-700]="!isSelected(a.id)"
+                  [class.border-border]="!isSelected(a.id)"
                 >
                   <button
                     type="button"
-                    class="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-800"
+                    class="relative aspect-square w-full overflow-hidden bg-surface-muted"
                     [attr.aria-label]="'Select ' + a.label"
                     [attr.aria-pressed]="isSelected(a.id)"
                     (click)="toggle(a.id)"
@@ -142,7 +140,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
                     }
                   </button>
                   <div class="flex flex-col gap-1 px-2 pb-2">
-                    <p class="m-0 truncate text-xs font-medium text-slate-700 dark:text-slate-300">{{ a.label }}</p>
+                    <p class="m-0 truncate text-xs font-medium text-foreground-muted">{{ a.label }}</p>
                     <div class="flex gap-1">
                       <button
                         uiGhost
@@ -164,7 +162,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
           }
         </div>
 
-        <footer class="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+        <footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
           <button uiGhost type="button" (click)="cancel()">Cancel</button>
           <button
             uiPrimary
