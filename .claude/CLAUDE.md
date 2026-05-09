@@ -5,6 +5,7 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 Before executing any request, check the `docs` folder for applicable rules. Each doc has a strict **Rules** section (standing constraints) and an **Implementation** section (open backlog; items removed when shipped):
 - `docs/narrative-engine-impl.md` — engine rules (entity tiers, reference tiers, scope locks, inline-ref tokens, scene model, scene rendering layers) and the engine implementation backlog. Consult before touching entity types, picker UX, scene composition, or inline `${kind:<guid>}` references.
 - `docs/media-rules.md` — media rules (storage, schema, editor flow, loading) and the media implementation backlog. Consult before touching uploads, asset pickers, or asset loading.
+- `docs/styling-rules.md` — design token system, theme switching, when `dark:` siblings are allowed, and editor/Rete styling exceptions. Consult before adding color utilities, building new components, or theming changes.
 
 If a request conflicts with documented rules or architecture:
 - Point out the conflict
