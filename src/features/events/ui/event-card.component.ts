@@ -2,57 +2,43 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
-import {
-  DangerButtonComponent,
-  EntityRefComponent,
-  GhostButtonComponent,
-  TagComponent,
-} from '@shared/ui';
+import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
 
 @Component({
   selector: 'app-event-card',
-  imports: [
-    NgOptimizedImage,
-    GhostButtonComponent,
-    DangerButtonComponent,
-    EntityRefComponent,
-    TagComponent,
-  ],
+  imports: [NgOptimizedImage, GhostButtonComponent, DangerButtonComponent, EntityRefComponent],
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg bg-surface shadow-sm"
       [class.border]="!accentColor()"
-      [class.border-amber-200]="!accentColor()"
-      [class.dark:border-amber-900/50]="!accentColor()"
+      [class.border-border]="!accentColor()"
       [class.border-l-4]="!!accentColor()"
       [class.border-y]="!!accentColor()"
       [class.border-r]="!!accentColor()"
-      [class.border-amber-100]="!!accentColor()"
-      [class.dark:border-amber-900/50]="!!accentColor()"
+      [class.border-surface-muted]="!!accentColor()"
       [style.borderLeftColor]="accentColor()"
     >
       @if (coverUrl(); as u) {
-        <div class="relative aspect-video w-full bg-amber-100/40 dark:bg-amber-950/40">
+        <div class="relative aspect-video w-full bg-surface-muted">
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
       }
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-2">
           <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ event().name }}</h3>
-          <div class="flex shrink-0 items-center gap-2">
-            <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
-            @if (canEdit()) {
+          @if (canEdit()) {
+            <div class="flex shrink-0 gap-1">
               <button uiGhost type="button" (click)="edit.emit()">Edit</button>
               <button uiDanger type="button" (click)="remove.emit()">Delete</button>
-            }
-          </div>
+            </div>
+          }
         </div>
 
         @if (formattedDate(); as d) {
-          <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">{{ d }}</p>
+          <p class="m-0 text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ d }}</p>
         }
 
         @if (event().description; as desc) {

@@ -119,7 +119,7 @@ import {
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-indigo-100 dark:bg-indigo-950/60 text-sm font-semibold text-indigo-700 dark:text-indigo-300"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-indigo text-sm font-semibold text-tone-indigo-foreground"
                     [attr.aria-label]="'Era ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}
@@ -280,7 +280,7 @@ import {
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-emerald-100 dark:bg-emerald-950/60 text-sm font-semibold text-emerald-700 dark:text-emerald-300"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-emerald text-sm font-semibold text-tone-emerald-foreground"
                     [attr.aria-label]="'Month ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}
@@ -383,7 +383,7 @@ import {
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-amber-100 dark:bg-amber-950/60 text-sm font-semibold text-amber-700 dark:text-amber-300"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-amber text-sm font-semibold text-tone-amber-foreground"
                     [attr.aria-label]="'Weekday ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}

@@ -12,9 +12,10 @@
  * dark: siblings. The two blocks below are kept structurally identical:
  * same token names, same order, same group comments. Only the values differ.
  *
- * Identity colors that stay color-keyed regardless of theme (entity kinds,
- * tag tones, decorative drag handles) live outside this file as raw
- * utilities with dark: variants — see docs/styling-rules.md.
+ * The Tone palette at the bottom of each block holds identity hues
+ * (entity kinds, app-tag tones, calendar section handles). Adding a new
+ * theme means defining a third selector block with the same tokens — no
+ * component code changes.
  */
 @theme {
   --color-canvas: #ffffff;
@@ -59,6 +60,53 @@
   --color-accent-ring: #6366f1; /* indigo-500 */
   --color-accent-soft: #eef2ff; /* indigo-50 */
   --color-accent-soft-foreground: #312e81; /* indigo-900 */
+
+  /* Tone palette — identity hues used by entity-kind chips, app-tag tones,
+     and decorative section handles. Each tone exposes 5 facets so a new
+     theme can re-tune identity-colored UI in one place:
+       {tone}                    medium bg (tags, handles, picker hover)
+       {tone}-soft               soft bg (kind UI chip, picker default,
+                                 inline text ref hover)
+       {tone}-foreground         standard readable text on either bg
+       {tone}-foreground-strong  emphasized text (picker)
+       {tone}-border             outline (picker)
+     Slate/neutral identity reuses the surface/foreground/border tokens
+     above; only colored tones live here. */
+  --color-tone-indigo: #e0e7ff; /* indigo-100 */
+  --color-tone-indigo-soft: #eef2ff; /* indigo-50 */
+  --color-tone-indigo-foreground: #4338ca; /* indigo-700 */
+  --color-tone-indigo-foreground-strong: #312e81; /* indigo-900 */
+  --color-tone-indigo-border: #c7d2fe; /* indigo-200 */
+
+  --color-tone-emerald: #d1fae5; /* emerald-100 */
+  --color-tone-emerald-soft: #ecfdf5; /* emerald-50 */
+  --color-tone-emerald-foreground: #047857; /* emerald-700 */
+  --color-tone-emerald-foreground-strong: #064e3b; /* emerald-900 */
+  --color-tone-emerald-border: #a7f3d0; /* emerald-200 */
+
+  --color-tone-amber: #fef3c7; /* amber-100 */
+  --color-tone-amber-soft: #fffbeb; /* amber-50 */
+  --color-tone-amber-foreground: #b45309; /* amber-700 */
+  --color-tone-amber-foreground-strong: #78350f; /* amber-900 */
+  --color-tone-amber-border: #fde68a; /* amber-200 */
+
+  --color-tone-fuchsia: #fae8ff; /* fuchsia-100 */
+  --color-tone-fuchsia-soft: #fdf4ff; /* fuchsia-50 */
+  --color-tone-fuchsia-foreground: #a21caf; /* fuchsia-700 */
+  --color-tone-fuchsia-foreground-strong: #701a75; /* fuchsia-900 */
+  --color-tone-fuchsia-border: #f5d0fe; /* fuchsia-200 */
+
+  --color-tone-sky: #e0f2fe; /* sky-100 */
+  --color-tone-sky-soft: #f0f9ff; /* sky-50 */
+  --color-tone-sky-foreground: #0369a1; /* sky-700 */
+  --color-tone-sky-foreground-strong: #0c4a6e; /* sky-900 */
+  --color-tone-sky-border: #bae6fd; /* sky-200 */
+
+  --color-tone-rose: #ffe4e6; /* rose-100 */
+  --color-tone-rose-soft: #fff1f2; /* rose-50 */
+  --color-tone-rose-foreground: #be123c; /* rose-700 */
+  --color-tone-rose-foreground-strong: #881337; /* rose-900 */
+  --color-tone-rose-border: #fecdd3; /* rose-200 */
 }
 
 .dark {
@@ -104,6 +152,43 @@
   --color-accent-ring: #818cf8; /* indigo-400 */
   --color-accent-soft: rgb(49 46 129 / 0.6); /* indigo-900/60 */
   --color-accent-soft-foreground: #c7d2fe; /* indigo-200 */
+
+  /* Tone palette — see @theme block for facet descriptions. */
+  --color-tone-indigo: rgb(30 27 75 / 0.6); /* indigo-950/60 */
+  --color-tone-indigo-soft: rgb(30 27 75 / 0.5); /* indigo-950/50 */
+  --color-tone-indigo-foreground: #a5b4fc; /* indigo-300 */
+  --color-tone-indigo-foreground-strong: #e0e7ff; /* indigo-100 */
+  --color-tone-indigo-border: #4338ca; /* indigo-700 */
+
+  --color-tone-emerald: rgb(2 44 34 / 0.6); /* emerald-950/60 */
+  --color-tone-emerald-soft: rgb(2 44 34 / 0.5); /* emerald-950/50 */
+  --color-tone-emerald-foreground: #6ee7b7; /* emerald-300 */
+  --color-tone-emerald-foreground-strong: #d1fae5; /* emerald-100 */
+  --color-tone-emerald-border: #047857; /* emerald-700 */
+
+  --color-tone-amber: rgb(69 26 3 / 0.6); /* amber-950/60 */
+  --color-tone-amber-soft: rgb(69 26 3 / 0.5); /* amber-950/50 */
+  --color-tone-amber-foreground: #fcd34d; /* amber-300 */
+  --color-tone-amber-foreground-strong: #fef3c7; /* amber-100 */
+  --color-tone-amber-border: #b45309; /* amber-700 */
+
+  --color-tone-fuchsia: rgb(74 4 78 / 0.6); /* fuchsia-950/60 */
+  --color-tone-fuchsia-soft: rgb(74 4 78 / 0.5); /* fuchsia-950/50 */
+  --color-tone-fuchsia-foreground: #f0abfc; /* fuchsia-300 */
+  --color-tone-fuchsia-foreground-strong: #fae8ff; /* fuchsia-100 */
+  --color-tone-fuchsia-border: #a21caf; /* fuchsia-700 */
+
+  --color-tone-sky: rgb(8 47 73 / 0.6); /* sky-950/60 */
+  --color-tone-sky-soft: rgb(8 47 73 / 0.5); /* sky-950/50 */
+  --color-tone-sky-foreground: #7dd3fc; /* sky-300 */
+  --color-tone-sky-foreground-strong: #e0f2fe; /* sky-100 */
+  --color-tone-sky-border: #0369a1; /* sky-700 */
+
+  --color-tone-rose: rgb(76 5 25 / 0.6); /* rose-950/60 */
+  --color-tone-rose-soft: rgb(76 5 25 / 0.5); /* rose-950/50 */
+  --color-tone-rose-foreground: #fda4af; /* rose-300 */
+  --color-tone-rose-foreground-strong: #ffe4e6; /* rose-100 */
+  --color-tone-rose-border: #be123c; /* rose-700 */
 }
 
 html,

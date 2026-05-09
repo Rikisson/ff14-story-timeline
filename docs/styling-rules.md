@@ -49,6 +49,7 @@ The token vocabulary:
   `accent-foreground` (text on accent), `accent-ring` (focus ring),
   `accent-soft` (selection bg), `accent-soft-foreground`.
 - **Special** — `overlay` (loading scrim), `backdrop` (dialog backdrop), `workspace` (node-editor canvas; sits one step below `surface` in both themes so nodes read as cards on top).
+- **Tone palette** — identity hues for decorative chips and section handles: `tone-indigo`, `tone-emerald`, `tone-amber` each with a `-foreground` pair. Add tones here as new identity needs arise so a future theme can re-tune them centrally.
 
 ## How to write components
 
@@ -61,16 +62,31 @@ The token vocabulary:
   `[class.bg-accent-soft]="selected()"`. Don't pair light + `dark:` bindings.
 - Don't write `bg-white dark:bg-slate-900` or any raw light/dark utility pair for neutral surfaces — use a token instead.
 
-## When `dark:` siblings are allowed
+## Identity colors flow through the tone palette
 
-Only when the color is **per-identity, not per-theme**. These deliberately stay color-keyed regardless of the active theme:
+Identity colors (entity kinds, app-tag tones, calendar section handles)
+also live in `styles.css`, in the **Tone palette** at the bottom of each
+theme block. Lookup files map their identity strings to tone-token
+utility classes:
 
-- Entity kind identity colors in `shared/utils/entity-kind-palette.ts` (character indigo, place emerald, event amber, story fuchsia, plotline sky, codex slate).
-- The `<app-tag>` tone API in `shared/ui/tag/tag.component.ts`. The user picks the color by name.
-- Event-card identity styling in `features/events/ui/event-card.component.ts` (events are amber by identity, paired with the calendar timeline lane).
-- Decorative section drag handles in `features/calendar/feature/calendar-settings-panel.component.ts` (Eras=indigo, Months=emerald, Weekdays=amber).
+- `shared/utils/entity-kind-palette.ts` — entity kind chip / picker /
+  inline-text ref classes per `EntityKind`. Character→indigo,
+  place→emerald, event→amber, story→fuchsia, plotline→sky, codexEntry
+  reuses the neutral surface/foreground tokens.
+- `shared/ui/tag/tag.component.ts` — `TagTone` ('neutral' | 'amber' |
+  'emerald' | 'sky' | 'indigo' | 'rose') maps to `bg-tone-{tone}
+  text-tone-{tone}-foreground`. Neutral reuses `bg-surface-muted
+  text-foreground-muted`.
 
-For anything else, define a token and use it.
+Components write tone utilities (`bg-tone-indigo`,
+`text-tone-amber-foreground`, …); `dark:` siblings are never needed.
+A new theme retunes identity by overriding the tone tokens in its block.
+
+## No `dark:` siblings in the codebase
+
+Neutral surfaces and identity colors all flow through tokens. If you
+catch yourself writing `bg-foo-50 dark:bg-foo-950/X`, define a token
+(or reuse an existing tone) instead.
 
 ## Theme switching
 
