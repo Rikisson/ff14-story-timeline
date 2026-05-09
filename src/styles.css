@@ -9,11 +9,12 @@
  * Semantic color tokens.
  * Components reference these via utilities (bg-surface, text-foreground, …)
  * and the .dark override redefines the variables — components don't need
- * dark: siblings for the slate sweep.
+ * dark: siblings. The two blocks below are kept structurally identical:
+ * same token names, same order, same group comments. Only the values differ.
  *
- * Tinted colors (amber warnings, red errors, indigo accents, entity kinds)
- * still use direct utilities with dark: variants where they need to stay
- * color-keyed in both modes.
+ * Identity colors that stay color-keyed regardless of theme (entity kinds,
+ * tag tones, decorative drag handles) live outside this file as raw
+ * utilities with dark: variants — see docs/styling-rules.md.
  */
 @theme {
   --color-canvas: #ffffff;
@@ -22,6 +23,7 @@
   --color-surface-strong: #e2e8f0; /* slate-200 — hover one step beyond muted */
   --color-surface-stronger: #cbd5e1; /* slate-300 — pressed/active */
   --color-surface-subtle: #f8fafc; /* slate-50 */
+  --color-workspace: #f8fafc; /* slate-50 — node-editor canvas, sits below surface */
   --color-overlay: rgb(255 255 255 / 0.6); /* loading overlay */
   --color-backdrop: rgb(15 23 42 / 0.4); /* dialog backdrop — slate-900/40 */
   --color-foreground: #0f172a; /* slate-900 */
@@ -63,11 +65,12 @@
   --color-canvas: #020617; /* slate-950 */
   --color-surface: #0f172a; /* slate-900 */
   --color-surface-muted: #1e293b; /* slate-800 */
-  --color-surface-strong: #334155; /* slate-700 */
-  --color-surface-stronger: #475569; /* slate-600 */
+  --color-surface-strong: #334155; /* slate-700 — hover one step beyond muted */
+  --color-surface-stronger: #475569; /* slate-600 — pressed/active */
   --color-surface-subtle: rgb(30 41 59 / 0.5); /* slate-800/50 */
-  --color-overlay: rgb(2 6 23 / 0.6); /* slate-950/60 */
-  --color-backdrop: rgb(0 0 0 / 0.6);
+  --color-workspace: #020617; /* slate-950 — node-editor canvas, sits below surface */
+  --color-overlay: rgb(2 6 23 / 0.6); /* slate-950/60 — loading overlay */
+  --color-backdrop: rgb(0 0 0 / 0.6); /* dialog backdrop */
   --color-foreground: #f1f5f9; /* slate-100 */
   --color-foreground-muted: #cbd5e1; /* slate-300 */
   --color-foreground-subtle: #94a3b8; /* slate-400 */
@@ -75,14 +78,15 @@
   --color-border: #334155; /* slate-700 */
   --color-border-strong: #334155; /* slate-700 */
 
-  --color-warning: rgb(69 26 3 / 0.4); /* amber-950/40 */
-  --color-warning-foreground: #fde68a; /* amber-200 */
+  /* Role tokens — soft tinted bg + readable foreground + border. */
+  --color-warning: rgb(69 26 3 / 0.4); /* amber-950/40 — soft bg */
+  --color-warning-foreground: #fde68a; /* amber-200 — readable on warning bg + standalone */
   --color-warning-border: rgb(120 53 15 / 0.5); /* amber-900/50 */
 
-  --color-danger: rgb(69 10 10 / 0.4); /* red-950/40 */
+  --color-danger: rgb(69 10 10 / 0.4); /* red-950/40 — soft bg */
   --color-danger-foreground: #f87171; /* red-400 */
   --color-danger-border: rgb(127 29 29 / 0.5); /* red-900/50 */
-  --color-danger-strong: #ef4444; /* red-500 stays bright on dark */
+  --color-danger-strong: #ef4444; /* red-500 — validation outline + destructive button bg */
   --color-danger-strong-hover: #f87171; /* red-400 */
   --color-danger-strong-active: #dc2626; /* red-600 */
   --color-danger-strong-foreground: #ffffff;
@@ -92,7 +96,8 @@
   --color-success-foreground: #6ee7b7; /* emerald-300 */
   --color-success-border: rgb(6 78 59 / 0.5); /* emerald-900/50 */
 
-  --color-accent: #6366f1; /* indigo-500 stays bright on dark */
+  /* Accent: strong (button/ring) + soft (selection). */
+  --color-accent: #6366f1; /* indigo-500 */
   --color-accent-hover: #818cf8; /* indigo-400 */
   --color-accent-active: #4f46e5; /* indigo-600 */
   --color-accent-foreground: #ffffff;
@@ -136,11 +141,20 @@ html [data-testid='node'].selected {
   background: var(--color-accent-soft);
   border-color: var(--color-accent-ring);
 }
-html [data-testid='node'] .title,
-html [data-testid='node'] .input-title,
-html [data-testid='node'] .output-title {
+html [data-testid='node'] [data-testid='title'].title,
+html [data-testid='node'] [data-testid='input-title'].input-title,
+html [data-testid='node'] [data-testid='output-title'].output-title {
   color: var(--color-foreground);
 }
 html connection svg path {
   stroke: var(--color-accent);
+}
+html [data-testid='input-socket'] > *,
+html [data-testid='output-socket'] > * {
+  background: var(--color-accent);
+  border-color: var(--color-canvas);
+}
+html [data-testid='input-socket'] > *.multiple,
+html [data-testid='output-socket'] > *.multiple {
+  border-color: var(--color-warning-border);
 }

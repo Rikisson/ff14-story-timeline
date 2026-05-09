@@ -24,6 +24,13 @@ and the variables are overridden inside `.dark { ... }` (and any future
 theme block). Components write light-mode utilities only — no `dark:`
 sibling needed for token-based styling.
 
+The light `@theme` and dark `.dark` blocks are kept structurally
+identical: every token defined in one is defined in the other, in the
+same order, with the same group comments. When adding a token, add it to
+both blocks at the same index so the file reads as two parallel columns.
+A token that only makes sense in one theme is a smell — pick a value for
+the other theme too, even if it's the same hex.
+
 The token vocabulary:
 
 - **Surfaces** — `canvas` (page bg), `surface` (cards/panels/dialogs),
@@ -41,7 +48,7 @@ The token vocabulary:
 - **Accent** — `accent` (button/strong), `accent-hover`, `accent-active`,
   `accent-foreground` (text on accent), `accent-ring` (focus ring),
   `accent-soft` (selection bg), `accent-soft-foreground`.
-- **Special** — `overlay` (loading scrim), `backdrop` (dialog backdrop).
+- **Special** — `overlay` (loading scrim), `backdrop` (dialog backdrop), `workspace` (node-editor canvas; sits one step below `surface` in both themes so nodes read as cards on top).
 
 ## How to write components
 
@@ -75,7 +82,7 @@ For anything else, define a token and use it.
 ## Editor and Rete
 
 - The editor surfaces (`features/editor/feature/editor.page.ts`, `features/editor/ui/scene-editor-panel.component.ts`, `features/editor/ui/story-meta-panel.component.ts`, `features/editor/ui/rete-canvas.component.ts`) style via CSS-in-styles blocks rather than utilities. Rules inside those blocks reference global tokens directly: `background: var(--color-surface); color: var(--color-foreground)`. No per-component `:host-context(.dark)` overrides — the global block does the work.
-- The Rete plugin renders nodes/connections through component-encapsulated styles with build-hashed selectors (`[_nghost-XXX]`) that can't be reached from component CSS. Override Rete from `src/styles.css` using its stable host hooks: `[data-testid='node']` for the node container, `connection svg path` for connection lines. These overrides reference tokens too, so they follow the active theme.
+- The Rete plugin renders nodes/connections through component-encapsulated styles with build-hashed selectors (`[_nghost-XXX]`) that can't be reached from component CSS. Override Rete from `src/styles.css` using its stable host hooks: `[data-testid='node']` for the node container, `connection svg path` for connection lines, and `[data-testid='input-socket'] > *` / `[data-testid='output-socket'] > *` for the socket discs. These overrides reference tokens too, so they follow the active theme.
 
 ## Accessibility and contrast
 
