@@ -13,6 +13,7 @@
       "close": "Close",
       "back": "Back",
       "retry": "Retry",
+      "reset": "Reset",
       "seedTestData": "Seed test data",
       "backToTimeline": "Back to timeline"
     },
@@ -21,6 +22,7 @@
       "title": "Title",
       "slug": "Slug",
       "description": "Description",
+      "descriptionOptional": "Description (optional)",
       "color": "Color",
       "coverImage": "Cover image",
       "relatedEntities": "Related entities",
@@ -55,6 +57,7 @@
       "loading": "Loading…",
       "saveSuccess": "Saved",
       "saveError": "Couldn't save changes",
+      "untitledStory": "Untitled story",
       "deleteConfirm": "Are you sure you want to delete this item?",
       "entityDeleteConfirm": "Delete \"{{ name }}\"? This can't be undone.",
       "slugHint": "Lowercase letters, digits, and hyphens. Unique within this universe.",

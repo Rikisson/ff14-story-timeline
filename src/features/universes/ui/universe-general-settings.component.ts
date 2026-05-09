@@ -1,11 +1,14 @@
-﻿import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
 import { SlugTakenError } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseUpdate } from '../data-access/universe.types';
 import { UniversesService } from '../data-access/universes.service';
+import universeEn from '../i18n/en.json';
+import universeUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-universe-general-settings',
@@ -14,76 +17,90 @@ import { UniversesService } from '../data-access/universes.service';
     CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'universe',
+      loader: {
+        en: () => Promise.resolve(universeEn),
+        uk: () => Promise.resolve(universeUk),
+      },
+    }),
   ],
   template: `
-    <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
-      <div>
-        <h2 class="m-0 text-lg font-semibold text-foreground">General</h2>
-        <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
-          Edit the universe's name, slug, description, and cover image.
-        </p>
-      </div>
-
-      @if (universe(); as u) {
-        <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="onSubmit()">
-          <div class="grid gap-3 sm:grid-cols-2">
-            <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium text-foreground-muted">Name</span>
-              <input
-                type="text"
-                formControlName="name"
-                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-              />
-            </label>
-            <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium text-foreground-muted">Slug</span>
-              <input
-                type="text"
-                formControlName="slug"
-                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-              />
-              <span class="text-xs text-foreground-faint">Lowercase, hyphens. Globally unique.</span>
-            </label>
+    <ng-container *transloco="let t; prefix: 'universe'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
+          <div>
+            <h2 class="m-0 text-lg font-semibold text-foreground">{{ t('field.generalHeader') }}</h2>
+            <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
+              {{ t('message.generalSubtitle') }}
+            </p>
           </div>
 
-          <label class="flex flex-col gap-1 text-sm">
-            <span class="font-medium text-foreground-muted">Description (optional)</span>
-            <textarea
-              formControlName="description"
-              rows="3"
-              class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
-            ></textarea>
-          </label>
+          @if (universe(); as u) {
+            <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="onSubmit()">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="flex flex-col gap-1 text-sm">
+                  <span class="font-medium text-foreground-muted">{{ g('field.name') }}</span>
+                  <input
+                    type="text"
+                    formControlName="name"
+                    class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                  />
+                </label>
+                <label class="flex flex-col gap-1 text-sm">
+                  <span class="font-medium text-foreground-muted">{{ g('field.slug') }}</span>
+                  <input
+                    type="text"
+                    formControlName="slug"
+                    class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                  />
+                  <span class="text-xs text-foreground-faint">{{ t('message.globalSlugHint') }}</span>
+                </label>
+              </div>
 
-          <app-cover-slot
-            label="Cover image"
-            [assetId]="cover()"
-            (picked)="onCoverPicked($event)"
-          />
+              <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-foreground-muted">{{ g('field.descriptionOptional') }}</span>
+                <textarea
+                  formControlName="description"
+                  rows="3"
+                  class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
+                ></textarea>
+              </label>
 
-          @if (errorMessage(); as e) {
-            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+              <app-cover-slot
+                [label]="g('field.coverImage')"
+                [assetId]="cover()"
+                (picked)="onCoverPicked($event)"
+              />
+
+              @if (errorMessage(); as e) {
+                <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+              }
+
+              <div class="flex gap-2">
+                <button
+                  uiPrimary
+                  type="submit"
+                  [loading]="saving()"
+                  [disabled]="form.invalid || !dirty() || saving()"
+                >{{ g('action.save') }}</button>
+                <button
+                  uiGhost
+                  type="button"
+                  [disabled]="!dirty() || saving()"
+                  (click)="reset(u)"
+                >{{ g('action.reset') }}</button>
+              </div>
+            </form>
+          } @else {
+            <p class="m-0 text-sm italic text-foreground-faint">{{ t('empty.noActive') }}</p>
           }
-
-          <div class="flex gap-2">
-            <button
-              uiPrimary
-              type="submit"
-              [loading]="saving()"
-              [disabled]="form.invalid || !dirty() || saving()"
-            >Save</button>
-            <button
-              uiGhost
-              type="button"
-              [disabled]="!dirty() || saving()"
-              (click)="reset(u)"
-            >Reset</button>
-          </div>
-        </form>
-      } @else {
-        <p class="m-0 text-sm italic text-foreground-faint">No active universe.</p>
-      }
-    </section>
+        </section>
+      </ng-container>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

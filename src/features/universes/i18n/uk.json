@@ -1,0 +1,49 @@
+{
+  "field": {
+    "settingsTitle": "Налаштування всесвіту",
+    "generalHeader": "Загальне",
+    "accessHeader": "Доступ",
+    "calendarHeader": "Календар",
+    "categoriesHeader": "Категорії",
+    "ownerLabel": "Власник",
+    "contributorLabel": "Співавтор",
+    "youBadge": "ви",
+    "activeBadge": "Активний",
+    "createDialogTitle": "Створити всесвіт",
+    "addContributorLabel": "Додати співавтора за UID",
+    "defaultLabel": "Всесвіти"
+  },
+  "action": {
+    "create": "Створити",
+    "addContributor": "Додати співавтора",
+    "settingsMenu": "Налаштування всесвіту",
+    "createMenu": "+ Створити всесвіт"
+  },
+  "message": {
+    "generalSubtitle": "Редагуйте назву, слаг, опис та обкладинку всесвіту.",
+    "ownerSubtitle": "Власник і співавтори всесвіту {{ name }}.",
+    "uidAlreadyOwner": "Цей UID вже належить власнику.",
+    "uidAlreadyContributor": "Цей UID вже є співавтором.",
+    "removeYourselfConfirm": "Прибрати себе з цього всесвіту?",
+    "removeContributorConfirm": "Прибрати співавтора «{{ uid }}» з цього всесвіту?",
+    "uidHint": "Попросіть користувача скопіювати свій UID з меню автентифікації та вставити сюди.",
+    "globalSlugHint": "Малі літери, дефіси. Унікальне глобально.",
+    "sectionHintGeneral": "Назва, слаг, опис, обкладинка",
+    "sectionHintAccess": "Власник і співавтори",
+    "sectionHintCalendar": "Ери та місяці",
+    "sectionHintCategories": "Категорії кодексу"
+  },
+  "empty": {
+    "noActive": "Немає активного всесвіту.",
+    "noSections": "Немає розділів.",
+    "noUniverses": "Поки немає всесвітів.",
+    "namePlaceholder": "напр. FF14 Canon",
+    "slugPlaceholder": "напр. ff14-canon",
+    "uidPlaceholder": "напр. uDRxrMxHMtNZfgbpNjbJat1BPBE3"
+  },
+  "tooltip": {
+    "settingsList": "Розділи налаштувань всесвіту",
+    "sectionDetails": "Деталі розділу",
+    "switchUniverse": "Перемкнути всесвіт"
+  }
+}

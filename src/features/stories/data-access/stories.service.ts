@@ -16,6 +16,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore/lite';
+import { TranslocoService } from '@jsverse/transloco';
 import { UniverseStore } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
@@ -42,6 +43,7 @@ export class StaleStoryError extends Error {
 export class StoriesService {
   private readonly firebase = inject(FirebaseService);
   private readonly universes = inject(UniverseStore);
+  private readonly transloco = inject(TranslocoService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _publishedStories = signal<Story[]>([]);
@@ -187,7 +189,7 @@ export class StoriesService {
     const now = Date.now();
     const metaData: StoredStory = {
       slug,
-      title: 'Untitled story',
+      title: this.transloco.translate('general.message.untitledStory'),
       inGameDate: {},
       authorUid,
       draft: true,

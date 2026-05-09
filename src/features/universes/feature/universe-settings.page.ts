@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CalendarSettingsPanelComponent } from '@features/calendar';
 import { CodexCategoriesSettingsPanelComponent } from '@features/codex';
 import {
@@ -11,23 +12,25 @@ import {
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseGeneralSettingsComponent } from '../ui/universe-general-settings.component';
 import { UniverseMembersComponent } from '../ui/universe-members.component';
+import universeEn from '../i18n/en.json';
+import universeUk from '../i18n/uk.json';
 
 export type UniverseSettingsSection = 'general' | 'access' | 'calendar' | 'categories';
 
 const DEFAULT_SECTION: UniverseSettingsSection = 'general';
 
-const SECTION_LABEL: Record<UniverseSettingsSection, string> = {
-  general: 'General',
-  access: 'Access',
-  calendar: 'Calendar',
-  categories: 'Categories',
+const SECTION_LABEL_KEY: Record<UniverseSettingsSection, string> = {
+  general: 'universe.field.generalHeader',
+  access: 'universe.field.accessHeader',
+  calendar: 'universe.field.calendarHeader',
+  categories: 'universe.field.categoriesHeader',
 };
 
-const SECTION_HINT: Record<UniverseSettingsSection, string> = {
-  general: 'Name, slug, description, cover',
-  access: 'Owner and contributors',
-  calendar: 'Eras and months',
-  categories: 'Codex category buckets',
+const SECTION_HINT_KEY: Record<UniverseSettingsSection, string> = {
+  general: 'universe.message.sectionHintGeneral',
+  access: 'universe.message.sectionHintAccess',
+  calendar: 'universe.message.sectionHintCalendar',
+  categories: 'universe.message.sectionHintCategories',
 };
 
 function isSection(value: string | null): value is UniverseSettingsSection {
@@ -44,44 +47,56 @@ function isSection(value: string | null): value is UniverseSettingsSection {
     UniverseMembersComponent,
     CalendarSettingsPanelComponent,
     CodexCategoriesSettingsPanelComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'universe',
+      loader: {
+        en: () => Promise.resolve(universeEn),
+        uk: () => Promise.resolve(universeUk),
+      },
+    }),
   ],
   template: `
-    <div class="flex h-full flex-col gap-4">
-      <app-page-header
-        title="Universe settings"
-        [subtitle]="universe()?.name ?? ''"
-      />
-
-      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-        <app-entity-list-pane
-          class="md:w-72 md:shrink-0"
-          [items]="listItems()"
-          [selectedId]="section()"
-          ariaLabel="Universe settings sections"
-          emptyMessage="No sections."
-          (select)="onSelect($event)"
+    <ng-container *transloco="let t; prefix: 'universe'">
+      <div class="flex h-full flex-col gap-4">
+        <app-page-header
+          [title]="t('field.settingsTitle')"
+          [subtitle]="universe()?.name ?? ''"
         />
 
-        <section class="flex min-h-0 flex-1 flex-col" aria-label="Section details">
-          <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-            @switch (section()) {
-              @case ('general') {
-                <app-universe-general-settings />
+        <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+          <app-entity-list-pane
+            class="md:w-72 md:shrink-0"
+            [items]="listItems()"
+            [selectedId]="section()"
+            [ariaLabel]="t('tooltip.settingsList')"
+            [emptyMessage]="t('empty.noSections')"
+            (select)="onSelect($event)"
+          />
+
+          <section class="flex min-h-0 flex-1 flex-col" [attr.aria-label]="t('tooltip.sectionDetails')">
+            <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              @switch (section()) {
+                @case ('general') {
+                  <app-universe-general-settings />
+                }
+                @case ('access') {
+                  <app-universe-members />
+                }
+                @case ('calendar') {
+                  <app-calendar-settings-panel />
+                }
+                @case ('categories') {
+                  <app-codex-categories-settings-panel />
+                }
               }
-              @case ('access') {
-                <app-universe-members />
-              }
-              @case ('calendar') {
-                <app-calendar-settings-panel />
-              }
-              @case ('categories') {
-                <app-codex-categories-settings-panel />
-              }
-            }
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
       </div>
-    </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -89,6 +104,10 @@ export class UniverseSettingsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly store = inject(UniverseStore);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected readonly universe = this.store.activeUniverse;
   private readonly isOwner = this.store.isOwnerOfActive;
@@ -104,13 +123,14 @@ export class UniverseSettingsPage {
   });
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
+    this.activeLang();
     const sections: UniverseSettingsSection[] = this.isOwner()
       ? ['general', 'access', 'calendar', 'categories']
       : ['general', 'calendar', 'categories'];
     return sections.map((s) => ({
       id: s,
-      label: SECTION_LABEL[s],
-      secondary: SECTION_HINT[s],
+      label: this.transloco.translate(SECTION_LABEL_KEY[s]),
+      secondary: this.transloco.translate(SECTION_HINT_KEY[s]),
     }));
   });
 
