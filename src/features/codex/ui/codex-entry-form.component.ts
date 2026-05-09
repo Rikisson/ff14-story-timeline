@@ -54,39 +54,39 @@ function parseRefKey(key: string): EntityRef | null {
   template: `
     <form
       [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      class="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm"
       (ngSubmit)="onSubmit()"
     >
-      <h3 class="m-0 text-base font-semibold text-slate-900">
+      <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">
         {{ initial() ? 'Edit codex entry' : 'Add codex entry' }}
       </h3>
 
       <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Title</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Title</span>
           <input
             type="text"
             formControlName="title"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. The Echo"
           />
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Slug</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Slug</span>
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. the-echo"
           />
-          <span class="text-xs text-slate-500">Lowercase, digits, hyphens.</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Lowercase, digits, hyphens.</span>
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Category</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Category</span>
           <input
             type="text"
             formControlName="category"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
             list="codex-category-options"
             placeholder="Pick or type a category"
           />
@@ -105,17 +105,17 @@ function parseRefKey(key: string): EntityRef | null {
       />
 
       <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Description</span>
+        <span class="font-medium text-slate-700 dark:text-slate-300">Description</span>
         <textarea
           formControlName="description"
           rows="8"
-          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          class="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 py-2 text-sm"
           placeholder="The lore content of this entry."
         ></textarea>
       </label>
 
       <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-slate-700">Related entities</span>
+        <span class="font-medium text-slate-700 dark:text-slate-300">Related entities</span>
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
@@ -126,7 +126,7 @@ function parseRefKey(key: string): EntityRef | null {
       </div>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700">{{ e }}</p>
+        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
       }
 
       <div class="flex gap-2">

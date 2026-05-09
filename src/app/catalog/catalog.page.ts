@@ -40,7 +40,7 @@ import { CatalogDetailComponent } from './catalog-detail.component';
       </app-page-header>
 
       @if (actionError(); as e) {
-        <p class="m-0 text-sm text-red-700">{{ e }}</p>
+        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
       }
 
       <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
@@ -69,7 +69,7 @@ import { CatalogDetailComponent } from './catalog-detail.component';
               />
             </div>
           } @else {
-            <p class="m-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-sm text-slate-500">
+            <p class="m-0 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
               Select a story to view details.
             </p>
           }

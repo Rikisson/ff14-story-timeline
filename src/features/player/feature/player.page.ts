@@ -26,13 +26,13 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
   template: `
     <div class="mx-auto flex max-w-3xl flex-col gap-4">
       @if (store.loading()) {
-        <p class="text-slate-600">Loading...</p>
+        <p class="text-slate-600 dark:text-slate-400">Loading...</p>
       } @else if (store.error(); as err) {
-        <p class="text-red-700">{{ err }}</p>
-        <p><a routerLink="/library" class="text-indigo-700 hover:underline">Back to catalog</a></p>
+        <p class="text-red-700 dark:text-red-400">{{ err }}</p>
+        <p><a routerLink="/library" class="text-indigo-700 dark:text-indigo-300 hover:underline">Back to catalog</a></p>
       } @else if (store.story(); as story) {
         <header class="flex flex-wrap items-center gap-3">
-          <h1 class="m-0 text-2xl font-semibold text-slate-900">{{ story.title }}</h1>
+          <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ story.title }}</h1>
           <div class="ml-auto flex items-center gap-2">
             <button
               uiGhost
@@ -42,16 +42,16 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
             >
               ← Back
             </button>
-            <a routerLink="/library" class="text-sm text-slate-600 hover:underline">Catalog</a>
+            <a routerLink="/library" class="text-sm text-slate-600 dark:text-slate-400 hover:underline">Catalog</a>
           </div>
         </header>
 
         @if (store.pendingResume(); as resume) {
           <aside
-            class="flex flex-wrap items-center gap-3 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3"
+            class="flex flex-wrap items-center gap-3 rounded-md border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 px-4 py-3"
             role="status"
           >
-            <p class="m-0 text-sm text-indigo-900">
+            <p class="m-0 text-sm text-indigo-900 dark:text-indigo-200">
               You have a saved spot in this story.
             </p>
             <div class="ml-auto flex gap-2">
@@ -75,9 +75,9 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 
           @if (scene.next.length === 0) {
             <div class="flex flex-wrap items-center gap-3">
-              <p class="m-0 italic text-slate-600">The end.</p>
+              <p class="m-0 italic text-slate-600 dark:text-slate-400">The end.</p>
               <button uiPrimary type="button" (click)="store.restart()">Restart</button>
-              <a routerLink="/library" class="text-sm text-indigo-700 hover:underline">
+              <a routerLink="/library" class="text-sm text-indigo-700 dark:text-indigo-300 hover:underline">
                 Back to catalog
               </a>
             </div>

@@ -16,10 +16,10 @@ import { UniversesService } from '../data-access/universes.service';
     GhostButtonComponent,
   ],
   template: `
-    <section class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section class="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <div>
-        <h2 class="m-0 text-lg font-semibold text-slate-900">General</h2>
-        <p class="m-0 mt-0.5 text-sm text-slate-600">
+        <h2 class="m-0 text-lg font-semibold text-slate-900 dark:text-slate-100">General</h2>
+        <p class="m-0 mt-0.5 text-sm text-slate-600 dark:text-slate-400">
           Edit the universe's name, slug, description, and cover image.
         </p>
       </div>
@@ -28,30 +28,30 @@ import { UniversesService } from '../data-access/universes.service';
         <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="onSubmit()">
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium text-slate-700">Name</span>
+              <span class="font-medium text-slate-700 dark:text-slate-300">Name</span>
               <input
                 type="text"
                 formControlName="name"
-                class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
               />
             </label>
             <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium text-slate-700">Slug</span>
+              <span class="font-medium text-slate-700 dark:text-slate-300">Slug</span>
               <input
                 type="text"
                 formControlName="slug"
-                class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
               />
-              <span class="text-xs text-slate-500">Lowercase, hyphens. Globally unique.</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Lowercase, hyphens. Globally unique.</span>
             </label>
           </div>
 
           <label class="flex flex-col gap-1 text-sm">
-            <span class="font-medium text-slate-700">Description (optional)</span>
+            <span class="font-medium text-slate-700 dark:text-slate-300">Description (optional)</span>
             <textarea
               formControlName="description"
               rows="3"
-              class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              class="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 py-2 text-sm"
             ></textarea>
           </label>
 
@@ -62,7 +62,7 @@ import { UniversesService } from '../data-access/universes.service';
           />
 
           @if (errorMessage(); as e) {
-            <p class="m-0 text-sm text-red-700">{{ e }}</p>
+            <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
           }
 
           <div class="flex gap-2">
@@ -81,7 +81,7 @@ import { UniversesService } from '../data-access/universes.service';
           </div>
         </form>
       } @else {
-        <p class="m-0 text-sm italic text-slate-500">No active universe.</p>
+        <p class="m-0 text-sm italic text-slate-500 dark:text-slate-400">No active universe.</p>
       }
     </section>
   `,

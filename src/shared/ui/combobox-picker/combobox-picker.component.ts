@@ -23,13 +23,14 @@ type ComboItem =
   | { kind: 'option'; option: ComboboxOption };
 
 const NEUTRAL_PICKER_CLASS =
-  'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100';
+  'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 ' +
+  'dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700';
 
 @Component({
   selector: 'app-combobox-picker',
   template: `
     @if (options().length === 0 && !allowCreate()) {
-      <p class="m-0 text-sm italic text-slate-500">{{ emptyMessage() }}</p>
+      <p class="m-0 text-sm italic text-slate-500 dark:text-slate-400">{{ emptyMessage() }}</p>
     } @else {
       <div class="flex flex-col gap-1">
         @if (selectedOptions().length > 0) {
@@ -59,7 +60,7 @@ const NEUTRAL_PICKER_CLASS =
             spellcheck="false"
             [attr.aria-expanded]="open()"
             [placeholder]="placeholder()"
-            class="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            class="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
             [value]="query()"
             (input)="onQuery($event)"
             (focus)="open.set(true)"
@@ -69,14 +70,14 @@ const NEUTRAL_PICKER_CLASS =
           @if (open()) {
             @if (items().length === 0) {
               <p
-                class="absolute left-0 right-0 top-full z-10 mt-1 m-0 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm italic text-slate-500 shadow-md"
+                class="absolute left-0 right-0 top-full z-10 mt-1 m-0 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm italic text-slate-500 shadow-md dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
               >
                 @if (query()) { No matches for "{{ query() }}". } @else { All options selected. }
               </p>
             } @else {
               <ul
                 role="listbox"
-                class="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 list-none overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-md"
+                class="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 list-none overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-slate-700 dark:bg-slate-900"
               >
                 @for (item of items(); track itemKey(item); let i = $index) {
                   <li
@@ -90,11 +91,11 @@ const NEUTRAL_PICKER_CLASS =
                       <span>
                         Add <span class="font-semibold">"{{ item.query }}"</span>
                       </span>
-                      <span class="text-xs text-slate-500">new</span>
+                      <span class="text-xs text-slate-500 dark:text-slate-400">new</span>
                     } @else {
                       <span>{{ item.option.label }}</span>
                       @if (item.option.hint; as h) {
-                        <span class="text-xs text-slate-500">{{ h }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ h }}</span>
                       }
                     }
                   </li>
@@ -229,7 +230,9 @@ export class ComboboxPickerComponent {
   protected optionClass(active: boolean): string {
     const base =
       'flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-sm';
-    return active ? `${base} bg-indigo-50 text-indigo-900` : `${base} text-slate-700`;
+    return active
+      ? `${base} bg-indigo-50 text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-100`
+      : `${base} text-slate-700 dark:text-slate-300`;
   }
 
   protected chipClass(opt: ComboboxOption): string {

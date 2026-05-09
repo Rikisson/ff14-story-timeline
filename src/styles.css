@@ -3,10 +3,16 @@
 @import 'tailwindcss';
 @import '@angular/cdk/overlay-prebuilt.css';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 html,
 body {
   height: 100%;
   margin: 0;
+}
+
+body {
+  @apply bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100;
 }
 
 app-root {

@@ -8,3 +8,4 @@ export * from './markdown-text';
 export * from './page-header';
 export * from './rich-text-input';
 export * from './tag';
+export * from './theme-toggle';

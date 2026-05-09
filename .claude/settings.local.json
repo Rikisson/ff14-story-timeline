@@ -25,7 +25,8 @@
       "Bash(grep -E \"Initial chunk|kB$|MB$\")",
       "Bash(node *)",
       "Bash(cmd.exe *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(grep -rn \"background\\\\|color:\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" src/features/editor/data-access/)"
     ]
   }
 }

@@ -22,16 +22,16 @@ import {
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
     >
       @if (coverUrl(); as u) {
-        <div class="relative aspect-video w-full bg-slate-100">
+        <div class="relative aspect-video w-full bg-slate-100 dark:bg-slate-800">
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
       }
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-2">
-          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ character().name }}</h3>
+          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ character().name }}</h3>
           @if (canEdit()) {
             <div class="flex shrink-0 gap-1">
               <button uiGhost type="button" (click)="edit.emit()">Edit</button>
@@ -41,7 +41,7 @@ import {
         </div>
         @if (character().description; as d) {
           <app-markdown-text
-            class="text-sm text-slate-700"
+            class="text-sm text-slate-700 dark:text-slate-300"
             [text]="d"
             [options]="inlineRefOptions()"
           />

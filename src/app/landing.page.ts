@@ -9,13 +9,13 @@ import { UniverseStore } from '@features/universes';
     <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
       @if (loading()) {
         <span
-          class="inline-block size-10 rounded-full border-4 border-slate-300 border-t-slate-700 animate-spin"
+          class="inline-block size-10 rounded-full border-4 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-300 animate-spin"
           aria-hidden="true"
         ></span>
-        <p class="m-0 text-slate-600">Loading universes…</p>
+        <p class="m-0 text-slate-600 dark:text-slate-400">Loading universes…</p>
       } @else if (universes().length === 0) {
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">No universes available</h1>
-        <p class="m-0 text-slate-600">
+        <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">No universes available</h1>
+        <p class="m-0 text-slate-600 dark:text-slate-400">
           @if (canCreate()) {
             Use the universe menu in the top-left to create one.
           } @else if (user()) {
@@ -25,8 +25,8 @@ import { UniverseStore } from '@features/universes';
           }
         </p>
       } @else {
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">Pick a universe</h1>
-        <p class="m-0 text-slate-600">
+        <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">Pick a universe</h1>
+        <p class="m-0 text-slate-600 dark:text-slate-400">
           Use the universe menu in the top-left to choose what to read.
           @if (!user()) {
             Sign in if you'd like to author or edit.

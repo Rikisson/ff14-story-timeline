@@ -4,10 +4,12 @@ import { EntityRefAttrs } from './entity-ref-node';
 import { buildEntityRefAttrs } from './ref-suggestion.extension';
 
 const POPUP_CLASS =
-  'fixed z-[9999] max-h-60 w-72 overflow-auto rounded-md border border-slate-300 bg-white p-1 text-sm shadow-lg';
+  'fixed z-[9999] max-h-60 w-72 overflow-auto rounded-md border border-slate-300 bg-white p-1 text-sm shadow-lg ' +
+  'dark:border-slate-700 dark:bg-slate-900';
 const ITEM_BASE_CLASS =
-  'flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-left';
-const ITEM_ACTIVE_CLASS = 'bg-indigo-100';
+  'flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-left ' +
+  'text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800';
+const ITEM_ACTIVE_CLASS = 'bg-indigo-100 dark:bg-indigo-950/60';
 
 export function createSuggestionRender(): SuggestionOptions<
   InlineRefOption,
@@ -24,7 +26,7 @@ export function createSuggestionRender(): SuggestionOptions<
       popup.innerHTML = '';
       if (items.length === 0) {
         const empty = document.createElement('p');
-        empty.className = 'm-0 px-2 py-1 italic text-slate-500';
+        empty.className = 'm-0 px-2 py-1 italic text-slate-500 dark:text-slate-400';
         empty.textContent = 'No matches';
         popup.appendChild(empty);
         return;
@@ -35,10 +37,10 @@ export function createSuggestionRender(): SuggestionOptions<
         button.className =
           ITEM_BASE_CLASS + (i === activeIndex ? ' ' + ITEM_ACTIVE_CLASS : '');
         const label = document.createElement('span');
-        label.className = 'flex-1 truncate text-slate-900';
+        label.className = 'flex-1 truncate';
         label.textContent = it.label;
         const tag = document.createElement('span');
-        tag.className = 'shrink-0 font-mono text-xs text-slate-500';
+        tag.className = 'shrink-0 font-mono text-xs text-slate-500 dark:text-slate-400';
         tag.textContent = it.slug ? `${kindBadge(it.kind)} · ${it.slug}` : kindBadge(it.kind);
         button.appendChild(label);
         button.appendChild(tag);

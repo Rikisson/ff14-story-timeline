@@ -34,7 +34,8 @@
       "@shared/ui": ["src/shared/ui/index.ts"],
       "@shared/utils": ["src/shared/utils/index.ts"],
       "@shared/models": ["src/shared/models/index.ts"],
-      "@shared/data-access": ["src/shared/data-access/index.ts"]
+      "@shared/data-access": ["src/shared/data-access/index.ts"],
+      "@shared/services": ["src/shared/services/index.ts"]
     }
   },
   "angularCompilerOptions": {

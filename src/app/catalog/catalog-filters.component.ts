@@ -112,7 +112,7 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
         <label class="flex flex-col text-sm">
           <span class="sr-only">Sort by date</span>
           <select
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3 text-sm"
             [value]="sortDirection()"
             (change)="emitSort($event)"
             aria-label="Sort by date"

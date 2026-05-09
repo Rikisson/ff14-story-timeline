@@ -22,7 +22,7 @@ import { UniverseFormComponent } from './universe-form.component';
     <div class="relative">
       <button
         type="button"
-        class="flex items-center gap-1.5 rounded-md px-2 py-1 text-lg font-semibold text-slate-900 hover:bg-slate-100"
+        class="flex items-center gap-1.5 rounded-md px-2 py-1 text-lg font-semibold text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
         [attr.aria-haspopup]="'menu'"
         [attr.aria-expanded]="open()"
         aria-label="Switch universe"
@@ -47,10 +47,10 @@ import { UniverseFormComponent } from './universe-form.component';
       @if (open()) {
         <div
           role="menu"
-          class="absolute left-0 top-full z-10 mt-1 min-w-[260px] rounded-md border border-slate-200 bg-white shadow-lg"
+          class="absolute left-0 top-full z-10 mt-1 min-w-[260px] rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
         >
           @if (universes().length === 0) {
-            <p class="m-0 p-3 text-sm text-slate-600">No universes yet.</p>
+            <p class="m-0 p-3 text-sm text-slate-600 dark:text-slate-400">No universes yet.</p>
           } @else {
             <ul class="m-0 max-h-72 list-none overflow-y-auto p-1">
               @for (u of universes(); track u.id) {
@@ -58,9 +58,10 @@ import { UniverseFormComponent } from './universe-form.component';
                   <button
                     type="button"
                     role="menuitem"
-                    class="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
+                    class="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                     [class.font-semibold]="u.id === activeId()"
                     [class.text-blue-700]="u.id === activeId()"
+                    [class.dark:text-blue-400]="u.id === activeId()"
                     (click)="select(u.id)"
                   >
                     <span class="truncate">{{ u.name }}</span>
@@ -73,12 +74,12 @@ import { UniverseFormComponent } from './universe-form.component';
             </ul>
           }
           @if (isMemberOfActive() || canCreate()) {
-            <div class="flex flex-col gap-1 border-t border-slate-200 p-1">
+            <div class="flex flex-col gap-1 border-t border-slate-200 p-1 dark:border-slate-700">
               @if (isMemberOfActive()) {
                 <button
                   type="button"
                   role="menuitem"
-                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                   (click)="openSettings()"
                 >Universe settings</button>
               }
@@ -86,7 +87,7 @@ import { UniverseFormComponent } from './universe-form.component';
                 <button
                   type="button"
                   role="menuitem"
-                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                   (click)="openCreate()"
                 >+ Create universe</button>
               }
@@ -98,7 +99,7 @@ import { UniverseFormComponent } from './universe-form.component';
 
     <dialog
       #createDialog
-      class="rounded-lg p-0 backdrop:bg-slate-900/40"
+      class="rounded-lg p-0 backdrop:bg-slate-900/40 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
       aria-label="Create universe"
       (close)="onDialogClose()"
       (click)="onDialogBackdropClick($event)"

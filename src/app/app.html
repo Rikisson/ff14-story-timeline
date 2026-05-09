@@ -1,47 +1,47 @@
-<header class="flex items-center gap-6 border-b border-slate-200 px-6 py-3">
+<header class="flex items-center gap-6 border-b border-slate-200 px-6 py-3 dark:border-slate-800">
   <app-universe-selector />
   @if (hasActiveUniverse()) {
     <nav class="flex flex-1 items-center gap-4">
       <a
         routerLink="/timeline"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Timeline</a>
 
-      <span class="h-4 w-px bg-slate-300" aria-hidden="true"></span>
+      <span class="h-4 w-px bg-slate-300 dark:bg-slate-700" aria-hidden="true"></span>
 
       <a
         routerLink="/library"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Stories</a>
       <a
         routerLink="/events"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Events</a>
       <a
         routerLink="/plotlines"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Plotlines</a>
 
-      <span class="h-4 w-px bg-slate-300" aria-hidden="true"></span>
+      <span class="h-4 w-px bg-slate-300 dark:bg-slate-700" aria-hidden="true"></span>
 
       <a
         routerLink="/characters"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Characters</a>
       <a
         routerLink="/places"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Places</a>
       <a
         routerLink="/codex"
-        routerLinkActive="text-slate-900 font-medium"
-        class="text-slate-600 no-underline"
+        routerLinkActive="text-slate-900 font-medium dark:text-slate-100"
+        class="text-slate-600 no-underline dark:text-slate-400"
       >Codex</a>
     </nav>
   } @else {
@@ -52,12 +52,13 @@
       Seed test data
     </button>
   }
+  <app-theme-toggle />
   <app-auth-button />
 </header>
 
 @if (refreshErrors().length > 0) {
   <div
-    class="border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
+    class="border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
     role="alert"
   >
     @for (err of refreshErrors(); track err.label) {
@@ -72,13 +73,13 @@
   <router-outlet />
   @if (isNavigating()) {
     <div
-      class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm"
+      class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm dark:bg-slate-950/60"
       role="status"
       aria-live="polite"
       aria-label="Loading page"
     >
       <span
-        class="inline-block size-10 rounded-full border-4 border-slate-300 border-t-slate-700 animate-spin"
+        class="inline-block size-10 rounded-full border-4 border-slate-300 border-t-slate-700 animate-spin dark:border-slate-700 dark:border-t-slate-200"
         aria-hidden="true"
       ></span>
     </div>

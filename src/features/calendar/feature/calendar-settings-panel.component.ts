@@ -36,11 +36,11 @@ import {
     DangerButtonComponent,
   ],
   template: `
-    <section class="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section class="flex flex-col gap-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <header class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 class="m-0 text-lg font-semibold text-slate-900">Calendar</h2>
-          <p class="m-0 mt-0.5 text-sm text-slate-600">
+          <h2 class="m-0 text-lg font-semibold text-slate-900 dark:text-slate-100">Calendar</h2>
+          <p class="m-0 mt-0.5 text-sm text-slate-600 dark:text-slate-400">
             Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.
           </p>
         </div>
@@ -50,7 +50,7 @@ import {
             <button uiSecondary type="button" (click)="applyPreset('ff14')">FF14 preset</button>
           }
           @if (dirty()) {
-            <span class="text-sm text-amber-700">Unsaved changes</span>
+            <span class="text-sm text-amber-700 dark:text-amber-300">Unsaved changes</span>
           }
           <button uiGhost type="button" [disabled]="!dirty()" (click)="reset()">Reset</button>
           <button
@@ -66,19 +66,19 @@ import {
       </header>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700">{{ e }}</p>
+        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
       }
 
       <details
-        class="rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200 dark:border-slate-700"
         [open]="erasOpen()"
         (toggle)="onErasToggle($event)"
       >
         <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         >
-          <h3 class="m-0 text-base font-semibold text-slate-900">
-            Eras <span class="text-sm font-normal text-slate-500">({{ eras().length }})</span>
+          <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">
+            Eras <span class="text-sm font-normal text-slate-500 dark:text-slate-400">({{ eras().length }})</span>
           </h3>
           <span class="ml-auto flex items-center gap-2">
             @if (canEdit()) {
@@ -89,7 +89,7 @@ import {
               >+ Add era</button>
             }
             <svg
-              class="size-4 shrink-0 text-slate-500 transition-transform"
+              class="size-4 shrink-0 text-slate-500 dark:text-slate-400 transition-transform"
               [class.rotate-180]="erasOpen()"
               aria-hidden="true"
               viewBox="0 0 20 20"
@@ -104,53 +104,53 @@ import {
           </span>
         </summary>
 
-        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
+        <div class="flex flex-col gap-2 border-t border-slate-200 dark:border-slate-700 p-3">
         @if (eras().length === 0) {
-          <p class="m-0 text-sm text-slate-600">No eras yet.</p>
+          <p class="m-0 text-sm text-slate-600 dark:text-slate-400">No eras yet.</p>
         } @else {
           <ul cdkDropList class="flex flex-col gap-2" (cdkDropListDropped)="dropEra($event)">
             @for (era of eras(); track era.id; let i = $index) {
               <li
                 cdkDrag
                 [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm"
               >
                 <div class="flex items-start gap-3">
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-indigo-100 text-sm font-semibold text-indigo-700"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-indigo-100 dark:bg-indigo-950/60 text-sm font-semibold text-indigo-700 dark:text-indigo-300"
                     [attr.aria-label]="'Era ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}
                   </button>
                   <div class="flex flex-1 flex-wrap gap-2">
                     <label class="flex min-w-[10rem] flex-[2_1_10rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Name</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="era.name"
                         [disabled]="!canEdit()"
                         (input)="updateEra(i, { name: text($event) })"
                       />
                     </label>
                     <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Slug (optional)</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Slug (optional)</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="era.slug ?? ''"
                         [disabled]="!canEdit()"
                         (input)="updateEra(i, { slug: text($event) || undefined })"
                       />
                     </label>
                     <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Max years</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Max years</span>
                       <input
                         type="number"
                         min="0"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="era.maxYears ?? ''"
                         [disabled]="!canEdit()"
                         placeholder="unknown"
@@ -162,11 +162,11 @@ import {
 
                 <div class="flex flex-wrap gap-2 pl-12">
                   <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Hours / day</span>
+                    <span class="font-medium text-slate-700 dark:text-slate-300">Hours / day</span>
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                       [value]="era.hoursPerDay ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultHoursPerDay"
@@ -174,11 +174,11 @@ import {
                     />
                   </label>
                   <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Minutes / hour</span>
+                    <span class="font-medium text-slate-700 dark:text-slate-300">Minutes / hour</span>
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                       [value]="era.minutesPerHour ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultMinutesPerHour"
@@ -186,11 +186,11 @@ import {
                     />
                   </label>
                   <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-slate-700">Seconds / minute</span>
+                    <span class="font-medium text-slate-700 dark:text-slate-300">Seconds / minute</span>
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                      class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                       [value]="era.secondsPerMinute ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultSecondsPerMinute"
@@ -209,8 +209,8 @@ import {
                       (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
                     />
                     <span class="flex flex-col gap-0.5">
-                      <span class="font-medium text-slate-700">Resets weekday cycle</span>
-                      <span class="text-xs text-slate-500">
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Resets weekday cycle</span>
+                      <span class="text-xs text-slate-500 dark:text-slate-400">
                         Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.
                       </span>
                     </span>
@@ -227,15 +227,15 @@ import {
       </details>
 
       <details
-        class="rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200 dark:border-slate-700"
         [open]="monthsOpen()"
         (toggle)="onMonthsToggle($event)"
       >
         <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         >
-          <h3 class="m-0 text-base font-semibold text-slate-900">
-            Months <span class="text-sm font-normal text-slate-500">({{ months().length }})</span>
+          <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">
+            Months <span class="text-sm font-normal text-slate-500 dark:text-slate-400">({{ months().length }})</span>
           </h3>
           <span class="ml-auto flex items-center gap-2">
             @if (canEdit()) {
@@ -246,7 +246,7 @@ import {
               >+ Add month</button>
             }
             <svg
-              class="size-4 shrink-0 text-slate-500 transition-transform"
+              class="size-4 shrink-0 text-slate-500 dark:text-slate-400 transition-transform"
               [class.rotate-180]="monthsOpen()"
               aria-hidden="true"
               viewBox="0 0 20 20"
@@ -261,9 +261,9 @@ import {
           </span>
         </summary>
 
-        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
+        <div class="flex flex-col gap-2 border-t border-slate-200 dark:border-slate-700 p-3">
         @if (months().length === 0) {
-          <p class="m-0 text-sm text-slate-600">No months yet.</p>
+          <p class="m-0 text-sm text-slate-600 dark:text-slate-400">No months yet.</p>
         } @else {
           <ul
             cdkDropList
@@ -274,34 +274,34 @@ import {
               <li
                 cdkDrag
                 [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm"
               >
                 <div class="flex items-start gap-3">
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-emerald-100 text-sm font-semibold text-emerald-700"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-emerald-100 dark:bg-emerald-950/60 text-sm font-semibold text-emerald-700 dark:text-emerald-300"
                     [attr.aria-label]="'Month ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}
                   </button>
                   <div class="flex flex-1 flex-wrap gap-2">
                     <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Name</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="month.name"
                         [disabled]="!canEdit()"
                         (input)="updateMonth(i, { name: text($event) })"
                       />
                     </label>
                     <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Days</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Days</span>
                       <input
                         type="number"
                         min="1"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="month.days"
                         [disabled]="!canEdit()"
                         (input)="updateMonth(i, { days: requiredInt($event) })"
@@ -325,18 +325,18 @@ import {
       </details>
 
       <details
-        class="rounded-md border border-slate-200"
+        class="rounded-md border border-slate-200 dark:border-slate-700"
         [open]="weekdaysOpen()"
         (toggle)="onWeekdaysToggle($event)"
       >
         <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50"
+          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         >
           <div class="flex flex-col">
-            <h3 class="m-0 text-base font-semibold text-slate-900">
-              Weekdays <span class="text-sm font-normal text-slate-500">({{ weekdays().length }})</span>
+            <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">
+              Weekdays <span class="text-sm font-normal text-slate-500 dark:text-slate-400">({{ weekdays().length }})</span>
             </h3>
-            <p class="m-0 mt-0.5 text-xs text-slate-500">
+            <p class="m-0 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
             </p>
           </div>
@@ -349,7 +349,7 @@ import {
               >+ Add weekday</button>
             }
             <svg
-              class="size-4 shrink-0 text-slate-500 transition-transform"
+              class="size-4 shrink-0 text-slate-500 dark:text-slate-400 transition-transform"
               [class.rotate-180]="weekdaysOpen()"
               aria-hidden="true"
               viewBox="0 0 20 20"
@@ -364,9 +364,9 @@ import {
           </span>
         </summary>
 
-        <div class="flex flex-col gap-2 border-t border-slate-200 p-3">
+        <div class="flex flex-col gap-2 border-t border-slate-200 dark:border-slate-700 p-3">
         @if (weekdays().length === 0) {
-          <p class="m-0 text-sm text-slate-600">No weekdays defined. Dates will render without a weekday.</p>
+          <p class="m-0 text-sm text-slate-600 dark:text-slate-400">No weekdays defined. Dates will render without a weekday.</p>
         } @else {
           <ul
             cdkDropList
@@ -377,33 +377,33 @@ import {
               <li
                 cdkDrag
                 [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                class="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm"
               >
                 <div class="flex items-start gap-3">
                   <button
                     type="button"
                     cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-amber-100 text-sm font-semibold text-amber-700"
+                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-amber-100 dark:bg-amber-950/60 text-sm font-semibold text-amber-700 dark:text-amber-300"
                     [attr.aria-label]="'Weekday ' + (i + 1) + ', drag to reorder'"
                   >
                     {{ i + 1 }}
                   </button>
                   <div class="flex flex-1 flex-wrap gap-2">
                     <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Name</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="wd.name"
                         [disabled]="!canEdit()"
                         (input)="updateWeekday(i, { name: text($event) })"
                       />
                     </label>
                     <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-slate-700">Short</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-300">Short</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                        class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                         [value]="wd.short ?? ''"
                         [disabled]="!canEdit()"
                         (input)="updateWeekday(i, { short: text($event) || undefined })"

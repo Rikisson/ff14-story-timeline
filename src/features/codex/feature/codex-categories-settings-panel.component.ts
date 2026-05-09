@@ -39,11 +39,11 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
     DangerButtonComponent,
   ],
   template: `
-    <section class="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section class="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <header class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 class="m-0 text-lg font-semibold text-slate-900">Categories</h2>
-          <p class="m-0 mt-0.5 text-sm text-slate-600">
+          <h2 class="m-0 text-lg font-semibold text-slate-900 dark:text-slate-100">Categories</h2>
+          <p class="m-0 mt-0.5 text-sm text-slate-600 dark:text-slate-400">
             Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set.
           </p>
         </div>
@@ -52,7 +52,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
             <button uiSecondary type="button" (click)="addCategory()">+ Add category</button>
           }
           @if (dirty()) {
-            <span class="text-sm text-amber-700">Unsaved changes</span>
+            <span class="text-sm text-amber-700 dark:text-amber-300">Unsaved changes</span>
           }
           <button uiGhost type="button" [disabled]="!dirty()" (click)="reset()">Reset</button>
           <button
@@ -68,23 +68,23 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
       </header>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700">{{ e }}</p>
+        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
       }
 
       @if (categories().length === 0) {
-        <p class="text-sm text-slate-600">No categories yet.</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400">No categories yet.</p>
       } @else {
         <ul
           class="grid min-h-0 list-none gap-3 overflow-y-auto p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           @for (cat of categories(); track cat.id; let i = $index) {
             <li
-              class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              class="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm"
             >
               <div class="flex items-center gap-2">
                 <input
                   type="text"
-                  class="h-10 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                  class="h-10 flex-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                   [value]="cat.label"
                   [disabled]="!canEdit()"
                   placeholder="Label"
@@ -93,7 +93,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
                 />
                 <input
                   type="color"
-                  class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-slate-300 bg-white p-1"
+                  class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-1"
                   [value]="cat.color ?? '#64748b'"
                   [disabled]="!canEdit()"
                   aria-label="Color"
@@ -102,7 +102,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
               </div>
               <input
                 type="text"
-                class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+                class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
                 [value]="cat.description ?? ''"
                 [disabled]="!canEdit()"
                 placeholder="Description (optional)"

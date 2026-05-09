@@ -35,10 +35,10 @@ const BTN_SECONDARY =
   host: { class: 'block' },
   template: `
     <article
-      class="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+      class="flex flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
     >
       <div
-        class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-slate-200"
+        class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-slate-200 dark:bg-slate-700"
         [style.backgroundImage]="background() ? 'url(' + background() + ')' : null"
         [style.backgroundSize]="'cover'"
         [style.backgroundPosition]="'center'"

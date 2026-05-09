@@ -22,7 +22,7 @@ const BTN_PRIMARY =
   ' bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 focus-visible:ring-indigo-500';
 const BTN_SECONDARY =
   BTN_BASE +
-  ' bg-slate-100 text-slate-900 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-slate-400';
+  ' bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 focus-visible:ring-slate-400';
 
 @Component({
   selector: 'app-catalog-card',
@@ -37,19 +37,21 @@ const BTN_SECONDARY =
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-900 shadow-sm"
       [class.border]="!accentColor()"
       [class.border-slate-200]="!accentColor()"
+      [class.dark:border-slate-700]="!accentColor()"
       [class.border-l-4]="!!accentColor()"
       [class.border-y]="!!accentColor()"
       [class.border-r]="!!accentColor()"
       [class.border-slate-100]="!!accentColor()"
+      [class.dark:border-slate-800]="!!accentColor()"
       [style.borderLeftColor]="accentColor()"
     >
       <a
         [routerLink]="['/play', story().id]"
         [attr.aria-label]="'Play ' + story().title"
-        class="group relative block aspect-video overflow-hidden bg-slate-200"
+        class="group relative block aspect-video overflow-hidden bg-slate-200 dark:bg-slate-700"
       >
         @if (background(); as bg) {
           <img
@@ -83,12 +85,12 @@ const BTN_SECONDARY =
       </a>
 
       <div class="flex flex-1 flex-col gap-2 px-4 py-3">
-        <h3 class="m-0 text-lg font-semibold text-slate-900">
+        <h3 class="m-0 text-lg font-semibold text-slate-900 dark:text-slate-100">
           {{ story().title || 'Untitled' }}
         </h3>
         @if (story().description; as d) {
           <app-markdown-text
-            class="line-clamp-3 text-sm text-slate-600"
+            class="line-clamp-3 text-sm text-slate-600 dark:text-slate-400"
             [text]="d"
             [options]="inlineRefOptions()"
             [inline]="true"
@@ -119,14 +121,14 @@ const BTN_SECONDARY =
         }
       </div>
 
-      <div class="flex gap-2 border-t border-slate-100 px-4 py-3">
+      <div class="flex gap-2 border-t border-slate-100 dark:border-slate-800 px-4 py-3">
         <a [routerLink]="['/play', story().id]" [class]="primaryClass">Play</a>
         @if (canEdit()) {
           <a [routerLink]="['/edit', story().id]" [class]="secondaryClass">Edit</a>
           <button
             uiGhost
             type="button"
-            class="text-red-700 hover:bg-red-50"
+            class="text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
             [attr.aria-label]="'Delete ' + story().title"
             (click)="confirmDelete()"
           >

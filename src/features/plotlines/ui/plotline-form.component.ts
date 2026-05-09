@@ -18,32 +18,32 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
   template: `
     <form
       [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      class="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm"
       (ngSubmit)="onSubmit()"
     >
-      <h3 class="m-0 text-base font-semibold text-slate-900">
+      <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">
         {{ initial() ? 'Edit plotline' : 'Add plotline' }}
       </h3>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Title</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Title</span>
           <input
             type="text"
             formControlName="title"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. Shadowbringers main scenario"
           />
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Slug</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Slug</span>
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 text-sm"
             placeholder="e.g. shadowbringers-msq"
           />
-          <span class="text-xs text-slate-500">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
         </label>
       </div>
 
@@ -55,19 +55,19 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
 
       <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Description</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Description</span>
           <textarea
             formControlName="description"
             rows="3"
-            class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            class="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-3 py-2 text-sm"
             placeholder="High-level arc of this plotline."
           ></textarea>
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Status</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Status</span>
           <select
             formControlName="status"
-            class="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            class="h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3 text-sm"
           >
             @for (o of statusOptions; track o.value) {
               <option [value]="o.value">{{ o.label }}</option>
@@ -75,18 +75,18 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
           </select>
         </label>
         <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-slate-700">Color</span>
+          <span class="font-medium text-slate-700 dark:text-slate-300">Color</span>
           <input
             type="color"
             formControlName="color"
-            class="h-10 w-16 cursor-pointer rounded-md border border-slate-300 bg-white p-1"
+            class="h-10 w-16 cursor-pointer rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-1"
             aria-label="Color"
           />
         </label>
       </div>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700">{{ e }}</p>
+        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
       }
 
       <div class="flex gap-2">

@@ -23,23 +23,25 @@ import { TimelineEvent } from '../data-access/event.types';
   host: { class: 'block h-full' },
   template: `
     <article
-      class="flex h-full flex-col overflow-hidden rounded-lg bg-amber-50/40 shadow-sm"
+      class="flex h-full flex-col overflow-hidden rounded-lg bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
       [class.border]="!accentColor()"
       [class.border-amber-200]="!accentColor()"
+      [class.dark:border-amber-900/50]="!accentColor()"
       [class.border-l-4]="!!accentColor()"
       [class.border-y]="!!accentColor()"
       [class.border-r]="!!accentColor()"
       [class.border-amber-100]="!!accentColor()"
+      [class.dark:border-amber-900/50]="!!accentColor()"
       [style.borderLeftColor]="accentColor()"
     >
       @if (coverUrl(); as u) {
-        <div class="relative aspect-video w-full bg-amber-100/40">
+        <div class="relative aspect-video w-full bg-amber-100/40 dark:bg-amber-950/40">
           <img [ngSrc]="u" alt="" fill class="object-cover" />
         </div>
       }
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-2">
-          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900">{{ event().name }}</h3>
+          <h3 class="m-0 flex-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ event().name }}</h3>
           <div class="flex shrink-0 items-center gap-2">
             <app-tag tone="amber" aria-label="Event entry">Event</app-tag>
             @if (canEdit()) {
@@ -50,11 +52,11 @@ import { TimelineEvent } from '../data-access/event.types';
         </div>
 
         @if (formattedDate(); as d) {
-          <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700">{{ d }}</p>
+          <p class="m-0 text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">{{ d }}</p>
         }
 
         @if (event().description; as desc) {
-          <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700">{{ desc }}</p>
+          <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ desc }}</p>
         }
 
         @if (relatedRefs().length > 0) {

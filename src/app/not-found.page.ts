@@ -6,9 +6,9 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
-      <h1 class="m-0 text-3xl font-semibold text-slate-900">Page not found</h1>
-      <p class="m-0 text-slate-600">We couldn't find what you were looking for.</p>
-      <a routerLink="/timeline" class="text-indigo-700 hover:underline">Back to timeline</a>
+      <h1 class="m-0 text-3xl font-semibold text-slate-900 dark:text-slate-100">Page not found</h1>
+      <p class="m-0 text-slate-600 dark:text-slate-400">We couldn't find what you were looking for.</p>
+      <a routerLink="/timeline" class="text-indigo-700 dark:text-indigo-300 hover:underline">Back to timeline</a>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

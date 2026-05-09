@@ -5,9 +5,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <header class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 class="m-0 text-2xl font-semibold text-slate-900">{{ title() }}</h1>
+        <h1 class="m-0 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ title() }}</h1>
         @if (subtitle()) {
-          <p class="m-0 text-sm text-slate-600">{{ subtitle() }}</p>
+          <p class="m-0 text-sm text-slate-600 dark:text-slate-400">{{ subtitle() }}</p>
         }
       </div>
       <ng-content />
