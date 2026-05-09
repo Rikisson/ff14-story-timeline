@@ -1,0 +1,27 @@
+{
+  "field": {
+    "pageTitle": "Сюжетні лінії",
+    "pageSubtitle": "Наративні арки, які групують повʼязані історії та події.",
+    "statusUnset": "— Не задано —",
+    "statusPlanned": "Заплановано",
+    "statusActive": "Активна",
+    "statusResolved": "Завершена",
+    "formAdd": "Додати сюжетну лінію",
+    "formEdit": "Редагувати сюжетну лінію"
+  },
+  "action": {
+    "create": "+ Додати сюжетну лінію"
+  },
+  "empty": {
+    "list": "Поки немає сюжетних ліній.",
+    "selectDetail": "Оберіть сюжетну лінію, щоб переглянути деталі.",
+    "titlePlaceholder": "напр. Основний сценарій Shadowbringers",
+    "slugPlaceholder": "напр. shadowbringers-msq",
+    "descriptionPlaceholder": "Загальний хід цієї сюжетної лінії."
+  },
+  "tooltip": {
+    "list": "Список сюжетних ліній",
+    "details": "Деталі сюжетної лінії",
+    "colorAria": "Колір"
+  }
+}

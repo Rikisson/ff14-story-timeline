@@ -1,0 +1,27 @@
+{
+  "field": {
+    "pageTitle": "Plotlines",
+    "pageSubtitle": "Narrative arcs that group related stories and events together.",
+    "statusUnset": "— Unset —",
+    "statusPlanned": "Planned",
+    "statusActive": "Active",
+    "statusResolved": "Resolved",
+    "formAdd": "Add plotline",
+    "formEdit": "Edit plotline"
+  },
+  "action": {
+    "create": "+ Add plotline"
+  },
+  "empty": {
+    "list": "No plotlines yet.",
+    "selectDetail": "Select a plotline to view details.",
+    "titlePlaceholder": "e.g. Shadowbringers main scenario",
+    "slugPlaceholder": "e.g. shadowbringers-msq",
+    "descriptionPlaceholder": "High-level arc of this plotline."
+  },
+  "tooltip": {
+    "list": "Plotlines list",
+    "details": "Plotline details",
+    "colorAria": "Color"
+  }
+}

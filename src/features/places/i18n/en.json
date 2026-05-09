@@ -1,0 +1,22 @@
+{
+  "field": {
+    "pageTitle": "Places",
+    "pageSubtitle": "Locations where stories unfold and events occur.",
+    "formAdd": "Add place",
+    "formEdit": "Edit place"
+  },
+  "action": {
+    "create": "+ Add place"
+  },
+  "empty": {
+    "list": "No places yet.",
+    "selectDetail": "Select a place to view details.",
+    "namePlaceholder": "e.g. Limsa Lominsa",
+    "slugPlaceholder": "e.g. limsa-lominsa",
+    "descriptionPlaceholder": "History, geography, notable inhabitants…"
+  },
+  "tooltip": {
+    "list": "Places list",
+    "details": "Place details"
+  }
+}

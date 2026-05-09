@@ -1,0 +1,22 @@
+{
+  "field": {
+    "pageTitle": "Місця",
+    "pageSubtitle": "Локації, де розгортаються історії та відбуваються події.",
+    "formAdd": "Додати місце",
+    "formEdit": "Редагувати місце"
+  },
+  "action": {
+    "create": "+ Додати місце"
+  },
+  "empty": {
+    "list": "Поки немає місць.",
+    "selectDetail": "Оберіть місце, щоб переглянути деталі.",
+    "namePlaceholder": "напр. Лімса Ломінса",
+    "slugPlaceholder": "напр. limsa-lominsa",
+    "descriptionPlaceholder": "Історія, географія, видатні мешканці…"
+  },
+  "tooltip": {
+    "list": "Список місць",
+    "details": "Деталі місця"
+  }
+}

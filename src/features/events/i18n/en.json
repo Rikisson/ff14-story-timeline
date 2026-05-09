@@ -1,0 +1,23 @@
+{
+  "field": {
+    "pageTitle": "Events",
+    "pageSubtitle": "Timeline-anchored happenings — battles, treaties, calamities, personal turning points.",
+    "inGameDate": "In-game date",
+    "formAdd": "Add event",
+    "formEdit": "Edit event"
+  },
+  "action": {
+    "create": "+ Add event"
+  },
+  "empty": {
+    "list": "No events yet.",
+    "selectDetail": "Select an event to view details.",
+    "namePlaceholder": "e.g. Calamity of the Seventh Umbral Era",
+    "slugPlaceholder": "e.g. seventh-umbral-calamity",
+    "descriptionPlaceholder": "What happens in this event…"
+  },
+  "tooltip": {
+    "list": "Events list",
+    "details": "Event details"
+  }
+}
