@@ -268,7 +268,7 @@ import {
         } @else {
           <ul
             cdkDropList
-            class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+            class="flex flex-col gap-2"
             (cdkDropListDropped)="dropMonth($event)"
           >
             @for (month of months(); track month.id; let i = $index) {
@@ -369,7 +369,7 @@ import {
         } @else {
           <ul
             cdkDropList
-            class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+            class="flex flex-col gap-2"
             (cdkDropListDropped)="dropWeekday($event)"
           >
             @for (wd of weekdays(); track wd.id; let i = $index) {
