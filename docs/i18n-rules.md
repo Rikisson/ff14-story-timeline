@@ -280,4 +280,3 @@ Open changes. Remove items as they ship.
   through transloco at the integration layer (`editor.tiptap.*`).
 - Rete node and socket labels translated at the render component
   (`editor.rete.*`).
-- Firebase Auth error-code translator keyed under `auth.message.*`.

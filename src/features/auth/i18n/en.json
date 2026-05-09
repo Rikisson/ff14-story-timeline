@@ -6,7 +6,14 @@
   },
   "message": {
     "loading": "Loading…",
-    "uidCopied": "UID copied"
+    "uidCopied": "UID copied",
+    "errorPopupClosed": "Sign-in was cancelled.",
+    "errorPopupBlocked": "The sign-in popup was blocked. Please allow popups for this site and try again.",
+    "errorNetworkFailed": "Network error. Check your connection and try again.",
+    "errorUnauthorizedDomain": "This domain isn't authorised for sign-in.",
+    "errorAccountExists": "An account already exists with a different sign-in method.",
+    "errorTooManyRequests": "Too many attempts. Try again later.",
+    "errorGeneric": "Authentication error: {{ code }}"
   },
   "tooltip": {
     "accountMenu": "Account menu for {{ name }}"

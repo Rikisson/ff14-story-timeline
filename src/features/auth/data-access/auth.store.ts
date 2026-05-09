@@ -1,6 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import { TranslocoService } from '@jsverse/transloco';
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -10,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { AuthUser } from './auth.types';
+import { translateFirebaseAuthError } from './firebase-auth-error';
 
 interface AuthState {
   user: AuthUser | null;
@@ -33,21 +35,21 @@ function toAuthUser(user: User | null): AuthUser | null {
   };
 }
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-}
-
 export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withMethods((store, firebase = inject(FirebaseService)) => ({
+  withMethods((
+    store,
+    firebase = inject(FirebaseService),
+    transloco = inject(TranslocoService),
+  ) => ({
     async login(): Promise<void> {
       patchState(store, { error: null });
       try {
         await signInWithPopup(firebase.auth, new GoogleAuthProvider());
       } catch (err) {
         console.error('login failed', err);
-        patchState(store, { error: errorMessage(err) });
+        patchState(store, { error: translateFirebaseAuthError(err, transloco) });
       }
     },
     async logout(): Promise<void> {
@@ -56,7 +58,7 @@ export const AuthStore = signalStore(
         await signOut(firebase.auth);
       } catch (err) {
         console.error('logout failed', err);
-        patchState(store, { error: errorMessage(err) });
+        patchState(store, { error: translateFirebaseAuthError(err, transloco) });
       }
     },
   })),
