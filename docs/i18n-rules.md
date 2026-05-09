@@ -82,7 +82,9 @@ the prose does not.
   *action* / *field* / etc. category." Don't force three pre-set
   groups; a small scope can sit flat (`general.loading`,
   `auth.signOut`).
-- **Key**: camelCase, descriptive, self-documenting.
+- **Key**: camelCase, descriptive, self-documenting. Free-form — the
+  singular rule applies only to scope and group, so keys can be
+  `seedTestData`, `noPlotlines`, or `landingNoUniversesGuest`.
 
 ## What goes where
 
@@ -242,7 +244,7 @@ When adding or refactoring translations:
 2. Pick the smallest scope the string belongs to. Promote to `general`
    only when three scopes share it.
 3. camelCase keys, max three levels (`scope.group.key`), no deeper
-   nesting.
+   nesting. Scope and group are singular; the key is free-form.
 4. Cross-cutting validator messages live at `general.validation.*`;
    field-specific validation goes in the scope's `validation` group.
 5. ICU MessageFormat for plurals and selects. Never concatenate

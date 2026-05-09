@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
@@ -16,6 +17,8 @@ import {
   matchesStory,
 } from './catalog-filters.component';
 import { CatalogDetailComponent } from './catalog-detail.component';
+import catalogEn from './i18n/en.json';
+import catalogUk from './i18n/uk.json';
 
 @Component({
   selector: 'app-catalog-page',
@@ -25,57 +28,69 @@ import { CatalogDetailComponent } from './catalog-detail.component';
     CatalogFiltersComponent,
     EntityListPaneComponent,
     PageHeaderComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'catalog',
+      loader: {
+        en: () => Promise.resolve(catalogEn),
+        uk: () => Promise.resolve(catalogUk),
+      },
+    }),
   ],
   template: `
-    <div class="flex h-full flex-col gap-4">
-      <app-page-header
-        title="Stories"
-        subtitle="Branching scenes you can play through, scoped to this universe."
-      >
-        <app-catalog-filters
-          [value]="filters()"
-          (filtersChange)="filters.set($event)"
-          (reset)="filters.set(EMPTY_FILTERS)"
-        />
-      </app-page-header>
+    <ng-container *transloco="let t; prefix: 'catalog'">
+      <div class="flex h-full flex-col gap-4">
+        <app-page-header
+          [title]="t('field.title')"
+          [subtitle]="t('message.subtitle')"
+        >
+          <app-catalog-filters
+            [value]="filters()"
+            (filtersChange)="filters.set($event)"
+            (reset)="filters.set(EMPTY_FILTERS)"
+          />
+        </app-page-header>
 
-      @if (actionError(); as e) {
-        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-      }
+        @if (actionError(); as e) {
+          <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+        }
 
-      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-        <app-entity-list-pane
-          class="md:w-80 md:shrink-0"
-          [items]="listItems()"
-          [selectedId]="selectedId()"
-          [hasMore]="stories.hasMore()"
-          [loadingMore]="stories.loadingMore()"
-          [canCreate]="canCreate()"
-          createLabel="+ New story"
-          emptyMessage="No stories match the current filters."
-          ariaLabel="Stories list"
-          (select)="onSelect($event)"
-          (create)="createStory()"
-          (loadMore)="stories.loadMorePublished()"
-        />
+        <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+          <app-entity-list-pane
+            class="md:w-80 md:shrink-0"
+            [items]="listItems()"
+            [selectedId]="selectedId()"
+            [hasMore]="stories.hasMore()"
+            [loadingMore]="stories.loadingMore()"
+            [canCreate]="canCreate()"
+            [createLabel]="t('action.newStory')"
+            [emptyMessage]="t('empty.list')"
+            [ariaLabel]="t('tooltip.storiesList')"
+            (select)="onSelect($event)"
+            (create)="createStory()"
+            (loadMore)="stories.loadMorePublished()"
+          />
 
-        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Story details">
-          @if (selected(); as s) {
-            <div class="min-h-0 flex-1 overflow-y-auto">
-              <app-catalog-detail
-                [story]="s"
-                [canEdit]="canCreate()"
-                (remove)="deleteStory($event)"
-              />
-            </div>
-          } @else {
-            <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
-              Select a story to view details.
-            </p>
-          }
-        </section>
+          <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.storyDetails')">
+            @if (selected(); as s) {
+              <div class="min-h-0 flex-1 overflow-y-auto">
+                <app-catalog-detail
+                  [story]="s"
+                  [canEdit]="canCreate()"
+                  (remove)="deleteStory($event)"
+                />
+              </div>
+            } @else {
+              <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
+                {{ t('empty.selectStory') }}
+              </p>
+            }
+          </section>
+        </div>
       </div>
-    </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -86,6 +101,7 @@ export class CatalogPage {
   private readonly router = inject(Router);
   private readonly calendar = inject(CalendarService);
   private readonly media = inject(MediaAssetsService);
+  private readonly transloco = inject(TranslocoService);
   protected readonly user = inject(AuthStore).user;
 
   protected readonly canCreate = computed(
@@ -114,10 +130,12 @@ export class CatalogPage {
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.filteredStories().map((s) => ({
       id: s.id,
-      label: s.title || 'Untitled',
+      label: s.title || this.transloco.translate('catalog.field.untitled'),
       secondary: this.formatDateLabel(s),
       thumbnailUrl: this.media.urlFor(s.coverAssetId),
-      badge: s.draft ? { text: 'Draft', tone: 'amber' } : undefined,
+      badge: s.draft
+        ? { text: this.transloco.translate('catalog.field.draft'), tone: 'amber' }
+        : undefined,
     })),
   );
 

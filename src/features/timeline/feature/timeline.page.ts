@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { EventsService, TimelineEvent } from '@features/events';
 import { PlotlinesService } from '@features/plotlines';
@@ -14,44 +15,62 @@ import {
   matchesStory,
 } from '../../../app/catalog/catalog-filters.component';
 import { CatalogTimelineComponent } from '../../../app/catalog/catalog-timeline.component';
+import timelineEn from '../i18n/en.json';
+import timelineUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-timeline-page',
-  imports: [CatalogFiltersComponent, CatalogTimelineComponent, PageHeaderComponent],
+  imports: [
+    CatalogFiltersComponent,
+    CatalogTimelineComponent,
+    PageHeaderComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'timeline',
+      loader: {
+        en: () => Promise.resolve(timelineEn),
+        uk: () => Promise.resolve(timelineUk),
+      },
+    }),
+  ],
   template: `
-    <div class="flex flex-col gap-4">
-      <app-page-header
-        title="Timeline"
-        subtitle="Stories and events placed on the universe's calendar."
-      >
-        <app-catalog-filters
-          [value]="filters()"
-          [showPlotlineFilter]="true"
-          [showSortControl]="true"
-          [sortDirection]="sortDirection()"
-          (filtersChange)="filters.set($event)"
-          (sortDirectionChange)="sortDirection.set($event)"
-          (reset)="filters.set(EMPTY_FILTERS)"
-        />
-      </app-page-header>
+    <ng-container *transloco="let t; prefix: 'timeline'">
+      <div class="flex flex-col gap-4">
+        <app-page-header
+          [title]="t('field.title')"
+          [subtitle]="t('message.subtitle')"
+        >
+          <app-catalog-filters
+            [value]="filters()"
+            [showPlotlineFilter]="true"
+            [showSortControl]="true"
+            [sortDirection]="sortDirection()"
+            (filtersChange)="filters.set($event)"
+            (sortDirectionChange)="sortDirection.set($event)"
+            (reset)="filters.set(EMPTY_FILTERS)"
+          />
+        </app-page-header>
 
-      @if (filteredStories().length === 0 && filteredEvents().length === 0) {
-        <p class="text-foreground-subtle">Nothing to show on the timeline.</p>
-      } @else {
-        <app-catalog-timeline
-          [stories]="filteredStories()"
-          [events]="filteredEvents()"
-          [plotlines]="plotlines()"
-          [selectedPlotlineIds]="filters().plotlines"
-          [sortDirection]="sortDirection()"
-          [canManage]="canCreate()"
-          [storiesHasMore]="storiesService.hasMore()"
-          [eventsHasMore]="eventsService.hasMore()"
-          (loadMoreStories)="storiesService.loadMorePublished()"
-          (loadMoreEvents)="eventsService.loadMore()"
-        />
-      }
-    </div>
+        @if (filteredStories().length === 0 && filteredEvents().length === 0) {
+          <p class="text-foreground-subtle">{{ t('empty.list') }}</p>
+        } @else {
+          <app-catalog-timeline
+            [stories]="filteredStories()"
+            [events]="filteredEvents()"
+            [plotlines]="plotlines()"
+            [selectedPlotlineIds]="filters().plotlines"
+            [sortDirection]="sortDirection()"
+            [canManage]="canCreate()"
+            [storiesHasMore]="storiesService.hasMore()"
+            [eventsHasMore]="eventsService.hasMore()"
+            (loadMoreStories)="storiesService.loadMorePublished()"
+            (loadMoreEvents)="eventsService.loadMore()"
+          />
+        }
+      </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

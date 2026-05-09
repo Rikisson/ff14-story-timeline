@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { TimelineEvent } from '@features/events';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { Story } from '@features/stories';
 import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
+import catalogEn from './i18n/en.json';
+import catalogUk from './i18n/uk.json';
 
 export interface CatalogFilters {
   characters: string[];
@@ -70,65 +73,76 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
 
 @Component({
   selector: 'app-catalog-filters',
-  imports: [GhostButtonComponent, ComboboxPickerComponent],
+  imports: [GhostButtonComponent, ComboboxPickerComponent, TranslocoDirective],
+  providers: [
+    provideTranslocoScope({
+      scope: 'catalog',
+      loader: {
+        en: () => Promise.resolve(catalogEn),
+        uk: () => Promise.resolve(catalogUk),
+      },
+    }),
+  ],
   template: `
-    <div class="flex flex-wrap items-start gap-4">
-      <label class="flex w-60 flex-col text-sm">
-        <span class="sr-only">Main character</span>
-        <app-combobox-picker
-          [options]="characterOptions()"
-          [value]="value().characters"
-          placeholder="Search characters…"
-          emptyMessage="No characters yet."
-          (valueChange)="setKey('characters', $event)"
-        />
-      </label>
-
-      <label class="flex w-60 flex-col text-sm">
-        <span class="sr-only">Place</span>
-        <app-combobox-picker
-          [options]="placeOptions()"
-          [value]="value().places"
-          placeholder="Search places…"
-          emptyMessage="No places yet."
-          (valueChange)="setKey('places', $event)"
-        />
-      </label>
-
-      @if (showPlotlineFilter()) {
+    <ng-container *transloco="let t; prefix: 'catalog'">
+      <div class="flex flex-wrap items-start gap-4">
         <label class="flex w-60 flex-col text-sm">
-          <span class="sr-only">Plotline</span>
+          <span class="sr-only">{{ t('field.mainCharacter') }}</span>
           <app-combobox-picker
-            [options]="plotlineOptions()"
-            [value]="value().plotlines"
-            placeholder="Search plotlines…"
-            emptyMessage="No plotlines yet."
-            (valueChange)="setKey('plotlines', $event)"
+            [options]="characterOptions()"
+            [value]="value().characters"
+            [placeholder]="t('empty.searchCharacters')"
+            [emptyMessage]="t('empty.noCharacters')"
+            (valueChange)="setKey('characters', $event)"
           />
         </label>
-      }
 
-      @if (showSortControl()) {
-        <label class="flex flex-col text-sm">
-          <span class="sr-only">Sort by date</span>
-          <select
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
-            [value]="sortDirection()"
-            (change)="emitSort($event)"
-            aria-label="Sort by date"
-          >
-            <option value="asc">Oldest first</option>
-            <option value="desc">Newest first</option>
-          </select>
+        <label class="flex w-60 flex-col text-sm">
+          <span class="sr-only">{{ t('field.place') }}</span>
+          <app-combobox-picker
+            [options]="placeOptions()"
+            [value]="value().places"
+            [placeholder]="t('empty.searchPlaces')"
+            [emptyMessage]="t('empty.noPlaces')"
+            (valueChange)="setKey('places', $event)"
+          />
         </label>
-      }
 
-      @if (hasActive()) {
-        <button uiGhost type="button" class="self-end" (click)="reset.emit()">
-          Clear filters
-        </button>
-      }
-    </div>
+        @if (showPlotlineFilter()) {
+          <label class="flex w-60 flex-col text-sm">
+            <span class="sr-only">{{ t('field.plotline') }}</span>
+            <app-combobox-picker
+              [options]="plotlineOptions()"
+              [value]="value().plotlines"
+              [placeholder]="t('empty.searchPlotlines')"
+              [emptyMessage]="t('empty.noPlotlines')"
+              (valueChange)="setKey('plotlines', $event)"
+            />
+          </label>
+        }
+
+        @if (showSortControl()) {
+          <label class="flex flex-col text-sm">
+            <span class="sr-only">{{ t('field.sortByDate') }}</span>
+            <select
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+              [value]="sortDirection()"
+              (change)="emitSort($event)"
+              [attr.aria-label]="t('field.sortByDate')"
+            >
+              <option value="asc">{{ t('action.oldestFirst') }}</option>
+              <option value="desc">{{ t('action.newestFirst') }}</option>
+            </select>
+          </label>
+        }
+
+        @if (hasActive()) {
+          <button uiGhost type="button" class="self-end" (click)="reset.emit()">
+            {{ t('action.clearFilters') }}
+          </button>
+        }
+      </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

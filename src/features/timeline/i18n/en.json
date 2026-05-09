@@ -1,0 +1,11 @@
+{
+  "field": {
+    "title": "Timeline"
+  },
+  "message": {
+    "subtitle": "Stories and events placed on the universe's calendar."
+  },
+  "empty": {
+    "list": "Nothing to show on the timeline."
+  }
+}

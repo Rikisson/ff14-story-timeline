@@ -1,0 +1,47 @@
+{
+  "field": {
+    "title": "Stories",
+    "untitled": "Untitled",
+    "draft": "Draft",
+    "draftBadge": "DRAFT",
+    "mainCharacter": "Main character",
+    "place": "Place",
+    "plotline": "Plotline",
+    "sortByDate": "Sort by date",
+    "undated": "Undated",
+    "allItems": "All timeline items"
+  },
+  "action": {
+    "newStory": "+ New story",
+    "play": "Play",
+    "playEmoji": "▶ Play",
+    "edit": "Edit",
+    "delete": "Delete",
+    "oldestFirst": "Oldest first",
+    "newestFirst": "Newest first",
+    "clearFilters": "Clear filters",
+    "showUnassigned": "Show unassigned items"
+  },
+  "message": {
+    "subtitle": "Branching scenes you can play through, scoped to this universe.",
+    "deleteConfirm": "Delete \"{{ title }}\"? This cannot be undone."
+  },
+  "empty": {
+    "list": "No stories match the current filters.",
+    "selectStory": "Select a story to view details.",
+    "searchCharacters": "Search characters…",
+    "noCharacters": "No characters yet.",
+    "searchPlaces": "Search places…",
+    "noPlaces": "No places yet.",
+    "searchPlotlines": "Search plotlines…",
+    "noPlotlines": "No plotlines yet.",
+    "noItemsLane": "No items in this lane."
+  },
+  "tooltip": {
+    "storiesList": "Stories list",
+    "storyDetails": "Story details",
+    "playStory": "Play {{ title }}",
+    "deleteStory": "Delete {{ title }}",
+    "loadMore": "Load 25 more items into {{ lane }}"
+  }
+}

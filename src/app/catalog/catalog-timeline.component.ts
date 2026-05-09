@@ -8,6 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
 import { TimelineEvent } from '@features/events';
 import { Plotline } from '@features/plotlines';
@@ -15,36 +16,49 @@ import { Story } from '@features/stories';
 import { SortDirection } from './catalog-filters.component';
 import { buildTimelineLanes } from './catalog-timeline-lanes';
 import { TimelineLaneComponent } from './timeline-lane.component';
+import catalogEn from './i18n/en.json';
+import catalogUk from './i18n/uk.json';
 
 const PAGE_STEP = 25;
 
 @Component({
   selector: 'app-catalog-timeline',
-  imports: [TimelineLaneComponent],
+  imports: [TimelineLaneComponent, TranslocoDirective],
+  providers: [
+    provideTranslocoScope({
+      scope: 'catalog',
+      loader: {
+        en: () => Promise.resolve(catalogEn),
+        uk: () => Promise.resolve(catalogUk),
+      },
+    }),
+  ],
   template: `
-    <div class="flex flex-col gap-6">
-      @if (selectedPlotlineIds().length > 0) {
-        <label class="flex items-center gap-2 self-start text-sm text-foreground-muted">
-          <input
-            type="checkbox"
-            [checked]="showUnassigned()"
-            (change)="toggleUnassigned($event)"
-          />
-          Show unassigned items
-        </label>
-      }
+    <ng-container *transloco="let t; prefix: 'catalog'">
+      <div class="flex flex-col gap-6">
+        @if (selectedPlotlineIds().length > 0) {
+          <label class="flex items-center gap-2 self-start text-sm text-foreground-muted">
+            <input
+              type="checkbox"
+              [checked]="showUnassigned()"
+              (change)="toggleUnassigned($event)"
+            />
+            {{ t('action.showUnassigned') }}
+          </label>
+        }
 
-      @for (lane of lanes(); track lane.key) {
-        <app-timeline-lane
-          [lane]="lane"
-          [sortDirection]="sortDirection()"
-          [canManage]="canManage()"
-          [pageSize]="pageSizeFor(lane.key)"
-          [serverHasMore]="serverHasMore()"
-          (loadMore)="loadMoreLane(lane.key)"
-        />
-      }
-    </div>
+        @for (lane of lanes(); track lane.key) {
+          <app-timeline-lane
+            [lane]="lane"
+            [sortDirection]="sortDirection()"
+            [canManage]="canManage()"
+            [pageSize]="pageSizeFor(lane.key)"
+            [serverHasMore]="serverHasMore()"
+            (loadMore)="loadMoreLane(lane.key)"
+          />
+        }
+      </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
