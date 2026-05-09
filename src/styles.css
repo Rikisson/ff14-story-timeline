@@ -19,7 +19,11 @@
   --color-canvas: #ffffff;
   --color-surface: #ffffff;
   --color-surface-muted: #f1f5f9; /* slate-100 */
+  --color-surface-strong: #e2e8f0; /* slate-200 — hover one step beyond muted */
+  --color-surface-stronger: #cbd5e1; /* slate-300 — pressed/active */
   --color-surface-subtle: #f8fafc; /* slate-50 */
+  --color-overlay: rgb(255 255 255 / 0.6); /* loading overlay */
+  --color-backdrop: rgb(15 23 42 / 0.4); /* dialog backdrop — slate-900/40 */
   --color-foreground: #0f172a; /* slate-900 */
   --color-foreground-muted: #334155; /* slate-700 */
   --color-foreground-subtle: #475569; /* slate-600 */
@@ -55,7 +59,11 @@
   --color-canvas: #020617; /* slate-950 */
   --color-surface: #0f172a; /* slate-900 */
   --color-surface-muted: #1e293b; /* slate-800 */
+  --color-surface-strong: #334155; /* slate-700 */
+  --color-surface-stronger: #475569; /* slate-600 */
   --color-surface-subtle: rgb(30 41 59 / 0.5); /* slate-800/50 */
+  --color-overlay: rgb(2 6 23 / 0.6); /* slate-950/60 */
+  --color-backdrop: rgb(0 0 0 / 0.6);
   --color-foreground: #f1f5f9; /* slate-100 */
   --color-foreground-muted: #cbd5e1; /* slate-300 */
   --color-foreground-subtle: #94a3b8; /* slate-400 */

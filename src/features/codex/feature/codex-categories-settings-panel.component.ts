@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
 import {
@@ -84,7 +84,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
               <div class="flex items-center gap-2">
                 <input
                   type="text"
-                  class="h-10 flex-1 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                  class="h-10 flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                   [value]="cat.label"
                   [disabled]="!canEdit()"
                   placeholder="Label"
@@ -102,7 +102,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
               </div>
               <input
                 type="text"
-                class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                 [value]="cat.description ?? ''"
                 [disabled]="!canEdit()"
                 placeholder="Description (optional)"

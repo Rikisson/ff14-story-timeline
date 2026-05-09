@@ -60,8 +60,7 @@ import { UniverseFormComponent } from './universe-form.component';
                     role="menuitem"
                     class="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
                     [class.font-semibold]="u.id === activeId()"
-                    [class.text-blue-700]="u.id === activeId()"
-                    [class.dark:text-blue-400]="u.id === activeId()"
+                    [class.text-accent]="u.id === activeId()"
                     (click)="select(u.id)"
                   >
                     <span class="truncate">{{ u.name }}</span>
@@ -99,7 +98,7 @@ import { UniverseFormComponent } from './universe-form.component';
 
     <dialog
       #createDialog
-      class="rounded-lg p-0 backdrop:bg-slate-900/40 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/60"
+      class="rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
       aria-label="Create universe"
       (close)="onDialogClose()"
       (click)="onDialogBackdropClick($event)"

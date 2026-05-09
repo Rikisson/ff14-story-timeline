@@ -36,7 +36,7 @@ const SCROLL_STEP = 320;
           <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
             {{ lane().label }}
           </h3>
-          <span class="text-xs text-slate-400 dark:text-slate-500">
+          <span class="text-xs text-foreground-faint">
             ({{ lane().dated.length + lane().undated.length }})
           </span>
         </header>

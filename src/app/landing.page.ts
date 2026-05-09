@@ -9,7 +9,7 @@ import { UniverseStore } from '@features/universes';
     <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
       @if (loading()) {
         <span
-          class="inline-block size-10 rounded-full border-4 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-300 animate-spin"
+          class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
           aria-hidden="true"
         ></span>
         <p class="m-0 text-foreground-subtle">Loading universes…</p>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -69,7 +69,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="name"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. Limsa Lominsa"
           />
         </label>
@@ -78,7 +78,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. limsa-lominsa"
           />
           <span class="text-xs text-foreground-faint">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
@@ -97,7 +97,7 @@ function parseRefKey(key: string): EntityRef | null {
           [value]="description()"
           [options]="inlineRefOptions()"
           ariaLabel="Description"
-          placeholder="History, geography, notable inhabitants…"
+          placeholder="History, geography, notable inhabitantsвЂ¦"
           (valueChange)="onDescription($event)"
         />
       </div>
@@ -107,7 +107,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
+          placeholder="Search characters, places, codex entriesвЂ¦"
           emptyMessage="Nothing else in this universe yet."
           (valueChange)="onRelatedKeys($event)"
         />

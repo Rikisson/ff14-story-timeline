@@ -29,7 +29,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
         <p class="text-foreground-subtle">Loading...</p>
       } @else if (store.error(); as err) {
         <p class="text-danger-foreground">{{ err }}</p>
-        <p><a routerLink="/library" class="text-indigo-700 dark:text-indigo-300 hover:underline">Back to catalog</a></p>
+        <p><a routerLink="/library" class="text-accent hover:underline">Back to catalog</a></p>
       } @else if (store.story(); as story) {
         <header class="flex flex-wrap items-center gap-3">
           <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
@@ -48,10 +48,10 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 
         @if (store.pendingResume(); as resume) {
           <aside
-            class="flex flex-wrap items-center gap-3 rounded-md border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 px-4 py-3"
+            class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
             role="status"
           >
-            <p class="m-0 text-sm text-indigo-900 dark:text-indigo-200">
+            <p class="m-0 text-sm text-accent-soft-foreground">
               You have a saved spot in this story.
             </p>
             <div class="ml-auto flex gap-2">
@@ -77,7 +77,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
             <div class="flex flex-wrap items-center gap-3">
               <p class="m-0 italic text-foreground-subtle">The end.</p>
               <button uiPrimary type="button" (click)="store.restart()">Restart</button>
-              <a routerLink="/library" class="text-sm text-indigo-700 dark:text-indigo-300 hover:underline">
+              <a routerLink="/library" class="text-sm text-accent hover:underline">
                 Back to catalog
               </a>
             </div>

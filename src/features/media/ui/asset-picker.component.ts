@@ -1,4 +1,4 @@
-import { NgOptimizedImage } from '@angular/common';
+﻿import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,7 +33,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
   template: `
     <dialog
       #dialog
-      class="rounded-lg p-0 backdrop:bg-slate-900/40 dark:bg-slate-900 dark:text-slate-100"
+      class="rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
       [attr.aria-label]="title()"
       (close)="onDialogClose()"
       (click)="onBackdropClick($event)"
@@ -47,14 +47,14 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
             class="h-8 w-8 p-0 text-lg leading-none"
             aria-label="Close"
             (click)="cancel()"
-          >×</button>
+          >Г—</button>
         </header>
 
         <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
           <input
             type="text"
-            class="flex-1 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-1.5 text-sm"
-            placeholder="Filter by tag…"
+            class="flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-1.5 text-sm"
+            placeholder="Filter by tagвЂ¦"
             [value]="tagFilter()"
             (input)="onTagInput($event)"
           />
@@ -91,9 +91,8 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
               @for (a of visible(); track a.id) {
                 <li
                   class="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center"
-                  [class.border-indigo-500]="isSelected(a.id)"
-                  [class.bg-indigo-50]="isSelected(a.id)"
-                  [class.dark:bg-indigo-950/60]="isSelected(a.id)"
+                  [class.border-accent-ring]="isSelected(a.id)"
+                  [class.bg-accent-soft]="isSelected(a.id)"
                   [class.border-border]="!isSelected(a.id)"
                 >
                   <button
@@ -114,9 +113,9 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
               @for (a of visible(); track a.id) {
                 <li
                   class="flex flex-col gap-2 overflow-hidden rounded-md border bg-surface"
-                  [class.border-indigo-500]="isSelected(a.id)"
+                  [class.border-accent-ring]="isSelected(a.id)"
                   [class.ring-2]="isSelected(a.id)"
-                  [class.ring-indigo-300]="isSelected(a.id)"
+                  [class.ring-accent-ring]="isSelected(a.id)"
                   [class.border-border]="!isSelected(a.id)"
                 >
                   <button
@@ -134,9 +133,9 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
                     />
                     @if (isSelected(a.id)) {
                       <span
-                        class="absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow"
+                        class="absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground shadow"
                         aria-hidden="true"
-                      >✓</span>
+                      >вњ“</span>
                     }
                   </button>
                   <div class="flex flex-col gap-1 px-2 pb-2">

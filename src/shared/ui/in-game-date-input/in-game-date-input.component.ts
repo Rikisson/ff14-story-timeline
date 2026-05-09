@@ -157,7 +157,7 @@ import { formatInGameDate } from '@shared/utils';
           <span>Display override (optional — replaces the formatted output)</span>
           <input
             type="text"
-            class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
             placeholder="e.g. Spring of the Wolf, 1577"
             [value]="value()?.display ?? ''"
             (input)="onDisplay($event)"

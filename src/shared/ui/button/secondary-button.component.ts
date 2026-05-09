@@ -8,8 +8,6 @@ import { BUTTON_TEMPLATE, ButtonBase } from './button-base';
 })
 export class SecondaryButtonComponent extends ButtonBase {
   protected readonly variantClasses =
-    'bg-surface-muted text-foreground hover:bg-slate-200 active:bg-slate-300 ' +
-    'focus-visible:ring-slate-400 ' +
-    'dark:hover:bg-slate-700 dark:active:bg-slate-600 ' +
-    'dark:focus-visible:ring-slate-500';
+    'bg-surface-muted text-foreground hover:bg-surface-strong active:bg-surface-stronger ' +
+    'focus-visible:ring-foreground-faint';
 }

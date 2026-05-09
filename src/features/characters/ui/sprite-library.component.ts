@@ -58,7 +58,7 @@ interface ResolvedSprite {
               <span class="flex-1 truncate text-sm text-foreground">{{ s.label }}</span>
               @if (i === 0) {
                 <span
-                  class="rounded bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200"
+                  class="rounded bg-success px-2 py-0.5 text-xs font-semibold text-success-foreground"
                 >
                   DEFAULT
                 </span>

@@ -1,4 +1,4 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+﻿import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
@@ -41,7 +41,7 @@ import {
         <div>
           <h2 class="m-0 text-lg font-semibold text-foreground">Calendar</h2>
           <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
-            Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.
+            Define eras, months, and weekdays for this universe. Drag to reorder вЂ” order is the sort key.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -129,7 +129,7 @@ import {
                       <span class="font-medium text-foreground-muted">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="era.name"
                         [disabled]="!canEdit()"
                         (input)="updateEra(i, { name: text($event) })"
@@ -139,7 +139,7 @@ import {
                       <span class="font-medium text-foreground-muted">Slug (optional)</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="era.slug ?? ''"
                         [disabled]="!canEdit()"
                         (input)="updateEra(i, { slug: text($event) || undefined })"
@@ -150,7 +150,7 @@ import {
                       <input
                         type="number"
                         min="0"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="era.maxYears ?? ''"
                         [disabled]="!canEdit()"
                         placeholder="unknown"
@@ -166,7 +166,7 @@ import {
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                       [value]="era.hoursPerDay ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultHoursPerDay"
@@ -178,7 +178,7 @@ import {
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                       [value]="era.minutesPerHour ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultMinutesPerHour"
@@ -190,7 +190,7 @@ import {
                     <input
                       type="number"
                       min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                       [value]="era.secondsPerMinute ?? ''"
                       [disabled]="!canEdit()"
                       [placeholder]="defaultSecondsPerMinute"
@@ -290,7 +290,7 @@ import {
                       <span class="font-medium text-foreground-muted">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="month.name"
                         [disabled]="!canEdit()"
                         (input)="updateMonth(i, { name: text($event) })"
@@ -301,7 +301,7 @@ import {
                       <input
                         type="number"
                         min="1"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="month.days"
                         [disabled]="!canEdit()"
                         (input)="updateMonth(i, { days: requiredInt($event) })"
@@ -337,7 +337,7 @@ import {
               Weekdays <span class="text-sm font-normal text-foreground-faint">({{ weekdays().length }})</span>
             </h3>
             <p class="m-0 mt-0.5 text-xs text-foreground-faint">
-              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
+              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked вЂњResets weekday cycleвЂќ).
             </p>
           </div>
           <span class="ml-auto flex items-center gap-2">
@@ -393,7 +393,7 @@ import {
                       <span class="font-medium text-foreground-muted">Name</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="wd.name"
                         [disabled]="!canEdit()"
                         (input)="updateWeekday(i, { name: text($event) })"
@@ -403,7 +403,7 @@ import {
                       <span class="font-medium text-foreground-muted">Short</span>
                       <input
                         type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
                         [value]="wd.short ?? ''"
                         [disabled]="!canEdit()"
                         (input)="updateWeekday(i, { short: text($event) || undefined })"

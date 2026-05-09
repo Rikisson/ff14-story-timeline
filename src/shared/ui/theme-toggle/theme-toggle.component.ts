@@ -7,10 +7,9 @@ import { ThemeService } from '@shared/services';
   template: `
     <button
       type="button"
-      class="inline-flex size-9 items-center justify-center rounded-md text-slate-600
-             hover:bg-surface-muted hover:text-slate-900
-             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400
-             dark:text-slate-300 dark:hover:text-slate-100"
+      class="inline-flex size-9 items-center justify-center rounded-md text-foreground-subtle
+             hover:bg-surface-muted hover:text-foreground
+             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
       [attr.aria-label]="ariaLabel()"
       [title]="title()"
       (click)="toggle()"

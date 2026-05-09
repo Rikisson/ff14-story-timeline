@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CoverSlotComponent } from '@features/media';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
@@ -6,7 +6,7 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
 
 const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
-  { value: '', label: '— Unset —' },
+  { value: '', label: 'вЂ” Unset вЂ”' },
   { value: 'planned', label: 'Planned' },
   { value: 'active', label: 'Active' },
   { value: 'resolved', label: 'Resolved' },
@@ -31,7 +31,7 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
           <input
             type="text"
             formControlName="title"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. Shadowbringers main scenario"
           />
         </label>
@@ -40,7 +40,7 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. shadowbringers-msq"
           />
           <span class="text-xs text-foreground-faint">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
@@ -59,7 +59,7 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
           <textarea
             formControlName="description"
             rows="3"
-            class="rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-2 text-sm"
+            class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
             placeholder="High-level arc of this plotline."
           ></textarea>
         </label>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore } from '@features/auth';
 import {
@@ -38,7 +38,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
               <code class="break-all text-xs text-foreground-subtle">{{ u.ownerUid }}</code>
             </div>
             @if (isYou(u.ownerUid)) {
-              <span class="shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 text-xs text-indigo-800 dark:text-indigo-200">
+              <span class="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">
                 you
               </span>
             }
@@ -53,7 +53,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
               </div>
               <div class="flex items-center gap-2">
                 @if (isYou(uid)) {
-                  <span class="rounded-full bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 text-xs text-indigo-800 dark:text-indigo-200">you</span>
+                  <span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">you</span>
                 }
                 <button
                   uiDanger
@@ -74,7 +74,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
               formControlName="uid"
               autocomplete="off"
               spellcheck="false"
-              class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 font-mono text-xs"
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 font-mono text-xs"
               placeholder="e.g. uDRxrMxHMtNZfgbpNjbJat1BPBE3"
             />
             <span class="text-xs text-foreground-faint">

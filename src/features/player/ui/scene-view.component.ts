@@ -47,7 +47,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                     />
                   } @else {
                     <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-slate-400 dark:text-slate-500"
+                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
                     >
                       no sprite
                     </div>
@@ -73,7 +73,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
                     />
                   } @else {
                     <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-slate-400 dark:text-slate-500"
+                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
                     >
                       no sprite
                     </div>

@@ -4,8 +4,7 @@ import { cn } from '@shared/utils';
 const BASE =
   'inline-flex items-center justify-center gap-2 rounded-md font-medium ' +
   'h-10 px-4 text-sm transition-colors cursor-pointer select-none ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-  'dark:focus-visible:ring-offset-slate-950 ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 export const BUTTON_TEMPLATE = `

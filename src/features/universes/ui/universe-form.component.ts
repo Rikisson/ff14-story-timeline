@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { UniverseDraft } from '../data-access/universe.types';
@@ -20,7 +20,7 @@ import { UniverseDraft } from '../data-access/universe.types';
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. ff14-canon"
           />
           <span class="text-xs text-foreground-faint">Lowercase, hyphens. Globally unique.</span>
@@ -30,7 +30,7 @@ import { UniverseDraft } from '../data-access/universe.types';
           <input
             type="text"
             formControlName="name"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. FF14 Canon"
           />
         </label>
@@ -41,7 +41,7 @@ import { UniverseDraft } from '../data-access/universe.types';
         <textarea
           formControlName="description"
           rows="3"
-          class="rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-2 text-sm"
+          class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
         ></textarea>
       </label>
 

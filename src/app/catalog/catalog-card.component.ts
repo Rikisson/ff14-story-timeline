@@ -22,7 +22,7 @@ const BTN_PRIMARY =
   ' bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
 const BTN_SECONDARY =
   BTN_BASE +
-  ' bg-surface-muted text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 focus-visible:ring-slate-400';
+  ' bg-surface-muted text-foreground hover:bg-surface-strong active:bg-surface-stronger focus-visible:ring-foreground-faint';
 
 @Component({
   selector: 'app-catalog-card',
@@ -43,14 +43,13 @@ const BTN_SECONDARY =
       [class.border-l-4]="!!accentColor()"
       [class.border-y]="!!accentColor()"
       [class.border-r]="!!accentColor()"
-      [class.border-slate-100]="!!accentColor()"
-      [class.dark:border-slate-800]="!!accentColor()"
+      [class.border-surface-muted]="!!accentColor()"
       [style.borderLeftColor]="accentColor()"
     >
       <a
         [routerLink]="['/play', story().id]"
         [attr.aria-label]="'Play ' + story().title"
-        class="group relative block aspect-video overflow-hidden bg-slate-200 dark:bg-slate-700"
+        class="group relative block aspect-video overflow-hidden bg-surface-strong"
       >
         @if (background(); as bg) {
           <img
@@ -120,7 +119,7 @@ const BTN_SECONDARY =
         }
       </div>
 
-      <div class="flex gap-2 border-t border-slate-100 dark:border-slate-800 px-4 py-3">
+      <div class="flex gap-2 border-t border-surface-muted px-4 py-3">
         <a [routerLink]="['/play', story().id]" [class]="primaryClass">Play</a>
         @if (canEdit()) {
           <a [routerLink]="['/edit', story().id]" [class]="secondaryClass">Edit</a>

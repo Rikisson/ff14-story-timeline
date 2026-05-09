@@ -38,7 +38,7 @@ const BTN_SECONDARY =
       class="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
     >
       <div
-        class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-slate-200 dark:bg-slate-700"
+        class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-surface-strong"
         [style.backgroundImage]="background() ? 'url(' + background() + ')' : null"
         [style.backgroundSize]="'cover'"
         [style.backgroundPosition]="'center'"

@@ -8,7 +8,7 @@
         class="text-foreground-subtle no-underline"
       >Timeline</a>
 
-      <span class="h-4 w-px bg-slate-300 dark:bg-slate-700" aria-hidden="true"></span>
+      <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
 
       <a
         routerLink="/library"
@@ -26,7 +26,7 @@
         class="text-foreground-subtle no-underline"
       >Plotlines</a>
 
-      <span class="h-4 w-px bg-slate-300 dark:bg-slate-700" aria-hidden="true"></span>
+      <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
 
       <a
         routerLink="/characters"
@@ -73,13 +73,13 @@
   <router-outlet />
   @if (isNavigating()) {
     <div
-      class="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm dark:bg-slate-950/60"
+      class="absolute inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-sm"
       role="status"
       aria-live="polite"
       aria-label="Loading page"
     >
       <span
-        class="inline-block size-10 rounded-full border-4 border-slate-300 border-t-slate-700 animate-spin dark:border-slate-700 dark:border-t-slate-200"
+        class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
         aria-hidden="true"
       ></span>
     </div>

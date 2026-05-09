@@ -41,9 +41,8 @@ import { RefSuggestion } from './ref-suggestion.extension';
       >
         <button
           type="button"
-          class="rounded px-2 py-1 text-sm font-semibold hover:bg-surface-muted dark:text-slate-200"
-          [class.bg-slate-200]="boldActive()"
-          [class.dark:bg-slate-700]="boldActive()"
+          class="rounded px-2 py-1 text-sm font-semibold text-foreground hover:bg-surface-muted"
+          [class.bg-surface-strong]="boldActive()"
           [attr.aria-pressed]="boldActive()"
           aria-label="Bold (Ctrl+B)"
           (click)="toggleBold()"
@@ -52,9 +51,8 @@ import { RefSuggestion } from './ref-suggestion.extension';
         </button>
         <button
           type="button"
-          class="rounded px-2 py-1 text-sm italic hover:bg-surface-muted dark:text-slate-200"
-          [class.bg-slate-200]="italicActive()"
-          [class.dark:bg-slate-700]="italicActive()"
+          class="rounded px-2 py-1 text-sm italic text-foreground hover:bg-surface-muted"
+          [class.bg-surface-strong]="italicActive()"
           [attr.aria-pressed]="italicActive()"
           aria-label="Italic (Ctrl+I)"
           (click)="toggleItalic()"
@@ -67,7 +65,7 @@ import { RefSuggestion } from './ref-suggestion.extension';
       </div>
       <div
         #host
-        class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-indigo-300 dark:focus-within:ring-indigo-400"
+        class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-accent-ring"
         [attr.aria-label]="ariaLabel() || null"
       ></div>
     </div>

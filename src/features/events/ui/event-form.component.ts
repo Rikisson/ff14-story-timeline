@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
@@ -63,7 +63,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="name"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. Calamity of the Seventh Umbral Era"
           />
         </label>
@@ -72,7 +72,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. seventh-umbral-calamity"
           />
           <span class="text-xs text-foreground-faint">Lowercase, digits, hyphens. Unique within universe.</span>
@@ -97,7 +97,7 @@ function parseRefKey(key: string): EntityRef | null {
           [value]="description()"
           [options]="inlineRefOptions()"
           ariaLabel="Description"
-          placeholder="What happens in this event…"
+          placeholder="What happens in this eventвЂ¦"
           (valueChange)="onDescription($event)"
         />
       </div>
@@ -107,7 +107,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
+          placeholder="Search characters, places, codex entriesвЂ¦"
           emptyMessage="Nothing else in this universe yet."
           (valueChange)="onRelatedKeys($event)"
         />
@@ -118,7 +118,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="plotlineCombobox()"
           [value]="plotlineIds()"
-          placeholder="Search plotlines…"
+          placeholder="Search plotlinesвЂ¦"
           emptyMessage="No plotlines yet."
           (valueChange)="onPlotlineIds($event)"
         />

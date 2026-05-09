@@ -8,7 +8,7 @@ const POPUP_CLASS =
 const ITEM_BASE_CLASS =
   'flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-left ' +
   'text-foreground hover:bg-surface-muted';
-const ITEM_ACTIVE_CLASS = 'bg-indigo-100 dark:bg-indigo-950/60';
+const ITEM_ACTIVE_CLASS = 'bg-accent-soft';
 
 export function createSuggestionRender(): SuggestionOptions<
   InlineRefOption,

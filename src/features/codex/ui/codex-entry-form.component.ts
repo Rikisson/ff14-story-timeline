@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -67,7 +67,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="title"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. The Echo"
           />
         </label>
@@ -76,7 +76,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             placeholder="e.g. the-echo"
           />
           <span class="text-xs text-foreground-faint">Lowercase, digits, hyphens.</span>
@@ -86,7 +86,7 @@ function parseRefKey(key: string): EntityRef | null {
           <input
             type="text"
             formControlName="category"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 text-sm"
+            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
             list="codex-category-options"
             placeholder="Pick or type a category"
           />
@@ -109,7 +109,7 @@ function parseRefKey(key: string): EntityRef | null {
         <textarea
           formControlName="description"
           rows="8"
-          class="rounded-md border border-border-strong bg-surface text-foreground dark:placeholder:text-slate-500 px-3 py-2 text-sm"
+          class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
           placeholder="The lore content of this entry."
         ></textarea>
       </label>
@@ -119,7 +119,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
+          placeholder="Search characters, places, codex entriesвЂ¦"
           emptyMessage="Nothing else in this universe yet."
           (valueChange)="onRelatedKeys($event)"
         />

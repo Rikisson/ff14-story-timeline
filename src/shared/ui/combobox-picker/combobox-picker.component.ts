@@ -23,8 +23,7 @@ type ComboItem =
   | { kind: 'option'; option: ComboboxOption };
 
 const NEUTRAL_PICKER_CLASS =
-  'border-border bg-slate-50 text-foreground hover:bg-slate-100 ' +
-  'dark:bg-slate-800 dark:hover:bg-slate-700';
+  'border-border bg-surface-subtle text-foreground hover:bg-surface-muted';
 
 @Component({
   selector: 'app-combobox-picker',
@@ -60,7 +59,7 @@ const NEUTRAL_PICKER_CLASS =
             spellcheck="false"
             [attr.aria-expanded]="open()"
             [placeholder]="placeholder()"
-            class="h-10 w-full rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+            class="h-10 w-full rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm placeholder:text-foreground-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent-ring"
             [value]="query()"
             (input)="onQuery($event)"
             (focus)="open.set(true)"
