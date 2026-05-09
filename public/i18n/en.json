@@ -68,7 +68,7 @@
       "landingPickTitle": "Pick a universe",
       "landingPickHint": "Use the universe menu in the top-left to choose what to read.",
       "landingSignInHint": "Sign in if you'd like to author or edit.",
-      "tiptapRefHint": "Type ${ for entity refs"
+      "tiptapRefHint": "Type $'{' for entity refs"
     },
     "empty": {
       "landingNoUniversesTitle": "No universes available",
