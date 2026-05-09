@@ -1,170 +1,188 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { CalendarService } from '@features/calendar';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { CalendarService, DateValidationError, validateInGameDate } from '@features/calendar';
 import { InGameDate, isInGameDateEmpty } from '@shared/models';
 import { formatInGameDate } from '@shared/utils';
 
 @Component({
   selector: 'app-in-game-date-input',
+  imports: [TranslocoDirective],
   template: `
-    <details
-      class="rounded-md border border-border bg-surface"
-      [open]="expanded()"
-      (toggle)="onToggle($event)"
-    >
-      <summary
-        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+    <ng-container *transloco="let g; prefix: 'general'">
+      <details
+        class="rounded-md border border-border bg-surface"
+        [open]="expanded()"
+        (toggle)="onToggle($event)"
       >
-        <span class="flex flex-col">
-          @if (label(); as l) {
-            <span class="text-xs font-medium text-foreground-subtle">{{ l }}</span>
-          }
-          @if (summary(); as s) {
-            <span class="text-sm text-foreground">{{ s }}</span>
-          } @else {
-            <span class="text-sm italic text-foreground-faint">Set in-game date</span>
-          }
-        </span>
-        <svg
-          class="ml-auto size-4 shrink-0 text-foreground-faint transition-transform"
-          [class.rotate-180]="expanded()"
-          aria-hidden="true"
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <summary
+          class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
         >
-          <polyline points="5 8 10 13 15 8" />
-        </svg>
-      </summary>
-
-      <div class="flex flex-col gap-2 border-t border-border p-3">
-        <div class="flex flex-wrap gap-2">
-          @if (eras().length > 0) {
-            <label class="flex min-w-[8rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
-              <span>Era</span>
-              <select
-                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-                [value]="value()?.era ?? ''"
-                (change)="onEra($event)"
-              >
-                <option value="">—</option>
-                @for (e of eras(); track e.id) {
-                  <option [value]="e.id">{{ e.name }}</option>
-                }
-              </select>
-            </label>
-          }
-          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
-            <span>Year</span>
-            <input
-              type="number"
-              class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-              [value]="value()?.year ?? ''"
-              (input)="onField('year', $event)"
-            />
-          </label>
-          <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
-            <span>Month</span>
-            @if (months().length > 0) {
-              <select
-                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-                [value]="value()?.month ?? ''"
-                (change)="onField('month', $event)"
-              >
-                <option value="">—</option>
-                @for (m of months(); track m.id; let i = $index) {
-                  <option [value]="i + 1">{{ m.name }}</option>
-                }
-              </select>
+          <span class="flex flex-col">
+            @if (label(); as l) {
+              <span class="text-xs font-medium text-foreground-subtle">{{ l }}</span>
+            }
+            @if (summary(); as s) {
+              <span class="text-sm text-foreground">{{ s }}</span>
             } @else {
+              <span class="text-sm italic text-foreground-faint">{{ g('empty.dateNotSet') }}</span>
+            }
+          </span>
+          <svg
+            class="ml-auto size-4 shrink-0 text-foreground-faint transition-transform"
+            [class.rotate-180]="expanded()"
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="5 8 10 13 15 8" />
+          </svg>
+        </summary>
+
+        <div class="flex flex-col gap-2 border-t border-border p-3">
+          <div class="flex flex-wrap gap-2">
+            @if (eras().length > 0) {
+              <label class="flex min-w-[8rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
+                <span>{{ g('field.dateEra') }}</span>
+                <select
+                  class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
+                  [value]="value()?.era ?? ''"
+                  (change)="onEra($event)"
+                >
+                  <option value="">—</option>
+                  @for (e of eras(); track e.id) {
+                    <option [value]="e.id">{{ e.name }}</option>
+                  }
+                </select>
+              </label>
+            }
+            <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateYear') }}</span>
+              <input
+                type="number"
+                class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
+                [class.border-danger-strong]="!!fieldErrors().year"
+                [class.border-border-strong]="!fieldErrors().year"
+                [attr.aria-invalid]="fieldErrors().year ? true : null"
+                [value]="value()?.year ?? ''"
+                (input)="onField('year', $event)"
+              />
+              @if (fieldErrors().year; as e) {
+                <span class="text-danger-foreground">{{ messageFor(e, g) }}</span>
+              }
+            </label>
+            <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateMonth') }}</span>
+              @if (months().length > 0) {
+                <select
+                  class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
+                  [value]="value()?.month ?? ''"
+                  (change)="onField('month', $event)"
+                >
+                  <option value="">—</option>
+                  @for (m of months(); track m.id; let i = $index) {
+                    <option [value]="i + 1">{{ m.name }}</option>
+                  }
+                </select>
+              } @else {
+                <input
+                  type="number"
+                  min="1"
+                  class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
+                  [value]="value()?.month ?? ''"
+                  (input)="onField('month', $event)"
+                />
+              }
+            </label>
+            <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateDay') }}</span>
               <input
                 type="number"
                 min="1"
-                class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-                [value]="value()?.month ?? ''"
-                (input)="onField('month', $event)"
+                [max]="dayMax()"
+                class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
+                [class.border-danger-strong]="!!fieldErrors().day"
+                [class.border-border-strong]="!fieldErrors().day"
+                [attr.aria-invalid]="fieldErrors().day ? true : null"
+                [value]="value()?.day ?? ''"
+                (input)="onField('day', $event)"
               />
-            }
-          </label>
-          <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-xs text-foreground-subtle">
-            <span>Day</span>
+              @if (fieldErrors().day; as e) {
+                <span class="text-danger-foreground">{{ messageFor(e, g) }}</span>
+              }
+            </label>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateHour') }}</span>
+              <input
+                type="number"
+                min="0"
+                [max]="hourMax()"
+                class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
+                [class.border-danger-strong]="!!fieldErrors().hour"
+                [class.border-border-strong]="!fieldErrors().hour"
+                [attr.aria-invalid]="fieldErrors().hour ? true : null"
+                [value]="value()?.hour ?? ''"
+                (input)="onField('hour', $event)"
+              />
+              @if (fieldErrors().hour; as e) {
+                <span class="text-danger-foreground">{{ messageFor(e, g) }}</span>
+              }
+            </label>
+            <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateMinute') }}</span>
+              <input
+                type="number"
+                min="0"
+                [max]="minuteMax()"
+                class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
+                [class.border-danger-strong]="!!fieldErrors().minute"
+                [class.border-border-strong]="!fieldErrors().minute"
+                [attr.aria-invalid]="fieldErrors().minute ? true : null"
+                [value]="value()?.minute ?? ''"
+                (input)="onField('minute', $event)"
+              />
+              @if (fieldErrors().minute; as e) {
+                <span class="text-danger-foreground">{{ messageFor(e, g) }}</span>
+              }
+            </label>
+            <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
+              <span>{{ g('field.dateSecond') }}</span>
+              <input
+                type="number"
+                min="0"
+                [max]="secondMax()"
+                class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
+                [class.border-danger-strong]="!!fieldErrors().second"
+                [class.border-border-strong]="!fieldErrors().second"
+                [attr.aria-invalid]="fieldErrors().second ? true : null"
+                [value]="value()?.second ?? ''"
+                (input)="onField('second', $event)"
+              />
+              @if (fieldErrors().second; as e) {
+                <span class="text-danger-foreground">{{ messageFor(e, g) }}</span>
+              }
+            </label>
+          </div>
+
+          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
+            <span>{{ g('field.dateDisplayOverride') }}</span>
             <input
-              type="number"
-              min="1"
-              [max]="dayMax()"
+              type="text"
               class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-              [value]="value()?.day ?? ''"
-              (input)="onField('day', $event)"
+              [placeholder]="g('empty.dateDisplayOverridePlaceholder')"
+              [value]="value()?.display ?? ''"
+              (input)="onDisplay($event)"
             />
           </label>
         </div>
-
-        <div class="grid grid-cols-3 gap-2">
-          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
-            <span>Hour</span>
-            <input
-              type="number"
-              min="0"
-              [max]="hourMax()"
-              class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-              [value]="value()?.hour ?? ''"
-              (input)="onField('hour', $event)"
-            />
-          </label>
-          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
-            <span class="flex items-center justify-between gap-2">
-              <span>Minute</span>
-              @if (timeErrors().minute) {
-                <span class="text-danger-foreground">needs hour</span>
-              }
-            </span>
-            <input
-              type="number"
-              min="0"
-              [max]="minuteMax()"
-              class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
-              [class.border-danger-strong]="timeErrors().minute"
-              [class.border-border-strong]="!timeErrors().minute"
-              [attr.aria-invalid]="timeErrors().minute || null"
-              [value]="value()?.minute ?? ''"
-              (input)="onField('minute', $event)"
-            />
-          </label>
-          <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
-            <span class="flex items-center justify-between gap-2">
-              <span>Second</span>
-              @if (timeErrors().second) {
-                <span class="text-danger-foreground">needs minute</span>
-              }
-            </span>
-            <input
-              type="number"
-              min="0"
-              [max]="secondMax()"
-              class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
-              [class.border-danger-strong]="timeErrors().second"
-              [class.border-border-strong]="!timeErrors().second"
-              [attr.aria-invalid]="timeErrors().second || null"
-              [value]="value()?.second ?? ''"
-              (input)="onField('second', $event)"
-            />
-          </label>
-        </div>
-
-        <label class="flex flex-col gap-1 text-xs text-foreground-subtle">
-          <span>Display override (optional — replaces the formatted output)</span>
-          <input
-            type="text"
-            class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-            placeholder="e.g. Spring of the Wolf, 1577"
-            [value]="value()?.display ?? ''"
-            (input)="onDisplay($event)"
-          />
-        </label>
-      </div>
-    </details>
+      </details>
+    </ng-container>
   `,
   styles: [`
     summary::-webkit-details-marker { display: none; }
@@ -176,6 +194,7 @@ export class InGameDateInputComponent {
   readonly value = input<InGameDate | null>(null);
   readonly label = input<string | null>(null);
   readonly valueChanged = output<InGameDate>();
+  readonly errorsChanged = output<DateValidationError[]>();
 
   private readonly calendar = inject(CalendarService);
   protected readonly eras = this.calendar.eras;
@@ -211,13 +230,45 @@ export class InGameDateInputComponent {
   protected readonly minuteMax = computed(() => (this.currentEra()?.minutesPerHour ?? 60) - 1);
   protected readonly secondMax = computed(() => (this.currentEra()?.secondsPerMinute ?? 60) - 1);
 
-  protected readonly timeErrors = computed(() => {
-    const v = this.value();
-    return {
-      minute: !!v && v.minute !== undefined && v.hour === undefined,
-      second: !!v && v.second !== undefined && v.minute === undefined,
-    };
+  protected readonly errors = computed<DateValidationError[]>(() =>
+    validateInGameDate(this.value(), this.calendar.calendar()),
+  );
+
+  protected readonly fieldErrors = computed<Partial<Record<DateValidationError['field'], DateValidationError>>>(() => {
+    const out: Partial<Record<DateValidationError['field'], DateValidationError>> = {};
+    for (const e of this.errors()) {
+      if (!out[e.field]) out[e.field] = e;
+    }
+    return out;
   });
+
+  constructor() {
+    effect(() => {
+      this.errorsChanged.emit(this.errors());
+    });
+  }
+
+  protected messageFor(
+    e: DateValidationError,
+    g: (key: string, params?: Record<string, unknown>) => string,
+  ): string {
+    switch (e.type) {
+      case 'minuteRequiresHour':
+        return g('validation.dateMinuteRequiresHour');
+      case 'secondRequiresMinute':
+        return g('validation.dateSecondRequiresMinute');
+      case 'yearMax':
+        return g('validation.dateYearMax', { max: e.max ?? 0 });
+      case 'dayMax':
+        return g('validation.dateDayMax', { max: e.max ?? 0 });
+      case 'hourMax':
+        return g('validation.dateHourMax', { max: e.max ?? 0 });
+      case 'minuteMax':
+        return g('validation.dateMinuteMax', { max: e.max ?? 0 });
+      case 'secondMax':
+        return g('validation.dateSecondMax', { max: e.max ?? 0 });
+    }
+  }
 
   protected onToggle(event: Event): void {
     const el = event.target as HTMLDetailsElement;
@@ -256,4 +307,3 @@ export class InGameDateInputComponent {
     this.valueChanged.emit(next);
   }
 }
-

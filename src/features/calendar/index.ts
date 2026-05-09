@@ -21,3 +21,9 @@ export {
   FF14_ERA_SEVENTH_UMBRAL_ID,
   withFreshCalendarIds,
 } from './data-access/calendar.presets';
+export { validateInGameDate } from './data-access/in-game-date-validation';
+export type {
+  DateErrorField,
+  DateErrorType,
+  DateValidationError,
+} from './data-access/in-game-date-validation';

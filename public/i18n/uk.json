@@ -32,7 +32,15 @@
       "relatedKindCodex": "Кодекс",
       "status": "Статус",
       "createdAt": "Створено",
-      "updatedAt": "Оновлено"
+      "updatedAt": "Оновлено",
+      "dateEra": "Ера",
+      "dateYear": "Рік",
+      "dateMonth": "Місяць",
+      "dateDay": "День",
+      "dateHour": "Година",
+      "dateMinute": "Хвилина",
+      "dateSecond": "Секунда",
+      "dateDisplayOverride": "Перевизначення відображення (необовʼязково — замінює сформатований вивід)"
     },
     "nav": {
       "timeline": "Хронологія",
@@ -81,7 +89,9 @@
       "noRelatedAvailable": "У цьому всесвіті більше нічого немає.",
       "searchPlotlines": "Шукати сюжетні лінії…",
       "noPlotlines": "Поки немає сюжетних ліній.",
-      "tiptapNoMatches": "Немає збігів"
+      "tiptapNoMatches": "Немає збігів",
+      "dateNotSet": "Задати внутрішньоігрову дату",
+      "dateDisplayOverridePlaceholder": "напр. Весна Вовка, 1577"
     },
     "tooltip": {
       "loadingPage": "Завантаження сторінки",
@@ -101,7 +111,14 @@
       "email": "Введіть коректну адресу електронної пошти",
       "minLength": "Має бути щонайменше {{ min }} символів",
       "maxLength": "Має бути щонайбільше {{ max }} символів",
-      "pattern": "Значення не відповідає очікуваному формату"
+      "pattern": "Значення не відповідає очікуваному формату",
+      "dateMinuteRequiresHour": "Хвилини потребують години.",
+      "dateSecondRequiresMinute": "Секунди потребують хвилини.",
+      "dateYearMax": "Ера закінчується на році {{ max }}.",
+      "dateDayMax": "У цьому місяці лише {{ max }} днів.",
+      "dateHourMax": "Години 0–{{ max }}.",
+      "dateMinuteMax": "Хвилини 0–{{ max }}.",
+      "dateSecondMax": "Секунди 0–{{ max }}."
     }
   }
 }

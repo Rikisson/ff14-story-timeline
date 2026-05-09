@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { CalendarService, validateInGameDate } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { MediaAssetsService } from '@features/media';
@@ -77,7 +78,7 @@ import editorUk from '../i18n/uk.json';
           <button
             uiPrimary
             type="button"
-            [disabled]="!store.dirty() || !store.metaValid()"
+            [disabled]="!store.dirty() || !store.metaValid() || dateInvalid()"
             [loading]="store.saving()"
             (click)="store.save()"
           >
@@ -246,6 +247,13 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly stories = inject(StoriesService);
   private readonly media = inject(MediaAssetsService);
   private readonly entityResolver = inject(EntityResolverService);
+  private readonly calendarService = inject(CalendarService);
+
+  protected readonly dateInvalid = computed(() => {
+    const meta = this.store.meta();
+    if (!meta) return false;
+    return validateInGameDate(meta.inGameDate, this.calendarService.calendar()).length > 0;
+  });
 
   protected readonly isSelectedStart = computed(
     () => this.store.selectedSceneId() !== null

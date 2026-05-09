@@ -32,7 +32,15 @@
       "relatedKindCodex": "Codex",
       "status": "Status",
       "createdAt": "Created",
-      "updatedAt": "Updated"
+      "updatedAt": "Updated",
+      "dateEra": "Era",
+      "dateYear": "Year",
+      "dateMonth": "Month",
+      "dateDay": "Day",
+      "dateHour": "Hour",
+      "dateMinute": "Minute",
+      "dateSecond": "Second",
+      "dateDisplayOverride": "Display override (optional — replaces the formatted output)"
     },
     "nav": {
       "timeline": "Timeline",
@@ -81,7 +89,9 @@
       "noRelatedAvailable": "Nothing else in this universe yet.",
       "searchPlotlines": "Search plotlines…",
       "noPlotlines": "No plotlines yet.",
-      "tiptapNoMatches": "No matches"
+      "tiptapNoMatches": "No matches",
+      "dateNotSet": "Set in-game date",
+      "dateDisplayOverridePlaceholder": "e.g. Spring of the Wolf, 1577"
     },
     "tooltip": {
       "loadingPage": "Loading page",
@@ -101,7 +111,14 @@
       "email": "Enter a valid email address",
       "minLength": "Must be at least {{ min }} characters",
       "maxLength": "Must be at most {{ max }} characters",
-      "pattern": "Value doesn't match the expected format"
+      "pattern": "Value doesn't match the expected format",
+      "dateMinuteRequiresHour": "Minute requires hour.",
+      "dateSecondRequiresMinute": "Second requires minute.",
+      "dateYearMax": "Era ends at year {{ max }}.",
+      "dateDayMax": "This month has only {{ max }} days.",
+      "dateHourMax": "Hours run 0–{{ max }}.",
+      "dateMinuteMax": "Minutes run 0–{{ max }}.",
+      "dateSecondMax": "Seconds run 0–{{ max }}."
     }
   }
 }

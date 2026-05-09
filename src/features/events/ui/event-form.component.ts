@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { DateValidationError } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { CoverSlotComponent } from '@features/media';
@@ -95,6 +96,7 @@ function parseRefKey(key: string): EntityRef | null {
             [label]="t('field.inGameDate')"
             [value]="inGameDate()"
             (valueChanged)="onDate($event)"
+            (errorsChanged)="dateErrors.set($event)"
           />
 
           <app-cover-slot
@@ -146,7 +148,7 @@ function parseRefKey(key: string): EntityRef | null {
               uiPrimary
               type="submit"
               [loading]="busy()"
-              [disabled]="form.invalid || busy()"
+              [disabled]="form.invalid || dateErrors().length > 0 || busy()"
             >
               {{ initial() ? g('action.save') : g('action.add') }}
             </button>
@@ -227,6 +229,7 @@ export class EventFormComponent {
   protected readonly plotlineIds = computed(() => this.plotlineRefs().map((r) => r.id));
 
   protected readonly inGameDate = signal<InGameDate>({});
+  protected readonly dateErrors = signal<DateValidationError[]>([]);
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
