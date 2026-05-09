@@ -1,106 +1,129 @@
-﻿import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
+import plotlineEn from '../i18n/en.json';
+import plotlineUk from '../i18n/uk.json';
 
-const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
-  { value: '', label: '— Unset —' },
-  { value: 'planned', label: 'Planned' },
-  { value: 'active', label: 'Active' },
-  { value: 'resolved', label: 'Resolved' },
+const STATUS_OPTIONS: { value: '' | PlotlineStatus; labelKey: string }[] = [
+  { value: '', labelKey: 'field.statusUnset' },
+  { value: 'planned', labelKey: 'field.statusPlanned' },
+  { value: 'active', labelKey: 'field.statusActive' },
+  { value: 'resolved', labelKey: 'field.statusResolved' },
 ];
 
 @Component({
   selector: 'app-plotline-form',
-  imports: [ReactiveFormsModule, CoverSlotComponent, PrimaryButtonComponent, GhostButtonComponent],
+  imports: [
+    ReactiveFormsModule,
+    CoverSlotComponent,
+    PrimaryButtonComponent,
+    GhostButtonComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'plotline',
+      loader: {
+        en: () => Promise.resolve(plotlineEn),
+        uk: () => Promise.resolve(plotlineUk),
+      },
+    }),
+  ],
   template: `
-    <form
-      [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
-      (ngSubmit)="onSubmit()"
-    >
-      <h3 class="m-0 text-base font-semibold text-foreground">
-        {{ initial() ? 'Edit plotline' : 'Add plotline' }}
-      </h3>
-
-      <div class="grid gap-3 sm:grid-cols-2">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Title</span>
-          <input
-            type="text"
-            formControlName="title"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. Shadowbringers main scenario"
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Slug</span>
-          <input
-            type="text"
-            formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. shadowbringers-msq"
-          />
-          <span class="text-xs text-foreground-faint">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
-        </label>
-      </div>
-
-      <app-cover-slot
-        label="Cover image"
-        [assetId]="cover()"
-        (picked)="cover.set($event)"
-      />
-
-      <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Description</span>
-          <textarea
-            formControlName="description"
-            rows="3"
-            class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
-            placeholder="High-level arc of this plotline."
-          ></textarea>
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Status</span>
-          <select
-            formControlName="status"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
-          >
-            @for (o of statusOptions; track o.value) {
-              <option [value]="o.value">{{ o.label }}</option>
-            }
-          </select>
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Color</span>
-          <input
-            type="color"
-            formControlName="color"
-            class="h-10 w-16 cursor-pointer rounded-md border border-border-strong bg-surface p-1"
-            aria-label="Color"
-          />
-        </label>
-      </div>
-
-      @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-      }
-
-      <div class="flex gap-2">
-        <button
-          uiPrimary
-          type="submit"
-          [loading]="busy()"
-          [disabled]="form.invalid || busy()"
+    <ng-container *transloco="let t; prefix: 'plotline'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <form
+          [formGroup]="form"
+          class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
+          (ngSubmit)="onSubmit()"
         >
-          {{ initial() ? 'Save' : 'Add' }}
-        </button>
-        <button uiGhost type="button" (click)="cancelled.emit()">Cancel</button>
-      </div>
-    </form>
+          <h3 class="m-0 text-base font-semibold text-foreground">
+            {{ initial() ? t('field.formEdit') : t('field.formAdd') }}
+          </h3>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.title') }}</span>
+              <input
+                type="text"
+                formControlName="title"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.titlePlaceholder')"
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.slug') }}</span>
+              <input
+                type="text"
+                formControlName="slug"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.slugPlaceholder')"
+              />
+              <span class="text-xs text-foreground-faint">{{ g('message.slugHint') }}</span>
+            </label>
+          </div>
+
+          <app-cover-slot
+            [label]="g('field.coverImage')"
+            [assetId]="cover()"
+            (picked)="cover.set($event)"
+          />
+
+          <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+              <textarea
+                formControlName="description"
+                rows="3"
+                class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
+                [placeholder]="t('empty.descriptionPlaceholder')"
+              ></textarea>
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.status') }}</span>
+              <select
+                formControlName="status"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+              >
+                @for (o of statusOptionLabels(); track o.value) {
+                  <option [value]="o.value">{{ o.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.color') }}</span>
+              <input
+                type="color"
+                formControlName="color"
+                class="h-10 w-16 cursor-pointer rounded-md border border-border-strong bg-surface p-1"
+                [attr.aria-label]="t('tooltip.colorAria')"
+              />
+            </label>
+          </div>
+
+          @if (errorMessage(); as e) {
+            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+          }
+
+          <div class="flex gap-2">
+            <button
+              uiPrimary
+              type="submit"
+              [loading]="busy()"
+              [disabled]="form.invalid || busy()"
+            >
+              {{ initial() ? g('action.save') : g('action.add') }}
+            </button>
+            <button uiGhost type="button" (click)="cancelled.emit()">{{ g('action.cancel') }}</button>
+          </div>
+        </form>
+      </ng-container>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -111,8 +134,20 @@ export class PlotlineFormComponent {
   readonly submitted = output<PlotlineDraft>();
   readonly cancelled = output<void>();
 
-  protected readonly statusOptions = STATUS_OPTIONS;
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
+
   protected readonly cover = signal<string | undefined>(undefined);
+
+  protected readonly statusOptionLabels = computed(() => {
+    this.activeLang();
+    return STATUS_OPTIONS.map((o) => ({
+      value: o.value,
+      label: this.transloco.translate(`plotline.${o.labelKey}`),
+    }));
+  });
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],

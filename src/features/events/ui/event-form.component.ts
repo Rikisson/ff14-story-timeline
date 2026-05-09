@@ -1,5 +1,7 @@
-﻿import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { CoverSlotComponent } from '@features/media';
@@ -16,12 +18,8 @@ import {
 } from '@shared/ui';
 import { EntityResolverService } from '@shared/data-access';
 import { TimelineEventDraft } from '../data-access/event.types';
-
-const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
-  character: 'Character',
-  place: 'Place',
-  codexEntry: 'Codex',
-};
+import eventEn from '../i18n/en.json';
+import eventUk from '../i18n/uk.json';
 
 function refKey(ref: EntityRef): string {
   return `${ref.kind}:${ref.id}`;
@@ -46,100 +44,114 @@ function parseRefKey(key: string): EntityRef | null {
     ComboboxPickerComponent,
     InGameDateInputComponent,
     RichTextInputComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'event',
+      loader: {
+        en: () => Promise.resolve(eventEn),
+        uk: () => Promise.resolve(eventUk),
+      },
+    }),
   ],
   template: `
-    <form
-      [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
-      (ngSubmit)="onSubmit()"
-    >
-      <h3 class="m-0 text-base font-semibold text-foreground">
-        {{ initial() ? 'Edit event' : 'Add event' }}
-      </h3>
-
-      <div class="grid gap-3 sm:grid-cols-2">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Name</span>
-          <input
-            type="text"
-            formControlName="name"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. Calamity of the Seventh Umbral Era"
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Slug</span>
-          <input
-            type="text"
-            formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. seventh-umbral-calamity"
-          />
-          <span class="text-xs text-foreground-faint">Lowercase, digits, hyphens. Unique within universe.</span>
-        </label>
-      </div>
-
-      <app-in-game-date-input
-        label="In-game date"
-        [value]="inGameDate()"
-        (valueChanged)="onDate($event)"
-      />
-
-      <app-cover-slot
-        label="Cover image"
-        [assetId]="cover()"
-        (picked)="cover.set($event)"
-      />
-
-      <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-foreground-muted">Description</span>
-        <app-rich-text-input
-          [value]="description()"
-          [options]="inlineRefOptions()"
-          ariaLabel="Description"
-          placeholder="What happens in this event…"
-          (valueChange)="onDescription($event)"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-foreground-muted">Related entities</span>
-        <app-combobox-picker
-          [options]="relatedOptions()"
-          [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
-          emptyMessage="Nothing else in this universe yet."
-          (valueChange)="onRelatedKeys($event)"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-foreground-muted">Plotlines</span>
-        <app-combobox-picker
-          [options]="plotlineCombobox()"
-          [value]="plotlineIds()"
-          placeholder="Search plotlines…"
-          emptyMessage="No plotlines yet."
-          (valueChange)="onPlotlineIds($event)"
-        />
-      </div>
-
-      @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-      }
-
-      <div class="flex gap-2">
-        <button
-          uiPrimary
-          type="submit"
-          [loading]="busy()"
-          [disabled]="form.invalid || busy()"
+    <ng-container *transloco="let t; prefix: 'event'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <form
+          [formGroup]="form"
+          class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
+          (ngSubmit)="onSubmit()"
         >
-          {{ initial() ? 'Save' : 'Add' }}
-        </button>
-        <button uiGhost type="button" (click)="cancelled.emit()">Cancel</button>
-      </div>
-    </form>
+          <h3 class="m-0 text-base font-semibold text-foreground">
+            {{ initial() ? t('field.formEdit') : t('field.formAdd') }}
+          </h3>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.name') }}</span>
+              <input
+                type="text"
+                formControlName="name"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.namePlaceholder')"
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.slug') }}</span>
+              <input
+                type="text"
+                formControlName="slug"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.slugPlaceholder')"
+              />
+              <span class="text-xs text-foreground-faint">{{ g('message.slugHint') }}</span>
+            </label>
+          </div>
+
+          <app-in-game-date-input
+            [label]="t('field.inGameDate')"
+            [value]="inGameDate()"
+            (valueChanged)="onDate($event)"
+          />
+
+          <app-cover-slot
+            [label]="g('field.coverImage')"
+            [assetId]="cover()"
+            (picked)="cover.set($event)"
+          />
+
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+            <app-rich-text-input
+              [value]="description()"
+              [options]="inlineRefOptions()"
+              [ariaLabel]="g('tooltip.descriptionAria')"
+              [placeholder]="t('empty.descriptionPlaceholder')"
+              (valueChange)="onDescription($event)"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
+            <app-combobox-picker
+              [options]="relatedOptions()"
+              [value]="relatedKeys()"
+              [placeholder]="g('empty.searchRelated')"
+              [emptyMessage]="g('empty.noRelatedAvailable')"
+              (valueChange)="onRelatedKeys($event)"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.plotlines') }}</span>
+            <app-combobox-picker
+              [options]="plotlineCombobox()"
+              [value]="plotlineIds()"
+              [placeholder]="g('empty.searchPlotlines')"
+              [emptyMessage]="g('empty.noPlotlines')"
+              (valueChange)="onPlotlineIds($event)"
+            />
+          </div>
+
+          @if (errorMessage(); as e) {
+            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+          }
+
+          <div class="flex gap-2">
+            <button
+              uiPrimary
+              type="submit"
+              [loading]="busy()"
+              [disabled]="form.invalid || busy()"
+            >
+              {{ initial() ? g('action.save') : g('action.add') }}
+            </button>
+            <button uiGhost type="button" (click)="cancelled.emit()">{{ g('action.cancel') }}</button>
+          </div>
+        </form>
+      </ng-container>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -155,27 +167,45 @@ export class EventFormComponent {
   private readonly plotlinesService = inject(PlotlinesService);
   private readonly codexService = inject(CodexEntriesService);
   private readonly entityResolver = inject(EntityResolverService);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
-    ...this.charactersService.characters().map((c) => ({
-      id: refKey({ kind: 'character', id: c.id }),
-      label: c.name,
-      hint: RELATED_KIND_LABEL.character,
-      kind: 'character' as const,
-    })),
-    ...this.placesService.places().map((p) => ({
-      id: refKey({ kind: 'place', id: p.id }),
-      label: p.name,
-      hint: RELATED_KIND_LABEL.place,
-      kind: 'place' as const,
-    })),
-    ...this.codexService.entries().map((c) => ({
-      id: refKey({ kind: 'codexEntry', id: c.id }),
-      label: c.title,
-      hint: RELATED_KIND_LABEL.codexEntry,
-      kind: 'codexEntry' as const,
-    })),
-  ]);
+  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
+    () => {
+      this.activeLang();
+      return {
+        character: this.transloco.translate('general.field.relatedKindCharacter'),
+        place: this.transloco.translate('general.field.relatedKindPlace'),
+        codexEntry: this.transloco.translate('general.field.relatedKindCodex'),
+      };
+    },
+  );
+
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
+    const labels = this.relatedKindLabels();
+    return [
+      ...this.charactersService.characters().map((c) => ({
+        id: refKey({ kind: 'character', id: c.id }),
+        label: c.name,
+        hint: labels.character,
+        kind: 'character' as const,
+      })),
+      ...this.placesService.places().map((p) => ({
+        id: refKey({ kind: 'place', id: p.id }),
+        label: p.name,
+        hint: labels.place,
+        kind: 'place' as const,
+      })),
+      ...this.codexService.entries().map((c) => ({
+        id: refKey({ kind: 'codexEntry', id: c.id }),
+        label: c.title,
+        hint: labels.codexEntry,
+        kind: 'codexEntry' as const,
+      })),
+    ];
+  });
 
   protected readonly plotlineCombobox = computed<ComboboxOption[]>(() =>
     this.plotlinesService

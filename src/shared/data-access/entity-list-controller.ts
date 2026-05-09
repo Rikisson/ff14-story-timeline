@@ -1,4 +1,5 @@
 import { computed, inject, signal, Signal, WritableSignal } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
 
@@ -38,6 +39,7 @@ export function createEntityListController<T extends { id: string }, Draft>(opts
 }): EntityListController<T, Draft> {
   const universes = inject(UniverseStore);
   const user = inject(AuthStore).user;
+  const transloco = inject(TranslocoService);
 
   const mode = signal<EntityListMode>({ kind: 'idle' });
   const busy = signal(false);
@@ -110,7 +112,10 @@ export function createEntityListController<T extends { id: string }, Draft>(opts
       }
     },
     async confirmRemove(entity: T): Promise<void> {
-      if (!confirm(`Delete "${opts.removeLabel(entity)}"? This can't be undone.`)) return;
+      const message = transloco.translate('general.message.entityDeleteConfirm', {
+        name: opts.removeLabel(entity),
+      });
+      if (!confirm(message)) return;
       try {
         await opts.service.remove(entity.id);
         if (selectedId() === entity.id) selectedId.set(null);
