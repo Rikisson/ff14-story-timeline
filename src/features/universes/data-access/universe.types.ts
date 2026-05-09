@@ -1,9 +1,16 @@
+export type UniverseLocale = 'en' | 'uk';
+
+export const SUPPORTED_UNIVERSE_LOCALES: readonly UniverseLocale[] = ['en', 'uk'];
+
+export const DEFAULT_UNIVERSE_LOCALE: UniverseLocale = 'en';
+
 export interface Universe {
   id: string;
   slug: string;
   name: string;
   description?: string;
   coverAssetId?: string;
+  locale: UniverseLocale;
   ownerUid: string;
   editorUids: string[];
   createdAt: number;
@@ -16,6 +23,7 @@ export interface UniverseDraft {
   slug: string;
   name: string;
   description?: string;
+  locale: UniverseLocale;
 }
 
 export interface UniverseUpdate {
@@ -23,4 +31,5 @@ export interface UniverseUpdate {
   name?: string;
   description?: string;
   coverAssetId?: string;
+  locale?: UniverseLocale;
 }

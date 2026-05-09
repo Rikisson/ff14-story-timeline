@@ -11,6 +11,7 @@
     "activeBadge": "Активний",
     "createDialogTitle": "Створити всесвіт",
     "addContributorLabel": "Додати співавтора за UID",
+    "contentLocale": "Мова контенту",
     "defaultLabel": "Всесвіти"
   },
   "action": {
@@ -21,6 +22,7 @@
   },
   "message": {
     "generalSubtitle": "Редагуйте назву, слаг, опис та обкладинку всесвіту.",
+    "contentLocaleHint": "Мова, якою написана проза історій, описи персонажів, тексти кодексу. Зміна не мігрує наявний контент.",
     "ownerSubtitle": "Власник і співавтори всесвіту {{ name }}.",
     "uidAlreadyOwner": "Цей UID вже належить власнику.",
     "uidAlreadyContributor": "Цей UID вже є співавтором.",

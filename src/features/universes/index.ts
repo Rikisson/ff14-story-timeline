@@ -9,4 +9,9 @@ export type {
   UniverseDraft,
   UniverseUpdate,
   StoredUniverse,
+  UniverseLocale,
+} from './data-access/universe.types';
+export {
+  SUPPORTED_UNIVERSE_LOCALES,
+  DEFAULT_UNIVERSE_LOCALE,
 } from './data-access/universe.types';

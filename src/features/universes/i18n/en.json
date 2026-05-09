@@ -11,6 +11,7 @@
     "activeBadge": "Active",
     "createDialogTitle": "Create universe",
     "addContributorLabel": "Add contributor by UID",
+    "contentLocale": "Content locale",
     "defaultLabel": "Universes"
   },
   "action": {
@@ -21,6 +22,7 @@
   },
   "message": {
     "generalSubtitle": "Edit the universe's name, slug, description, and cover image.",
+    "contentLocaleHint": "Language used in story prose, character descriptions, codex bodies. Switching doesn't migrate existing content.",
     "ownerSubtitle": "Owner and contributors of {{ name }}.",
     "uidAlreadyOwner": "That UID is already the owner.",
     "uidAlreadyContributor": "That UID is already a contributor.",

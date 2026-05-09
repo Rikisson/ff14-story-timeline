@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { doc, setDoc } from 'firebase/firestore/lite';
-import { StoredUniverse } from '@features/universes';
+import { DEFAULT_UNIVERSE_LOCALE, StoredUniverse } from '@features/universes';
 import { FirebaseService } from '../app/firebase/firebase.service';
 import {
   SEED_CALENDAR,
@@ -25,6 +25,7 @@ export class SeederService {
       slug: DEFAULT_UNIVERSE_SLUG,
       name: 'Default universe',
       description: 'Seeded universe used for bootstrap data.',
+      locale: DEFAULT_UNIVERSE_LOCALE,
       ownerUid: authorUid,
       editorUids: [],
       createdAt: Date.now(),

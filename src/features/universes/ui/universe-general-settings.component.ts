@@ -3,9 +3,15 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
 import { SlugTakenError } from '@shared/models';
+import { LocaleService } from '@shared/services';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { UniverseStore } from '../data-access/universe.store';
-import { UniverseUpdate } from '../data-access/universe.types';
+import {
+  DEFAULT_UNIVERSE_LOCALE,
+  SUPPORTED_UNIVERSE_LOCALES,
+  UniverseLocale,
+  UniverseUpdate,
+} from '../data-access/universe.types';
 import { UniversesService } from '../data-access/universes.service';
 import universeEn from '../i18n/en.json';
 import universeUk from '../i18n/uk.json';
@@ -70,6 +76,19 @@ import universeUk from '../i18n/uk.json';
                 ></textarea>
               </label>
 
+              <label class="flex flex-col gap-1 text-sm sm:max-w-xs">
+                <span class="font-medium text-foreground-muted">{{ t('field.contentLocale') }}</span>
+                <select
+                  formControlName="locale"
+                  class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+                >
+                  @for (o of localeOptions(); track o.value) {
+                    <option [value]="o.value">{{ o.label }}</option>
+                  }
+                </select>
+                <span class="text-xs text-foreground-faint">{{ t('message.contentLocaleHint') }}</span>
+              </label>
+
               <app-cover-slot
                 [label]="g('field.coverImage')"
                 [assetId]="cover()"
@@ -107,16 +126,25 @@ import universeUk from '../i18n/uk.json';
 export class UniverseGeneralSettingsComponent {
   private readonly store = inject(UniverseStore);
   private readonly service = inject(UniversesService);
+  private readonly localeService = inject(LocaleService);
 
   protected readonly universe = this.store.activeUniverse;
   protected readonly cover = signal<string | undefined>(undefined);
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
+  protected readonly localeOptions = computed(() =>
+    SUPPORTED_UNIVERSE_LOCALES.map((value) => ({
+      value,
+      label: this.localeService.labelFor(value),
+    })),
+  );
+
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9][a-z0-9-]*$/), Validators.maxLength(60)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
     description: ['', [Validators.maxLength(280)]],
+    locale: [DEFAULT_UNIVERSE_LOCALE as UniverseLocale, Validators.required],
   });
 
   private readonly formValue = signal(this.form.getRawValue());
@@ -129,6 +157,7 @@ export class UniverseGeneralSettingsComponent {
       v.slug !== u.slug ||
       v.name !== u.name ||
       (v.description || '') !== (u.description || '') ||
+      v.locale !== u.locale ||
       this.cover() !== u.coverAssetId
     );
   });
@@ -144,11 +173,18 @@ export class UniverseGeneralSettingsComponent {
     });
   }
 
-  protected reset(u: { slug: string; name: string; description?: string; coverAssetId?: string }): void {
+  protected reset(u: {
+    slug: string;
+    name: string;
+    description?: string;
+    coverAssetId?: string;
+    locale: UniverseLocale;
+  }): void {
     this.form.reset({
       slug: u.slug,
       name: u.name,
       description: u.description ?? '',
+      locale: u.locale,
     });
     this.formValue.set(this.form.getRawValue());
     this.cover.set(u.coverAssetId);
@@ -168,6 +204,7 @@ export class UniverseGeneralSettingsComponent {
       name: v.name.trim(),
       description: v.description.trim() || undefined,
       coverAssetId: this.cover(),
+      locale: v.locale,
     };
     this.saving.set(true);
     this.errorMessage.set(null);

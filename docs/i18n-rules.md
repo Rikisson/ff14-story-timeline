@@ -264,40 +264,12 @@ When adding or refactoring translations:
 
 Open changes. Remove items as they ship.
 
-## Per-feature scopes
+## Validator-message resolver
 
-- First feature wired through `provideTranslocoScope` becomes the
-  template for the rest. Pick `auth` (smallest surface) and put a
-  loader factory next to its lazy route that imports
-  `./i18n/en.json` and `./i18n/uk.json` via TS for parity with the
-  global loader.
-
-## Migration
-
-Replace hardcoded English in templates and TS feature-by-feature, in
-this order:
-
-1. `auth` (smallest surface, exercises the wiring end-to-end).
-2. `general` shared widgets (button labels, dialog chrome).
-3. `catalog` and `timeline` (read-only consumer surfaces).
-4. `editor` and `player` (largest surfaces, prove the scope-loading
-   pattern).
-5. Entity feature folders (`character`, `place`, `event`, `plotline`,
-   `story`, `codex`, `universe`, `calendar`, `era`, `media`).
-
-Validator-message resolver lives at `shared/utils/form-validation.ts`
-and reads `general.validation.*`, so existing Reactive Forms surface
-translated errors without per-form wiring after migration.
-
-## Universe.locale
-
-- Add `locale: 'en' | 'uk'` to the Universe schema (see
-  `narrative-engine-impl.md` *Locale*).
-- Universe settings *General* section: locale picker with explanatory
-  copy that prose is not migrated on switch.
-- Universe creation flow: prefill with the active UI locale.
-- One-shot Firestore migration stamps `locale: 'en'` on every existing
-  universe document missing the field.
+A shared resolver at `shared/utils/form-validation.ts` reads
+`general.validation.*` so existing Reactive Forms surface translated
+errors without per-form wiring. Not yet wired — current forms render
+raw error keys or rely on hardcoded copy.
 
 ## Content language tagging
 

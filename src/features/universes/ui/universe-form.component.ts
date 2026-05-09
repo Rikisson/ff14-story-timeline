@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { LocaleService } from '@shared/services';
 import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
-import { UniverseDraft } from '../data-access/universe.types';
+import {
+  SUPPORTED_UNIVERSE_LOCALES,
+  UniverseDraft,
+  UniverseLocale,
+} from '../data-access/universe.types';
 import universeEn from '../i18n/en.json';
 import universeUk from '../i18n/uk.json';
 
@@ -59,6 +64,19 @@ import universeUk from '../i18n/uk.json';
             ></textarea>
           </label>
 
+          <label class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ t('field.contentLocale') }}</span>
+            <select
+              formControlName="locale"
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+            >
+              @for (o of localeOptions(); track o.value) {
+                <option [value]="o.value">{{ o.label }}</option>
+              }
+            </select>
+            <span class="text-xs text-foreground-faint">{{ t('message.contentLocaleHint') }}</span>
+          </label>
+
           @if (errorMessage(); as e) {
             <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
           }
@@ -86,10 +104,20 @@ export class UniverseFormComponent {
   readonly submitted = output<UniverseDraft>();
   readonly cancelled = output<void>();
 
+  private readonly locale = inject(LocaleService);
+
+  protected readonly localeOptions = computed(() =>
+    SUPPORTED_UNIVERSE_LOCALES.map((value) => ({
+      value,
+      label: this.locale.labelFor(value),
+    })),
+  );
+
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9][a-z0-9-]*$/), Validators.maxLength(60)]],
     name: ['', [Validators.required, Validators.maxLength(80)]],
     description: ['', [Validators.maxLength(280)]],
+    locale: [this.locale.active() as UniverseLocale, Validators.required],
   });
 
   protected onSubmit(): void {
@@ -99,6 +127,7 @@ export class UniverseFormComponent {
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       description: v.description.trim() || undefined,
+      locale: v.locale,
     });
   }
 }

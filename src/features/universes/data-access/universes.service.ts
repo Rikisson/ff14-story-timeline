@@ -16,9 +16,19 @@ import {
 } from 'firebase/firestore/lite';
 import { SlugTakenError } from '@shared/models';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
-import { StoredUniverse, Universe, UniverseDraft, UniverseUpdate } from './universe.types';
+import {
+  DEFAULT_UNIVERSE_LOCALE,
+  StoredUniverse,
+  Universe,
+  UniverseDraft,
+  UniverseUpdate,
+} from './universe.types';
 
 const PAGE_SIZE = 50;
+
+function fromStored(id: string, data: StoredUniverse): Universe {
+  return { id, ...data, locale: data.locale ?? DEFAULT_UNIVERSE_LOCALE };
+}
 
 @Injectable({ providedIn: 'root' })
 export class UniversesService {
@@ -31,12 +41,12 @@ export class UniversesService {
       limit(PAGE_SIZE),
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredUniverse) }));
+    return snap.docs.map((d) => fromStored(d.id, d.data() as StoredUniverse));
   }
 
   async get(id: string): Promise<Universe | undefined> {
     const snap = await getDoc(doc(this.firebase.firestore, 'universes', id));
-    return snap.exists() ? { id: snap.id, ...(snap.data() as StoredUniverse) } : undefined;
+    return snap.exists() ? fromStored(snap.id, snap.data() as StoredUniverse) : undefined;
   }
 
   async findBySlug(slug: string): Promise<Universe | undefined> {
@@ -47,7 +57,7 @@ export class UniversesService {
     );
     const snap = await getDocs(q);
     const first = snap.docs[0];
-    return first ? { id: first.id, ...(first.data() as StoredUniverse) } : undefined;
+    return first ? fromStored(first.id, first.data() as StoredUniverse) : undefined;
   }
 
   async create(draft: UniverseDraft, ownerUid: string): Promise<string> {
@@ -56,7 +66,10 @@ export class UniversesService {
 
     const id = crypto.randomUUID();
     const data: StoredUniverse = {
-      ...draft,
+      slug: draft.slug,
+      name: draft.name,
+      description: draft.description,
+      locale: draft.locale,
       ownerUid,
       editorUids: [],
       createdAt: Date.now(),
