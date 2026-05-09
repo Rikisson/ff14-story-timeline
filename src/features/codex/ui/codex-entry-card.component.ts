@@ -29,8 +29,8 @@ import { CodexEntry } from '../data-access/codex-entry.types';
             @if (entry().category; as c) {
               <span
                 class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
-                [style.borderColor]="categoryColor() ?? '#94a3b8'"
-                [style.color]="categoryColor() ?? '#475569'"
+                [style.borderColor]="categoryColor() ?? 'var(--color-border-strong)'"
+                [style.color]="categoryColor() ?? 'var(--color-foreground-subtle)'"
               >{{ c }}</span>
             }
             @if (canEdit()) {

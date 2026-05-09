@@ -73,8 +73,8 @@ import { TimelineEvent } from '../data-access/event.types';
               <li>
                 <span
                   class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                  [style.borderColor]="p.color ?? '#94a3b8'"
-                  [style.color]="p.color ?? '#475569'"
+                  [style.borderColor]="p.color ?? 'var(--color-border-strong)'"
+                  [style.color]="p.color ?? 'var(--color-foreground-subtle)'"
                 >{{ p.label }}</span>
               </li>
             }

@@ -39,7 +39,11 @@
   --color-danger: #fef2f2; /* red-50 — soft bg */
   --color-danger-foreground: #b91c1c; /* red-700 */
   --color-danger-border: #fecaca; /* red-200 */
-  --color-danger-strong: #ef4444; /* red-500 — validation outline */
+  --color-danger-strong: #dc2626; /* red-600 — validation outline + destructive button bg */
+  --color-danger-strong-hover: #ef4444; /* red-500 */
+  --color-danger-strong-active: #b91c1c; /* red-700 */
+  --color-danger-strong-foreground: #ffffff;
+  --color-danger-strong-ring: #ef4444; /* red-500 */
 
   --color-success: #ecfdf5; /* emerald-50 */
   --color-success-foreground: #047857; /* emerald-700 */
@@ -78,7 +82,11 @@
   --color-danger: rgb(69 10 10 / 0.4); /* red-950/40 */
   --color-danger-foreground: #f87171; /* red-400 */
   --color-danger-border: rgb(127 29 29 / 0.5); /* red-900/50 */
-  --color-danger-strong: #ef4444;
+  --color-danger-strong: #ef4444; /* red-500 stays bright on dark */
+  --color-danger-strong-hover: #f87171; /* red-400 */
+  --color-danger-strong-active: #dc2626; /* red-600 */
+  --color-danger-strong-foreground: #ffffff;
+  --color-danger-strong-ring: #f87171; /* red-400 */
 
   --color-success: rgb(2 44 34 / 0.4); /* emerald-950/40 */
   --color-success-foreground: #6ee7b7; /* emerald-300 */

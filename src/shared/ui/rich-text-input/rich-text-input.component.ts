@@ -89,13 +89,10 @@ import { RefSuggestion } from './ref-suggestion.extension';
     }
     .rich-text-host .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
-      color: rgb(148 163 184);
+      color: var(--color-foreground-faint);
       pointer-events: none;
       float: left;
       height: 0;
-    }
-    :host-context(.dark) .rich-text-host .ProseMirror p.is-editor-empty:first-child::before {
-      color: rgb(100 116 139);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

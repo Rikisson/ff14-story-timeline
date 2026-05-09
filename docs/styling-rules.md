@@ -32,9 +32,12 @@ The token vocabulary:
 - **Text** — `foreground` (primary), `foreground-muted` (body),
   `foreground-subtle` (labels), `foreground-faint` (hints/placeholders).
 - **Borders** — `border` (panel borders), `border-strong` (input borders).
-- **Roles** — each has `{role}` (soft tinted bg), `{role}-foreground`
-  (text/icon), `{role}-border` (border): `warning`, `danger`, `success`.
-  `danger-strong` is the validation outline color.
+- **Roles** — `warning`, `danger`, `success` each expose a soft surface
+  family: `{role}` (soft tinted bg), `{role}-foreground` (text/icon),
+  `{role}-border` (border). `danger` additionally has a strong button
+  family for destructive actions, mirroring `accent`: `danger-strong`
+  (also the validation outline color), `danger-strong-hover`,
+  `danger-strong-active`, `danger-strong-foreground`, `danger-strong-ring`.
 - **Accent** — `accent` (button/strong), `accent-hover`, `accent-active`,
   `accent-foreground` (text on accent), `accent-ring` (focus ring),
   `accent-soft` (selection bg), `accent-soft-foreground`.
@@ -46,6 +49,7 @@ The token vocabulary:
 - For form inputs: `border-border-strong bg-surface text-foreground placeholder:text-foreground-faint focus:ring-accent-ring focus:border-accent`.
 - For errors/warnings/success surfaces: `bg-warning text-warning-foreground border-warning-border` (and equivalents for `danger`/`success`).
 - For accent surfaces (selection, focus, drag-over highlights): `bg-accent-soft text-accent-soft-foreground` for the soft variant; `bg-accent text-accent-foreground` for the strong (button-like) variant.
+- For destructive buttons: `bg-danger-strong text-danger-strong-foreground hover:bg-danger-strong-hover active:bg-danger-strong-active focus-visible:ring-danger-strong-ring`.
 - For class bindings, write a single binding per token:
   `[class.bg-accent-soft]="selected()"`. Don't pair light + `dark:` bindings.
 - Don't write `bg-white dark:bg-slate-900` or any raw light/dark utility pair for neutral surfaces — use a token instead.

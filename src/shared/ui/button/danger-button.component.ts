@@ -8,6 +8,6 @@ import { BUTTON_TEMPLATE, ButtonBase } from './button-base';
 })
 export class DangerButtonComponent extends ButtonBase {
   protected readonly variantClasses =
-    'bg-red-600 text-white hover:bg-red-500 active:bg-red-700 ' +
-    'focus-visible:ring-red-500';
+    'bg-danger-strong text-danger-strong-foreground hover:bg-danger-strong-hover active:bg-danger-strong-active ' +
+    'focus-visible:ring-danger-strong-ring';
 }
