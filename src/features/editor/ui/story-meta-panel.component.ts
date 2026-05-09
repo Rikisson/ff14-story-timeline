@@ -7,6 +7,7 @@ import { CodexEntriesService } from '@features/codex';
 import { AssetPickerComponent, MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
+import { ContentLangDirective } from '@features/universes';
 import { EntityKind, EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
 import { EntityResolverService } from '@shared/data-access';
 import {
@@ -45,6 +46,7 @@ function parseRefKey(key: string): EntityRef | null {
     SecondaryButtonComponent,
     NgOptimizedImage,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -110,6 +112,7 @@ function parseRefKey(key: string): EntityRef | null {
         <div class="field">
           <label>{{ t('field.description') }}</label>
           <app-rich-text-input
+            appContentLang
             [value]="m.description ?? ''"
             [options]="inlineRefOptions()"
             [ariaLabel]="t('tooltip.descriptionAria')"

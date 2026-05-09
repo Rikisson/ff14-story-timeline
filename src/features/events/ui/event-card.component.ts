@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
@@ -15,6 +16,7 @@ import { TimelineEvent } from '../data-access/event.types';
     DangerButtonComponent,
     EntityRefComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   host: { class: 'block h-full' },
   template: `
@@ -36,7 +38,7 @@ import { TimelineEvent } from '../data-access/event.types';
         }
         <div class="flex flex-1 flex-col gap-3 p-4">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ event().name }}</h3>
+            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ event().name }}</h3>
             @if (canEdit()) {
               <div class="flex shrink-0 gap-1">
                 <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
@@ -46,11 +48,11 @@ import { TimelineEvent } from '../data-access/event.types';
           </div>
 
           @if (formattedDate(); as d) {
-            <p class="m-0 text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ d }}</p>
+            <p appContentLang class="m-0 text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ d }}</p>
           }
 
           @if (event().description; as desc) {
-            <p class="m-0 line-clamp-4 whitespace-pre-line text-sm text-foreground-muted">{{ desc }}</p>
+            <p appContentLang class="m-0 line-clamp-4 whitespace-pre-line text-sm text-foreground-muted">{{ desc }}</p>
           }
 
           @if (relatedRefs().length > 0) {

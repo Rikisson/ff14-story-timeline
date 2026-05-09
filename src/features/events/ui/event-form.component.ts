@@ -7,6 +7,7 @@ import { CodexEntriesService } from '@features/codex';
 import { CoverSlotComponent } from '@features/media';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
+import { ContentLangDirective } from '@features/universes';
 import { EntityKind, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   ComboboxOption,
@@ -45,6 +46,7 @@ function parseRefKey(key: string): EntityRef | null {
     InGameDateInputComponent,
     RichTextInputComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -104,6 +106,7 @@ function parseRefKey(key: string): EntityRef | null {
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
             <app-rich-text-input
+              appContentLang
               [value]="description()"
               [options]="inlineRefOptions()"
               [ariaLabel]="g('tooltip.descriptionAria')"

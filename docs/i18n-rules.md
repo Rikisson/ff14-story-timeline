@@ -142,16 +142,19 @@ it should move into that scope, not be deleted.
 ## Content language tagging
 
 Any element whose visible text is authored prose binds `lang` to the
-universe's locale: `<div [attr.lang]="universe().locale">`.
+universe's locale via the `appContentLang` directive (exported from
+`@features/universes`). The directive reads `UniverseStore.activeUniverse()?.locale`
+and applies `[attr.lang]` to its host; children inherit the language
+through DOM inheritance.
 
 - Scene background prose, scene speaker text, entity descriptions,
-  codex bodies, story summaries — all wrap in a content boundary that
-  carries `lang`.
-- Tiptap-rendered output sets `lang` on its host wrapper, not on every
-  paragraph.
+  codex bodies, story summaries — apply `appContentLang` to the
+  enclosing prose element.
+- Tiptap-rendered output sets `lang` on its host (`<app-rich-text-input
+  appContentLang>`), not on every paragraph.
 - Chrome surrounding the content (panel header, edit button, metadata
-  chips) inherits the document `lang` from the active UI locale via
-  `<html lang>`.
+  chips) sits *outside* the tagged element and inherits the document
+  `lang` from the active UI locale via `<html lang>`.
 - Default screen-reader voice follows `<html lang>`, so chrome reads in
   the UI locale; content blocks pivot through their own `lang`
   attribute.
@@ -252,7 +255,8 @@ When adding or refactoring translations:
 6. Use `*transloco="let t; prefix: '<scope>'"` at the template root
    over the `| transloco` pipe; the directive subscribes once and folds
    the scope prefix in. (`read:` is deprecated; don't use it.)
-7. New content-prose surfaces wrap in `[attr.lang]="universe().locale"`.
+7. New content-prose surfaces apply the `appContentLang` directive
+   (from `@features/universes`).
 8. Add keys to **both** `en.json` and `uk.json` in the same change.
    The Ukrainian value can be a TODO marker (`"⟦TODO⟧ Save"`) when no
    translation is ready, but the key must exist in both files so
@@ -270,18 +274,6 @@ A shared resolver at `shared/utils/form-validation.ts` reads
 `general.validation.*` so existing Reactive Forms surface translated
 errors without per-form wiring. Not yet wired — current forms render
 raw error keys or rely on hardcoded copy.
-
-## Content language tagging
-
-Wrap each authored-prose surface in `[attr.lang]` bound to the
-universe's locale:
-
-- Scene-view text layers (background prose, speaker text).
-- Entity description blocks (character / place / event / story /
-  codex / plotline).
-- The Tiptap rich-text host.
-- Catalog cards and hover popovers that surface `description` /
-  `summary` fields.
 
 ## Third-party libraries
 

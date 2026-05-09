@@ -5,6 +5,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
 import { Story } from '@features/stories';
+import { ContentLangDirective } from '@features/universes';
 import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
@@ -31,6 +32,7 @@ import catalogUk from './i18n/uk.json';
     EntityRefComponent,
     TagComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -90,7 +92,7 @@ import catalogUk from './i18n/uk.json';
           }
         </a>
 
-        <div class="flex flex-1 flex-col gap-2 px-4 py-3">
+        <div appContentLang class="flex flex-1 flex-col gap-2 px-4 py-3">
           <h3 class="m-0 text-lg font-semibold text-foreground">
             {{ storyTitle() }}
           </h3>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Scene, StagedCharacter } from '@features/stories';
+import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
 import {
   DangerButtonComponent,
@@ -43,6 +44,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     RichTextInputComponent,
     SceneAssetsPanelComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -128,6 +130,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
           <div class="field">
             <label>{{ t('field.text') }}</label>
             <app-rich-text-input
+              appContentLang
               [value]="s.text"
               [options]="inlineRefOptions()"
               [ariaLabel]="t('tooltip.sceneTextAria')"

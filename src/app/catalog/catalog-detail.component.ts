@@ -4,6 +4,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
 import { Story } from '@features/stories';
+import { ContentLangDirective } from '@features/universes';
 import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
@@ -35,6 +36,7 @@ const HERO_SECONDARY =
     EntityRefComponent,
     TagComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -77,17 +79,19 @@ const HERO_SECONDARY =
           <div
             class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
           >
-            <h2 class="m-0 text-2xl font-bold text-scrim-foreground drop-shadow-md sm:text-3xl">
-              {{ storyTitle() }}
-            </h2>
-            @if (story().description; as d) {
-              <app-markdown-text
-                class="line-clamp-3 max-w-2xl text-sm text-scrim-foreground/90 drop-shadow"
-                [text]="d"
-                [options]="inlineRefOptions()"
-                [inline]="true"
-              />
-            }
+            <div appContentLang class="contents">
+              <h2 class="m-0 text-2xl font-bold text-scrim-foreground drop-shadow-md sm:text-3xl">
+                {{ storyTitle() }}
+              </h2>
+              @if (story().description; as d) {
+                <app-markdown-text
+                  class="line-clamp-3 max-w-2xl text-sm text-scrim-foreground/90 drop-shadow"
+                  [text]="d"
+                  [options]="inlineRefOptions()"
+                  [inline]="true"
+                />
+              }
+            </div>
             <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
               <a
                 [routerLink]="['/play', story().id]"

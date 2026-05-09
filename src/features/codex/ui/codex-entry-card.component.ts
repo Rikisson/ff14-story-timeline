@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import {
   DangerButtonComponent,
   EntityRefComponent,
@@ -18,6 +19,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
     DangerButtonComponent,
     EntityRefComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   host: { class: 'block h-full' },
   template: `
@@ -32,10 +34,11 @@ import { CodexEntry } from '../data-access/codex-entry.types';
         }
         <div class="flex flex-1 flex-col gap-3 p-4">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ entry().title }}</h3>
+            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ entry().title }}</h3>
             <div class="flex shrink-0 items-center gap-2">
               @if (entry().category; as c) {
                 <span
+                  appContentLang
                   class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
                   [style.borderColor]="categoryColor() ?? 'var(--color-border-strong)'"
                   [style.color]="categoryColor() ?? 'var(--color-foreground-subtle)'"
@@ -48,7 +51,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
             </div>
           </div>
 
-          <p class="m-0 whitespace-pre-line text-sm text-foreground-muted">
+          <p appContentLang class="m-0 whitespace-pre-line text-sm text-foreground-muted">
             {{ entry().description }}
           </p>
 

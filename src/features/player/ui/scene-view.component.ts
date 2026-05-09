@@ -1,6 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { ContentLangDirective } from '@features/universes';
 import { MarkdownTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import playerEn from '../i18n/en.json';
@@ -20,7 +21,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
 
 @Component({
   selector: 'app-scene-view',
-  imports: [NgOptimizedImage, MarkdownTextComponent, TranslocoDirective],
+  imports: [NgOptimizedImage, MarkdownTextComponent, TranslocoDirective, ContentLangDirective],
   providers: [
     provideTranslocoScope({
       scope: 'player',
@@ -101,7 +102,7 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
           </div>
         }
 
-        <div class="flex flex-col gap-2 px-5 py-4">
+        <div appContentLang class="flex flex-col gap-2 px-5 py-4">
           @if (speaker(); as s) {
             <p class="m-0 text-sm font-semibold text-foreground-muted">{{ s }}</p>
           }

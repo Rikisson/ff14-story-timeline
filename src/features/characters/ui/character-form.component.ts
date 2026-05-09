@@ -14,6 +14,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { CodexEntriesService } from '@features/codex';
 import { CoverSlotComponent } from '@features/media';
 import { PlacesService } from '@features/places';
+import { ContentLangDirective } from '@features/universes';
 import { CharacterDraft } from '../data-access/character.types';
 import { CharactersService } from '../data-access/characters.service';
 import { EntityResolverService } from '@shared/data-access';
@@ -51,6 +52,7 @@ function parseRefKey(key: string): EntityRef | null {
     RichTextInputComponent,
     ComboboxPickerComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -104,6 +106,7 @@ function parseRefKey(key: string): EntityRef | null {
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
             <app-rich-text-input
+              appContentLang
               [value]="description()"
               [options]="inlineRefOptions()"
               [ariaLabel]="g('tooltip.descriptionAria')"

@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import { Character } from '../data-access/character.types';
 import { EntityResolverService } from '@shared/data-access';
 import {
@@ -20,6 +21,7 @@ import {
     EntityRefComponent,
     MarkdownTextComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   host: { class: 'block h-full' },
   template: `
@@ -34,7 +36,7 @@ import {
         }
         <div class="flex flex-1 flex-col gap-3 p-4">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ character().name }}</h3>
+            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ character().name }}</h3>
             @if (canEdit()) {
               <div class="flex shrink-0 gap-1">
                 <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
@@ -44,6 +46,7 @@ import {
           </div>
           @if (character().description; as d) {
             <app-markdown-text
+              appContentLang
               class="text-sm text-foreground-muted"
               [text]="d"
               [options]="inlineRefOptions()"

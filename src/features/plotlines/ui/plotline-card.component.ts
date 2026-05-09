@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import { DangerButtonComponent, GhostButtonComponent, TagComponent, TagTone } from '@shared/ui';
 import { Plotline, PlotlineStatus } from '../data-access/plotline.types';
 import plotlineEn from '../i18n/en.json';
@@ -27,6 +28,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
     DangerButtonComponent,
     TagComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -58,7 +60,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
                   aria-hidden="true"
                 ></span>
               }
-              <h3 class="m-0 flex-1 text-lg font-semibold text-foreground">{{ plotline().title }}</h3>
+              <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ plotline().title }}</h3>
               <div class="flex shrink-0 items-center gap-2">
                 @if (statusInfo(); as s) {
                   <app-tag [tone]="s.tone">{{ t(s.labelKey) }}</app-tag>
@@ -70,7 +72,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
               </div>
             </div>
             @if (plotline().description; as d) {
-              <p class="m-0 whitespace-pre-line text-sm text-foreground-muted">{{ d }}</p>
+              <p appContentLang class="m-0 whitespace-pre-line text-sm text-foreground-muted">{{ d }}</p>
             }
           </div>
         </article>
