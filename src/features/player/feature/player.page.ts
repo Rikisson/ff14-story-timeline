@@ -28,7 +28,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
       @if (store.loading()) {
         <p class="text-foreground-subtle">Loading...</p>
       } @else if (store.error(); as err) {
-        <p class="text-red-700 dark:text-red-400">{{ err }}</p>
+        <p class="text-danger-foreground">{{ err }}</p>
         <p><a routerLink="/library" class="text-indigo-700 dark:text-indigo-300 hover:underline">Back to catalog</a></p>
       } @else if (store.story(); as story) {
         <header class="flex flex-wrap items-center gap-3">

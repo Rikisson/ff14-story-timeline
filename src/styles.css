@@ -26,6 +26,29 @@
   --color-foreground-faint: #64748b; /* slate-500 */
   --color-border: #e2e8f0; /* slate-200 */
   --color-border-strong: #cbd5e1; /* slate-300 */
+
+  /* Role tokens — soft tinted bg + readable foreground + border. */
+  --color-warning: #fffbeb; /* amber-50 — soft bg */
+  --color-warning-foreground: #b45309; /* amber-700 — readable on warning bg + standalone */
+  --color-warning-border: #fde68a; /* amber-200 */
+
+  --color-danger: #fef2f2; /* red-50 — soft bg */
+  --color-danger-foreground: #b91c1c; /* red-700 */
+  --color-danger-border: #fecaca; /* red-200 */
+  --color-danger-strong: #ef4444; /* red-500 — validation outline */
+
+  --color-success: #ecfdf5; /* emerald-50 */
+  --color-success-foreground: #047857; /* emerald-700 */
+  --color-success-border: #a7f3d0; /* emerald-200 */
+
+  /* Accent: strong (button/ring) + soft (selection). */
+  --color-accent: #4f46e5; /* indigo-600 */
+  --color-accent-hover: #6366f1; /* indigo-500 */
+  --color-accent-active: #4338ca; /* indigo-700 */
+  --color-accent-foreground: #ffffff;
+  --color-accent-ring: #6366f1; /* indigo-500 */
+  --color-accent-soft: #eef2ff; /* indigo-50 */
+  --color-accent-soft-foreground: #312e81; /* indigo-900 */
 }
 
 .dark {
@@ -39,6 +62,27 @@
   --color-foreground-faint: #94a3b8; /* slate-400 */
   --color-border: #334155; /* slate-700 */
   --color-border-strong: #334155; /* slate-700 */
+
+  --color-warning: rgb(69 26 3 / 0.4); /* amber-950/40 */
+  --color-warning-foreground: #fde68a; /* amber-200 */
+  --color-warning-border: rgb(120 53 15 / 0.5); /* amber-900/50 */
+
+  --color-danger: rgb(69 10 10 / 0.4); /* red-950/40 */
+  --color-danger-foreground: #f87171; /* red-400 */
+  --color-danger-border: rgb(127 29 29 / 0.5); /* red-900/50 */
+  --color-danger-strong: #ef4444;
+
+  --color-success: rgb(2 44 34 / 0.4); /* emerald-950/40 */
+  --color-success-foreground: #6ee7b7; /* emerald-300 */
+  --color-success-border: rgb(6 78 59 / 0.5); /* emerald-900/50 */
+
+  --color-accent: #6366f1; /* indigo-500 stays bright on dark */
+  --color-accent-hover: #818cf8; /* indigo-400 */
+  --color-accent-active: #4f46e5; /* indigo-600 */
+  --color-accent-foreground: #ffffff;
+  --color-accent-ring: #818cf8; /* indigo-400 */
+  --color-accent-soft: rgb(49 46 129 / 0.6); /* indigo-900/60 */
+  --color-accent-soft-foreground: #c7d2fe; /* indigo-200 */
 }
 
 html,
@@ -58,22 +102,29 @@ app-root {
 }
 
 /*
- * Rete editor dark-theme overrides.
+ * Rete editor theming.
  * Rete plugin component styles are emulated-encapsulated with build-hashed
  * attribute selectors, so they can only be reached from a global stylesheet
- * with selectors more specific than `[_nghost-XXX]`.
+ * with selectors more specific than `[_nghost-XXX]`. We override the
+ * plugin's default blue/yellow with our token system in both modes.
  */
-html.dark [data-testid='node'] {
-  background: rgb(30 41 59 / 0.9); /* slate-800 / 90% */
-  border-color: #475569; /* slate-600 */
+html [data-testid='node'] {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-foreground);
 }
-html.dark [data-testid='node']:hover {
-  background: rgb(51 65 85 / 0.9); /* slate-700 / 90% */
+html [data-testid='node']:hover {
+  background: var(--color-surface-muted);
 }
-html.dark [data-testid='node'].selected {
-  background: #b45309; /* amber-700 — selected highlight stays visible */
-  border-color: #f59e0b; /* amber-500 */
+html [data-testid='node'].selected {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-ring);
 }
-html.dark connection svg path {
-  stroke: #818cf8; /* indigo-400 */
+html [data-testid='node'] .title,
+html [data-testid='node'] .input-title,
+html [data-testid='node'] .output-title {
+  color: var(--color-foreground);
+}
+html connection svg path {
+  stroke: var(--color-accent);
 }

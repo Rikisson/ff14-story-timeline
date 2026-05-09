@@ -231,7 +231,7 @@ export class ComboboxPickerComponent {
     const base =
       'flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-sm';
     return active
-      ? `${base} bg-indigo-50 text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-100`
+      ? `${base} bg-accent-soft text-accent-soft-foreground`
       : `${base} text-foreground-muted`;
   }
 

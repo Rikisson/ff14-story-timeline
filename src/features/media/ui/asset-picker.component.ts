@@ -74,7 +74,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
         </div>
 
         @if (uploadError(); as e) {
-          <p class="m-0 px-4 py-2 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
+          <p class="m-0 px-4 py-2 text-sm text-danger-foreground">{{ e }}</p>
         }
 
         <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">

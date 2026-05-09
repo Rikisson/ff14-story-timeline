@@ -12,7 +12,7 @@ import { formatInGameDate } from '@shared/utils';
       (toggle)="onToggle($event)"
     >
       <summary
-        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
       >
         <span class="flex flex-col">
           @if (label(); as l) {
@@ -117,7 +117,7 @@ import { formatInGameDate } from '@shared/utils';
             <span class="flex items-center justify-between gap-2">
               <span>Minute</span>
               @if (timeErrors().minute) {
-                <span class="text-red-700 dark:text-red-400">needs hour</span>
+                <span class="text-danger-foreground">needs hour</span>
               }
             </span>
             <input
@@ -125,7 +125,7 @@ import { formatInGameDate } from '@shared/utils';
               min="0"
               [max]="minuteMax()"
               class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
-              [class.border-red-500]="timeErrors().minute"
+              [class.border-danger-strong]="timeErrors().minute"
               [class.border-border-strong]="!timeErrors().minute"
               [attr.aria-invalid]="timeErrors().minute || null"
               [value]="value()?.minute ?? ''"
@@ -136,7 +136,7 @@ import { formatInGameDate } from '@shared/utils';
             <span class="flex items-center justify-between gap-2">
               <span>Second</span>
               @if (timeErrors().second) {
-                <span class="text-red-700 dark:text-red-400">needs minute</span>
+                <span class="text-danger-foreground">needs minute</span>
               }
             </span>
             <input
@@ -144,7 +144,7 @@ import { formatInGameDate } from '@shared/utils';
               min="0"
               [max]="secondMax()"
               class="h-9 rounded-md border bg-surface text-foreground px-2 text-sm"
-              [class.border-red-500]="timeErrors().second"
+              [class.border-danger-strong]="timeErrors().second"
               [class.border-border-strong]="!timeErrors().second"
               [attr.aria-invalid]="timeErrors().second || null"
               [value]="value()?.second ?? ''"

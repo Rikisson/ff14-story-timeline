@@ -50,7 +50,7 @@ import {
             <button uiSecondary type="button" (click)="applyPreset('ff14')">FF14 preset</button>
           }
           @if (dirty()) {
-            <span class="text-sm text-amber-700 dark:text-amber-300">Unsaved changes</span>
+            <span class="text-sm text-warning-foreground">Unsaved changes</span>
           }
           <button uiGhost type="button" [disabled]="!dirty()" (click)="reset()">Reset</button>
           <button
@@ -66,7 +66,7 @@ import {
       </header>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
+        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
       }
 
       <details

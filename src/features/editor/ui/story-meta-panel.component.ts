@@ -151,25 +151,9 @@ function parseRefKey(key: string): EntityRef | null {
     :host {
       display: block;
       padding: 1rem;
-      border: 1px solid var(--panel-border);
+      border: 1px solid var(--color-border);
       border-radius: 0.5rem;
-      background: var(--panel-bg);
-      --panel-bg: #fff;
-      --panel-border: #e5e7eb;
-      --muted-fg: #4b5563;
-      --hint-fg: #6b7280;
-      --error-fg: #b00020;
-      --input-border: #d1d5db;
-      --cover-bg: #f3f4f6;
-    }
-    :host-context(.dark) {
-      --panel-bg: #0f172a; /* slate-900 */
-      --panel-border: #334155; /* slate-700 */
-      --muted-fg: #cbd5e1; /* slate-300 */
-      --hint-fg: #94a3b8; /* slate-400 */
-      --error-fg: #f87171; /* red-400 */
-      --input-border: #334155;
-      --cover-bg: #1e293b; /* slate-800 */
+      background: var(--color-surface);
     }
     h3 {
       margin: 0 0 1rem;
@@ -190,27 +174,27 @@ function parseRefKey(key: string): EntityRef | null {
     .field label {
       font-size: 0.875rem;
       font-weight: 500;
-      color: var(--muted-fg);
+      color: var(--color-foreground-subtle);
     }
     .hint {
       font-size: 0.75rem;
-      color: var(--hint-fg);
+      color: var(--color-foreground-faint);
     }
     .error {
       font-size: 0.75rem;
-      color: var(--error-fg);
+      color: var(--color-danger-foreground);
     }
     input[type='text'],
     textarea {
       padding: 0.5rem;
-      border: 1px solid var(--input-border);
+      border: 1px solid var(--color-border-strong);
       border-radius: 0.25rem;
       font: inherit;
-      background: var(--panel-bg);
+      background: var(--color-surface);
       color: inherit;
     }
     input[type='text'].invalid {
-      border-color: var(--error-fg);
+      border-color: var(--color-danger-foreground);
     }
     textarea {
       resize: vertical;
@@ -224,8 +208,8 @@ function parseRefKey(key: string): EntityRef | null {
       width: 100%;
       overflow: hidden;
       border-radius: 0.25rem;
-      border: 1px solid var(--panel-border);
-      background: var(--cover-bg);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-muted);
     }
     .cover-img {
       object-fit: cover;

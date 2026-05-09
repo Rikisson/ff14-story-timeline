@@ -36,11 +36,9 @@ export interface ListPaneItem {
                 <button
                   type="button"
                   role="option"
-                  class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                  [class.bg-indigo-50]="item.id === selectedId()"
-                  [class.text-indigo-900]="item.id === selectedId()"
-                  [class.dark:bg-indigo-950]="item.id === selectedId()"
-                  [class.dark:text-indigo-200]="item.id === selectedId()"
+                  class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                  [class.bg-accent-soft]="item.id === selectedId()"
+                  [class.text-accent-soft-foreground]="item.id === selectedId()"
                   [attr.aria-selected]="item.id === selectedId()"
                   (click)="select.emit(item.id)"
                 >
@@ -60,10 +58,8 @@ export interface ListPaneItem {
                   @if (item.badge) {
                     <span
                       class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
-                      [class.bg-amber-100]="item.badge.tone !== 'slate'"
-                      [class.text-amber-800]="item.badge.tone !== 'slate'"
-                      [class.dark:bg-amber-950]="item.badge.tone !== 'slate'"
-                      [class.dark:text-amber-300]="item.badge.tone !== 'slate'"
+                      [class.bg-warning]="item.badge.tone !== 'slate'"
+                      [class.text-warning-foreground]="item.badge.tone !== 'slate'"
                       [class.bg-surface-muted]="item.badge.tone === 'slate'"
                       [class.text-foreground-muted]="item.badge.tone === 'slate'"
                     >{{ item.badge.text }}</span>

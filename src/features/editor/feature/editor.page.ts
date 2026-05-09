@@ -125,28 +125,6 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       display: flex;
       flex-direction: column;
       height: 100%;
-      --status-draft-bg: #fef3c7;
-      --status-draft-fg: #92400e;
-      --status-published-bg: #dcfce7;
-      --status-published-fg: #166534;
-      --error-fg: #b00020;
-      --orphans-bg: #fffbeb;
-      --orphans-border: #fbbf24;
-      --orphans-fg: #92400e;
-      --orphan-chip-bg: #fef3c7;
-      --orphan-chip-hover: #fde68a;
-    }
-    :host-context(.dark) {
-      --status-draft-bg: rgb(69 26 3 / 0.6); /* amber-950/60 */
-      --status-draft-fg: #fcd34d; /* amber-300 */
-      --status-published-bg: rgb(5 46 22 / 0.6); /* emerald-950/60 */
-      --status-published-fg: #6ee7b7; /* emerald-300 */
-      --error-fg: #f87171; /* red-400 */
-      --orphans-bg: rgb(69 26 3 / 0.4);
-      --orphans-border: #b45309; /* amber-700 */
-      --orphans-fg: #fcd34d;
-      --orphan-chip-bg: rgb(69 26 3 / 0.6);
-      --orphan-chip-hover: #78350f; /* amber-800 */
     }
     .bar {
       display: flex;
@@ -162,7 +140,7 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       font-size: 1.25rem;
     }
     .dirty {
-      color: var(--error-fg);
+      color: var(--color-danger-foreground);
       margin-left: 0.5rem;
     }
     .status {
@@ -177,15 +155,15 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       letter-spacing: 0.04em;
     }
     .status--draft {
-      background: var(--status-draft-bg);
-      color: var(--status-draft-fg);
+      background: var(--color-warning);
+      color: var(--color-warning-foreground);
     }
     .status--published {
-      background: var(--status-published-bg);
-      color: var(--status-published-fg);
+      background: var(--color-success);
+      color: var(--color-success-foreground);
     }
     .error {
-      color: var(--error-fg);
+      color: var(--color-danger-foreground);
     }
     .orphans {
       display: flex;
@@ -194,10 +172,10 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       gap: 0.5rem;
       padding: 0.5rem 0.75rem;
       margin-bottom: 0.75rem;
-      border: 1px solid var(--orphans-border);
-      background: var(--orphans-bg);
+      border: 1px solid var(--color-warning-border);
+      background: var(--color-warning);
       border-radius: 0.375rem;
-      color: var(--orphans-fg);
+      color: var(--color-warning-foreground);
       font-size: 0.875rem;
       flex-shrink: 0;
     }
@@ -205,14 +183,14 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
       font: inherit;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       padding: 0.125rem 0.5rem;
-      border: 1px solid var(--orphans-border);
+      border: 1px solid var(--color-warning-border);
       border-radius: 0.25rem;
-      background: var(--orphan-chip-bg);
-      color: var(--orphans-fg);
+      background: var(--color-warning);
+      color: var(--color-warning-foreground);
       cursor: pointer;
     }
     .orphan-chip:hover {
-      background: var(--orphan-chip-hover);
+      background: var(--color-surface-muted);
     }
     .layout {
       display: grid;

@@ -58,7 +58,7 @@
 
 @if (refreshErrors().length > 0) {
   <div
-    class="border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
+    class="border-b border-warning-border bg-warning px-6 py-2 text-sm text-warning-foreground"
     role="alert"
   >
     @for (err of refreshErrors(); track err.label) {

@@ -10,7 +10,7 @@ import { EntityRefHoverService } from './entity-ref-hover.service';
     <button
       #anchor
       type="button"
-      class="inline-flex max-w-full cursor-help items-center gap-1 truncate rounded-none px-2 py-0.5 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+      class="inline-flex max-w-full cursor-help items-center gap-1 truncate rounded-none px-2 py-0.5 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-1"
       [class]="chipClass()"
       (mouseenter)="onShow()"
       (mouseleave)="onHide()"

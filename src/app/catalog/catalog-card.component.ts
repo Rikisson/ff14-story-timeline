@@ -19,7 +19,7 @@ const BTN_BASE =
   'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 const BTN_PRIMARY =
   BTN_BASE +
-  ' bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 focus-visible:ring-indigo-500';
+  ' bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
 const BTN_SECONDARY =
   BTN_BASE +
   ' bg-surface-muted text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 focus-visible:ring-slate-400';
@@ -127,7 +127,7 @@ const BTN_SECONDARY =
           <button
             uiGhost
             type="button"
-            class="text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+            class="text-danger-foreground hover:bg-danger"
             [attr.aria-label]="'Delete ' + story().title"
             (click)="confirmDelete()"
           >

@@ -39,7 +39,7 @@ interface ResolvedSprite {
       </header>
 
       @if (error(); as e) {
-        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
+        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
       }
 
       @if (resolved().length === 0) {

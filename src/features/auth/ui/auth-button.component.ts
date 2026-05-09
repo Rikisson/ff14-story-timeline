@@ -27,7 +27,7 @@ import { AuthStore } from '../data-access/auth.store';
       </button>
     }
     @if (auth.error(); as err) {
-      <span class="text-sm text-red-700 dark:text-red-400" role="alert">{{ err }}</span>
+      <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>
     }
   `,
   host: { class: 'inline-flex flex-wrap items-center gap-2' },

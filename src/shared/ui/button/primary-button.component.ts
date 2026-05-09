@@ -8,6 +8,6 @@ import { BUTTON_TEMPLATE, ButtonBase } from './button-base';
 })
 export class PrimaryButtonComponent extends ButtonBase {
   protected readonly variantClasses =
-    'bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 ' +
-    'focus-visible:ring-indigo-500';
+    'bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active ' +
+    'focus-visible:ring-accent-ring';
 }

@@ -46,7 +46,7 @@ import { UniverseDraft } from '../data-access/universe.types';
       </label>
 
       @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
+        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
       }
 
       <div class="flex gap-2">

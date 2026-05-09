@@ -82,7 +82,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
             </span>
           </label>
           @if (errorMessage(); as e) {
-            <p class="m-0 text-sm text-red-700 dark:text-red-400">{{ e }}</p>
+            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
           }
           <div>
             <button

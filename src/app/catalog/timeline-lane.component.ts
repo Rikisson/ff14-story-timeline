@@ -48,7 +48,7 @@ const SCROLL_STEP = 320;
         <div
           #rail
           tabindex="0"
-          class="flex items-stretch gap-4 overflow-x-auto rounded-md pb-2 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="flex items-stretch gap-4 overflow-x-auto rounded-md pb-2 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
           (keydown)="onRailKey($event)"
           (focusin)="onFocusIn($event)"
         >
@@ -104,7 +104,7 @@ const SCROLL_STEP = 320;
           @if (hasMore()) {
             <button
               type="button"
-              class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
               [attr.aria-label]="'Load 25 more items into ' + (lane().label || 'lane')"
               (click)="loadMore.emit()"
             >

@@ -18,7 +18,7 @@ const BTN_BASE =
   'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 const BTN_PRIMARY =
   BTN_BASE +
-  ' bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 active:bg-indigo-700 focus-visible:ring-indigo-500';
+  ' bg-accent text-accent-foreground shadow-lg hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
 const BTN_SECONDARY =
   BTN_BASE +
   ' bg-white/90 text-slate-900 shadow hover:bg-white active:bg-slate-100 focus-visible:ring-slate-400';
