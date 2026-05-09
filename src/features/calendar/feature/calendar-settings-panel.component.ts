@@ -199,27 +199,26 @@ import {
                   </label>
                 </div>
 
-                <label class="flex items-start gap-2 pl-12 text-sm">
-                  <input
-                    type="checkbox"
-                    class="mt-1"
-                    [checked]="!!era.resetsWeek"
-                    [disabled]="!canEdit()"
-                    (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
-                  />
-                  <span class="flex flex-col gap-0.5">
-                    <span class="font-medium text-slate-700">Resets weekday cycle</span>
-                    <span class="text-xs text-slate-500">
-                      Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.
+                <div class="flex items-start gap-3 pl-12 text-sm">
+                  <label class="flex flex-1 items-start gap-2">
+                    <input
+                      type="checkbox"
+                      class="mt-1"
+                      [checked]="!!era.resetsWeek"
+                      [disabled]="!canEdit()"
+                      (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
+                    />
+                    <span class="flex flex-col gap-0.5">
+                      <span class="font-medium text-slate-700">Resets weekday cycle</span>
+                      <span class="text-xs text-slate-500">
+                        Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.
+                      </span>
                     </span>
-                  </span>
-                </label>
-
-                @if (canEdit()) {
-                  <div class="flex justify-end pl-12">
+                  </label>
+                  @if (canEdit()) {
                     <button uiDanger type="button" (click)="removeEra(i)">Remove</button>
-                  </div>
-                }
+                  }
+                </div>
               </li>
             }
           </ul>
@@ -309,13 +308,15 @@ import {
                       />
                     </label>
                   </div>
+                  @if (canEdit()) {
+                    <button
+                      uiDanger
+                      type="button"
+                      class="mt-6 shrink-0"
+                      (click)="removeMonth(i)"
+                    >Remove</button>
+                  }
                 </div>
-
-                @if (canEdit()) {
-                  <div class="flex justify-end pl-12">
-                    <button uiDanger type="button" (click)="removeMonth(i)">Remove</button>
-                  </div>
-                }
               </li>
             }
           </ul>
@@ -409,13 +410,15 @@ import {
                       />
                     </label>
                   </div>
+                  @if (canEdit()) {
+                    <button
+                      uiDanger
+                      type="button"
+                      class="mt-6 shrink-0"
+                      (click)="removeWeekday(i)"
+                    >Remove</button>
+                  }
                 </div>
-
-                @if (canEdit()) {
-                  <div class="flex justify-end pl-12">
-                    <button uiDanger type="button" (click)="removeWeekday(i)">Remove</button>
-                  </div>
-                }
               </li>
             }
           </ul>
