@@ -26,6 +26,8 @@ export type {
   FormatInGameDateOptions,
   WeekdayResolveOptions,
 } from './in-game-date';
+export { resolveValidationError } from './form-validation';
+export type { ResolvedValidationError } from './form-validation';
 export {
   INLINE_REF_BASE_CLASS,
   KIND_PICKER_CLASS,

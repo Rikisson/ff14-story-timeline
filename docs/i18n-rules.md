@@ -104,13 +104,19 @@ labels) are *data*, not i18n — they live on per-universe config docs.
 ## Validation strings
 
 - **Generic validators** (`required`, `email`, `minLength`, `maxLength`,
-  `pattern`) live at `general.validation.*`. A shared validator-message
-  resolver reads from there so any Reactive Form picks them up. (The
+  `pattern`) live at `general.validation.*`. The shared
+  `resolveValidationError(errors)` helper in `@shared/utils` maps an
+  Angular `ValidationErrors` object to a `general.validation.*` key
+  plus interpolation params (`{{ min }}`, `{{ max }}`). Drop in
+  `<app-form-error [control]="form.controls.name" />` from `@shared/ui`
+  to render the first error inline once the control is dirty/touched;
+  `[showWhenUntouched]="true"` forces always-on display. (The
   `validation` group is the one canonical group whose name reads
   natural in either form — keep it singular for consistency.)
 - **Field-specific validation** (e.g. *"A character with this name
   already exists in {{universe}}"*) lives in the relevant scope's
-  `validation` group.
+  `validation` group. For these, pass an explicit translation key to
+  the form-error component or render a `<p>` directly.
 
 ## `general` promotion
 
@@ -267,13 +273,6 @@ When adding or refactoring translations:
 # Implementation
 
 Open changes. Remove items as they ship.
-
-## Validator-message resolver
-
-A shared resolver at `shared/utils/form-validation.ts` reads
-`general.validation.*` so existing Reactive Forms surface translated
-errors without per-form wiring. Not yet wired — current forms render
-raw error keys or rely on hardcoded copy.
 
 ## Third-party libraries
 
