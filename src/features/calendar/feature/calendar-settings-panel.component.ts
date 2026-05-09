@@ -199,17 +199,6 @@ import {
                   </label>
                 </div>
 
-                <label class="flex flex-col gap-1 pl-12 text-sm">
-                  <span class="font-medium text-slate-700">Description</span>
-                  <textarea
-                    rows="2"
-                    class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                    [value]="era.description ?? ''"
-                    [disabled]="!canEdit()"
-                    (input)="updateEra(i, { description: text($event) || undefined })"
-                  ></textarea>
-                </label>
-
                 <label class="flex items-start gap-2 pl-12 text-sm">
                   <input
                     type="checkbox"
@@ -321,17 +310,6 @@ import {
                     </label>
                   </div>
                 </div>
-
-                <label class="flex flex-col gap-1 pl-12 text-sm">
-                  <span class="font-medium text-slate-700">Description</span>
-                  <textarea
-                    rows="2"
-                    class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                    [value]="month.description ?? ''"
-                    [disabled]="!canEdit()"
-                    (input)="updateMonth(i, { description: text($event) || undefined })"
-                  ></textarea>
-                </label>
 
                 @if (canEdit()) {
                   <div class="flex justify-end pl-12">

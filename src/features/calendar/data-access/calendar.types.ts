@@ -6,7 +6,6 @@ export interface CalendarEra {
   hoursPerDay?: number;
   minutesPerHour?: number;
   secondsPerMinute?: number;
-  description?: string;
   resetsWeek?: boolean;
 }
 
@@ -14,7 +13,6 @@ export interface CalendarMonth {
   id: string;
   name: string;
   days: number;
-  description?: string;
 }
 
 export interface CalendarWeekday {
@@ -22,7 +20,6 @@ export interface CalendarWeekday {
   name: string;
   short?: string;
   slug?: string;
-  description?: string;
 }
 
 export interface Calendar {

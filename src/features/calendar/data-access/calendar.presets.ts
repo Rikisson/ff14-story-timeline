@@ -13,7 +13,6 @@ export const FF14_CALENDAR_PRESET: Calendar = {
       hoursPerDay: 24,
       minutesPerHour: 60,
       secondsPerMinute: 60,
-      description: 'The age that ended with the Calamity.',
     },
     {
       id: FF14_ERA_SEVENTH_UMBRAL_ID,
@@ -22,7 +21,6 @@ export const FF14_CALENDAR_PRESET: Calendar = {
       hoursPerDay: 24,
       minutesPerHour: 60,
       secondsPerMinute: 60,
-      description: 'Born from the fall of Dalamud.',
       resetsWeek: true,
     },
   ],
