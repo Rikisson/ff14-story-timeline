@@ -1,0 +1,48 @@
+{
+  "field": {
+    "header": "Calendar",
+    "subtitle": "Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.",
+    "erasHeader": "Eras",
+    "monthsHeader": "Months",
+    "weekdaysHeader": "Weekdays",
+    "weekdaysSubtitle": "The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked \"Resets weekday cycle\").",
+    "name": "Name",
+    "slugOptional": "Slug (optional)",
+    "maxYears": "Max years",
+    "hoursPerDay": "Hours / day",
+    "minutesPerHour": "Minutes / hour",
+    "secondsPerMinute": "Seconds / minute",
+    "days": "Days",
+    "short": "Short",
+    "resetsWeekday": "Resets weekday cycle"
+  },
+  "action": {
+    "earthPreset": "Earth preset",
+    "ff14Preset": "FF14 preset",
+    "reset": "Reset",
+    "addEra": "+ Add era",
+    "addMonth": "+ Add month",
+    "addWeekday": "+ Add weekday"
+  },
+  "message": {
+    "unsavedChanges": "Unsaved changes",
+    "resetsWeekdayHint": "Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.",
+    "applyPresetConfirm": "Replace the current calendar with the {{ label }} preset? Any unsaved changes will be lost.",
+    "presetEarth": "Earth",
+    "presetFf14": "FF14",
+    "newEraName": "Era {{ index }}",
+    "newMonthName": "Month {{ index }}",
+    "newWeekdayName": "Weekday {{ index }}"
+  },
+  "empty": {
+    "eras": "No eras yet.",
+    "months": "No months yet.",
+    "weekdays": "No weekdays defined. Dates will render without a weekday.",
+    "maxYearsPlaceholder": "unknown"
+  },
+  "tooltip": {
+    "dragEra": "Era {{ index }}, drag to reorder",
+    "dragMonth": "Month {{ index }}, drag to reorder",
+    "dragWeekday": "Weekday {{ index }}, drag to reorder"
+  }
+}

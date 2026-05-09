@@ -1,0 +1,25 @@
+{
+  "action": {
+    "upload": "+ Upload",
+    "rename": "Rename",
+    "pickCover": "Pick cover",
+    "useAsset": "Use this asset",
+    "pickAtLeastOne": "Pick at least one",
+    "useAssetsCount": "{count, plural, one {Use # asset} other {Use # assets}}"
+  },
+  "message": {
+    "signInToUpload": "Sign in to upload.",
+    "deleteAssetConfirm": "Delete \"{{ label }}\" from the library? This cannot be undone.",
+    "renameAssetPrompt": "Rename asset"
+  },
+  "empty": {
+    "filterByTag": "Filter by tag…",
+    "noAssetsForKind": "{kind, select, cover {No cover assets yet. Upload one to get started.} sprite {No sprite assets yet. Upload one to get started.} background {No background assets yet. Upload one to get started.} ambient {No ambient audio yet. Upload one to get started.} sfx {No sound effects yet. Upload one to get started.} other {No assets yet. Upload one to get started.}}",
+    "noAssetsMatchTag": "No assets match the current tag filter."
+  },
+  "tooltip": {
+    "defaultPickerTitle": "Pick asset",
+    "pickCoverTitle": "Pick a cover image",
+    "selectAsset": "Select {{ label }}"
+  }
+}

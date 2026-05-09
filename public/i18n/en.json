@@ -9,6 +9,7 @@
       "create": "Create",
       "add": "Add",
       "remove": "Remove",
+      "replace": "Replace",
       "close": "Close",
       "back": "Back",
       "retry": "Retry",

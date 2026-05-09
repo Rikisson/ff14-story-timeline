@@ -1,5 +1,6 @@
-﻿import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
 import {
@@ -23,6 +24,8 @@ import {
   DEFAULT_MINUTES_PER_HOUR,
   DEFAULT_SECONDS_PER_MINUTE,
 } from '../data-access/calendar.types';
+import calendarEn from '../i18n/en.json';
+import calendarUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-calendar-settings-panel',
@@ -34,398 +37,412 @@ import {
     SecondaryButtonComponent,
     GhostButtonComponent,
     DangerButtonComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'calendar',
+      loader: {
+        en: () => Promise.resolve(calendarEn),
+        uk: () => Promise.resolve(calendarUk),
+      },
+    }),
   ],
   template: `
-    <section class="flex flex-col gap-6 rounded-lg border border-border bg-surface p-4 shadow-sm">
-      <header class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 class="m-0 text-lg font-semibold text-foreground">Calendar</h2>
-          <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
-            Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          @if (canEdit()) {
-            <button uiSecondary type="button" (click)="applyPreset('earth')">Earth preset</button>
-            <button uiSecondary type="button" (click)="applyPreset('ff14')">FF14 preset</button>
+    <ng-container *transloco="let t; prefix: 'calendar'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <section class="flex flex-col gap-6 rounded-lg border border-border bg-surface p-4 shadow-sm">
+          <header class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="m-0 text-lg font-semibold text-foreground">{{ t('field.header') }}</h2>
+              <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
+                {{ t('field.subtitle') }}
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              @if (canEdit()) {
+                <button uiSecondary type="button" (click)="applyPreset('earth')">{{ t('action.earthPreset') }}</button>
+                <button uiSecondary type="button" (click)="applyPreset('ff14')">{{ t('action.ff14Preset') }}</button>
+              }
+              @if (dirty()) {
+                <span class="text-sm text-warning-foreground">{{ t('message.unsavedChanges') }}</span>
+              }
+              <button uiGhost type="button" [disabled]="!dirty()" (click)="reset()">{{ t('action.reset') }}</button>
+              <button
+                uiPrimary
+                type="button"
+                [loading]="saving()"
+                [disabled]="!dirty() || saving() || !canEdit()"
+                (click)="save()"
+              >
+                {{ g('action.save') }}
+              </button>
+            </div>
+          </header>
+
+          @if (errorMessage(); as e) {
+            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
           }
-          @if (dirty()) {
-            <span class="text-sm text-warning-foreground">Unsaved changes</span>
-          }
-          <button uiGhost type="button" [disabled]="!dirty()" (click)="reset()">Reset</button>
-          <button
-            uiPrimary
-            type="button"
-            [loading]="saving()"
-            [disabled]="!dirty() || saving() || !canEdit()"
-            (click)="save()"
+
+          <details
+            class="rounded-md border border-border"
+            [open]="erasOpen()"
+            (toggle)="onErasToggle($event)"
           >
-            Save
-          </button>
-        </div>
-      </header>
-
-      @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-      }
-
-      <details
-        class="rounded-md border border-border"
-        [open]="erasOpen()"
-        (toggle)="onErasToggle($event)"
-      >
-        <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
-        >
-          <h3 class="m-0 text-base font-semibold text-foreground">
-            Eras <span class="text-sm font-normal text-foreground-faint">({{ eras().length }})</span>
-          </h3>
-          <span class="ml-auto flex items-center gap-2">
-            @if (canEdit()) {
-              <button
-                uiSecondary
-                type="button"
-                (click)="$event.stopPropagation(); addEra()"
-              >+ Add era</button>
-            }
-            <svg
-              class="size-4 shrink-0 text-foreground-faint transition-transform"
-              [class.rotate-180]="erasOpen()"
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <summary
+              class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
             >
-              <polyline points="5 8 10 13 15 8" />
-            </svg>
-          </span>
-        </summary>
-
-        <div class="flex flex-col gap-2 border-t border-border p-3">
-        @if (eras().length === 0) {
-          <p class="m-0 text-sm text-foreground-subtle">No eras yet.</p>
-        } @else {
-          <ul cdkDropList class="flex flex-col gap-2" (cdkDropListDropped)="dropEra($event)">
-            @for (era of eras(); track era.id; let i = $index) {
-              <li
-                cdkDrag
-                [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
-              >
-                <div class="flex items-start gap-3">
+              <h3 class="m-0 text-base font-semibold text-foreground">
+                {{ t('field.erasHeader') }} <span class="text-sm font-normal text-foreground-faint">({{ eras().length }})</span>
+              </h3>
+              <span class="ml-auto flex items-center gap-2">
+                @if (canEdit()) {
                   <button
+                    uiSecondary
                     type="button"
-                    cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-indigo text-sm font-semibold text-tone-indigo-foreground"
-                    [attr.aria-label]="'Era ' + (i + 1) + ', drag to reorder'"
+                    (click)="$event.stopPropagation(); addEra()"
+                  >{{ t('action.addEra') }}</button>
+                }
+                <svg
+                  class="size-4 shrink-0 text-foreground-faint transition-transform"
+                  [class.rotate-180]="erasOpen()"
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="5 8 10 13 15 8" />
+                </svg>
+              </span>
+            </summary>
+
+            <div class="flex flex-col gap-2 border-t border-border p-3">
+            @if (eras().length === 0) {
+              <p class="m-0 text-sm text-foreground-subtle">{{ t('empty.eras') }}</p>
+            } @else {
+              <ul cdkDropList class="flex flex-col gap-2" (cdkDropListDropped)="dropEra($event)">
+                @for (era of eras(); track era.id; let i = $index) {
+                  <li
+                    cdkDrag
+                    [cdkDragDisabled]="!canEdit()"
+                    class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
                   >
-                    {{ i + 1 }}
-                  </button>
-                  <div class="flex flex-1 flex-wrap gap-2">
-                    <label class="flex min-w-[10rem] flex-[2_1_10rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Name</span>
-                      <input
-                        type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="era.name"
-                        [disabled]="!canEdit()"
-                        (input)="updateEra(i, { name: text($event) })"
-                      />
-                    </label>
-                    <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Slug (optional)</span>
-                      <input
-                        type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="era.slug ?? ''"
-                        [disabled]="!canEdit()"
-                        (input)="updateEra(i, { slug: text($event) || undefined })"
-                      />
-                    </label>
-                    <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Max years</span>
-                      <input
-                        type="number"
-                        min="0"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="era.maxYears ?? ''"
-                        [disabled]="!canEdit()"
-                        placeholder="unknown"
-                        (input)="updateEra(i, { maxYears: optionalInt($event) })"
-                      />
-                    </label>
-                  </div>
-                </div>
+                    <div class="flex items-start gap-3">
+                      <button
+                        type="button"
+                        cdkDragHandle
+                        class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-indigo text-sm font-semibold text-tone-indigo-foreground"
+                        [attr.aria-label]="t('tooltip.dragEra', { index: i + 1 })"
+                      >
+                        {{ i + 1 }}
+                      </button>
+                      <div class="flex flex-1 flex-wrap gap-2">
+                        <label class="flex min-w-[10rem] flex-[2_1_10rem] flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.name') }}</span>
+                          <input
+                            type="text"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="era.name"
+                            [disabled]="!canEdit()"
+                            (input)="updateEra(i, { name: text($event) })"
+                          />
+                        </label>
+                        <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.slugOptional') }}</span>
+                          <input
+                            type="text"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="era.slug ?? ''"
+                            [disabled]="!canEdit()"
+                            (input)="updateEra(i, { slug: text($event) || undefined })"
+                          />
+                        </label>
+                        <label class="flex min-w-[6rem] flex-1 flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.maxYears') }}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="era.maxYears ?? ''"
+                            [disabled]="!canEdit()"
+                            [placeholder]="t('empty.maxYearsPlaceholder')"
+                            (input)="updateEra(i, { maxYears: optionalInt($event) })"
+                          />
+                        </label>
+                      </div>
+                    </div>
 
-                <div class="flex flex-wrap gap-2 pl-12">
-                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-foreground-muted">Hours / day</span>
-                    <input
-                      type="number"
-                      min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                      [value]="era.hoursPerDay ?? ''"
-                      [disabled]="!canEdit()"
-                      [placeholder]="defaultHoursPerDay"
-                      (input)="updateEra(i, { hoursPerDay: optionalInt($event) })"
-                    />
-                  </label>
-                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-foreground-muted">Minutes / hour</span>
-                    <input
-                      type="number"
-                      min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                      [value]="era.minutesPerHour ?? ''"
-                      [disabled]="!canEdit()"
-                      [placeholder]="defaultMinutesPerHour"
-                      (input)="updateEra(i, { minutesPerHour: optionalInt($event) })"
-                    />
-                  </label>
-                  <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
-                    <span class="font-medium text-foreground-muted">Seconds / minute</span>
-                    <input
-                      type="number"
-                      min="1"
-                      class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                      [value]="era.secondsPerMinute ?? ''"
-                      [disabled]="!canEdit()"
-                      [placeholder]="defaultSecondsPerMinute"
-                      (input)="updateEra(i, { secondsPerMinute: optionalInt($event) })"
-                    />
-                  </label>
-                </div>
+                    <div class="flex flex-wrap gap-2 pl-12">
+                      <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
+                        <span class="font-medium text-foreground-muted">{{ t('field.hoursPerDay') }}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                          [value]="era.hoursPerDay ?? ''"
+                          [disabled]="!canEdit()"
+                          [placeholder]="defaultHoursPerDay"
+                          (input)="updateEra(i, { hoursPerDay: optionalInt($event) })"
+                        />
+                      </label>
+                      <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
+                        <span class="font-medium text-foreground-muted">{{ t('field.minutesPerHour') }}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                          [value]="era.minutesPerHour ?? ''"
+                          [disabled]="!canEdit()"
+                          [placeholder]="defaultMinutesPerHour"
+                          (input)="updateEra(i, { minutesPerHour: optionalInt($event) })"
+                        />
+                      </label>
+                      <label class="flex min-w-[7rem] flex-1 flex-col gap-1 text-sm">
+                        <span class="font-medium text-foreground-muted">{{ t('field.secondsPerMinute') }}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                          [value]="era.secondsPerMinute ?? ''"
+                          [disabled]="!canEdit()"
+                          [placeholder]="defaultSecondsPerMinute"
+                          (input)="updateEra(i, { secondsPerMinute: optionalInt($event) })"
+                        />
+                      </label>
+                    </div>
 
-                <div class="flex items-start gap-3 pl-12 text-sm">
-                  <label class="flex flex-1 items-start gap-2">
-                    <input
-                      type="checkbox"
-                      class="mt-1"
-                      [checked]="!!era.resetsWeek"
-                      [disabled]="!canEdit()"
-                      (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
-                    />
-                    <span class="flex flex-col gap-0.5">
-                      <span class="font-medium text-foreground-muted">Resets weekday cycle</span>
-                      <span class="text-xs text-foreground-faint">
-                        Day 1 of this era falls on the first weekday. Useful when the previous era is open-ended.
-                      </span>
-                    </span>
-                  </label>
-                  @if (canEdit()) {
-                    <button uiDanger type="button" (click)="removeEra(i)">Remove</button>
-                  }
-                </div>
-              </li>
+                    <div class="flex items-start gap-3 pl-12 text-sm">
+                      <label class="flex flex-1 items-start gap-2">
+                        <input
+                          type="checkbox"
+                          class="mt-1"
+                          [checked]="!!era.resetsWeek"
+                          [disabled]="!canEdit()"
+                          (change)="updateEra(i, { resetsWeek: checked($event) || undefined })"
+                        />
+                        <span class="flex flex-col gap-0.5">
+                          <span class="font-medium text-foreground-muted">{{ t('field.resetsWeekday') }}</span>
+                          <span class="text-xs text-foreground-faint">
+                            {{ t('message.resetsWeekdayHint') }}
+                          </span>
+                        </span>
+                      </label>
+                      @if (canEdit()) {
+                        <button uiDanger type="button" (click)="removeEra(i)">{{ g('action.remove') }}</button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
             }
-          </ul>
-        }
-        </div>
-      </details>
+            </div>
+          </details>
 
-      <details
-        class="rounded-md border border-border"
-        [open]="monthsOpen()"
-        (toggle)="onMonthsToggle($event)"
-      >
-        <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
-        >
-          <h3 class="m-0 text-base font-semibold text-foreground">
-            Months <span class="text-sm font-normal text-foreground-faint">({{ months().length }})</span>
-          </h3>
-          <span class="ml-auto flex items-center gap-2">
-            @if (canEdit()) {
-              <button
-                uiSecondary
-                type="button"
-                (click)="$event.stopPropagation(); addMonth()"
-              >+ Add month</button>
-            }
-            <svg
-              class="size-4 shrink-0 text-foreground-faint transition-transform"
-              [class.rotate-180]="monthsOpen()"
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="5 8 10 13 15 8" />
-            </svg>
-          </span>
-        </summary>
-
-        <div class="flex flex-col gap-2 border-t border-border p-3">
-        @if (months().length === 0) {
-          <p class="m-0 text-sm text-foreground-subtle">No months yet.</p>
-        } @else {
-          <ul
-            cdkDropList
-            class="flex flex-col gap-2"
-            (cdkDropListDropped)="dropMonth($event)"
+          <details
+            class="rounded-md border border-border"
+            [open]="monthsOpen()"
+            (toggle)="onMonthsToggle($event)"
           >
-            @for (month of months(); track month.id; let i = $index) {
-              <li
-                cdkDrag
-                [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
-              >
-                <div class="flex items-start gap-3">
-                  <button
-                    type="button"
-                    cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-emerald text-sm font-semibold text-tone-emerald-foreground"
-                    [attr.aria-label]="'Month ' + (i + 1) + ', drag to reorder'"
-                  >
-                    {{ i + 1 }}
-                  </button>
-                  <div class="flex flex-1 flex-wrap gap-2">
-                    <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Name</span>
-                      <input
-                        type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="month.name"
-                        [disabled]="!canEdit()"
-                        (input)="updateMonth(i, { name: text($event) })"
-                      />
-                    </label>
-                    <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Days</span>
-                      <input
-                        type="number"
-                        min="1"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="month.days"
-                        [disabled]="!canEdit()"
-                        (input)="updateMonth(i, { days: requiredInt($event) })"
-                      />
-                    </label>
-                  </div>
-                  @if (canEdit()) {
-                    <button
-                      uiDanger
-                      type="button"
-                      class="mt-6 shrink-0"
-                      (click)="removeMonth(i)"
-                    >Remove</button>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        }
-        </div>
-      </details>
-
-      <details
-        class="rounded-md border border-border"
-        [open]="weekdaysOpen()"
-        (toggle)="onWeekdaysToggle($event)"
-      >
-        <summary
-          class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
-        >
-          <div class="flex flex-col">
-            <h3 class="m-0 text-base font-semibold text-foreground">
-              Weekdays <span class="text-sm font-normal text-foreground-faint">({{ weekdays().length }})</span>
-            </h3>
-            <p class="m-0 mt-0.5 text-xs text-foreground-faint">
-              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
-            </p>
-          </div>
-          <span class="ml-auto flex items-center gap-2">
-            @if (canEdit()) {
-              <button
-                uiSecondary
-                type="button"
-                (click)="$event.stopPropagation(); addWeekday()"
-              >+ Add weekday</button>
-            }
-            <svg
-              class="size-4 shrink-0 text-foreground-faint transition-transform"
-              [class.rotate-180]="weekdaysOpen()"
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <summary
+              class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
             >
-              <polyline points="5 8 10 13 15 8" />
-            </svg>
-          </span>
-        </summary>
-
-        <div class="flex flex-col gap-2 border-t border-border p-3">
-        @if (weekdays().length === 0) {
-          <p class="m-0 text-sm text-foreground-subtle">No weekdays defined. Dates will render without a weekday.</p>
-        } @else {
-          <ul
-            cdkDropList
-            class="flex flex-col gap-2"
-            (cdkDropListDropped)="dropWeekday($event)"
-          >
-            @for (wd of weekdays(); track wd.id; let i = $index) {
-              <li
-                cdkDrag
-                [cdkDragDisabled]="!canEdit()"
-                class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
-              >
-                <div class="flex items-start gap-3">
+              <h3 class="m-0 text-base font-semibold text-foreground">
+                {{ t('field.monthsHeader') }} <span class="text-sm font-normal text-foreground-faint">({{ months().length }})</span>
+              </h3>
+              <span class="ml-auto flex items-center gap-2">
+                @if (canEdit()) {
                   <button
+                    uiSecondary
                     type="button"
-                    cdkDragHandle
-                    class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-amber text-sm font-semibold text-tone-amber-foreground"
-                    [attr.aria-label]="'Weekday ' + (i + 1) + ', drag to reorder'"
+                    (click)="$event.stopPropagation(); addMonth()"
+                  >{{ t('action.addMonth') }}</button>
+                }
+                <svg
+                  class="size-4 shrink-0 text-foreground-faint transition-transform"
+                  [class.rotate-180]="monthsOpen()"
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="5 8 10 13 15 8" />
+                </svg>
+              </span>
+            </summary>
+
+            <div class="flex flex-col gap-2 border-t border-border p-3">
+            @if (months().length === 0) {
+              <p class="m-0 text-sm text-foreground-subtle">{{ t('empty.months') }}</p>
+            } @else {
+              <ul
+                cdkDropList
+                class="flex flex-col gap-2"
+                (cdkDropListDropped)="dropMonth($event)"
+              >
+                @for (month of months(); track month.id; let i = $index) {
+                  <li
+                    cdkDrag
+                    [cdkDragDisabled]="!canEdit()"
+                    class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
                   >
-                    {{ i + 1 }}
-                  </button>
-                  <div class="flex flex-1 flex-wrap gap-2">
-                    <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Name</span>
-                      <input
-                        type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="wd.name"
-                        [disabled]="!canEdit()"
-                        (input)="updateWeekday(i, { name: text($event) })"
-                      />
-                    </label>
-                    <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
-                      <span class="font-medium text-foreground-muted">Short</span>
-                      <input
-                        type="text"
-                        class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                        [value]="wd.short ?? ''"
-                        [disabled]="!canEdit()"
-                        (input)="updateWeekday(i, { short: text($event) || undefined })"
-                      />
-                    </label>
-                  </div>
-                  @if (canEdit()) {
-                    <button
-                      uiDanger
-                      type="button"
-                      class="mt-6 shrink-0"
-                      (click)="removeWeekday(i)"
-                    >Remove</button>
-                  }
-                </div>
-              </li>
+                    <div class="flex items-start gap-3">
+                      <button
+                        type="button"
+                        cdkDragHandle
+                        class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-emerald text-sm font-semibold text-tone-emerald-foreground"
+                        [attr.aria-label]="t('tooltip.dragMonth', { index: i + 1 })"
+                      >
+                        {{ i + 1 }}
+                      </button>
+                      <div class="flex flex-1 flex-wrap gap-2">
+                        <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.name') }}</span>
+                          <input
+                            type="text"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="month.name"
+                            [disabled]="!canEdit()"
+                            (input)="updateMonth(i, { name: text($event) })"
+                          />
+                        </label>
+                        <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.days') }}</span>
+                          <input
+                            type="number"
+                            min="1"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="month.days"
+                            [disabled]="!canEdit()"
+                            (input)="updateMonth(i, { days: requiredInt($event) })"
+                          />
+                        </label>
+                      </div>
+                      @if (canEdit()) {
+                        <button
+                          uiDanger
+                          type="button"
+                          class="mt-6 shrink-0"
+                          (click)="removeMonth(i)"
+                        >{{ g('action.remove') }}</button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
             }
-          </ul>
-        }
-        </div>
-      </details>
-    </section>
+            </div>
+          </details>
+
+          <details
+            class="rounded-md border border-border"
+            [open]="weekdaysOpen()"
+            (toggle)="onWeekdaysToggle($event)"
+          >
+            <summary
+              class="flex cursor-pointer list-none items-center gap-3 rounded-md px-3 py-2 hover:bg-surface-subtle"
+            >
+              <div class="flex flex-col">
+                <h3 class="m-0 text-base font-semibold text-foreground">
+                  {{ t('field.weekdaysHeader') }} <span class="text-sm font-normal text-foreground-faint">({{ weekdays().length }})</span>
+                </h3>
+                <p class="m-0 mt-0.5 text-xs text-foreground-faint">
+                  {{ t('field.weekdaysSubtitle') }}
+                </p>
+              </div>
+              <span class="ml-auto flex items-center gap-2">
+                @if (canEdit()) {
+                  <button
+                    uiSecondary
+                    type="button"
+                    (click)="$event.stopPropagation(); addWeekday()"
+                  >{{ t('action.addWeekday') }}</button>
+                }
+                <svg
+                  class="size-4 shrink-0 text-foreground-faint transition-transform"
+                  [class.rotate-180]="weekdaysOpen()"
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="5 8 10 13 15 8" />
+                </svg>
+              </span>
+            </summary>
+
+            <div class="flex flex-col gap-2 border-t border-border p-3">
+            @if (weekdays().length === 0) {
+              <p class="m-0 text-sm text-foreground-subtle">{{ t('empty.weekdays') }}</p>
+            } @else {
+              <ul
+                cdkDropList
+                class="flex flex-col gap-2"
+                (cdkDropListDropped)="dropWeekday($event)"
+              >
+                @for (wd of weekdays(); track wd.id; let i = $index) {
+                  <li
+                    cdkDrag
+                    [cdkDragDisabled]="!canEdit()"
+                    class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
+                  >
+                    <div class="flex items-start gap-3">
+                      <button
+                        type="button"
+                        cdkDragHandle
+                        class="inline-flex size-9 shrink-0 cursor-grab items-center justify-center rounded-full border-0 bg-tone-amber text-sm font-semibold text-tone-amber-foreground"
+                        [attr.aria-label]="t('tooltip.dragWeekday', { index: i + 1 })"
+                      >
+                        {{ i + 1 }}
+                      </button>
+                      <div class="flex flex-1 flex-wrap gap-2">
+                        <label class="flex min-w-[8rem] flex-[2_1_8rem] flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.name') }}</span>
+                          <input
+                            type="text"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="wd.name"
+                            [disabled]="!canEdit()"
+                            (input)="updateWeekday(i, { name: text($event) })"
+                          />
+                        </label>
+                        <label class="flex min-w-[5rem] flex-1 flex-col gap-1 text-sm">
+                          <span class="font-medium text-foreground-muted">{{ t('field.short') }}</span>
+                          <input
+                            type="text"
+                            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                            [value]="wd.short ?? ''"
+                            [disabled]="!canEdit()"
+                            (input)="updateWeekday(i, { short: text($event) || undefined })"
+                          />
+                        </label>
+                      </div>
+                      @if (canEdit()) {
+                        <button
+                          uiDanger
+                          type="button"
+                          class="mt-6 shrink-0"
+                          (click)="removeWeekday(i)"
+                        >{{ g('action.remove') }}</button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+            </div>
+          </details>
+        </section>
+      </ng-container>
+    </ng-container>
   `,
   styles: [`
     summary::-webkit-details-marker { display: none; }
@@ -437,6 +454,7 @@ export class CalendarSettingsPanelComponent {
   private readonly service = inject(CalendarService);
   private readonly universes = inject(UniverseStore);
   private readonly user = inject(AuthStore).user;
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly defaultHoursPerDay = String(DEFAULT_HOURS_PER_DAY);
   protected readonly defaultMinutesPerHour = String(DEFAULT_MINUTES_PER_HOUR);
@@ -506,9 +524,11 @@ export class CalendarSettingsPanelComponent {
   }
 
   protected applyPreset(kind: 'earth' | 'ff14'): void {
-    const label = kind === 'earth' ? 'Earth' : 'FF14';
+    const label = this.transloco.translate(
+      kind === 'earth' ? 'calendar.message.presetEarth' : 'calendar.message.presetFf14',
+    );
     const ok = window.confirm(
-      `Replace the current calendar with the ${label} preset? Any unsaved changes will be lost.`,
+      this.transloco.translate('calendar.message.applyPresetConfirm', { label }),
     );
     if (!ok) return;
     this.errorMessage.set(null);
@@ -521,7 +541,7 @@ export class CalendarSettingsPanelComponent {
       const last = c.eras.at(-1);
       const era: CalendarEra = {
         id: crypto.randomUUID(),
-        name: `Era ${c.eras.length + 1}`,
+        name: this.transloco.translate('calendar.message.newEraName', { index: c.eras.length + 1 }),
         maxYears: last?.maxYears,
         hoursPerDay: last?.hoursPerDay,
         minutesPerHour: last?.minutesPerHour,
@@ -558,7 +578,7 @@ export class CalendarSettingsPanelComponent {
       const last = c.months.at(-1);
       const month: CalendarMonth = {
         id: crypto.randomUUID(),
-        name: `Month ${c.months.length + 1}`,
+        name: this.transloco.translate('calendar.message.newMonthName', { index: c.months.length + 1 }),
         days: last?.days ?? 30,
       };
       return { ...c, months: [...c.months, month] };
@@ -592,7 +612,7 @@ export class CalendarSettingsPanelComponent {
       const wds = c.weekdays ?? [];
       const wd: CalendarWeekday = {
         id: crypto.randomUUID(),
-        name: `Weekday ${wds.length + 1}`,
+        name: this.transloco.translate('calendar.message.newWeekdayName', { index: wds.length + 1 }),
       };
       return { ...c, weekdays: [...wds, wd] };
     });

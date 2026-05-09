@@ -1,4 +1,4 @@
-﻿import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,6 +11,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import {
   DangerButtonComponent,
@@ -20,6 +22,8 @@ import {
 } from '@shared/ui';
 import { AssetDoc, AssetKind, AUDIO_ASSET_KINDS } from '../data-access/asset.types';
 import { MediaAssetsService } from '../data-access/media-assets.service';
+import mediaEn from '../i18n/en.json';
+import mediaUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-asset-picker',
@@ -29,151 +33,165 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
     GhostButtonComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'media',
+      loader: {
+        en: () => Promise.resolve(mediaEn),
+        uk: () => Promise.resolve(mediaUk),
+      },
+    }),
   ],
   template: `
-    <dialog
-      #dialog
-      class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
-      [attr.aria-label]="title()"
-      (close)="onDialogClose()"
-      (click)="onBackdropClick($event)"
-    >
-      <div class="flex max-h-[80vh] w-[min(48rem,92vw)] flex-col">
-        <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h3 class="m-0 text-base font-semibold text-foreground">{{ title() }}</h3>
-          <button
-            uiGhost
-            type="button"
-            class="h-8 w-8 p-0 text-lg leading-none"
-            aria-label="Close"
-            (click)="cancel()"
-          >×</button>
-        </header>
+    <ng-container *transloco="let t; prefix: 'media'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <dialog
+          #dialog
+          class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
+          [attr.aria-label]="resolvedTitle()"
+          (close)="onDialogClose()"
+          (click)="onBackdropClick($event)"
+        >
+          <div class="flex max-h-[80vh] w-[min(48rem,92vw)] flex-col">
+            <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <h3 class="m-0 text-base font-semibold text-foreground">{{ resolvedTitle() }}</h3>
+              <button
+                uiGhost
+                type="button"
+                class="h-8 w-8 p-0 text-lg leading-none"
+                [attr.aria-label]="g('action.close')"
+                (click)="cancel()"
+              >×</button>
+            </header>
 
-        <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-          <input
-            type="text"
-            class="flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-1.5 text-sm"
-            placeholder="Filter by tag…"
-            [value]="tagFilter()"
-            (input)="onTagInput($event)"
-          />
-          <button
-            uiSecondary
-            type="button"
-            [loading]="uploading()"
-            (click)="fileInput.click()"
-          >+ Upload</button>
-          <input
-            #fileInput
-            type="file"
-            class="hidden"
-            [accept]="acceptAttr()"
-            (change)="onPick($event)"
-          />
-        </div>
+            <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+              <input
+                type="text"
+                class="flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-1.5 text-sm"
+                [placeholder]="t('empty.filterByTag')"
+                [value]="tagFilter()"
+                (input)="onTagInput($event)"
+              />
+              <button
+                uiSecondary
+                type="button"
+                [loading]="uploading()"
+                (click)="fileInput.click()"
+              >{{ t('action.upload') }}</button>
+              <input
+                #fileInput
+                type="file"
+                class="hidden"
+                [accept]="acceptAttr()"
+                (change)="onPick($event)"
+              />
+            </div>
 
-        @if (uploadError(); as e) {
-          <p class="m-0 px-4 py-2 text-sm text-danger-foreground">{{ e }}</p>
-        }
+            @if (uploadError(); as e) {
+              <p class="m-0 px-4 py-2 text-sm text-danger-foreground">{{ e }}</p>
+            }
 
-        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          @if (visible().length === 0) {
-            <p class="m-0 py-8 text-center text-sm italic text-foreground-faint">
-              @if (allForKind().length === 0) {
-                No {{ kind() }} assets yet. Upload one to get started.
+            <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              @if (visible().length === 0) {
+                <p class="m-0 py-8 text-center text-sm italic text-foreground-faint">
+                  @if (allForKind().length === 0) {
+                    {{ t('empty.noAssetsForKind', { kind: kind() }) }}
+                  } @else {
+                    {{ t('empty.noAssetsMatchTag') }}
+                  }
+                </p>
+              } @else if (isAudio()) {
+                <ul class="m-0 flex list-none flex-col gap-2 p-0">
+                  @for (a of visible(); track a.id) {
+                    <li
+                      class="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center"
+                      [class.border-accent-ring]="isSelected(a.id)"
+                      [class.bg-accent-soft]="isSelected(a.id)"
+                      [class.border-border]="!isSelected(a.id)"
+                    >
+                      <button
+                        type="button"
+                        class="text-left text-sm font-medium text-foreground hover:underline"
+                        (click)="toggle(a.id)"
+                      >{{ a.label }}</button>
+                      <audio class="ml-auto" controls preload="none" [src]="a.url"></audio>
+                      <div class="flex shrink-0 gap-2">
+                        <button uiGhost type="button" (click)="renamePrompt(a)">{{ t('action.rename') }}</button>
+                        <button uiDanger type="button" (click)="confirmDelete(a)">{{ g('action.delete') }}</button>
+                      </div>
+                    </li>
+                  }
+                </ul>
               } @else {
-                No assets match the current tag filter.
-              }
-            </p>
-          } @else if (isAudio()) {
-            <ul class="m-0 flex list-none flex-col gap-2 p-0">
-              @for (a of visible(); track a.id) {
-                <li
-                  class="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center"
-                  [class.border-accent-ring]="isSelected(a.id)"
-                  [class.bg-accent-soft]="isSelected(a.id)"
-                  [class.border-border]="!isSelected(a.id)"
-                >
-                  <button
-                    type="button"
-                    class="text-left text-sm font-medium text-foreground hover:underline"
-                    (click)="toggle(a.id)"
-                  >{{ a.label }}</button>
-                  <audio class="ml-auto" controls preload="none" [src]="a.url"></audio>
-                  <div class="flex shrink-0 gap-2">
-                    <button uiGhost type="button" (click)="renamePrompt(a)">Rename</button>
-                    <button uiDanger type="button" (click)="confirmDelete(a)">Delete</button>
-                  </div>
-                </li>
-              }
-            </ul>
-          } @else {
-            <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 md:grid-cols-4">
-              @for (a of visible(); track a.id) {
-                <li
-                  class="flex flex-col gap-2 overflow-hidden rounded-md border bg-surface"
-                  [class.border-accent-ring]="isSelected(a.id)"
-                  [class.ring-2]="isSelected(a.id)"
-                  [class.ring-accent-ring]="isSelected(a.id)"
-                  [class.border-border]="!isSelected(a.id)"
-                >
-                  <button
-                    type="button"
-                    class="relative aspect-square w-full overflow-hidden bg-surface-muted"
-                    [attr.aria-label]="'Select ' + a.label"
-                    [attr.aria-pressed]="isSelected(a.id)"
-                    (click)="toggle(a.id)"
-                  >
-                    <img
-                      [ngSrc]="a.url"
-                      [alt]="a.label"
-                      fill
-                      class="object-cover"
-                    />
-                    @if (isSelected(a.id)) {
-                      <span
-                        class="absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground shadow"
-                        aria-hidden="true"
-                      >✓</span>
-                    }
-                  </button>
-                  <div class="flex flex-col gap-1 px-2 pb-2">
-                    <p class="m-0 truncate text-xs font-medium text-foreground-muted">{{ a.label }}</p>
-                    <div class="flex gap-1">
+                <ul class="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 md:grid-cols-4">
+                  @for (a of visible(); track a.id) {
+                    <li
+                      class="flex flex-col gap-2 overflow-hidden rounded-md border bg-surface"
+                      [class.border-accent-ring]="isSelected(a.id)"
+                      [class.ring-2]="isSelected(a.id)"
+                      [class.ring-accent-ring]="isSelected(a.id)"
+                      [class.border-border]="!isSelected(a.id)"
+                    >
                       <button
-                        uiGhost
                         type="button"
-                        class="flex-1 px-1 py-0.5 text-xs"
-                        (click)="renamePrompt(a)"
-                      >Rename</button>
-                      <button
-                        uiDanger
-                        type="button"
-                        class="flex-1 px-1 py-0.5 text-xs"
-                        (click)="confirmDelete(a)"
-                      >Delete</button>
-                    </div>
-                  </div>
-                </li>
+                        class="relative aspect-square w-full overflow-hidden bg-surface-muted"
+                        [attr.aria-label]="t('tooltip.selectAsset', { label: a.label })"
+                        [attr.aria-pressed]="isSelected(a.id)"
+                        (click)="toggle(a.id)"
+                      >
+                        <img
+                          [ngSrc]="a.url"
+                          [alt]="a.label"
+                          fill
+                          class="object-cover"
+                        />
+                        @if (isSelected(a.id)) {
+                          <span
+                            class="absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground shadow"
+                            aria-hidden="true"
+                          >✓</span>
+                        }
+                      </button>
+                      <div class="flex flex-col gap-1 px-2 pb-2">
+                        <p class="m-0 truncate text-xs font-medium text-foreground-muted">{{ a.label }}</p>
+                        <div class="flex gap-1">
+                          <button
+                            uiGhost
+                            type="button"
+                            class="flex-1 px-1 py-0.5 text-xs"
+                            (click)="renamePrompt(a)"
+                          >{{ t('action.rename') }}</button>
+                          <button
+                            uiDanger
+                            type="button"
+                            class="flex-1 px-1 py-0.5 text-xs"
+                            (click)="confirmDelete(a)"
+                          >{{ g('action.delete') }}</button>
+                        </div>
+                      </div>
+                    </li>
+                  }
+                </ul>
               }
-            </ul>
-          }
-        </div>
+            </div>
 
-        <footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
-          <button uiGhost type="button" (click)="cancel()">Cancel</button>
-          <button
-            uiPrimary
-            type="button"
-            [disabled]="selection().length === 0"
-            (click)="confirm()"
-          >
-            {{ confirmLabel() }}
-          </button>
-        </footer>
-      </div>
-    </dialog>
+            <footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+              <button uiGhost type="button" (click)="cancel()">{{ g('action.cancel') }}</button>
+              <button
+                uiPrimary
+                type="button"
+                [disabled]="selection().length === 0"
+                (click)="confirm()"
+              >
+                {{ confirmLabel() }}
+              </button>
+            </footer>
+          </div>
+        </dialog>
+      </ng-container>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -181,18 +199,27 @@ export class AssetPickerComponent {
   readonly kind = input.required<AssetKind>();
   readonly multiSelect = input<boolean>(false);
   readonly currentSelection = input<string[]>([]);
-  readonly title = input<string>('Pick asset');
+  readonly title = input<string | undefined>(undefined);
 
   readonly picked = output<string[]>();
 
   private readonly media = inject(MediaAssetsService);
   private readonly auth = inject(AuthStore);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   protected readonly selection = signal<string[]>([]);
   protected readonly tagFilter = signal<string>('');
   protected readonly uploading = signal(false);
   protected readonly uploadError = signal<string | null>(null);
+
+  protected readonly resolvedTitle = computed(() => {
+    this.activeLang();
+    return this.title() ?? this.transloco.translate('media.tooltip.defaultPickerTitle');
+  });
 
   protected readonly isAudio = computed(() => AUDIO_ASSET_KINDS.includes(this.kind()));
 
@@ -211,11 +238,11 @@ export class AssetPickerComponent {
   });
 
   protected readonly confirmLabel = computed(() => {
+    this.activeLang();
     const n = this.selection().length;
-    if (!this.multiSelect()) return 'Use this asset';
-    if (n === 0) return 'Pick at least one';
-    if (n === 1) return 'Use 1 asset';
-    return `Use ${n} assets`;
+    if (!this.multiSelect()) return this.transloco.translate('media.action.useAsset');
+    if (n === 0) return this.transloco.translate('media.action.pickAtLeastOne');
+    return this.transloco.translate('media.action.useAssetsCount', { count: n });
   });
 
   constructor() {
@@ -262,7 +289,7 @@ export class AssetPickerComponent {
     if (!file) return;
     const uid = this.auth.user()?.uid;
     if (!uid) {
-      this.uploadError.set('Sign in to upload.');
+      this.uploadError.set(this.transloco.translate('media.message.signInToUpload'));
       return;
     }
     this.uploading.set(true);
@@ -284,7 +311,10 @@ export class AssetPickerComponent {
   }
 
   protected async renamePrompt(asset: AssetDoc): Promise<void> {
-    const next = window.prompt('Rename asset', asset.label);
+    const next = window.prompt(
+      this.transloco.translate('media.message.renameAssetPrompt'),
+      asset.label,
+    );
     if (next === null) return;
     const trimmed = next.trim();
     if (!trimmed || trimmed === asset.label) return;
@@ -296,7 +326,10 @@ export class AssetPickerComponent {
   }
 
   protected async confirmDelete(asset: AssetDoc): Promise<void> {
-    if (!window.confirm(`Delete "${asset.label}" from the library? This cannot be undone.`)) {
+    const message = this.transloco.translate('media.message.deleteAssetConfirm', {
+      label: asset.label,
+    });
+    if (!window.confirm(message)) {
       return;
     }
     try {
