@@ -21,7 +21,7 @@ const BTN_PRIMARY =
   ' bg-accent text-accent-foreground shadow-lg hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
 const BTN_SECONDARY =
   BTN_BASE +
-  ' bg-white/90 text-slate-900 shadow hover:bg-white active:bg-slate-100 focus-visible:ring-slate-400';
+  ' bg-surface/90 text-foreground shadow hover:bg-surface active:bg-surface-muted focus-visible:ring-accent-ring';
 
 @Component({
   selector: 'app-catalog-detail',
@@ -45,7 +45,7 @@ const BTN_SECONDARY =
       >
         @if (!background()) {
           <div
-            class="size-full bg-gradient-to-br from-indigo-200 to-slate-300"
+            class="size-full bg-gradient-to-br from-tone-indigo-border to-surface-stronger"
             aria-hidden="true"
           ></div>
         }
@@ -87,7 +87,7 @@ const BTN_SECONDARY =
               <button
                 uiGhost
                 type="button"
-                class="bg-white/15 text-white hover:bg-white/25"
+                class="bg-surface/15 text-foreground hover:bg-surface/25"
                 [attr.aria-label]="'Delete ' + story().title"
                 (click)="confirmDelete()"
               >

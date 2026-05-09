@@ -60,7 +60,7 @@ const BTN_SECONDARY =
           />
         } @else {
           <div
-            class="flex size-full items-center justify-center bg-gradient-to-br from-indigo-200 to-slate-300"
+            class="flex size-full items-center justify-center bg-gradient-to-br from-tone-indigo-border to-surface-stronger"
           ></div>
         }
         <span
@@ -68,7 +68,7 @@ const BTN_SECONDARY =
           aria-hidden="true"
         >
           <span
-            class="flex size-16 items-center justify-center rounded-full bg-white/90 text-indigo-700 shadow-lg"
+            class="flex size-16 items-center justify-center rounded-full bg-surface/90 text-tone-indigo-foreground shadow-lg"
           >
             <svg viewBox="0 0 24 24" class="ml-1 size-8 fill-current">
               <path d="M8 5v14l11-7z" />

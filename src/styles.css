@@ -122,9 +122,9 @@
   --color-foreground: #f1f5f9; /* slate-100 */
   --color-foreground-muted: #cbd5e1; /* slate-300 */
   --color-foreground-subtle: #94a3b8; /* slate-400 */
-  --color-foreground-faint: #94a3b8; /* slate-400 */
+  --color-foreground-faint: #64748b; /* slate-500 — one step less prominent than subtle */
   --color-border: #334155; /* slate-700 */
-  --color-border-strong: #334155; /* slate-700 */
+  --color-border-strong: #475569; /* slate-600 — one step more visible than border */
 
   /* Role tokens — soft tinted bg + readable foreground + border. */
   --color-warning: rgb(69 26 3 / 0.4); /* amber-950/40 — soft bg */
