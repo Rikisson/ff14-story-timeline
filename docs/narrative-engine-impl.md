@@ -165,6 +165,35 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
   `characters[]` triggers a visible editor prompt rather than silently
   mutating the array.
 
+## Calendar
+
+- **Per-universe config** at `universes/{u}/_meta/calendar`, managed
+  via the Universe settings *Calendar* section
+  (`/universe/settings/calendar`). Three ordered lists: `eras`,
+  `months`, and optional `weekdays`.
+- **List order is the identity.** Era ordinal = array position. Month
+  index = 1..N matching array position. Weekday index 0 = the first
+  weekday — the anchor for cycle derivation. To re-anchor the week,
+  reorder the list.
+- **Era reset flag.** `CalendarEra.resetsWeek` declares "day 1 of this
+  era falls on the first weekday." Use it when a preceding era is
+  open-ended (`maxYears` unset), so dates after the cut-over still
+  derive a weekday.
+- **Weekday derivation.** For a date with year/month/day, weekday
+  index = `(daysSinceAnchor) mod weekdays.length`. The anchor is the
+  most recent era at-or-before the date that is `resetsWeek` or is
+  the first era. If a non-reset preceding era has no `maxYears`, the
+  count is unknowable and derivation returns null — the date renders
+  without a weekday silently.
+- **Display.** `formatInGameDate(d, { eraName, monthName, weekdayName })`
+  in `@shared/utils` is the single surface for rendering an in-game
+  date. It honors `d.display` as an explicit author override; otherwise
+  composes prose like *"Lightning Day — 15 Spring of 1577, Sixth
+  Astral Era — 13:45:30"*. Time cascades hour → minute → second;
+  trailing parts drop when an earlier component is missing. The input
+  form flags minute-without-hour and second-without-minute as
+  validation errors so the data the formatter sees is well-formed.
+
 ## Codex categories
 
 - **Per-universe config** at `universes/{u}/_meta/codex_categories`,
@@ -269,8 +298,6 @@ Open changes. Remove items as they ship.
   surface only inside list-pane).
 - Map view of places — store lat/lon, render with leaflet/maplibre.
 - Relationship graph — Rete is already in the bundle; reuse it.
-- Canonical `inGameDate` type — era + year (+ optional time-of-day)
-  replacing free text.
 
 ## Editor
 
