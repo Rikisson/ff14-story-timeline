@@ -4,170 +4,171 @@
 @import '@angular/cdk/overlay-prebuilt.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant inactive (&:where(:disabled, [aria-disabled='true']));
 
 /* Semantic color tokens — see docs/styling-rules.md. Light values in
  * @theme, dark overrides in .dark. The two blocks mirror each other
  * structurally; only values differ. */
 @theme {
-  --color-canvas: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f1f5f9;
-  --color-surface-strong: #e2e8f0;
-  --color-surface-stronger: #cbd5e1;
-  --color-surface-subtle: #f8fafc;
-  --color-workspace: #f8fafc;
-  --color-overlay: rgb(255 255 255 / 0.6);
-  --color-backdrop: rgb(15 23 42 / 0.4);
+  --color-canvas: #faf5ea;
+  --color-surface: #fffdf7;
+  --color-surface-muted: #f0e9d6;
+  --color-surface-strong: #e3d8bd;
+  --color-surface-stronger: #cfc197;
+  --color-surface-subtle: #f7f1e0;
+  --color-workspace: #e0d3a8;
+  --color-overlay: rgb(250 245 234 / 0.6);
+  --color-backdrop: rgb(40 32 18 / 0.5);
   --color-scrim: #000000;
   --color-scrim-foreground: #ffffff;
-  --color-foreground: #0f172a;
-  --color-foreground-muted: #334155;
-  --color-foreground-subtle: #475569;
-  --color-foreground-faint: #64748b;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  --color-foreground: #1a1408;
+  --color-foreground-muted: #3a2f1c;
+  --color-foreground-subtle: #4a3d28;
+  --color-foreground-faint: #6a5a3a;
+  --color-border: #d9cdaa;
+  --color-border-strong: #b8a777;
 
-  --color-warning: #fffbeb;
-  --color-warning-foreground: #b45309;
-  --color-warning-border: #fde68a;
+  --color-warning: #fdf3d3;
+  --color-warning-foreground: #8a5a0c;
+  --color-warning-border: #f0d894;
 
-  --color-danger: #fef2f2;
-  --color-danger-foreground: #b91c1c;
-  --color-danger-border: #fecaca;
-  --color-danger-strong: #dc2626;
-  --color-danger-strong-hover: #ef4444;
-  --color-danger-strong-active: #b91c1c;
-  --color-danger-strong-foreground: #ffffff;
-  --color-danger-strong-ring: #ef4444;
+  --color-danger: #fbeae3;
+  --color-danger-foreground: #a83a1f;
+  --color-danger-border: #f4c5b3;
+  --color-danger-strong: #b8431f;
+  --color-danger-strong-hover: #d05530;
+  --color-danger-strong-active: #9a3315;
+  --color-danger-strong-foreground: #fffdf7;
+  --color-danger-strong-ring: #d05530;
 
-  --color-success: #ecfdf5;
-  --color-success-foreground: #047857;
-  --color-success-border: #a7f3d0;
+  --color-success: #ebf2dc;
+  --color-success-foreground: #4a6628;
+  --color-success-border: #c5d9a0;
 
-  --color-accent: #4f46e5;
-  --color-accent-hover: #6366f1;
-  --color-accent-active: #4338ca;
-  --color-accent-foreground: #ffffff;
-  --color-accent-ring: #6366f1;
-  --color-accent-soft: #eef2ff;
-  --color-accent-soft-foreground: #312e81;
+  --color-accent: #8a6510;
+  --color-accent-hover: #a07820;
+  --color-accent-active: #6e510a;
+  --color-accent-foreground: #fffdf7;
+  --color-accent-ring: #a07820;
+  --color-accent-soft: #e8d49a;
+  --color-accent-soft-foreground: #4a3508;
 
-  --color-tone-indigo: #e0e7ff;
-  --color-tone-indigo-soft: #eef2ff;
-  --color-tone-indigo-foreground: #4338ca;
-  --color-tone-indigo-foreground-strong: #312e81;
-  --color-tone-indigo-border: #c7d2fe;
+  --color-tone-indigo: #d6dcf2;
+  --color-tone-indigo-soft: #e8ecf7;
+  --color-tone-indigo-foreground: #2d3a7a;
+  --color-tone-indigo-foreground-strong: #1a2456;
+  --color-tone-indigo-border: #b6c1e3;
 
-  --color-tone-emerald: #d1fae5;
-  --color-tone-emerald-soft: #ecfdf5;
-  --color-tone-emerald-foreground: #047857;
-  --color-tone-emerald-foreground-strong: #064e3b;
-  --color-tone-emerald-border: #a7f3d0;
+  --color-tone-emerald: #d3e7d0;
+  --color-tone-emerald-soft: #e4f0e0;
+  --color-tone-emerald-foreground: #2d5e2a;
+  --color-tone-emerald-foreground-strong: #1a4017;
+  --color-tone-emerald-border: #b3d3ad;
 
-  --color-tone-amber: #fef3c7;
-  --color-tone-amber-soft: #fffbeb;
-  --color-tone-amber-foreground: #b45309;
-  --color-tone-amber-foreground-strong: #78350f;
-  --color-tone-amber-border: #fde68a;
+  --color-tone-amber: #f5e0b3;
+  --color-tone-amber-soft: #fbf0d4;
+  --color-tone-amber-foreground: #7e5408;
+  --color-tone-amber-foreground-strong: #563600;
+  --color-tone-amber-border: #e3c789;
 
-  --color-tone-fuchsia: #fae8ff;
-  --color-tone-fuchsia-soft: #fdf4ff;
-  --color-tone-fuchsia-foreground: #a21caf;
-  --color-tone-fuchsia-foreground-strong: #701a75;
-  --color-tone-fuchsia-border: #f5d0fe;
+  --color-tone-fuchsia: #ecd2e8;
+  --color-tone-fuchsia-soft: #f5e6f1;
+  --color-tone-fuchsia-foreground: #762d72;
+  --color-tone-fuchsia-foreground-strong: #4f1a4d;
+  --color-tone-fuchsia-border: #d5a5cf;
 
-  --color-tone-sky: #e0f2fe;
-  --color-tone-sky-soft: #f0f9ff;
-  --color-tone-sky-foreground: #0369a1;
-  --color-tone-sky-foreground-strong: #0c4a6e;
-  --color-tone-sky-border: #bae6fd;
+  --color-tone-sky: #cce3eb;
+  --color-tone-sky-soft: #e0eef3;
+  --color-tone-sky-foreground: #1d566c;
+  --color-tone-sky-foreground-strong: #0e3d50;
+  --color-tone-sky-border: #a4c8d4;
 
-  --color-tone-rose: #ffe4e6;
-  --color-tone-rose-soft: #fff1f2;
-  --color-tone-rose-foreground: #be123c;
-  --color-tone-rose-foreground-strong: #881337;
-  --color-tone-rose-border: #fecdd3;
+  --color-tone-rose: #f0d4d8;
+  --color-tone-rose-soft: #f7e6e8;
+  --color-tone-rose-foreground: #842638;
+  --color-tone-rose-foreground-strong: #5a1424;
+  --color-tone-rose-border: #e0a8b0;
 }
 
 .dark {
-  --color-canvas: #020617;
-  --color-surface: #0f172a;
-  --color-surface-muted: #1e293b;
-  --color-surface-strong: #334155;
-  --color-surface-stronger: #475569;
-  --color-surface-subtle: rgb(30 41 59 / 0.5);
-  --color-workspace: #020617;
-  --color-overlay: rgb(2 6 23 / 0.6);
+  --color-canvas: #1c1a14;
+  --color-surface: #2a2620;
+  --color-surface-muted: #3a342a;
+  --color-surface-strong: #4a4234;
+  --color-surface-stronger: #5c5346;
+  --color-surface-subtle: rgb(58 52 42 / 0.5);
+  --color-workspace: #16140e;
+  --color-overlay: rgb(27 22 12 / 0.6);
   --color-backdrop: rgb(0 0 0 / 0.6);
   --color-scrim: #000000;
   --color-scrim-foreground: #ffffff;
-  --color-foreground: #f1f5f9;
-  --color-foreground-muted: #cbd5e1;
-  --color-foreground-subtle: #94a3b8;
-  --color-foreground-faint: #64748b;
-  --color-border: #334155;
-  --color-border-strong: #475569;
+  --color-foreground: #ebe4d2;
+  --color-foreground-muted: #b8ad94;
+  --color-foreground-subtle: #8a8068;
+  --color-foreground-faint: #645a45;
+  --color-border: #3e3628;
+  --color-border-strong: #5e5340;
 
-  --color-warning: rgb(69 26 3 / 0.4);
-  --color-warning-foreground: #fde68a;
-  --color-warning-border: rgb(120 53 15 / 0.5);
+  --color-warning: rgb(75 50 5 / 0.4);
+  --color-warning-foreground: #fcd34d;
+  --color-warning-border: rgb(125 85 15 / 0.5);
 
-  --color-danger: rgb(69 10 10 / 0.4);
-  --color-danger-foreground: #f87171;
-  --color-danger-border: rgb(127 29 29 / 0.5);
-  --color-danger-strong: #ef4444;
-  --color-danger-strong-hover: #f87171;
-  --color-danger-strong-active: #dc2626;
-  --color-danger-strong-foreground: #ffffff;
-  --color-danger-strong-ring: #f87171;
+  --color-danger: rgb(70 15 12 / 0.4);
+  --color-danger-foreground: #fb8a6e;
+  --color-danger-border: rgb(130 35 25 / 0.5);
+  --color-danger-strong: #d05530;
+  --color-danger-strong-hover: #e26b46;
+  --color-danger-strong-active: #b8431f;
+  --color-danger-strong-foreground: #fffdf7;
+  --color-danger-strong-ring: #e26b46;
 
-  --color-success: rgb(2 44 34 / 0.4);
-  --color-success-foreground: #6ee7b7;
-  --color-success-border: rgb(6 78 59 / 0.5);
+  --color-success: rgb(15 40 30 / 0.4);
+  --color-success-foreground: #98d49a;
+  --color-success-border: rgb(40 80 55 / 0.5);
 
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-accent-active: #4f46e5;
-  --color-accent-foreground: #ffffff;
-  --color-accent-ring: #818cf8;
-  --color-accent-soft: rgb(49 46 129 / 0.6);
-  --color-accent-soft-foreground: #c7d2fe;
+  --color-accent: #d97a2c;
+  --color-accent-hover: #ec924a;
+  --color-accent-active: #b8631d;
+  --color-accent-foreground: #1a0e05;
+  --color-accent-ring: #ec924a;
+  --color-accent-soft: rgb(118 60 15 / 0.5);
+  --color-accent-soft-foreground: #f5c896;
 
-  --color-tone-indigo: rgb(30 27 75 / 0.6);
-  --color-tone-indigo-soft: rgb(30 27 75 / 0.5);
-  --color-tone-indigo-foreground: #a5b4fc;
-  --color-tone-indigo-foreground-strong: #e0e7ff;
-  --color-tone-indigo-border: #4338ca;
+  --color-tone-indigo: rgb(40 35 100 / 0.6);
+  --color-tone-indigo-soft: rgb(40 35 100 / 0.5);
+  --color-tone-indigo-foreground: #b3bcf5;
+  --color-tone-indigo-foreground-strong: #d8dcfb;
+  --color-tone-indigo-border: #4f55d4;
 
-  --color-tone-emerald: rgb(2 44 34 / 0.6);
-  --color-tone-emerald-soft: rgb(2 44 34 / 0.5);
-  --color-tone-emerald-foreground: #6ee7b7;
-  --color-tone-emerald-foreground-strong: #d1fae5;
-  --color-tone-emerald-border: #047857;
+  --color-tone-emerald: rgb(15 60 40 / 0.6);
+  --color-tone-emerald-soft: rgb(15 60 40 / 0.5);
+  --color-tone-emerald-foreground: #8be8a8;
+  --color-tone-emerald-foreground-strong: #d6f5dd;
+  --color-tone-emerald-border: #1d7a3e;
 
-  --color-tone-amber: rgb(69 26 3 / 0.6);
-  --color-tone-amber-soft: rgb(69 26 3 / 0.5);
-  --color-tone-amber-foreground: #fcd34d;
-  --color-tone-amber-foreground-strong: #fef3c7;
-  --color-tone-amber-border: #b45309;
+  --color-tone-amber: rgb(75 50 5 / 0.6);
+  --color-tone-amber-soft: rgb(75 50 5 / 0.5);
+  --color-tone-amber-foreground: #fcd071;
+  --color-tone-amber-foreground-strong: #ffeec0;
+  --color-tone-amber-border: #c08020;
 
-  --color-tone-fuchsia: rgb(74 4 78 / 0.6);
-  --color-tone-fuchsia-soft: rgb(74 4 78 / 0.5);
-  --color-tone-fuchsia-foreground: #f0abfc;
-  --color-tone-fuchsia-foreground-strong: #fae8ff;
-  --color-tone-fuchsia-border: #a21caf;
+  --color-tone-fuchsia: rgb(80 20 75 / 0.6);
+  --color-tone-fuchsia-soft: rgb(80 20 75 / 0.5);
+  --color-tone-fuchsia-foreground: #f0a8e8;
+  --color-tone-fuchsia-foreground-strong: #fbdaf6;
+  --color-tone-fuchsia-border: #b53fa8;
 
-  --color-tone-sky: rgb(8 47 73 / 0.6);
-  --color-tone-sky-soft: rgb(8 47 73 / 0.5);
-  --color-tone-sky-foreground: #7dd3fc;
-  --color-tone-sky-foreground-strong: #e0f2fe;
-  --color-tone-sky-border: #0369a1;
+  --color-tone-sky: rgb(15 45 85 / 0.6);
+  --color-tone-sky-soft: rgb(15 45 85 / 0.5);
+  --color-tone-sky-foreground: #88c8f0;
+  --color-tone-sky-foreground-strong: #d4e8f8;
+  --color-tone-sky-border: #2475bb;
 
-  --color-tone-rose: rgb(76 5 25 / 0.6);
-  --color-tone-rose-soft: rgb(76 5 25 / 0.5);
-  --color-tone-rose-foreground: #fda4af;
-  --color-tone-rose-foreground-strong: #ffe4e6;
-  --color-tone-rose-border: #be123c;
+  --color-tone-rose: rgb(80 20 35 / 0.6);
+  --color-tone-rose-soft: rgb(80 20 35 / 0.5);
+  --color-tone-rose-foreground: #f5a0ad;
+  --color-tone-rose-foreground-strong: #fcd6da;
+  --color-tone-rose-border: #c03a55;
 }
 
 html,
@@ -189,12 +190,12 @@ app-root {
 /* Rete editor — overrides the plugin's encapsulated styles via its
  * stable data-testid hooks. See docs/styling-rules.md. */
 html [data-testid='node'] {
-  background: var(--color-surface-strong);
+  background: var(--color-surface);
   border-color: var(--color-border-strong);
   color: var(--color-foreground);
 }
 html [data-testid='node']:hover {
-  background: var(--color-surface-stronger);
+  background: var(--color-surface-muted);
 }
 html [data-testid='node'].selected {
   background: var(--color-accent-soft);

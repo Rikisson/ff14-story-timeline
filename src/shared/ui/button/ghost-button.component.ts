@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { BUTTON_TEMPLATE, ButtonBase } from './button-base';
 
 @Component({
-  selector: 'button[uiGhost]',
+  selector: 'button[uiGhost], a[uiGhost]',
   template: BUTTON_TEMPLATE,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

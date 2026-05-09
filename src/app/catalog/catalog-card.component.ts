@@ -10,19 +10,11 @@ import {
   EntityRefComponent,
   GhostButtonComponent,
   MarkdownTextComponent,
+  PrimaryButtonComponent,
+  SecondaryButtonComponent,
   TagComponent,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
-
-const BTN_BASE =
-  'inline-flex h-10 flex-1 items-center justify-center rounded-md px-4 text-sm font-medium ' +
-  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
-const BTN_PRIMARY =
-  BTN_BASE +
-  ' bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
-const BTN_SECONDARY =
-  BTN_BASE +
-  ' bg-surface-muted text-foreground hover:bg-surface-strong active:bg-surface-stronger focus-visible:ring-foreground-faint';
 
 @Component({
   selector: 'app-catalog-card',
@@ -31,6 +23,8 @@ const BTN_SECONDARY =
     NgOptimizedImage,
     MarkdownTextComponent,
     GhostButtonComponent,
+    PrimaryButtonComponent,
+    SecondaryButtonComponent,
     EntityRefComponent,
     TagComponent,
   ],
@@ -120,9 +114,9 @@ const BTN_SECONDARY =
       </div>
 
       <div class="flex gap-2 border-t border-surface-muted px-4 py-3">
-        <a [routerLink]="['/play', story().id]" [class]="primaryClass">Play</a>
+        <a uiPrimary [routerLink]="['/play', story().id]" class="flex-1">Play</a>
         @if (canEdit()) {
-          <a [routerLink]="['/edit', story().id]" [class]="secondaryClass">Edit</a>
+          <a uiSecondary [routerLink]="['/edit', story().id]" class="flex-1">Edit</a>
           <button
             uiGhost
             type="button"
@@ -157,9 +151,6 @@ export class CatalogCardComponent {
     );
     if (ok) this.remove.emit(s.id);
   }
-
-  protected readonly primaryClass = BTN_PRIMARY;
-  protected readonly secondaryClass = BTN_SECONDARY;
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 

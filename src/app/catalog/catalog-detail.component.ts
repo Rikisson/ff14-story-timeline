@@ -13,14 +13,14 @@ import {
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 
-const BTN_BASE =
+const HERO_BASE =
   'inline-flex h-11 items-center justify-center rounded-md px-5 text-sm font-medium ' +
   'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
-const BTN_PRIMARY =
-  BTN_BASE +
+const HERO_PRIMARY =
+  HERO_BASE +
   ' bg-accent text-accent-foreground shadow-lg hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
-const BTN_SECONDARY =
-  BTN_BASE +
+const HERO_SECONDARY =
+  HERO_BASE +
   ' bg-surface/90 text-foreground shadow hover:bg-surface active:bg-surface-muted focus-visible:ring-accent-ring';
 
 @Component({
@@ -77,13 +77,13 @@ const BTN_SECONDARY =
           <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
             <a
               [routerLink]="['/play', story().id]"
-              [class]="primaryClass"
+              [class]="heroPrimaryClass"
               [attr.aria-label]="'Play ' + story().title"
             >
               ▶ Play
             </a>
             @if (canEdit()) {
-              <a [routerLink]="['/edit', story().id]" [class]="secondaryClass">Edit</a>
+              <a [routerLink]="['/edit', story().id]" [class]="heroSecondaryClass">Edit</a>
               <button
                 uiGhost
                 type="button"
@@ -122,8 +122,8 @@ export class CatalogDetailComponent {
   private readonly calendar = inject(CalendarService);
   private readonly media = inject(MediaAssetsService);
 
-  protected readonly primaryClass = BTN_PRIMARY;
-  protected readonly secondaryClass = BTN_SECONDARY;
+  protected readonly heroPrimaryClass = HERO_PRIMARY;
+  protected readonly heroSecondaryClass = HERO_SECONDARY;
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 

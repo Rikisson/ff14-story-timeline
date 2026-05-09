@@ -94,6 +94,44 @@ The token vocabulary:
 - For class bindings, write a single binding per token:
   `[class.bg-accent-soft]="selected()"`. Don't pair light + `dark:` bindings.
 
+## Button hierarchy
+
+Four variants live in `shared/ui/button/`. Pick the one that matches the
+button's role on the screen, not the noun on its label — "Add" can be
+primary or secondary depending on what else is on the page.
+
+- `uiPrimary` (filled accent) — the page's dominant action. The Add CTA
+  on a list page (events, stories, characters), Save on a form or
+  settings panel, Resume on the player aside, Restart on the end screen.
+  At most one Primary visible per region.
+- `uiSecondary` (filled `surface-muted`) — a meaningful secondary action
+  living next to a Primary, or a chrome-level action with no Primary
+  competition. Add scene next to Save in the editor header, Add era /
+  Add category next to Save in settings, Replace asset next to Remove,
+  Sign in in the app header, Start over offered alongside Resume,
+  player choice buttons that should read as equal-weight options.
+- `uiGhost` (transparent) — tertiary, low-emphasis controls. Cancel in
+  form footers, Reset, Edit on a card (paired with Delete), Remove for
+  asset clearing (paired with Replace), View more pagination, header
+  utilities like Copy UID / Sign out, catalog filter Reset.
+- `uiDanger` (filled `danger-strong`) — destructive, irreversible
+  actions. Delete on entity cards, Remove era / season / sprite /
+  category / member, scene Delete in the editor.
+
+All four directives match both `<button>` and `<a>` host elements. On
+buttons the disabled input maps to the native `disabled` attribute; on
+anchors it maps to `aria-disabled="true"` plus `tabindex="-1"`. The
+custom Tailwind variant `inactive:` (defined in `styles.css`) targets
+both forms, so disabled styling — `bg-surface-muted text-foreground-faint
+border-border`, applied in the base directive — reads consistently
+regardless of element or variant. Don't add per-button disabled
+overrides.
+
+A page that needs a heroically large button (oversized CTA over a hero
+image, e.g. catalog story detail) should keep its classes inline rather
+than fight the directive with overrides; introducing a size variant is
+warranted only once two pages share the need.
+
 ## Identity colors flow through the tone palette
 
 Lookup files map identity strings to tone-token utility classes — they
