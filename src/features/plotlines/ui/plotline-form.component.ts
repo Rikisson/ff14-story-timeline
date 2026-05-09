@@ -6,7 +6,7 @@ import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
 import { PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
 
 const STATUS_OPTIONS: { value: '' | PlotlineStatus; label: string }[] = [
-  { value: '', label: 'вЂ” Unset вЂ”' },
+  { value: '', label: '— Unset —' },
   { value: 'planned', label: 'Planned' },
   { value: 'active', label: 'Active' },
   { value: 'resolved', label: 'Resolved' },

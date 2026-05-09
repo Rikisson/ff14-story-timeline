@@ -41,7 +41,7 @@ import {
         <div>
           <h2 class="m-0 text-lg font-semibold text-foreground">Calendar</h2>
           <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
-            Define eras, months, and weekdays for this universe. Drag to reorder вЂ” order is the sort key.
+            Define eras, months, and weekdays for this universe. Drag to reorder — order is the sort key.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -337,7 +337,7 @@ import {
               Weekdays <span class="text-sm font-normal text-foreground-faint">({{ weekdays().length }})</span>
             </h3>
             <p class="m-0 mt-0.5 text-xs text-foreground-faint">
-              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked вЂњResets weekday cycleвЂќ).
+              The first weekday corresponds to day 1 of the calendar (and to day 1 of any era marked “Resets weekday cycle”).
             </p>
           </div>
           <span class="ml-auto flex items-center gap-2">

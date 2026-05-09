@@ -119,7 +119,7 @@ function parseRefKey(key: string): EntityRef | null {
         <app-combobox-picker
           [options]="relatedOptions()"
           [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entriesвЂ¦"
+          placeholder="Search characters, places, codex entries…"
           emptyMessage="Nothing else in this universe yet."
           (valueChange)="onRelatedKeys($event)"
         />
