@@ -1,44 +1,112 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import { SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
 
 @Component({
   selector: 'app-auth-button',
-  imports: [GhostButtonComponent, SecondaryButtonComponent],
+  imports: [SecondaryButtonComponent],
   template: `
     @if (auth.loading()) {
       <span class="text-sm text-foreground-subtle">Loading…</span>
     } @else if (auth.user(); as u) {
-      <span class="text-sm text-foreground-muted">
-        Signed in as {{ u.displayName ?? u.email }}
-      </span>
-      <button
-        uiGhost
-        type="button"
-        [attr.aria-label]="'Copy your UID to clipboard'"
-        [title]="copied() ? 'Copied!' : ('Your UID: ' + u.uid)"
-        (click)="copyUid(u.uid)"
-      >{{ copied() ? 'UID copied' : 'Copy UID' }}</button>
-      <button uiGhost type="button" (click)="signOut()">Sign out</button>
+      <div class="relative">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground-muted hover:bg-surface-muted"
+          [attr.aria-haspopup]="'menu'"
+          [attr.aria-expanded]="open()"
+          [attr.aria-label]="'Account menu for ' + accountLabel()"
+          (click)="toggle()"
+        >
+          <span class="max-w-[12rem] truncate">{{ accountLabel() }}</span>
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="5 8 10 13 15 8" />
+          </svg>
+        </button>
+
+        @if (open()) {
+          <div
+            role="menu"
+            class="absolute right-0 top-full z-10 mt-1 min-w-[200px] rounded-md border border-border bg-surface shadow-lg"
+          >
+            <ul class="m-0 list-none p-1">
+              <li>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
+                  (click)="copyUid(u.uid)"
+                >{{ copied() ? 'UID copied' : 'Copy UID' }}</button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
+                  (click)="signOut()"
+                >Sign out</button>
+              </li>
+            </ul>
+          </div>
+        }
+      </div>
     } @else {
-      <button uiSecondary type="button" (click)="auth.login()">
-        Sign in with Google
-      </button>
+      <button uiSecondary type="button" (click)="auth.login()">Sign in</button>
     }
     @if (auth.error(); as err) {
       <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>
     }
   `,
-  host: { class: 'inline-flex flex-wrap items-center gap-2' },
+  host: {
+    class: 'inline-flex flex-wrap items-center gap-2',
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'close()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthButtonComponent {
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected readonly open = signal(false);
   protected readonly copied = signal(false);
 
+  protected readonly accountLabel = computed(() => {
+    const u = this.auth.user();
+    if (!u) return '';
+    return u.displayName?.trim() || u.email || 'Account';
+  });
+
+  protected toggle(): void {
+    this.open.update((v) => !v);
+  }
+
+  protected close(): void {
+    this.open.set(false);
+    this.copied.set(false);
+  }
+
   protected async signOut(): Promise<void> {
+    this.close();
     await this.auth.logout();
     await this.router.navigate(['/']);
   }
@@ -50,6 +118,14 @@ export class AuthButtonComponent {
       setTimeout(() => this.copied.set(false), 1500);
     } catch {
       window.prompt('Copy your UID:', uid);
+    }
+  }
+
+  protected onDocumentClick(event: MouseEvent): void {
+    if (!this.open()) return;
+    const target = event.target as Node;
+    if (!this.elementRef.nativeElement.contains(target)) {
+      this.close();
     }
   }
 }
