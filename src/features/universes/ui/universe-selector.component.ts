@@ -98,7 +98,7 @@ import { UniverseFormComponent } from './universe-form.component';
 
     <dialog
       #createDialog
-      class="rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
+      class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
       aria-label="Create universe"
       (close)="onDialogClose()"
       (click)="onDialogBackdropClick($event)"

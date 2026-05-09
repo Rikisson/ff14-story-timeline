@@ -33,7 +33,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
   template: `
     <dialog
       #dialog
-      class="rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
+      class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
       [attr.aria-label]="title()"
       (close)="onDialogClose()"
       (click)="onBackdropClick($event)"
@@ -47,14 +47,14 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
             class="h-8 w-8 p-0 text-lg leading-none"
             aria-label="Close"
             (click)="cancel()"
-          >Г—</button>
+          >×</button>
         </header>
 
         <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
           <input
             type="text"
             class="flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-1.5 text-sm"
-            placeholder="Filter by tagвЂ¦"
+            placeholder="Filter by tag…"
             [value]="tagFilter()"
             (input)="onTagInput($event)"
           />
@@ -135,7 +135,7 @@ import { MediaAssetsService } from '../data-access/media-assets.service';
                       <span
                         class="absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground shadow"
                         aria-hidden="true"
-                      >вњ“</span>
+                      >✓</span>
                     }
                   </button>
                   <div class="flex flex-col gap-1 px-2 pb-2">
