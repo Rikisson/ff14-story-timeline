@@ -15,14 +15,31 @@ token CSS variables.
 
 # Rules
 
+## Absolute rule: every system color is a token
+
+**All system-provided color in the codebase flows through a token in
+`src/styles.css`.** No raw Tailwind palette utilities (`bg-white`,
+`text-slate-700`, `from-indigo-200`, `bg-amber-50/40`, …), no inline hex
+literals, no `rgb(…)` / `rgba(…)` calls, no `dark:` siblings. If a
+component needs a color, the right token already exists or you add one.
+
+The single exception is **user-issued color stored in user data** —
+values the end user typed (e.g., the color picker for a plotline or a
+codex category). Those flow through `[style.color]` / `[style.background]`
+bindings with a token-based fallback for the null case
+(`p.color ?? 'var(--color-foreground-subtle)'`). Default values in seed
+data and form pickers are user-facing palette choices, not design-system
+chrome — those stay raw too.
+
+Themes adapt by redefining the token values, not by adding utilities to
+components. Adding a new theme is a single new selector block in
+`styles.css`; no component needs to change.
+
 ## Token system
 
-All neutral surfaces and intent colors flow through CSS variables defined
-in an `@theme` block in `src/styles.css`. Tailwind v4 generates utilities
-from those tokens (`bg-surface`, `text-foreground`, `border-border`, etc.)
-and the variables are overridden inside `.dark { ... }` (and any future
-theme block). Components write light-mode utilities only — no `dark:`
-sibling needed for token-based styling.
+All tokens live in `src/styles.css`. Tailwind v4 generates utilities from
+each token (`--color-foo` → `bg-foo`, `text-foo`, `border-foo`,
+`ring-foo`, `from-foo`, `to-foo`, etc.).
 
 The light `@theme` and dark `.dark` blocks are kept structurally
 identical: every token defined in one is defined in the other, in the
@@ -48,8 +65,23 @@ The token vocabulary:
 - **Accent** — `accent` (button/strong), `accent-hover`, `accent-active`,
   `accent-foreground` (text on accent), `accent-ring` (focus ring),
   `accent-soft` (selection bg), `accent-soft-foreground`.
-- **Special** — `overlay` (loading scrim), `backdrop` (dialog backdrop), `workspace` (node-editor canvas; sits one step below `surface` in both themes so nodes read as cards on top).
-- **Tone palette** — identity hues for decorative chips and section handles: `tone-indigo`, `tone-emerald`, `tone-amber` each with a `-foreground` pair. Add tones here as new identity needs arise so a future theme can re-tune them centrally.
+- **Special** — `overlay` (loading scrim over the page), `backdrop`
+  (dialog backdrop), `workspace` (node-editor canvas; sits one step
+  below `surface` in both themes), `scrim` + `scrim-foreground` (image
+  scrim — the dark veneer over user-uploaded covers and the always-light
+  text/UI that sits on top; applied with opacity modifiers like
+  `bg-scrim/40` and `text-scrim-foreground/90`).
+- **Tone palette** — identity hues for entity-kind chips, app-tag tones,
+  and decorative section handles. Six tones (`tone-indigo`,
+  `tone-emerald`, `tone-amber`, `tone-fuchsia`, `tone-sky`, `tone-rose`)
+  each expose five facets:
+  - `{tone}` — medium bg (tags, calendar handles, picker hover)
+  - `{tone}-soft` — soft bg (kind UI chip, picker default, inline ref hover)
+  - `{tone}-foreground` — readable text on either bg
+  - `{tone}-foreground-strong` — emphasized text (picker)
+  - `{tone}-border` — outline (picker)
+  Slate-toned identity (codexEntry kind, neutral tag) reuses the
+  surface/foreground/border tokens above instead of a dedicated tone.
 
 ## How to write components
 
@@ -58,35 +90,29 @@ The token vocabulary:
 - For errors/warnings/success surfaces: `bg-warning text-warning-foreground border-warning-border` (and equivalents for `danger`/`success`).
 - For accent surfaces (selection, focus, drag-over highlights): `bg-accent-soft text-accent-soft-foreground` for the soft variant; `bg-accent text-accent-foreground` for the strong (button-like) variant.
 - For destructive buttons: `bg-danger-strong text-danger-strong-foreground hover:bg-danger-strong-hover active:bg-danger-strong-active focus-visible:ring-danger-strong-ring`.
+- For image hero/cover surfaces: scrim gradient as `bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20`; text/UI on top uses `text-scrim-foreground` (drop with `/90` etc. for de-emphasis).
 - For class bindings, write a single binding per token:
   `[class.bg-accent-soft]="selected()"`. Don't pair light + `dark:` bindings.
-- Don't write `bg-white dark:bg-slate-900` or any raw light/dark utility pair for neutral surfaces — use a token instead.
 
 ## Identity colors flow through the tone palette
 
-Identity colors (entity kinds, app-tag tones, calendar section handles)
-also live in `styles.css`, in the **Tone palette** at the bottom of each
-theme block. Lookup files map their identity strings to tone-token
-utility classes:
+Lookup files map identity strings to tone-token utility classes — they
+contain no raw colors, only token references:
 
 - `shared/utils/entity-kind-palette.ts` — entity kind chip / picker /
   inline-text ref classes per `EntityKind`. Character→indigo,
-  place→emerald, event→amber, story→fuchsia, plotline→sky, codexEntry
-  reuses the neutral surface/foreground tokens.
+  place→emerald, event→amber, story→fuchsia, plotline→sky. CodexEntry
+  uses the neutral surface/foreground tokens directly.
 - `shared/ui/tag/tag.component.ts` — `TagTone` ('neutral' | 'amber' |
   'emerald' | 'sky' | 'indigo' | 'rose') maps to `bg-tone-{tone}
-  text-tone-{tone}-foreground`. Neutral reuses `bg-surface-muted
+  text-tone-{tone}-foreground`. Neutral uses `bg-surface-muted
   text-foreground-muted`.
+- `features/calendar/feature/calendar-settings-panel.component.ts` —
+  decorative section handles use `bg-tone-{indigo|emerald|amber}` plus
+  the `-foreground` pair.
 
-Components write tone utilities (`bg-tone-indigo`,
-`text-tone-amber-foreground`, …); `dark:` siblings are never needed.
-A new theme retunes identity by overriding the tone tokens in its block.
-
-## No `dark:` siblings in the codebase
-
-Neutral surfaces and identity colors all flow through tokens. If you
-catch yourself writing `bg-foo-50 dark:bg-foo-950/X`, define a token
-(or reuse an existing tone) instead.
+A new theme retunes identity by redefining the tone tokens in its
+selector block. No component code changes.
 
 ## Theme switching
 

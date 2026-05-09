@@ -27,6 +27,8 @@
   --color-workspace: #f8fafc; /* slate-50 — node-editor canvas, sits below surface */
   --color-overlay: rgb(255 255 255 / 0.6); /* loading overlay */
   --color-backdrop: rgb(15 23 42 / 0.4); /* dialog backdrop — slate-900/40 */
+  --color-scrim: #000000; /* image scrim — applied with opacity modifiers (/20, /40, /80) */
+  --color-scrim-foreground: #ffffff; /* readable text/UI on top of the scrim */
   --color-foreground: #0f172a; /* slate-900 */
   --color-foreground-muted: #334155; /* slate-700 */
   --color-foreground-subtle: #475569; /* slate-600 */
@@ -119,6 +121,8 @@
   --color-workspace: #020617; /* slate-950 — node-editor canvas, sits below surface */
   --color-overlay: rgb(2 6 23 / 0.6); /* slate-950/60 — loading overlay */
   --color-backdrop: rgb(0 0 0 / 0.6); /* dialog backdrop */
+  --color-scrim: #000000; /* image scrim — applied with opacity modifiers (/20, /40, /80) */
+  --color-scrim-foreground: #ffffff; /* readable text/UI on top of the scrim */
   --color-foreground: #f1f5f9; /* slate-100 */
   --color-foreground-muted: #cbd5e1; /* slate-300 */
   --color-foreground-subtle: #94a3b8; /* slate-400 */

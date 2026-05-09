@@ -64,7 +64,7 @@ const BTN_SECONDARY =
           ></div>
         }
         <span
-          class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-80 transition-opacity group-hover:opacity-100"
+          class="absolute inset-0 flex items-center justify-center bg-scrim/20 opacity-80 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
         >
           <span

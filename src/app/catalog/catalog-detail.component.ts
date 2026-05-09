@@ -50,7 +50,7 @@ const BTN_SECONDARY =
           ></div>
         }
         <div
-          class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"
+          class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20"
           aria-hidden="true"
         ></div>
 
@@ -63,12 +63,12 @@ const BTN_SECONDARY =
         <div
           class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
         >
-          <h2 class="m-0 text-2xl font-bold text-white drop-shadow-md sm:text-3xl">
+          <h2 class="m-0 text-2xl font-bold text-scrim-foreground drop-shadow-md sm:text-3xl">
             {{ story().title || 'Untitled' }}
           </h2>
           @if (story().description; as d) {
             <app-markdown-text
-              class="line-clamp-3 max-w-2xl text-sm text-white/90 drop-shadow"
+              class="line-clamp-3 max-w-2xl text-sm text-scrim-foreground/90 drop-shadow"
               [text]="d"
               [options]="inlineRefOptions()"
               [inline]="true"
