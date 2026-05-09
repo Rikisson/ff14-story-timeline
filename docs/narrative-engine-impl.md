@@ -212,6 +212,27 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
   the author's responsibility; the visible card grid makes them easy to
   spot.
 
+## Locale
+
+- **Per-universe declaration.** `Universe.locale: 'en' | 'uk'` records
+  the language the author writes prose in. Required; new universes
+  prefill from the active UI locale, legacy documents default to `en`.
+- **Authored prose follows this locale.** Story scenes, character /
+  place / event / codex descriptions, story summaries, scene speaker
+  strings — every authored-text surface tags `[attr.lang]` with this
+  value so screen readers and translators see the boundary.
+- **UI chrome locale is independent.** A reader on the Ukrainian UI
+  may be reading an English-authored universe; the surrounding panel,
+  buttons, and metadata chips translate, the prose does not. UI
+  translation rules live in `i18n-rules.md`.
+- **Switching the universe locale does not migrate prose.** Re-typing
+  is the author's responsibility; the picker in *Universe settings →
+  General* simply changes the field.
+- **Calendar prose follows the universe locale.** Era names, month
+  names, and weekday names entered in the universe calendar config are
+  authored data — they render in the universe's locale, not the UI
+  locale.
+
 ## Story persistence
 
 - **Story metadata and content live in separate Firestore documents.**
@@ -311,7 +332,5 @@ Open changes. Remove items as they ship.
 
 ## Platform
 
-- i18n via `@angular/localize` (ENG/JPN).
-- Dark mode via Tailwind `dark:` variants.
 - Comments / reactions on stories.
 - Achievements — endings discovered, hidden scenes found.
