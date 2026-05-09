@@ -20,3 +20,24 @@ app-root {
   flex-direction: column;
   height: 100%;
 }
+
+/*
+ * Rete editor dark-theme overrides.
+ * Rete plugin component styles are emulated-encapsulated with build-hashed
+ * attribute selectors, so they can only be reached from a global stylesheet
+ * with selectors more specific than `[_nghost-XXX]`.
+ */
+html.dark [data-testid='node'] {
+  background: rgb(30 41 59 / 0.9); /* slate-800 / 90% */
+  border-color: #475569; /* slate-600 */
+}
+html.dark [data-testid='node']:hover {
+  background: rgb(51 65 85 / 0.9); /* slate-700 / 90% */
+}
+html.dark [data-testid='node'].selected {
+  background: #b45309; /* amber-700 — selected highlight stays visible */
+  border-color: #f59e0b; /* amber-500 */
+}
+html.dark connection svg path {
+  stroke: #818cf8; /* indigo-400 */
+}
