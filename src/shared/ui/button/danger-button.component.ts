@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { BUTTON_TEMPLATE, ButtonBase } from './button-base';
 
 @Component({
-  selector: 'button[uiDanger]',
+  selector: 'button[uiDanger], a[uiDanger]',
   template: BUTTON_TEMPLATE,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
