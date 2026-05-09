@@ -1,88 +1,90 @@
-<header class="flex items-center gap-6 border-b border-border px-6 py-3">
-  <app-universe-selector />
-  @if (hasActiveUniverse()) {
-    <nav class="flex flex-1 items-center gap-4">
-      <a
-        routerLink="/timeline"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Timeline</a>
+<ng-container *transloco="let t; prefix: 'general'">
+  <header class="flex items-center gap-6 border-b border-border px-6 py-3">
+    <app-universe-selector />
+    @if (hasActiveUniverse()) {
+      <nav class="flex flex-1 items-center gap-4">
+        <a
+          routerLink="/timeline"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.timeline') }}</a>
 
-      <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
+        <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
 
-      <a
-        routerLink="/library"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Stories</a>
-      <a
-        routerLink="/events"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Events</a>
-      <a
-        routerLink="/plotlines"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Plotlines</a>
+        <a
+          routerLink="/library"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.stories') }}</a>
+        <a
+          routerLink="/events"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.events') }}</a>
+        <a
+          routerLink="/plotlines"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.plotlines') }}</a>
 
-      <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
+        <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
 
-      <a
-        routerLink="/characters"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Characters</a>
-      <a
-        routerLink="/places"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Places</a>
-      <a
-        routerLink="/codex"
-        routerLinkActive="text-foreground font-medium"
-        class="text-foreground-subtle no-underline"
-      >Codex</a>
-    </nav>
-  } @else {
-    <span class="flex-1"></span>
-  }
-  @if (canSeed()) {
-    <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
-      Seed test data
-    </button>
-  }
-  <app-locale-toggle />
-  <app-theme-toggle />
-  <app-auth-button />
-</header>
-
-@if (refreshErrors().length > 0) {
-  <div
-    class="border-b border-warning-border bg-warning px-6 py-2 text-sm text-warning-foreground"
-    role="alert"
-  >
-    @for (err of refreshErrors(); track err.label) {
-      <p class="m-0">
-        <strong>Couldn't load {{ err.label }}:</strong> {{ err.message }}
-      </p>
+        <a
+          routerLink="/characters"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.characters') }}</a>
+        <a
+          routerLink="/places"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.places') }}</a>
+        <a
+          routerLink="/codex"
+          routerLinkActive="text-foreground font-medium"
+          class="text-foreground-subtle no-underline"
+        >{{ t('nav.codex') }}</a>
+      </nav>
+    } @else {
+      <span class="flex-1"></span>
     }
-  </div>
-}
+    @if (canSeed()) {
+      <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
+        {{ t('action.seedTestData') }}
+      </button>
+    }
+    <app-locale-toggle />
+    <app-theme-toggle />
+    <app-auth-button />
+  </header>
 
-<main class="relative min-h-0 flex-1 overflow-auto p-6">
-  <router-outlet />
-  @if (isNavigating()) {
+  @if (refreshErrors().length > 0) {
     <div
-      class="absolute inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-sm"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading page"
+      class="border-b border-warning-border bg-warning px-6 py-2 text-sm text-warning-foreground"
+      role="alert"
     >
-      <span
-        class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
-        aria-hidden="true"
-      ></span>
+      @for (err of refreshErrors(); track err.entityKey) {
+        <p class="m-0">
+          <strong>{{ t('message.refreshError', { resource: t('entity.' + err.entityKey) }) }}</strong> {{ err.message }}
+        </p>
+      }
     </div>
   }
-</main>
+
+  <main class="relative min-h-0 flex-1 overflow-auto p-6">
+    <router-outlet />
+    @if (isNavigating()) {
+      <div
+        class="absolute inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-sm"
+        role="status"
+        aria-live="polite"
+        [attr.aria-label]="t('tooltip.loadingPage')"
+      >
+        <span
+          class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
+          aria-hidden="true"
+        ></span>
+      </div>
+    }
+  </main>
+</ng-container>

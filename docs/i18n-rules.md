@@ -36,11 +36,11 @@ the prose does not.
 - Default: the `*transloco` structural directive at the component
   template root, with `prefix:` set to the component's scope. One
   subscription per component, scope-prefix folded in:
-  `<ng-container *transloco="let t; prefix: 'auth'">{{ t('actions.signIn') }}</ng-container>`.
+  `<ng-container *transloco="let t; prefix: 'auth'">{{ t('action.signIn') }}</ng-container>`.
 - Reserve the `transloco` pipe for one-off bindings outside a directive
   region (rare).
 - For dynamic interpolation, pass params as the second argument:
-  `t('tooltips.accountMenu', { name: accountLabel() })`.
+  `t('tooltip.accountMenu', { name: accountLabel() })`.
 - Don't use the directive's `read:` parameter — it's deprecated in
   transloco 8 and removed in 9.
 
@@ -77,22 +77,24 @@ the prose does not.
   `codex`, `editor`, `timeline`, `player`, `universe`, `calendar`,
   `era`, `media`.
 - **Group** *(optional)*: pick what the scope actually needs from
-  `actions`, `fields`, `empty`, `messages`, `tooltips`, `validation`,
-  `enums`. Don't force three pre-set groups; a small scope can sit
-  flat (`general.loading`, `auth.signOut`).
+  `action`, `field`, `empty`, `message`, `tooltip`, `validation`,
+  `enum`. Singular — every group reads as "this string is in the
+  *action* / *field* / etc. category." Don't force three pre-set
+  groups; a small scope can sit flat (`general.loading`,
+  `auth.signOut`).
 - **Key**: camelCase, descriptive, self-documenting.
 
 ## What goes where
 
 | String kind                                                     | Group        |
 |-----------------------------------------------------------------|--------------|
-| Buttons, menu items, command names, link text                   | `actions`    |
-| Form field labels, table headers, filter chips, dropdown labels | `fields`     |
+| Buttons, menu items, command names, link text                   | `action`     |
+| Form field labels, table headers, filter chips, dropdown labels | `field`      |
 | Empty-state copy, search placeholders, hint text                | `empty`      |
-| Toasts, dialog bodies, success/error feedback, loading states   | `messages`   |
-| Hover tooltips, ARIA hints, keyboard chips                      | `tooltips`   |
+| Toasts, dialog bodies, success/error feedback, loading states   | `message`    |
+| Hover tooltips, ARIA hints, keyboard chips                      | `tooltip`    |
 | Reactive Forms validator messages                               | `validation` |
-| App-defined enum value labels (plotline status, scene position) | `enums`      |
+| App-defined enum value labels (plotline status, scene position) | `enum`       |
 
 Author-defined enum values (codex categories, era names, plotline
 labels) are *data*, not i18n — they live on per-universe config docs.
@@ -101,7 +103,9 @@ labels) are *data*, not i18n — they live on per-universe config docs.
 
 - **Generic validators** (`required`, `email`, `minLength`, `maxLength`,
   `pattern`) live at `general.validation.*`. A shared validator-message
-  resolver reads from there so any Reactive Form picks them up.
+  resolver reads from there so any Reactive Form picks them up. (The
+  `validation` group is the one canonical group whose name reads
+  natural in either form — keep it singular for consistency.)
 - **Field-specific validation** (e.g. *"A character with this name
   already exists in {{universe}}"*) lives in the relevant scope's
   `validation` group.
@@ -172,7 +176,7 @@ universe's locale: `<div [attr.lang]="universe().locale">`.
 - **Rete** — node and socket labels are authored by us; they translate
   at the rendering layer under `editor.rete.*`.
 - **Firebase Auth** — error codes pass through a thin translator that
-  maps to `auth.messages.*`. We never display the SDK's English strings
+  maps to `auth.message.*`. We never display the SDK's English strings
   directly.
 
 ## Static prerender
@@ -195,9 +199,9 @@ A trimmed `public/i18n/en.json`:
 ```json
 {
   "general": {
-    "actions": { "save": "Save", "cancel": "Cancel", "delete": "Delete" },
-    "fields": { "name": "Name", "status": "Status" },
-    "messages": { "loading": "Loading…", "saveSuccess": "Saved" },
+    "action": { "save": "Save", "cancel": "Cancel", "delete": "Delete" },
+    "field": { "name": "Name", "status": "Status" },
+    "message": { "loading": "Loading…", "saveSuccess": "Saved" },
     "validation": {
       "required": "This field is required",
       "email": "Enter a valid email",
@@ -205,9 +209,9 @@ A trimmed `public/i18n/en.json`:
     }
   },
   "auth": {
-    "actions": { "signIn": "Sign in", "signOut": "Sign out" },
-    "fields": { "email": "Email", "password": "Password" },
-    "messages": { "signInError": "Sign-in failed: {{ reason }}" }
+    "action": { "signIn": "Sign in", "signOut": "Sign out" },
+    "field": { "email": "Email", "password": "Password" },
+    "message": { "signInError": "Sign-in failed: {{ reason }}" }
   }
 }
 ```
@@ -217,8 +221,8 @@ scope prefix inside the file — the prefix comes from registration):
 
 ```json
 {
-  "actions": { "create": "New character", "edit": "Edit character" },
-  "fields": { "name": "Name", "appearance": "Appearance" },
+  "action": { "create": "New character", "edit": "Edit character" },
+  "field": { "name": "Name", "appearance": "Appearance" },
   "empty": {
     "list": "This universe has no characters yet.",
     "search": "No characters match \"{{ query }}\"."
@@ -311,4 +315,4 @@ universe's locale:
   through transloco at the integration layer (`editor.tiptap.*`).
 - Rete node and socket labels translated at the render component
   (`editor.rete.*`).
-- Firebase Auth error-code translator keyed under `auth.messages.*`.
+- Firebase Auth error-code translator keyed under `auth.message.*`.

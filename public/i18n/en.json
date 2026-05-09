@@ -1,6 +1,6 @@
 {
   "general": {
-    "actions": {
+    "action": {
       "save": "Save",
       "cancel": "Cancel",
       "confirm": "Confirm",
@@ -10,20 +10,64 @@
       "remove": "Remove",
       "close": "Close",
       "back": "Back",
-      "retry": "Retry"
+      "retry": "Retry",
+      "seedTestData": "Seed test data",
+      "backToTimeline": "Back to timeline"
     },
-    "fields": {
+    "field": {
       "name": "Name",
       "status": "Status",
       "createdAt": "Created",
       "updatedAt": "Updated"
     },
-    "messages": {
+    "nav": {
+      "timeline": "Timeline",
+      "stories": "Stories",
+      "events": "Events",
+      "plotlines": "Plotlines",
+      "characters": "Characters",
+      "places": "Places",
+      "codex": "Codex"
+    },
+    "entity": {
+      "characters": "Characters",
+      "places": "Places",
+      "events": "Events",
+      "stories": "Stories",
+      "plotlines": "Plotlines",
+      "codex": "Codex",
+      "codexCategories": "Codex categories",
+      "calendar": "Calendar"
+    },
+    "message": {
       "loading": "Loading…",
       "saveSuccess": "Saved",
       "saveError": "Couldn't save changes",
       "deleteConfirm": "Are you sure you want to delete this item?",
-      "noData": "No data to show"
+      "noData": "No data to show",
+      "refreshError": "Couldn't load {{ resource }}:",
+      "seedConfirm": "Seed test data? This overwrites the default universe and its seeded entities (calendar, codex categories, characters, places, events, stories, plotlines, codex entries) by ID.",
+      "loadingUniverses": "Loading universes…",
+      "landingPickTitle": "Pick a universe",
+      "landingPickHint": "Use the universe menu in the top-left to choose what to read.",
+      "landingSignInHint": "Sign in if you'd like to author or edit."
+    },
+    "empty": {
+      "landingNoUniversesTitle": "No universes available",
+      "landingNoUniversesAuthor": "Use the universe menu in the top-left to create one.",
+      "landingNoUniversesUser": "Nothing to read yet — check back once a universe has been published.",
+      "landingNoUniversesGuest": "Nothing to read yet. Sign in if you'd like to author your own stories.",
+      "notFoundTitle": "Page not found",
+      "notFoundMessage": "We couldn't find what you were looking for."
+    },
+    "tooltip": {
+      "loadingPage": "Loading page",
+      "themeAria": "Theme: {{ pref }}. Click to change.",
+      "themeSystem": "System theme (click for light)",
+      "themeLight": "Light theme (click for dark)",
+      "themeDark": "Dark theme (click for system)",
+      "localeAria": "Language: {{ label }}. Click to change.",
+      "localeTitle": "{{ current }} (click for {{ next }})"
     },
     "validation": {
       "required": "This field is required",
@@ -31,14 +75,6 @@
       "minLength": "Must be at least {{ min }} characters",
       "maxLength": "Must be at most {{ max }} characters",
       "pattern": "Value doesn't match the expected format"
-    }
-  },
-  "locale": {
-    "actions": {
-      "switchTo": "Switch to {{ label }}"
-    },
-    "labels": {
-      "current": "Language: {{ label }}"
     }
   }
 }

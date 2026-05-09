@@ -1,14 +1,14 @@
 {
-  "actions": {
+  "action": {
     "signIn": "Sign in",
     "signOut": "Sign out",
     "copyUid": "Copy UID"
   },
-  "messages": {
+  "message": {
     "loading": "Loading…",
     "uidCopied": "UID copied"
   },
-  "tooltips": {
+  "tooltip": {
     "accountMenu": "Account menu for {{ name }}"
   }
 }

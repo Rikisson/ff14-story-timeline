@@ -31,7 +31,8 @@
       "Bash(curl -sS -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:4200/i18n/en.json)",
       "Bash(curl -sS -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:4200/i18n/uk.json)",
       "Bash(curl -sS http://localhost:4200/i18n/en.json)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(grep *)"
     ]
   }
 }

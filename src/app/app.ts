@@ -10,6 +10,7 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
@@ -29,6 +30,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    TranslocoDirective,
     AuthButtonComponent,
     GhostButtonComponent,
     LocaleToggleComponent,
@@ -41,6 +43,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 export class App {
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
   private readonly characters = inject(CharactersService);
@@ -72,33 +75,31 @@ export class App {
     { initialValue: false },
   );
 
-  protected readonly refreshErrors = computed<{ label: string; message: string }[]>(() => {
-    const errors: { label: string; message: string }[] = [];
+  protected readonly refreshErrors = computed<{ entityKey: string; message: string }[]>(() => {
+    const errors: { entityKey: string; message: string }[] = [];
     const c = this.characters.refreshError();
-    if (c) errors.push({ label: 'Characters', message: c });
+    if (c) errors.push({ entityKey: 'characters', message: c });
     const p = this.places.refreshError();
-    if (p) errors.push({ label: 'Places', message: p });
+    if (p) errors.push({ entityKey: 'places', message: p });
     const e = this.events.refreshError();
-    if (e) errors.push({ label: 'Events', message: e });
+    if (e) errors.push({ entityKey: 'events', message: e });
     const s = this.stories.refreshError();
-    if (s) errors.push({ label: 'Stories', message: s });
+    if (s) errors.push({ entityKey: 'stories', message: s });
     const pl = this.plotlines.refreshError();
-    if (pl) errors.push({ label: 'Plotlines', message: pl });
+    if (pl) errors.push({ entityKey: 'plotlines', message: pl });
     const cx = this.codex.refreshError();
-    if (cx) errors.push({ label: 'Codex', message: cx });
+    if (cx) errors.push({ entityKey: 'codex', message: cx });
     const ccx = this.codexCategories.refreshError();
-    if (ccx) errors.push({ label: 'Codex categories', message: ccx });
+    if (ccx) errors.push({ entityKey: 'codexCategories', message: ccx });
     const ca = this.calendar.refreshError();
-    if (ca) errors.push({ label: 'Calendar', message: ca });
+    if (ca) errors.push({ entityKey: 'calendar', message: ca });
     return errors;
   });
 
   protected async seedTestData(): Promise<void> {
     const u = this.user();
     if (!u || !this.canSeed()) return;
-    const ok = window.confirm(
-      'Seed test data? This overwrites the default universe and its seeded entities (calendar, codex categories, characters, places, events, stories, plotlines, codex entries) by ID.',
-    );
+    const ok = window.confirm(this.transloco.translate('general.message.seedConfirm'));
     if (!ok) return;
     this.seeding.set(true);
     try {

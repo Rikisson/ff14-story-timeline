@@ -1,14 +1,14 @@
 {
-  "actions": {
+  "action": {
     "signIn": "Увійти",
     "signOut": "Вийти",
     "copyUid": "Копіювати UID"
   },
-  "messages": {
+  "message": {
     "loading": "Завантаження…",
     "uidCopied": "UID скопійовано"
   },
-  "tooltips": {
+  "tooltip": {
     "accountMenu": "Меню облікового запису для {{ name }}"
   }
 }

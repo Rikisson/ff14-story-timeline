@@ -28,7 +28,7 @@ import authUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'auth'">
       @if (auth.loading()) {
-        <span class="text-sm text-foreground-subtle">{{ t('messages.loading') }}</span>
+        <span class="text-sm text-foreground-subtle">{{ t('message.loading') }}</span>
       } @else if (auth.user(); as u) {
         <div class="relative">
           <button
@@ -36,7 +36,7 @@ import authUk from '../i18n/uk.json';
             class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground-muted hover:bg-surface-muted"
             [attr.aria-haspopup]="'menu'"
             [attr.aria-expanded]="open()"
-            [attr.aria-label]="t('tooltips.accountMenu', { name: accountLabel() })"
+            [attr.aria-label]="t('tooltip.accountMenu', { name: accountLabel() })"
             (click)="toggle()"
           >
             <span class="max-w-[12rem] truncate">{{ accountLabel() }}</span>
@@ -67,7 +67,7 @@ import authUk from '../i18n/uk.json';
                     role="menuitem"
                     class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
                     (click)="copyUid(u.uid)"
-                  >{{ t(copied() ? 'messages.uidCopied' : 'actions.copyUid') }}</button>
+                  >{{ t(copied() ? 'message.uidCopied' : 'action.copyUid') }}</button>
                 </li>
                 <li>
                   <button
@@ -75,14 +75,14 @@ import authUk from '../i18n/uk.json';
                     role="menuitem"
                     class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
                     (click)="signOut()"
-                  >{{ t('actions.signOut') }}</button>
+                  >{{ t('action.signOut') }}</button>
                 </li>
               </ul>
             </div>
           }
         </div>
       } @else {
-        <button uiSecondary type="button" (click)="auth.login()">{{ t('actions.signIn') }}</button>
+        <button uiSecondary type="button" (click)="auth.login()">{{ t('action.signIn') }}</button>
       }
       @if (auth.error(); as err) {
         <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>
