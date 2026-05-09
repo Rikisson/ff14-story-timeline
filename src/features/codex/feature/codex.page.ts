@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
 import { createEntityListController } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
@@ -8,62 +9,81 @@ import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntry, CodexEntryDraft } from '../data-access/codex-entry.types';
 import { CodexEntryCardComponent } from '../ui/codex-entry-card.component';
 import { CodexEntryFormComponent } from '../ui/codex-entry-form.component';
+import codexEn from '../i18n/en.json';
+import codexUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-codex-page',
   host: { class: 'block h-full' },
-  imports: [EntityListPaneComponent, CodexEntryCardComponent, CodexEntryFormComponent, PageHeaderComponent],
+  imports: [
+    EntityListPaneComponent,
+    CodexEntryCardComponent,
+    CodexEntryFormComponent,
+    PageHeaderComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'codex',
+      loader: {
+        en: () => Promise.resolve(codexEn),
+        uk: () => Promise.resolve(codexUk),
+      },
+    }),
+  ],
   template: `
-    <div class="flex h-full flex-col gap-4">
-      <app-page-header
-        title="Codex"
-        subtitle="Encyclopedic entries — anything that doesn't fit the other categories."
-      />
-
-      <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-        <app-entity-list-pane
-          class="md:w-80 md:shrink-0"
-          [items]="listItems()"
-          [selectedId]="ctrl.selectedId()"
-          [hasMore]="service.hasMore()"
-          [loadingMore]="service.loadingMore()"
-          [canCreate]="ctrl.canCreate()"
-          createLabel="+ Add entry"
-          emptyMessage="No codex entries yet."
-          ariaLabel="Codex list"
-          (select)="onSelect($event)"
-          (create)="ctrl.startCreate()"
-          (loadMore)="service.loadMore()"
+    <ng-container *transloco="let t; prefix: 'codex'">
+      <div class="flex h-full flex-col gap-4">
+        <app-page-header
+          [title]="t('field.pageTitle')"
+          [subtitle]="t('field.pageSubtitle')"
         />
 
-        <section class="flex min-h-0 flex-col md:flex-1" aria-label="Codex entry details">
-          @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
-            <div class="min-h-0 flex-1 overflow-y-auto">
-              <app-codex-entry-form
-                [initial]="ctrl.editingDraft()"
-                [busy]="ctrl.busy()"
-                [errorMessage]="ctrl.errorMessage()"
-                (submitted)="ctrl.submit($event)"
-                (cancelled)="ctrl.cancel()"
-              />
-            </div>
-          } @else if (ctrl.selected(); as e) {
-            <div class="min-h-0 flex-1 overflow-y-auto">
-              <app-codex-entry-card
-                [entry]="e"
-                [canEdit]="ctrl.canCreate()"
-                (edit)="ctrl.startEdit(e)"
-                (remove)="ctrl.confirmRemove(e)"
-              />
-            </div>
-          } @else {
-            <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
-              Select an entry to view details.
-            </p>
-          }
-        </section>
+        <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+          <app-entity-list-pane
+            class="md:w-80 md:shrink-0"
+            [items]="listItems()"
+            [selectedId]="ctrl.selectedId()"
+            [hasMore]="service.hasMore()"
+            [loadingMore]="service.loadingMore()"
+            [canCreate]="ctrl.canCreate()"
+            [createLabel]="t('action.create')"
+            [emptyMessage]="t('empty.list')"
+            [ariaLabel]="t('tooltip.list')"
+            (select)="onSelect($event)"
+            (create)="ctrl.startCreate()"
+            (loadMore)="service.loadMore()"
+          />
+
+          <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
+            @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
+              <div class="min-h-0 flex-1 overflow-y-auto">
+                <app-codex-entry-form
+                  [initial]="ctrl.editingDraft()"
+                  [busy]="ctrl.busy()"
+                  [errorMessage]="ctrl.errorMessage()"
+                  (submitted)="ctrl.submit($event)"
+                  (cancelled)="ctrl.cancel()"
+                />
+              </div>
+            } @else if (ctrl.selected(); as e) {
+              <div class="min-h-0 flex-1 overflow-y-auto">
+                <app-codex-entry-card
+                  [entry]="e"
+                  [canEdit]="ctrl.canCreate()"
+                  (edit)="ctrl.startEdit(e)"
+                  (remove)="ctrl.confirmRemove(e)"
+                />
+              </div>
+            } @else {
+              <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
+                {{ t('empty.selectDetail') }}
+              </p>
+            }
+          </section>
+        </div>
       </div>
-    </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

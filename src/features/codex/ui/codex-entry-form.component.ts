@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -8,7 +8,9 @@
   output,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { CoverSlotComponent } from '@features/media';
 import { PlacesService } from '@features/places';
@@ -22,12 +24,8 @@ import {
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntryDraft } from '../data-access/codex-entry.types';
-
-const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
-  character: 'Character',
-  place: 'Place',
-  codexEntry: 'Codex',
-};
+import codexEn from '../i18n/en.json';
+import codexUk from '../i18n/uk.json';
 
 function refKey(ref: EntityRef): string {
   return `${ref.kind}:${ref.id}`;
@@ -50,97 +48,111 @@ function parseRefKey(key: string): EntityRef | null {
     PrimaryButtonComponent,
     GhostButtonComponent,
     ComboboxPickerComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'codex',
+      loader: {
+        en: () => Promise.resolve(codexEn),
+        uk: () => Promise.resolve(codexUk),
+      },
+    }),
   ],
   template: `
-    <form
-      [formGroup]="form"
-      class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
-      (ngSubmit)="onSubmit()"
-    >
-      <h3 class="m-0 text-base font-semibold text-foreground">
-        {{ initial() ? 'Edit codex entry' : 'Add codex entry' }}
-      </h3>
-
-      <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Title</span>
-          <input
-            type="text"
-            formControlName="title"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. The Echo"
-          />
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Slug</span>
-          <input
-            type="text"
-            formControlName="slug"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            placeholder="e.g. the-echo"
-          />
-          <span class="text-xs text-foreground-faint">Lowercase, digits, hyphens.</span>
-        </label>
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium text-foreground-muted">Category</span>
-          <input
-            type="text"
-            formControlName="category"
-            class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-            list="codex-category-options"
-            placeholder="Pick or type a category"
-          />
-          <datalist id="codex-category-options">
-            @for (cat of categoryOptions(); track cat.id) {
-              <option [value]="cat.label"></option>
-            }
-          </datalist>
-        </label>
-      </div>
-
-      <app-cover-slot
-        label="Cover image"
-        [assetId]="cover()"
-        (picked)="cover.set($event)"
-      />
-
-      <label class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-foreground-muted">Description</span>
-        <textarea
-          formControlName="description"
-          rows="8"
-          class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
-          placeholder="The lore content of this entry."
-        ></textarea>
-      </label>
-
-      <div class="flex flex-col gap-1 text-sm">
-        <span class="font-medium text-foreground-muted">Related entities</span>
-        <app-combobox-picker
-          [options]="relatedOptions()"
-          [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
-          emptyMessage="Nothing else in this universe yet."
-          (valueChange)="onRelatedKeys($event)"
-        />
-      </div>
-
-      @if (errorMessage(); as e) {
-        <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-      }
-
-      <div class="flex gap-2">
-        <button
-          uiPrimary
-          type="submit"
-          [loading]="busy()"
-          [disabled]="form.invalid || busy()"
+    <ng-container *transloco="let t; prefix: 'codex'">
+      <ng-container *transloco="let g; prefix: 'general'">
+        <form
+          [formGroup]="form"
+          class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
+          (ngSubmit)="onSubmit()"
         >
-          {{ initial() ? 'Save' : 'Add' }}
-        </button>
-        <button uiGhost type="button" (click)="cancelled.emit()">Cancel</button>
-      </div>
-    </form>
+          <h3 class="m-0 text-base font-semibold text-foreground">
+            {{ initial() ? t('field.formEdit') : t('field.formAdd') }}
+          </h3>
+
+          <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.title') }}</span>
+              <input
+                type="text"
+                formControlName="title"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.titlePlaceholder')"
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ g('field.slug') }}</span>
+              <input
+                type="text"
+                formControlName="slug"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                [placeholder]="t('empty.slugPlaceholder')"
+              />
+              <span class="text-xs text-foreground-faint">{{ g('message.slugHint') }}</span>
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span class="font-medium text-foreground-muted">{{ t('field.category') }}</span>
+              <input
+                type="text"
+                formControlName="category"
+                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                list="codex-category-options"
+                [placeholder]="t('empty.categoryPlaceholder')"
+              />
+              <datalist id="codex-category-options">
+                @for (cat of categoryOptions(); track cat.id) {
+                  <option [value]="cat.label"></option>
+                }
+              </datalist>
+            </label>
+          </div>
+
+          <app-cover-slot
+            [label]="g('field.coverImage')"
+            [assetId]="cover()"
+            (picked)="cover.set($event)"
+          />
+
+          <label class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+            <textarea
+              formControlName="description"
+              rows="8"
+              class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
+              [placeholder]="t('empty.descriptionPlaceholder')"
+            ></textarea>
+          </label>
+
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
+            <app-combobox-picker
+              [options]="relatedOptions()"
+              [value]="relatedKeys()"
+              [placeholder]="g('empty.searchRelated')"
+              [emptyMessage]="g('empty.noRelatedAvailable')"
+              (valueChange)="onRelatedKeys($event)"
+            />
+          </div>
+
+          @if (errorMessage(); as e) {
+            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+          }
+
+          <div class="flex gap-2">
+            <button
+              uiPrimary
+              type="submit"
+              [loading]="busy()"
+              [disabled]="form.invalid || busy()"
+            >
+              {{ initial() ? g('action.save') : g('action.add') }}
+            </button>
+            <button uiGhost type="button" (click)="cancelled.emit()">{{ g('action.cancel') }}</button>
+          </div>
+        </form>
+      </ng-container>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -155,29 +167,47 @@ export class CodexEntryFormComponent {
   private readonly places = inject(PlacesService);
   private readonly codex = inject(CodexEntriesService);
   private readonly categoriesService = inject(CodexCategoriesService);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected readonly categoryOptions = this.categoriesService.categories;
 
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      id: refKey({ kind: 'character', id: c.id }),
-      label: c.name,
-      hint: RELATED_KIND_LABEL.character,
-      kind: 'character' as const,
-    })),
-    ...this.places.places().map((p) => ({
-      id: refKey({ kind: 'place', id: p.id }),
-      label: p.name,
-      hint: RELATED_KIND_LABEL.place,
-      kind: 'place' as const,
-    })),
-    ...this.codex.entries().map((e) => ({
-      id: refKey({ kind: 'codexEntry', id: e.id }),
-      label: e.title,
-      hint: RELATED_KIND_LABEL.codexEntry,
-      kind: 'codexEntry' as const,
-    })),
-  ]);
+  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
+    () => {
+      this.activeLang();
+      return {
+        character: this.transloco.translate('general.field.relatedKindCharacter'),
+        place: this.transloco.translate('general.field.relatedKindPlace'),
+        codexEntry: this.transloco.translate('general.field.relatedKindCodex'),
+      };
+    },
+  );
+
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
+    const labels = this.relatedKindLabels();
+    return [
+      ...this.characters.characters().map((c) => ({
+        id: refKey({ kind: 'character', id: c.id }),
+        label: c.name,
+        hint: labels.character,
+        kind: 'character' as const,
+      })),
+      ...this.places.places().map((p) => ({
+        id: refKey({ kind: 'place', id: p.id }),
+        label: p.name,
+        hint: labels.place,
+        kind: 'place' as const,
+      })),
+      ...this.codex.entries().map((e) => ({
+        id: refKey({ kind: 'codexEntry', id: e.id }),
+        label: e.title,
+        hint: labels.codexEntry,
+        kind: 'codexEntry' as const,
+      })),
+    ];
+  });
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly cover = signal<string | undefined>(undefined);

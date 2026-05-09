@@ -1,0 +1,38 @@
+{
+  "field": {
+    "pageTitle": "Codex",
+    "pageSubtitle": "Encyclopedic entries — anything that doesn't fit the other categories.",
+    "formAdd": "Add codex entry",
+    "formEdit": "Edit codex entry",
+    "category": "Category",
+    "categoriesHeader": "Categories",
+    "label": "Label"
+  },
+  "action": {
+    "create": "+ Add entry",
+    "addCategory": "+ Add category",
+    "reset": "Reset"
+  },
+  "message": {
+    "categoriesSubtitle": "Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set.",
+    "unsavedChanges": "Unsaved changes"
+  },
+  "empty": {
+    "list": "No codex entries yet.",
+    "selectDetail": "Select an entry to view details.",
+    "categoriesList": "No categories yet.",
+    "titlePlaceholder": "e.g. The Echo",
+    "slugPlaceholder": "e.g. the-echo",
+    "categoryPlaceholder": "Pick or type a category",
+    "descriptionPlaceholder": "The lore content of this entry.",
+    "categoryLabelPlaceholder": "Label",
+    "categoryDescriptionPlaceholder": "Description (optional)"
+  },
+  "tooltip": {
+    "list": "Codex list",
+    "details": "Codex entry details",
+    "labelAria": "Label",
+    "colorAria": "Color",
+    "descriptionAria": "Description"
+  }
+}

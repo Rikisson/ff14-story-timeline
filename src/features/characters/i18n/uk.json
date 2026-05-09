@@ -1,0 +1,32 @@
+{
+  "field": {
+    "pageTitle": "Персонажі",
+    "pageSubtitle": "Люди, які зʼявляються в історіях та подіях цього всесвіту.",
+    "formAdd": "Додати персонажа",
+    "formEdit": "Редагувати персонажа",
+    "spritesHeader": "Спрайти",
+    "spriteDefaultBadge": "ТИПОВИЙ"
+  },
+  "action": {
+    "create": "+ Додати персонажа",
+    "setSpriteDefault": "Зробити типовим",
+    "addSpriteFromLibrary": "+ Додати з бібліотеки"
+  },
+  "message": {
+    "spriteDefaultHint": "Перший спрайт — типовий.",
+    "removeSpriteConfirm": "Прибрати цей спрайт з персонажа?"
+  },
+  "empty": {
+    "list": "Поки немає персонажів.",
+    "selectDetail": "Оберіть персонажа, щоб переглянути деталі.",
+    "namePlaceholder": "напр. Іштола",
+    "slugPlaceholder": "напр. yshtola",
+    "descriptionPlaceholder": "Біографія, характер, звʼязки з іншими персонажами…",
+    "spritesList": "Поки немає спрайтів."
+  },
+  "tooltip": {
+    "list": "Список персонажів",
+    "details": "Деталі персонажа",
+    "spritePickerTitle": "Обрати спрайти для цього персонажа"
+  }
+}

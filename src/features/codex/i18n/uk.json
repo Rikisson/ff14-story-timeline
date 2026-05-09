@@ -1,0 +1,38 @@
+{
+  "field": {
+    "pageTitle": "Кодекс",
+    "pageSubtitle": "Енциклопедичні записи — усе, що не вкладається в інші категорії.",
+    "formAdd": "Додати запис кодексу",
+    "formEdit": "Редагувати запис кодексу",
+    "category": "Категорія",
+    "categoriesHeader": "Категорії",
+    "label": "Мітка"
+  },
+  "action": {
+    "create": "+ Додати запис",
+    "addCategory": "+ Додати категорію",
+    "reset": "Скинути"
+  },
+  "message": {
+    "categoriesSubtitle": "Кольорові групи для записів кодексу. Автори можуть вводити довільні категорії на записах; селектори підказують цей канонічний набір.",
+    "unsavedChanges": "Незбережені зміни"
+  },
+  "empty": {
+    "list": "Поки немає записів кодексу.",
+    "selectDetail": "Оберіть запис, щоб переглянути деталі.",
+    "categoriesList": "Поки немає категорій.",
+    "titlePlaceholder": "напр. Луна",
+    "slugPlaceholder": "напр. the-echo",
+    "categoryPlaceholder": "Оберіть або введіть категорію",
+    "descriptionPlaceholder": "Лор цього запису.",
+    "categoryLabelPlaceholder": "Мітка",
+    "categoryDescriptionPlaceholder": "Опис (необовʼязково)"
+  },
+  "tooltip": {
+    "list": "Список кодексу",
+    "details": "Деталі запису кодексу",
+    "labelAria": "Мітка",
+    "colorAria": "Колір",
+    "descriptionAria": "Опис"
+  }
+}

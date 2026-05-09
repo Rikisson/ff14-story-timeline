@@ -1,0 +1,32 @@
+{
+  "field": {
+    "pageTitle": "Characters",
+    "pageSubtitle": "People who recur across this universe's stories and events.",
+    "formAdd": "Add character",
+    "formEdit": "Edit character",
+    "spritesHeader": "Sprites",
+    "spriteDefaultBadge": "DEFAULT"
+  },
+  "action": {
+    "create": "+ Add character",
+    "setSpriteDefault": "Set default",
+    "addSpriteFromLibrary": "+ Add from library"
+  },
+  "message": {
+    "spriteDefaultHint": "First sprite is the default.",
+    "removeSpriteConfirm": "Remove this sprite from the character?"
+  },
+  "empty": {
+    "list": "No characters yet.",
+    "selectDetail": "Select a character to view details.",
+    "namePlaceholder": "e.g. Y'shtola",
+    "slugPlaceholder": "e.g. yshtola",
+    "descriptionPlaceholder": "Background, personality, ties to other characters…",
+    "spritesList": "No sprites yet."
+  },
+  "tooltip": {
+    "list": "Characters list",
+    "details": "Character details",
+    "spritePickerTitle": "Pick sprites for this character"
+  }
+}
