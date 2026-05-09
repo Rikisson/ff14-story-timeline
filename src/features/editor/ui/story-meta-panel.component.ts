@@ -1,5 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { CodexEntriesService } from '@features/codex';
 import { AssetPickerComponent, MediaAssetsService } from '@features/media';
@@ -16,12 +18,8 @@ import {
   SecondaryButtonComponent,
 } from '@shared/ui';
 import { StoryMeta } from '../data-access/editor.state';
-
-const RELATED_KIND_LABEL: Record<'character' | 'place' | 'codexEntry', string> = {
-  character: 'Character',
-  place: 'Place',
-  codexEntry: 'Codex',
-};
+import editorEn from '../i18n/en.json';
+import editorUk from '../i18n/uk.json';
 
 function refKey(ref: EntityRef): string {
   return `${ref.kind}:${ref.id}`;
@@ -46,106 +44,118 @@ function parseRefKey(key: string): EntityRef | null {
     GhostButtonComponent,
     SecondaryButtonComponent,
     NgOptimizedImage,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'editor',
+      loader: {
+        en: () => Promise.resolve(editorEn),
+        uk: () => Promise.resolve(editorUk),
+      },
+    }),
   ],
   template: `
-    @if (meta(); as m) {
-      <h3>Story info</h3>
+    <ng-container *transloco="let t; prefix: 'editor'">
+      @if (meta(); as m) {
+        <h3>{{ t('field.storyInfo') }}</h3>
 
-      <div class="field">
-        <label for="meta-title">Title</label>
-        <input id="meta-title" type="text" [value]="m.title" (input)="onTitle($event)" />
-      </div>
+        <div class="field">
+          <label for="meta-title">{{ t('field.title') }}</label>
+          <input id="meta-title" type="text" [value]="m.title" (input)="onTitle($event)" />
+        </div>
 
-      <div class="field">
-        <label for="meta-slug">Slug</label>
-        <input
-          id="meta-slug"
-          type="text"
-          [value]="m.slug"
-          [class.invalid]="!slugValid()"
-          (input)="onSlug($event)"
-        />
-        <span class="hint">Lowercase letters, digits, and hyphens. Unique within this universe.</span>
-        @if (!slugValid()) {
-          <span class="error">Slug must start with a letter or digit and contain only lowercase letters, digits, and hyphens.</span>
-        }
-      </div>
+        <div class="field">
+          <label for="meta-slug">{{ t('field.slug') }}</label>
+          <input
+            id="meta-slug"
+            type="text"
+            [value]="m.slug"
+            [class.invalid]="!slugValid()"
+            (input)="onSlug($event)"
+          />
+          <span class="hint">{{ t('empty.slugHint') }}</span>
+          @if (!slugValid()) {
+            <span class="error">{{ t('empty.slugError') }}</span>
+          }
+        </div>
 
-      <div class="field">
-        <label>Cover image</label>
-        @if (coverUrl(); as url) {
-          <div class="cover-preview">
-            <img [ngSrc]="url" alt="Story cover" fill class="cover-img" />
-          </div>
-          <div class="cover-actions">
+        <div class="field">
+          <label>{{ t('field.coverImage') }}</label>
+          @if (coverUrl(); as url) {
+            <div class="cover-preview">
+              <img [ngSrc]="url" [alt]="t('tooltip.storyCoverAlt')" fill class="cover-img" />
+            </div>
+            <div class="cover-actions">
+              <button uiSecondary type="button" (click)="coverPicker.open()">
+                {{ t('action.replace') }}
+              </button>
+              <button uiGhost type="button" (click)="clearCover()">{{ t('action.remove') }}</button>
+            </div>
+          } @else {
             <button uiSecondary type="button" (click)="coverPicker.open()">
-              Replace
+              {{ t('action.pickCover') }}
             </button>
-            <button uiGhost type="button" (click)="clearCover()">Remove</button>
-          </div>
-        } @else {
-          <button uiSecondary type="button" (click)="coverPicker.open()">
-            Pick cover
-          </button>
-          <span class="hint">Used for the catalog card.</span>
-        }
-        <app-asset-picker
-          #coverPicker
-          kind="cover"
-          title="Pick a cover image"
-          [currentSelection]="coverSelection()"
-          (picked)="onCoverPicked($event)"
-        />
-      </div>
+            <span class="hint">{{ t('empty.coverHint') }}</span>
+          }
+          <app-asset-picker
+            #coverPicker
+            kind="cover"
+            [title]="t('tooltip.pickCoverTitle')"
+            [currentSelection]="coverSelection()"
+            (picked)="onCoverPicked($event)"
+          />
+        </div>
 
-      <div class="field">
-        <label>Description</label>
-        <app-rich-text-input
-          [value]="m.description ?? ''"
-          [options]="inlineRefOptions()"
-          ariaLabel="Description"
-          placeholder="What is this story about?"
-          (valueChange)="onDescription($event)"
-        />
-      </div>
+        <div class="field">
+          <label>{{ t('field.description') }}</label>
+          <app-rich-text-input
+            [value]="m.description ?? ''"
+            [options]="inlineRefOptions()"
+            [ariaLabel]="t('tooltip.descriptionAria')"
+            [placeholder]="t('empty.descriptionPlaceholder')"
+            (valueChange)="onDescription($event)"
+          />
+        </div>
 
-      <div class="field">
-        <label>Related entities</label>
-        <app-combobox-picker
-          [options]="relatedOptions()"
-          [value]="relatedKeys()"
-          placeholder="Search characters, places, codex entries…"
-          emptyMessage="Nothing else in this universe yet."
-          (valueChange)="onRelatedKeys($event)"
-        />
-      </div>
+        <div class="field">
+          <label>{{ t('field.relatedEntities') }}</label>
+          <app-combobox-picker
+            [options]="relatedOptions()"
+            [value]="relatedKeys()"
+            [placeholder]="t('empty.relatedPlaceholder')"
+            [emptyMessage]="t('empty.noRelatedAvailable')"
+            (valueChange)="onRelatedKeys($event)"
+          />
+        </div>
 
-      <div class="field">
-        <label>Plotlines</label>
-        <app-combobox-picker
-          [options]="plotlineOptions()"
-          [value]="plotlineIds()"
-          placeholder="Search plotlines…"
-          emptyMessage="No plotlines yet."
-          (valueChange)="onPlotlineIds($event)"
-        />
-      </div>
+        <div class="field">
+          <label>{{ t('field.plotlines') }}</label>
+          <app-combobox-picker
+            [options]="plotlineOptions()"
+            [value]="plotlineIds()"
+            [placeholder]="t('empty.plotlinesPlaceholder')"
+            [emptyMessage]="t('empty.noPlotlines')"
+            (valueChange)="onPlotlineIds($event)"
+          />
+        </div>
 
-      <div class="field">
-        <app-in-game-date-input
-          label="In-game date"
-          [value]="m.inGameDate"
-          (valueChanged)="onDate($event)"
-        />
-      </div>
+        <div class="field">
+          <app-in-game-date-input
+            [label]="t('field.inGameDate')"
+            [value]="m.inGameDate"
+            (valueChanged)="onDate($event)"
+          />
+        </div>
 
-      <div class="field checkbox">
-        <label>
-          <input type="checkbox" [checked]="m.draft" (change)="onDraft($event)" />
-          Draft (hidden from catalog)
-        </label>
-      </div>
-    }
+        <div class="field checkbox">
+          <label>
+            <input type="checkbox" [checked]="m.draft" (change)="onDraft($event)" />
+            {{ t('field.draftCheckbox') }}
+          </label>
+        </div>
+      }
+    </ng-container>
   `,
   styles: `
     :host {
@@ -232,6 +242,10 @@ export class StoryMetaPanelComponent {
   private readonly codex = inject(CodexEntriesService);
   private readonly plotlines = inject(PlotlinesService);
   private readonly entityResolver = inject(EntityResolverService);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
@@ -247,26 +261,40 @@ export class StoryMetaPanelComponent {
     return SLUG_PATTERN.test(m.slug);
   });
 
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => [
-    ...this.characters.characters().map((c) => ({
-      id: refKey({ kind: 'character', id: c.id }),
-      label: c.name,
-      hint: RELATED_KIND_LABEL.character,
-      kind: 'character' as const,
-    })),
-    ...this.places.places().map((p) => ({
-      id: refKey({ kind: 'place', id: p.id }),
-      label: p.name,
-      hint: RELATED_KIND_LABEL.place,
-      kind: 'place' as const,
-    })),
-    ...this.codex.entries().map((e) => ({
-      id: refKey({ kind: 'codexEntry', id: e.id }),
-      label: e.title,
-      hint: RELATED_KIND_LABEL.codexEntry,
-      kind: 'codexEntry' as const,
-    })),
-  ]);
+  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
+    () => {
+      this.activeLang();
+      return {
+        character: this.transloco.translate('editor.field.relatedKindCharacter'),
+        place: this.transloco.translate('editor.field.relatedKindPlace'),
+        codexEntry: this.transloco.translate('editor.field.relatedKindCodex'),
+      };
+    },
+  );
+
+  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
+    const labels = this.relatedKindLabels();
+    return [
+      ...this.characters.characters().map((c) => ({
+        id: refKey({ kind: 'character', id: c.id }),
+        label: c.name,
+        hint: labels.character,
+        kind: 'character' as const,
+      })),
+      ...this.places.places().map((p) => ({
+        id: refKey({ kind: 'place', id: p.id }),
+        label: p.name,
+        hint: labels.place,
+        kind: 'place' as const,
+      })),
+      ...this.codex.entries().map((e) => ({
+        id: refKey({ kind: 'codexEntry', id: e.id }),
+        label: e.title,
+        hint: labels.codexEntry,
+        kind: 'codexEntry' as const,
+      })),
+    ];
+  });
 
   protected readonly plotlineOptions = computed<ComboboxOption[]>(() =>
     this.plotlines

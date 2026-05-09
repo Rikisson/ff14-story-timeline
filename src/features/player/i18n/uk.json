@@ -1,0 +1,24 @@
+{
+  "action": {
+    "back": "← Назад",
+    "catalog": "Каталог",
+    "backToCatalog": "Назад до каталогу",
+    "resume": "Продовжити",
+    "startOver": "Почати спочатку",
+    "restart": "Перезапустити",
+    "continue": "Далі"
+  },
+  "message": {
+    "loading": "Завантаження…",
+    "end": "Кінець.",
+    "savedSpot": "У вас є збережене місце в цій історії."
+  },
+  "empty": {
+    "noSprite": "немає спрайту"
+  },
+  "tooltip": {
+    "position": "Позиція: {{ slot }}",
+    "audioForSpeaker": "Аудіо для {{ speaker }}",
+    "audioGeneric": "Звуковий супровід сцени"
+  }
+}

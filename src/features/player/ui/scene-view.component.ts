@@ -1,7 +1,10 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { MarkdownTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
+import playerEn from '../i18n/en.json';
+import playerUk from '../i18n/uk.json';
 
 export interface StagedView {
   id: string;
@@ -17,98 +20,109 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
 
 @Component({
   selector: 'app-scene-view',
-  imports: [NgOptimizedImage, MarkdownTextComponent],
+  imports: [NgOptimizedImage, MarkdownTextComponent, TranslocoDirective],
+  providers: [
+    provideTranslocoScope({
+      scope: 'player',
+      loader: {
+        en: () => Promise.resolve(playerEn),
+        uk: () => Promise.resolve(playerUk),
+      },
+    }),
+  ],
   template: `
-    <article
-      class="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
-    >
-      @if (background(); as bg) {
-        <div class="relative aspect-video w-full">
-          <img [ngSrc]="bg" alt="" fill class="object-cover" />
-        </div>
-      }
-
-      @if (staged().length > 0) {
-        <div class="grid grid-cols-3 gap-2 border-b border-border px-4 py-3">
-          @for (slot of slots; track slot) {
-            <div class="flex flex-wrap items-end justify-center gap-2">
-              @for (s of stagedFor(slot); track s.id) {
-                <figure
-                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                  [class.opacity-40]="!s.isSpeaker"
-                >
-                  @if (s.spriteUrl; as url) {
-                    <img
-                      [ngSrc]="url"
-                      [alt]="s.name"
-                      width="120"
-                      height="120"
-                      class="size-24 rounded-md border border-border object-cover"
-                    />
-                  } @else {
-                    <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
-                    >
-                      no sprite
-                    </div>
-                  }
-                  <figcaption class="text-xs font-medium text-foreground-muted">
-                    {{ s.name }}
-                  </figcaption>
-                </figure>
-              }
-              @for (s of stagedOther(slot); track s.id) {
-                <figure
-                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                  [class.opacity-40]="!s.isSpeaker"
-                  [title]="'Position: ' + s.position"
-                >
-                  @if (s.spriteUrl; as url) {
-                    <img
-                      [ngSrc]="url"
-                      [alt]="s.name"
-                      width="120"
-                      height="120"
-                      class="size-24 rounded-md border border-border object-cover"
-                    />
-                  } @else {
-                    <div
-                      class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
-                    >
-                      no sprite
-                    </div>
-                  }
-                  <figcaption class="text-xs font-medium text-foreground-muted">
-                    {{ s.name }}
-                  </figcaption>
-                </figure>
-              }
-            </div>
-          }
-        </div>
-      }
-
-      <div class="flex flex-col gap-2 px-5 py-4">
-        @if (speaker(); as s) {
-          <p class="m-0 text-sm font-semibold text-foreground-muted">{{ s }}</p>
+    <ng-container *transloco="let t; prefix: 'player'">
+      <article
+        class="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      >
+        @if (background(); as bg) {
+          <div class="relative aspect-video w-full">
+            <img [ngSrc]="bg" alt="" fill class="object-cover" />
+          </div>
         }
-        <app-markdown-text
-          class="text-base leading-relaxed text-foreground"
-          [text]="text()"
-          [options]="inlineRefOptions()"
-        />
-      </div>
 
-      @if (audio(); as a) {
-        <audio
-          class="w-full"
-          controls
-          preload="auto"
-          [src]="a"
-          [attr.aria-label]="audioLabel()"
-        ></audio>
-      }
-    </article>
+        @if (staged().length > 0) {
+          <div class="grid grid-cols-3 gap-2 border-b border-border px-4 py-3">
+            @for (slot of slots; track slot) {
+              <div class="flex flex-wrap items-end justify-center gap-2">
+                @for (s of stagedFor(slot); track s.id) {
+                  <figure
+                    class="m-0 flex flex-col items-center gap-1 transition-opacity"
+                    [class.opacity-40]="!s.isSpeaker"
+                  >
+                    @if (s.spriteUrl; as url) {
+                      <img
+                        [ngSrc]="url"
+                        [alt]="s.name"
+                        width="120"
+                        height="120"
+                        class="size-24 rounded-md border border-border object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
+                      >
+                        {{ t('empty.noSprite') }}
+                      </div>
+                    }
+                    <figcaption class="text-xs font-medium text-foreground-muted">
+                      {{ s.name }}
+                    </figcaption>
+                  </figure>
+                }
+                @for (s of stagedOther(slot); track s.id) {
+                  <figure
+                    class="m-0 flex flex-col items-center gap-1 transition-opacity"
+                    [class.opacity-40]="!s.isSpeaker"
+                    [title]="t('tooltip.position', { slot: s.position })"
+                  >
+                    @if (s.spriteUrl; as url) {
+                      <img
+                        [ngSrc]="url"
+                        [alt]="s.name"
+                        width="120"
+                        height="120"
+                        class="size-24 rounded-md border border-border object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
+                      >
+                        {{ t('empty.noSprite') }}
+                      </div>
+                    }
+                    <figcaption class="text-xs font-medium text-foreground-muted">
+                      {{ s.name }}
+                    </figcaption>
+                  </figure>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="flex flex-col gap-2 px-5 py-4">
+          @if (speaker(); as s) {
+            <p class="m-0 text-sm font-semibold text-foreground-muted">{{ s }}</p>
+          }
+          <app-markdown-text
+            class="text-base leading-relaxed text-foreground"
+            [text]="text()"
+            [options]="inlineRefOptions()"
+          />
+        </div>
+
+        @if (audio(); as a) {
+          <audio
+            class="w-full"
+            controls
+            preload="auto"
+            [src]="a"
+            [attr.aria-label]="audioLabel()"
+          ></audio>
+        }
+      </article>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -120,11 +134,15 @@ export class SceneViewComponent {
   readonly staged = input<StagedView[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
 
+  private readonly transloco = inject(TranslocoService);
+
   protected readonly slots = POSITION_SLOTS;
 
   protected readonly audioLabel = computed(() => {
     const s = this.speaker();
-    return s ? `Audio for ${s}` : 'Scene audio';
+    return s
+      ? this.transloco.translate('player.tooltip.audioForSpeaker', { speaker: s })
+      : this.transloco.translate('player.tooltip.audioGeneric');
   });
 
   protected stagedFor(slot: PositionSlot): StagedView[] {

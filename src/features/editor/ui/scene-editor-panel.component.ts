@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Scene, StagedCharacter } from '@features/stories';
 import { EntityRef } from '@shared/models';
 import {
@@ -10,6 +12,8 @@ import {
 } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
+import editorEn from '../i18n/en.json';
+import editorUk from '../i18n/uk.json';
 
 export interface SceneUpdate {
   id: string;
@@ -38,212 +42,224 @@ type SpeakerMode = 'none' | 'character' | 'custom';
     EntityPickerComponent,
     RichTextInputComponent,
     SceneAssetsPanelComponent,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'editor',
+      loader: {
+        en: () => Promise.resolve(editorEn),
+        uk: () => Promise.resolve(editorUk),
+      },
+    }),
   ],
   template: `
-    @if (sceneId(); as id) {
-      @if (scene(); as s) {
-        <header class="header">
-          <h3>Scene: <code>{{ headLabel(id, s) }}</code></h3>
-          @if (isStartScene()) {
-            <span class="badge">START</span>
-          } @else {
-            <button uiGhost type="button" (click)="confirmSetAsStart(id)">Set as start</button>
-          }
-        </header>
-        <p class="full-id" [title]="id">id: {{ id }}</p>
-
-        <div class="field">
-          <label for="scene-label">Label</label>
-          <input
-            id="scene-label"
-            type="text"
-            placeholder="Optional shorthand (e.g. intro, ending-bad)"
-            [value]="s.label ?? ''"
-            (input)="emitLabel($event, id)"
-          />
-          <span class="hint">
-            Shows up in the graph and choice list. Doesn't have to be unique.
-          </span>
-        </div>
-
-        <fieldset class="group">
-          <legend>Speaker</legend>
-          <div class="modes" role="radiogroup" aria-label="Speaker type">
-            @for (m of speakerModes; track m.value) {
-              <label class="mode">
-                <input
-                  type="radio"
-                  name="speakerMode"
-                  [value]="m.value"
-                  [checked]="speakerMode() === m.value"
-                  (change)="onSpeakerMode(id, m.value)"
-                />
-                {{ m.label }}
-              </label>
+    <ng-container *transloco="let t; prefix: 'editor'">
+      @if (sceneId(); as id) {
+        @if (scene(); as s) {
+          <header class="header">
+            <h3>{{ t('field.scenePrefix') }} <code>{{ headLabel(id, s) }}</code></h3>
+            @if (isStartScene()) {
+              <span class="badge">{{ t('field.startBadge') }}</span>
+            } @else {
+              <button uiGhost type="button" (click)="confirmSetAsStart(id)">{{ t('action.setAsStart') }}</button>
             }
+          </header>
+          <p class="full-id" [title]="id">{{ t('field.sceneIdPrefix') }} {{ id }}</p>
+
+          <div class="field">
+            <label for="scene-label">{{ t('field.label') }}</label>
+            <input
+              id="scene-label"
+              type="text"
+              [placeholder]="t('empty.sceneShorthandPlaceholder')"
+              [value]="s.label ?? ''"
+              (input)="emitLabel($event, id)"
+            />
+            <span class="hint">
+              {{ t('empty.labelHint') }}
+            </span>
           </div>
 
-          @if (speakerMode() === 'character') {
-            <app-entity-picker
-              kind="character"
-              [options]="characterOptions()"
-              [value]="speakerRefArray()"
-              [multiple]="false"
-              emptyMessage="No characters in this universe yet."
-              (selected)="onSpeakerCharacter(id, $event)"
-            />
-            @if (speakerNotOnStage()) {
-              <div class="warning" role="status">
-                <span>Speaker is not on stage.</span>
-                <button uiGhost type="button" (click)="addSpeakerToStage(id)">
-                  Add to stage
-                </button>
-              </div>
+          <fieldset class="group">
+            <legend>{{ t('field.speaker') }}</legend>
+            <div class="modes" role="radiogroup" [attr.aria-label]="t('field.speakerType')">
+              @for (m of speakerModes(); track m.value) {
+                <label class="mode">
+                  <input
+                    type="radio"
+                    name="speakerMode"
+                    [value]="m.value"
+                    [checked]="speakerMode() === m.value"
+                    (change)="onSpeakerMode(id, m.value)"
+                  />
+                  {{ m.label }}
+                </label>
+              }
+            </div>
+
+            @if (speakerMode() === 'character') {
+              <app-entity-picker
+                kind="character"
+                [options]="characterOptions()"
+                [value]="speakerRefArray()"
+                [multiple]="false"
+                [emptyMessage]="t('empty.noCharactersUniverse')"
+                (selected)="onSpeakerCharacter(id, $event)"
+              />
+              @if (speakerNotOnStage()) {
+                <div class="warning" role="status">
+                  <span>{{ t('message.speakerNotOnStage') }}</span>
+                  <button uiGhost type="button" (click)="addSpeakerToStage(id)">
+                    {{ t('action.addToStage') }}
+                  </button>
+                </div>
+              }
+            } @else if (speakerMode() === 'custom') {
+              <input
+                type="text"
+                [placeholder]="t('empty.speakerCustomPlaceholder')"
+                [value]="speakerString()"
+                (input)="onSpeakerCustom($event, id)"
+              />
             }
-          } @else if (speakerMode() === 'custom') {
-            <input
-              type="text"
-              placeholder="Narrator, off-screen voice…"
-              [value]="speakerString()"
-              (input)="onSpeakerCustom($event, id)"
+          </fieldset>
+
+          <div class="field">
+            <label>{{ t('field.text') }}</label>
+            <app-rich-text-input
+              [value]="s.text"
+              [options]="inlineRefOptions()"
+              [ariaLabel]="t('tooltip.sceneTextAria')"
+              [placeholder]="t('empty.textPlaceholder')"
+              (valueChange)="emitTextValue(id, $event)"
             />
-          }
-        </fieldset>
+          </div>
 
-        <div class="field">
-          <label>Text</label>
-          <app-rich-text-input
-            [value]="s.text"
-            [options]="inlineRefOptions()"
-            ariaLabel="Scene text"
-            placeholder="Write the scene…"
-            (valueChange)="emitTextValue(id, $event)"
-          />
-        </div>
-
-        <fieldset class="group">
-          <legend>On stage ({{ s.characters.length }})</legend>
-          @if (s.characters.length === 0) {
-            <p class="hint">No characters on stage. Add one below.</p>
-          } @else {
-            <ul class="staged">
-              @for (sc of s.characters; track sc.entity.id) {
-                <li class="staged-row">
-                  <span class="staged-name">{{ characterName(sc.entity.id) }}</span>
-                  <select
-                    [value]="sc.position"
-                    (change)="onPositionChange($event, id, sc.entity.id)"
-                  >
-                    @for (p of positionOptions; track p) {
-                      <option [value]="p">{{ p }}</option>
-                    }
-                  </select>
-                  @if (spriteOptions(sc.entity.id).length > 1) {
+          <fieldset class="group">
+            <legend>{{ t('message.onStageCount', { count: s.characters.length }) }}</legend>
+            @if (s.characters.length === 0) {
+              <p class="hint">{{ t('empty.noStaged') }}</p>
+            } @else {
+              <ul class="staged">
+                @for (sc of s.characters; track sc.entity.id) {
+                  <li class="staged-row">
+                    <span class="staged-name">{{ characterName(sc.entity.id) }}</span>
                     <select
-                      [value]="sc.spriteId ?? ''"
-                      [attr.aria-label]="'Sprite for ' + characterName(sc.entity.id)"
-                      (change)="onSpriteChange($event, id, sc.entity.id)"
+                      [value]="sc.position"
+                      (change)="onPositionChange($event, id, sc.entity.id)"
                     >
-                      @for (po of spriteOptions(sc.entity.id); track po.id) {
-                        <option [value]="po.id">{{ po.label }}</option>
+                      @for (p of positionOptions; track p) {
+                        <option [value]="p">{{ p }}</option>
                       }
                     </select>
-                  }
+                    @if (spriteOptions(sc.entity.id).length > 1) {
+                      <select
+                        [value]="sc.spriteId ?? ''"
+                        [attr.aria-label]="t('tooltip.spriteForCharacter', { name: characterName(sc.entity.id) })"
+                        (change)="onSpriteChange($event, id, sc.entity.id)"
+                      >
+                        @for (po of spriteOptions(sc.entity.id); track po.id) {
+                          <option [value]="po.id">{{ po.label }}</option>
+                        }
+                      </select>
+                    }
+                    <button
+                      type="button"
+                      class="remove"
+                      [attr.aria-label]="t('tooltip.removeFromStage', { name: characterName(sc.entity.id) })"
+                      (click)="removeStaged(id, sc.entity.id)"
+                    >
+                      ×
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+            <app-entity-picker
+              kind="character"
+              [options]="unstagedOptions()"
+              [value]="emptyValue"
+              [multiple]="false"
+              [emptyMessage]="t('empty.allOnStage')"
+              (selected)="onAddStaged(id, $event)"
+            />
+          </fieldset>
+
+          <div class="field">
+            <label>{{ t('field.place') }}</label>
+            <app-entity-picker
+              kind="place"
+              [options]="placeOptions()"
+              [value]="placeRefArray()"
+              [multiple]="false"
+              [emptyMessage]="t('empty.noPlacesUniverse')"
+              (selected)="onPlace(id, $event)"
+            />
+          </div>
+
+          <h4>{{ t('message.choicesCount', { count: s.next.length }) }}</h4>
+          @if (s.next.length === 0) {
+            <p class="hint">{{ t('empty.noChoicesHint') }}</p>
+          } @else {
+            @if (s.next.length > 1) {
+              <p class="hint">{{ t('empty.reorderHint') }}</p>
+            }
+            <ul class="choices">
+              @for (choice of s.next; track choice.sceneId; let i = $index) {
+                <li
+                  class="choice"
+                  [class.dragging]="dragIndex() === i"
+                  [class.drag-over]="dragOverIndex() === i && dragIndex() !== i"
+                  (dragover)="onDragOver($event, i)"
+                  (dragleave)="onDragLeave(i)"
+                  (drop)="onDrop($event, id, i)"
+                >
                   <button
                     type="button"
-                    class="remove"
-                    [attr.aria-label]="'Remove ' + characterName(sc.entity.id) + ' from stage'"
-                    (click)="removeStaged(id, sc.entity.id)"
+                    class="handle"
+                    draggable="true"
+                    [attr.aria-label]="t('tooltip.reorderChoice', { index: i + 1, total: s.next.length })"
+                    (dragstart)="onDragStart($event, i)"
+                    (dragend)="onDragEnd()"
                   >
-                    ×
+                    ⋮⋮
                   </button>
+                  <span class="arrow" [title]="choice.sceneId">
+                    → <code>{{ destLabel(choice.sceneId) }}</code>
+                  </span>
+                  <input
+                    type="text"
+                    [placeholder]="t('empty.choiceLabelPlaceholder')"
+                    [value]="choice.label ?? ''"
+                    (input)="emitChoiceLabel($event, id, choice.sceneId)"
+                  />
                 </li>
               }
             </ul>
           }
-          <app-entity-picker
-            kind="character"
-            [options]="unstagedOptions()"
-            [value]="emptyValue"
-            [multiple]="false"
-            emptyMessage="All characters are on stage."
-            (selected)="onAddStaged(id, $event)"
-          />
-        </fieldset>
 
-        <div class="field">
-          <label>Place</label>
-          <app-entity-picker
-            kind="place"
-            [options]="placeOptions()"
-            [value]="placeRefArray()"
-            [multiple]="false"
-            emptyMessage="No places in this universe yet."
-            (selected)="onPlace(id, $event)"
-          />
-        </div>
+          <hr />
 
-        <h4>Choices ({{ s.next.length }})</h4>
-        @if (s.next.length === 0) {
-          <p class="hint">Drag from this scene's "next" port to another scene to create a choice.</p>
-        } @else {
-          @if (s.next.length > 1) {
-            <p class="hint">Drag the handle to reorder choices.</p>
+          <app-scene-assets-panel
+            [backgroundAssetId]="s.backgroundAssetId"
+            [audioAssetId]="s.audioAssetId"
+            (update)="update.emit({ id, patch: $event })"
+          />
+
+          <hr />
+
+          <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
+            {{ t('action.deleteScene') }}
+          </button>
+          @if (isStartScene()) {
+            <p class="hint">{{ t('empty.cantDeleteStartHint') }}</p>
           }
-          <ul class="choices">
-            @for (choice of s.next; track choice.sceneId; let i = $index) {
-              <li
-                class="choice"
-                [class.dragging]="dragIndex() === i"
-                [class.drag-over]="dragOverIndex() === i && dragIndex() !== i"
-                (dragover)="onDragOver($event, i)"
-                (dragleave)="onDragLeave(i)"
-                (drop)="onDrop($event, id, i)"
-              >
-                <button
-                  type="button"
-                  class="handle"
-                  draggable="true"
-                  [attr.aria-label]="'Reorder choice ' + (i + 1) + ' of ' + s.next.length"
-                  (dragstart)="onDragStart($event, i)"
-                  (dragend)="onDragEnd()"
-                >
-                  ⋮⋮
-                </button>
-                <span class="arrow" [title]="choice.sceneId">
-                  → <code>{{ destLabel(choice.sceneId) }}</code>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Label (e.g. Yes / Continue)"
-                  [value]="choice.label ?? ''"
-                  (input)="emitChoiceLabel($event, id, choice.sceneId)"
-                />
-              </li>
-            }
-          </ul>
         }
-
-        <hr />
-
-        <app-scene-assets-panel
-          [backgroundAssetId]="s.backgroundAssetId"
-          [audioAssetId]="s.audioAssetId"
-          (update)="update.emit({ id, patch: $event })"
-        />
-
-        <hr />
-
-        <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
-          Delete scene
-        </button>
-        @if (isStartScene()) {
-          <p class="hint">Set another scene as the start before deleting this one.</p>
-        }
+      } @else {
+        <p class="empty">{{ t('empty.selectSceneHint') }}</p>
       }
-    } @else {
-      <p class="empty">Click a scene in the graph to edit it.</p>
-    }
+    </ng-container>
   `,
   styles: `
     :host {
@@ -474,14 +490,22 @@ export class SceneEditorPanelComponent {
   readonly remove = output<string>();
   readonly setAsStart = output<string>();
 
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
+
   protected readonly dragIndex = signal<number | null>(null);
   protected readonly dragOverIndex = signal<number | null>(null);
 
-  protected readonly speakerModes: { value: SpeakerMode; label: string }[] = [
-    { value: 'none', label: 'None' },
-    { value: 'character', label: 'Character' },
-    { value: 'custom', label: 'Custom' },
-  ];
+  protected readonly speakerModes = computed<{ value: SpeakerMode; label: string }[]>(() => {
+    this.activeLang();
+    return [
+      { value: 'none', label: this.transloco.translate('editor.field.speakerModeNone') },
+      { value: 'character', label: this.transloco.translate('editor.field.speakerModeCharacter') },
+      { value: 'custom', label: this.transloco.translate('editor.field.speakerModeCustom') },
+    ];
+  });
   protected readonly positionOptions = ['left', 'center', 'right'];
   protected readonly emptyValue: EntityRef[] = [];
 
@@ -526,7 +550,10 @@ export class SceneEditorPanelComponent {
   protected spriteOptions(characterId: string): { id: string; label: string }[] {
     const list = this.characterSprites()[characterId] ?? [];
     if (list.length === 0) return [];
-    return [{ id: '', label: '(default)' }, ...list];
+    return [
+      { id: '', label: this.transloco.translate('editor.empty.spriteDefault') },
+      ...list,
+    ];
   }
 
   protected emitTextValue(id: string, value: string): void {
@@ -618,9 +645,7 @@ export class SceneEditorPanelComponent {
   }
 
   protected confirmSetAsStart(id: string): void {
-    const ok = window.confirm(
-      'Make this the starting scene? Players will begin the story here.',
-    );
+    const ok = window.confirm(this.transloco.translate('editor.message.setAsStartConfirm'));
     if (ok) this.setAsStart.emit(id);
   }
 

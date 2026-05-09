@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { MediaAssetsService } from '@features/media';
 import { EntityResolverService } from '@shared/data-access';
@@ -11,6 +12,8 @@ import {
 import { PlayerStore } from '../data-access/player.store';
 import { ChoiceListComponent } from '../ui/choice-list.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
+import playerEn from '../i18n/en.json';
+import playerUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-player-page',
@@ -21,72 +24,84 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
+    TranslocoDirective,
   ],
-  providers: [PlayerStore],
+  providers: [
+    PlayerStore,
+    provideTranslocoScope({
+      scope: 'player',
+      loader: {
+        en: () => Promise.resolve(playerEn),
+        uk: () => Promise.resolve(playerUk),
+      },
+    }),
+  ],
   template: `
-    <div class="mx-auto flex max-w-3xl flex-col gap-4">
-      @if (store.loading()) {
-        <p class="text-foreground-subtle">Loading...</p>
-      } @else if (store.error(); as err) {
-        <p class="text-danger-foreground">{{ err }}</p>
-        <p><a routerLink="/library" class="text-accent hover:underline">Back to catalog</a></p>
-      } @else if (store.story(); as story) {
-        <header class="flex flex-wrap items-center gap-3">
-          <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
-          <div class="ml-auto flex items-center gap-2">
-            <button
-              uiGhost
-              type="button"
-              [disabled]="!store.canGoBack()"
-              (click)="store.back()"
-            >
-              ← Back
-            </button>
-            <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">Catalog</a>
-          </div>
-        </header>
-
-        @if (store.pendingResume(); as resume) {
-          <aside
-            class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
-            role="status"
-          >
-            <p class="m-0 text-sm text-accent-soft-foreground">
-              You have a saved spot in this story.
-            </p>
-            <div class="ml-auto flex gap-2">
-              <button uiPrimary type="button" (click)="store.resume()">Resume</button>
-              <button uiSecondary type="button" (click)="store.dismissResume()">
-                Start over
+    <ng-container *transloco="let t; prefix: 'player'">
+      <div class="mx-auto flex max-w-3xl flex-col gap-4">
+        @if (store.loading()) {
+          <p class="text-foreground-subtle">{{ t('message.loading') }}</p>
+        } @else if (store.error(); as err) {
+          <p class="text-danger-foreground">{{ err }}</p>
+          <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
+        } @else if (store.story(); as story) {
+          <header class="flex flex-wrap items-center gap-3">
+            <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
+            <div class="ml-auto flex items-center gap-2">
+              <button
+                uiGhost
+                type="button"
+                [disabled]="!store.canGoBack()"
+                (click)="store.back()"
+              >
+                {{ t('action.back') }}
               </button>
+              <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
             </div>
-          </aside>
-        }
+          </header>
 
-        @if (store.currentScene(); as scene) {
-          <app-scene-view
-            [text]="scene.text"
-            [speaker]="speakerLabel()"
-            [background]="backgroundUrl()"
-            [audio]="audioUrl()"
-            [staged]="stagedView()"
-            [inlineRefOptions]="inlineRefOptions()"
-          />
+          @if (store.pendingResume(); as resume) {
+            <aside
+              class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
+              role="status"
+            >
+              <p class="m-0 text-sm text-accent-soft-foreground">
+                {{ t('message.savedSpot') }}
+              </p>
+              <div class="ml-auto flex gap-2">
+                <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
+                <button uiSecondary type="button" (click)="store.dismissResume()">
+                  {{ t('action.startOver') }}
+                </button>
+              </div>
+            </aside>
+          }
 
-          @if (scene.next.length === 0) {
-            <div class="flex flex-wrap items-center gap-3">
-              <p class="m-0 italic text-foreground-subtle">The end.</p>
-              <button uiPrimary type="button" (click)="store.restart()">Restart</button>
-              <a routerLink="/library" class="text-sm text-accent hover:underline">
-                Back to catalog
-              </a>
-            </div>
-          } @else {
-            <app-choice-list [choices]="scene.next" (choose)="store.choose($event)" />
+          @if (store.currentScene(); as scene) {
+            <app-scene-view
+              [text]="scene.text"
+              [speaker]="speakerLabel()"
+              [background]="backgroundUrl()"
+              [audio]="audioUrl()"
+              [staged]="stagedView()"
+              [inlineRefOptions]="inlineRefOptions()"
+            />
+
+            @if (scene.next.length === 0) {
+              <div class="flex flex-wrap items-center gap-3">
+                <p class="m-0 italic text-foreground-subtle">{{ t('message.end') }}</p>
+                <button uiPrimary type="button" (click)="store.restart()">{{ t('action.restart') }}</button>
+                <a routerLink="/library" class="text-sm text-accent hover:underline">
+                  {{ t('action.backToCatalog') }}
+                </a>
+              </div>
+            } @else {
+              <app-choice-list [choices]="scene.next" (choose)="store.choose($event)" />
+            }
           }
         }
-      }
-    </div>
+      </div>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

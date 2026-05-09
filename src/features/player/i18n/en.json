@@ -1,0 +1,24 @@
+{
+  "action": {
+    "back": "← Back",
+    "catalog": "Catalog",
+    "backToCatalog": "Back to catalog",
+    "resume": "Resume",
+    "startOver": "Start over",
+    "restart": "Restart",
+    "continue": "Continue"
+  },
+  "message": {
+    "loading": "Loading…",
+    "end": "The end.",
+    "savedSpot": "You have a saved spot in this story."
+  },
+  "empty": {
+    "noSprite": "no sprite"
+  },
+  "tooltip": {
+    "position": "Position: {{ slot }}",
+    "audioForSpeaker": "Audio for {{ speaker }}",
+    "audioGeneric": "Scene audio"
+  }
+}

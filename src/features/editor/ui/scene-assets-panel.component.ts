@@ -1,8 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AssetPickerComponent, MediaAssetsService } from '@features/media';
 import { Scene } from '@features/stories';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import editorEn from '../i18n/en.json';
+import editorUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-scene-assets-panel',
@@ -11,59 +14,71 @@ import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
     GhostButtonComponent,
     SecondaryButtonComponent,
     NgOptimizedImage,
+    TranslocoDirective,
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'editor',
+      loader: {
+        en: () => Promise.resolve(editorEn),
+        uk: () => Promise.resolve(editorUk),
+      },
+    }),
   ],
   template: `
-    <section class="flex flex-col gap-4">
-      <h4 class="m-0 text-sm font-semibold text-foreground-muted">Assets</h4>
+    <ng-container *transloco="let t; prefix: 'editor'">
+      <section class="flex flex-col gap-4">
+        <h4 class="m-0 text-sm font-semibold text-foreground-muted">{{ t('field.assets') }}</h4>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-          Background
-        </label>
-        @if (backgroundUrl(); as bg) {
-          <div class="relative aspect-video w-full overflow-hidden rounded border border-border">
-            <img [ngSrc]="bg" alt="Scene background" fill class="object-cover" />
-          </div>
-          <div class="flex gap-2">
-            <button uiSecondary type="button" (click)="bgPicker.open()">Replace</button>
-            <button uiGhost type="button" (click)="clearBackground()">Remove</button>
-          </div>
-        } @else {
-          <button uiSecondary type="button" (click)="bgPicker.open()">
-            Pick background
-          </button>
-        }
-        <app-asset-picker
-          #bgPicker
-          kind="background"
-          title="Pick a scene background"
-          [currentSelection]="backgroundSelection()"
-          (picked)="onBackgroundPicked($event)"
-        />
-      </div>
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+            {{ t('field.background') }}
+          </label>
+          @if (backgroundUrl(); as bg) {
+            <div class="relative aspect-video w-full overflow-hidden rounded border border-border">
+              <img [ngSrc]="bg" [alt]="t('tooltip.sceneBackgroundAlt')" fill class="object-cover" />
+            </div>
+            <div class="flex gap-2">
+              <button uiSecondary type="button" (click)="bgPicker.open()">{{ t('action.replace') }}</button>
+              <button uiGhost type="button" (click)="clearBackground()">{{ t('action.remove') }}</button>
+            </div>
+          } @else {
+            <button uiSecondary type="button" (click)="bgPicker.open()">
+              {{ t('action.pickBackground') }}
+            </button>
+          }
+          <app-asset-picker
+            #bgPicker
+            kind="background"
+            [title]="t('tooltip.pickBackgroundTitle')"
+            [currentSelection]="backgroundSelection()"
+            (picked)="onBackgroundPicked($event)"
+          />
+        </div>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">Audio</label>
-        @if (audioUrl(); as a) {
-          <audio class="w-full" controls preload="none" [src]="a"></audio>
-          <div class="flex gap-2">
-            <button uiSecondary type="button" (click)="audioPicker.open()">Replace</button>
-            <button uiGhost type="button" (click)="clearAudio()">Remove</button>
-          </div>
-        } @else {
-          <button uiSecondary type="button" (click)="audioPicker.open()">
-            Pick audio
-          </button>
-        }
-        <app-asset-picker
-          #audioPicker
-          kind="ambient"
-          title="Pick scene audio"
-          [currentSelection]="audioSelection()"
-          (picked)="onAudioPicked($event)"
-        />
-      </div>
-    </section>
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ t('field.audio') }}</label>
+          @if (audioUrl(); as a) {
+            <audio class="w-full" controls preload="none" [src]="a"></audio>
+            <div class="flex gap-2">
+              <button uiSecondary type="button" (click)="audioPicker.open()">{{ t('action.replace') }}</button>
+              <button uiGhost type="button" (click)="clearAudio()">{{ t('action.remove') }}</button>
+            </div>
+          } @else {
+            <button uiSecondary type="button" (click)="audioPicker.open()">
+              {{ t('action.pickAudio') }}
+            </button>
+          }
+          <app-asset-picker
+            #audioPicker
+            kind="ambient"
+            [title]="t('tooltip.pickAudioTitle')"
+            [currentSelection]="audioSelection()"
+            (picked)="onAudioPicked($event)"
+          />
+        </div>
+      </section>
+    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

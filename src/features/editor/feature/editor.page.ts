@@ -9,6 +9,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { MediaAssetsService } from '@features/media';
@@ -26,6 +27,8 @@ import {
   SceneUpdate,
 } from '../ui/scene-editor-panel.component';
 import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
+import editorEn from '../i18n/en.json';
+import editorUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-editor-page',
@@ -36,89 +39,101 @@ import { StoryMetaPanelComponent } from '../ui/story-meta-panel.component';
     StoryMetaPanelComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
+    TranslocoDirective,
   ],
-  providers: [EditorStore],
+  providers: [
+    EditorStore,
+    provideTranslocoScope({
+      scope: 'editor',
+      loader: {
+        en: () => Promise.resolve(editorEn),
+        uk: () => Promise.resolve(editorUk),
+      },
+    }),
+  ],
   template: `
-    @if (store.loading()) {
-      <p>Loading...</p>
-    } @else if (store.error(); as err) {
-      <p class="error">{{ err }}</p>
-      <p><a routerLink="/library">Back to stories</a></p>
-    } @else if (store.storyId()) {
-      <header class="bar">
-        <h1>
-          {{ store.meta()?.title || 'Untitled story' }}
-          @if (store.meta()?.draft) {
-            <span class="status status--draft" title="This story is a draft">Draft</span>
-          } @else {
-            <span class="status status--published" title="This story is published">
-              Published
-            </span>
-          }
-          @if (store.dirty()) {
-            <span class="dirty" title="Unsaved changes">●</span>
-          }
-        </h1>
-        <button uiSecondary type="button" (click)="store.addScene()">+ Add scene</button>
-        <button
-          uiPrimary
-          type="button"
-          [disabled]="!store.dirty() || !store.metaValid()"
-          [loading]="store.saving()"
-          (click)="store.save()"
-        >
-          Save
-        </button>
-      </header>
+    <ng-container *transloco="let t; prefix: 'editor'">
+      @if (store.loading()) {
+        <p>{{ t('message.loading') }}</p>
+      } @else if (store.error(); as err) {
+        <p class="error">{{ err }}</p>
+        <p><a routerLink="/library">{{ t('action.backToStories') }}</a></p>
+      } @else if (store.storyId()) {
+        <header class="bar">
+          <h1>
+            {{ store.meta()?.title || t('message.untitledStory') }}
+            @if (store.meta()?.draft) {
+              <span class="status status--draft" [title]="t('message.draftStatusTitle')">{{ t('field.draftBadge') }}</span>
+            } @else {
+              <span class="status status--published" [title]="t('message.publishedStatusTitle')">
+                {{ t('field.publishedBadge') }}
+              </span>
+            }
+            @if (store.dirty()) {
+              <span class="dirty" [title]="t('message.unsavedChanges')">●</span>
+            }
+          </h1>
+          <button uiSecondary type="button" (click)="store.addScene()">{{ t('action.addScene') }}</button>
+          <button
+            uiPrimary
+            type="button"
+            [disabled]="!store.dirty() || !store.metaValid()"
+            [loading]="store.saving()"
+            (click)="store.save()"
+          >
+            {{ t('action.save') }}
+          </button>
+        </header>
 
-      @if (store.orphanSceneIds().length; as count) {
-        <aside class="orphans" role="status">
-          <strong>{{ count }} orphan {{ count === 1 ? 'scene' : 'scenes' }}</strong>
-          unreachable from the start scene:
-          @for (id of store.orphanSceneIds(); track id) {
-            <button
-              type="button"
-              class="orphan-chip"
-              [title]="id"
-              (click)="store.selectScene(id)"
-            >
-              {{ sceneLabels()[id] }}
-            </button>
-          }
-        </aside>
+        @if (store.orphanSceneIds().length; as count) {
+          <aside class="orphans" role="status">
+            <strong>{{ t('message.orphansCountWord', { count }) }}</strong>
+            {{ t('message.orphansSuffix') }}
+            @for (id of store.orphanSceneIds(); track id) {
+              <button
+                type="button"
+                class="orphan-chip"
+                [title]="id"
+                (click)="store.selectScene(id)"
+              >
+                {{ sceneLabels()[id] }}
+              </button>
+            }
+          </aside>
+        }
+
+        <div class="layout">
+          <app-story-meta-panel
+            [meta]="store.meta()"
+            (update)="store.updateMeta($event)"
+          />
+
+          <app-rete-canvas
+            [scenes]="store.scenes()"
+            (move)="onMove($event)"
+            (selectScene)="store.selectScene($event)"
+            (connect)="onConnect($event)"
+            (disconnect)="onDisconnect($event)"
+          />
+
+          <app-scene-editor-panel
+            [sceneId]="store.selectedSceneId()"
+            [scene]="store.selectedScene()"
+            [isStartScene]="isSelectedStart()"
+            [characterOptions]="characterOptions()"
+            [placeOptions]="placeOptions()"
+            [characterSprites]="characterSprites()"
+            [inlineRefOptions]="inlineRefOptions()"
+            [sceneLabels]="sceneLabels()"
+            (update)="onUpdate($event)"
+            (updateChoiceLabel)="onChoiceLabel($event)"
+            (reorderChoices)="onReorderChoices($event)"
+            (remove)="store.removeScene($event)"
+            (setAsStart)="store.setStartScene($event)"
+          />
+        </div>
       }
-
-      <div class="layout">
-        <app-story-meta-panel
-          [meta]="store.meta()"
-          (update)="store.updateMeta($event)"
-        />
-
-        <app-rete-canvas
-          [scenes]="store.scenes()"
-          (move)="onMove($event)"
-          (selectScene)="store.selectScene($event)"
-          (connect)="onConnect($event)"
-          (disconnect)="onDisconnect($event)"
-        />
-
-        <app-scene-editor-panel
-          [sceneId]="store.selectedSceneId()"
-          [scene]="store.selectedScene()"
-          [isStartScene]="isSelectedStart()"
-          [characterOptions]="characterOptions()"
-          [placeOptions]="placeOptions()"
-          [characterSprites]="characterSprites()"
-          [inlineRefOptions]="inlineRefOptions()"
-          [sceneLabels]="sceneLabels()"
-          (update)="onUpdate($event)"
-          (updateChoiceLabel)="onChoiceLabel($event)"
-          (reorderChoices)="onReorderChoices($event)"
-          (remove)="store.removeScene($event)"
-          (setAsStart)="store.setStartScene($event)"
-        />
-      </div>
-    }
+    </ng-container>
   `,
   styles: `
     :host {
