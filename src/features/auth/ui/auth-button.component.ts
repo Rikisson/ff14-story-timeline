@@ -7,73 +7,87 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
+import authEn from '../i18n/en.json';
+import authUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-auth-button',
-  imports: [SecondaryButtonComponent],
+  imports: [SecondaryButtonComponent, TranslocoDirective],
+  providers: [
+    provideTranslocoScope({
+      scope: 'auth',
+      loader: {
+        en: () => Promise.resolve(authEn),
+        uk: () => Promise.resolve(authUk),
+      },
+    }),
+  ],
   template: `
-    @if (auth.loading()) {
-      <span class="text-sm text-foreground-subtle">Loading…</span>
-    } @else if (auth.user(); as u) {
-      <div class="relative">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground-muted hover:bg-surface-muted"
-          [attr.aria-haspopup]="'menu'"
-          [attr.aria-expanded]="open()"
-          [attr.aria-label]="'Account menu for ' + accountLabel()"
-          (click)="toggle()"
-        >
-          <span class="max-w-[12rem] truncate">{{ accountLabel() }}</span>
-          <svg
-            aria-hidden="true"
-            width="14"
-            height="14"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+    <ng-container *transloco="let t; prefix: 'auth'">
+      @if (auth.loading()) {
+        <span class="text-sm text-foreground-subtle">{{ t('messages.loading') }}</span>
+      } @else if (auth.user(); as u) {
+        <div class="relative">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground-muted hover:bg-surface-muted"
+            [attr.aria-haspopup]="'menu'"
+            [attr.aria-expanded]="open()"
+            [attr.aria-label]="t('tooltips.accountMenu', { name: accountLabel() })"
+            (click)="toggle()"
           >
-            <polyline points="5 8 10 13 15 8" />
-          </svg>
-        </button>
+            <span class="max-w-[12rem] truncate">{{ accountLabel() }}</span>
+            <svg
+              aria-hidden="true"
+              width="14"
+              height="14"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="5 8 10 13 15 8" />
+            </svg>
+          </button>
 
-        @if (open()) {
-          <div
-            role="menu"
-            class="absolute right-0 top-full z-10 mt-1 min-w-[200px] rounded-md border border-border bg-surface shadow-lg"
-          >
-            <ul class="m-0 list-none p-1">
-              <li>
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
-                  (click)="copyUid(u.uid)"
-                >{{ copied() ? 'UID copied' : 'Copy UID' }}</button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
-                  (click)="signOut()"
-                >Sign out</button>
-              </li>
-            </ul>
-          </div>
-        }
-      </div>
-    } @else {
-      <button uiSecondary type="button" (click)="auth.login()">Sign in</button>
-    }
-    @if (auth.error(); as err) {
-      <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>
-    }
+          @if (open()) {
+            <div
+              role="menu"
+              class="absolute right-0 top-full z-10 mt-1 min-w-[200px] rounded-md border border-border bg-surface shadow-lg"
+            >
+              <ul class="m-0 list-none p-1">
+                <li>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
+                    (click)="copyUid(u.uid)"
+                  >{{ t(copied() ? 'messages.uidCopied' : 'actions.copyUid') }}</button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="block w-full rounded px-2 py-1.5 text-left text-sm text-foreground-muted hover:bg-surface-muted"
+                    (click)="signOut()"
+                  >{{ t('actions.signOut') }}</button>
+                </li>
+              </ul>
+            </div>
+          }
+        </div>
+      } @else {
+        <button uiSecondary type="button" (click)="auth.login()">{{ t('actions.signIn') }}</button>
+      }
+      @if (auth.error(); as err) {
+        <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>
+      }
+    </ng-container>
   `,
   host: {
     class: 'inline-flex flex-wrap items-center gap-2',

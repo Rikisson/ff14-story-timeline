@@ -31,6 +31,19 @@ the prose does not.
 - `@jsverse/transloco-messageformat` for ICU plurals and selects.
 - No other i18n library — `@angular/localize` is not used.
 
+## Template usage
+
+- Default: the `*transloco` structural directive at the component
+  template root, with `prefix:` set to the component's scope. One
+  subscription per component, scope-prefix folded in:
+  `<ng-container *transloco="let t; prefix: 'auth'">{{ t('actions.signIn') }}</ng-container>`.
+- Reserve the `transloco` pipe for one-off bindings outside a directive
+  region (rare).
+- For dynamic interpolation, pass params as the second argument:
+  `t('tooltips.accountMenu', { name: accountLabel() })`.
+- Don't use the directive's `read:` parameter — it's deprecated in
+  transloco 8 and removed in 9.
+
 ## Locales
 
 - Supported: `en` (default), `uk`.
@@ -230,8 +243,11 @@ When adding or refactoring translations:
    field-specific validation goes in the scope's `validation` group.
 5. ICU MessageFormat for plurals and selects. Never concatenate
    translated fragments.
-6. New content-prose surfaces wrap in `[attr.lang]="universe().locale"`.
-7. Add keys to **both** `en.json` and `uk.json` in the same change.
+6. Use `*transloco="let t; prefix: '<scope>'"` at the template root
+   over the `| transloco` pipe; the directive subscribes once and folds
+   the scope prefix in. (`read:` is deprecated; don't use it.)
+7. New content-prose surfaces wrap in `[attr.lang]="universe().locale"`.
+8. Add keys to **both** `en.json` and `uk.json` in the same change.
    The Ukrainian value can be a TODO marker (`"⟦TODO⟧ Save"`) when no
    translation is ready, but the key must exist in both files so
    missing-key warnings stay clean.

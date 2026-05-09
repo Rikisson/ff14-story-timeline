@@ -26,7 +26,12 @@
       "Bash(node *)",
       "Bash(cmd.exe *)",
       "Bash(npx vitest *)",
-      "Bash(grep -rn \"background\\\\|color:\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" src/features/editor/data-access/)"
+      "Bash(grep -rn \"background\\\\|color:\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\" src/features/editor/data-access/)",
+      "Bash(curl -sS http://localhost:4200/)",
+      "Bash(curl -sS -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:4200/i18n/en.json)",
+      "Bash(curl -sS -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:4200/i18n/uk.json)",
+      "Bash(curl -sS http://localhost:4200/i18n/en.json)",
+      "Bash(curl *)"
     ]
   }
 }
