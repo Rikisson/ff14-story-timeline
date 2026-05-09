@@ -43,11 +43,15 @@ the prose does not.
 
 ## File layout
 
-- Global chrome (used in 3+ feature scopes): `public/i18n/{en,uk}.json`,
-  the default loader URL.
+- Global chrome (used in 3+ feature scopes): `public/i18n/{en,uk}.json`.
+  Bundled into the JS via TypeScript imports in
+  `src/app/transloco-loader.ts` so prerender and first paint don't need
+  a network round-trip; the same files are also copied to `dist/` as
+  static assets, available for HTTP fetching if a future loader needs
+  them.
 - Per-feature scope files: `src/features/{x}/i18n/{en,uk}.json`,
-  registered with `provideTranslocoScope({ scope: 'x', loader })` on the
-  feature's lazy route. The scope name matches the feature folder,
+  registered with `provideTranslocoScope({ scope: 'x', loader })` on
+  the feature's lazy route. The scope name matches the feature folder,
   singularized.
 - Callers reference scoped keys as `x.group.key` after registration.
 
@@ -135,11 +139,16 @@ universe's locale: `<div [attr.lang]="universe().locale">`.
 
 ## Locale switching
 
-- The UI toggle lives in the user dropdown next to the theme toggle;
-  cycles `EN ↔ UK`.
+- The UI toggle (`<app-locale-toggle>`) lives in the app header next
+  to the theme toggle; cycles `EN ↔ UK`.
 - Switching is synchronous from the user's perspective — no reload.
-  Transloco swaps the active language; the `LOCALE_ID` factory
-  re-resolves on the next change-detection tick.
+  Transloco swaps the active language for chrome strings and
+  `<html lang>` flips immediately.
+- `LOCALE_ID` is bound at bootstrap to the persisted choice. Angular's
+  `DatePipe` / `DecimalPipe` formatting follows the user's saved
+  preference from page load; runtime switches don't retune these pipes
+  until the next reload. Acceptable today because date/number-heavy
+  surfaces are scarce; revisit if it bites.
 - Content locale never changes via the toggle; it is whatever the
   active universe declares.
 
@@ -153,12 +162,18 @@ universe's locale: `<div [attr.lang]="universe().locale">`.
   maps to `auth.messages.*`. We never display the SDK's English strings
   directly.
 
-## SSR
+## Static prerender
 
-The server picks the initial locale from the request `Accept-Language`
-header before rendering, so the prerendered HTML doesn't flash a
-default-locale layout. The same logic re-runs on hydration, reading
-`localStorage` first; the server choice only sticks on first visits.
+The build runs `outputMode: static` — pages prerender at build time
+with `defaultLang: 'en'` baked in. There is no request-time
+`Accept-Language` because the HTML is served as a static asset.
+
+A pre-hydration script in `src/index.html` reads `localStorage.uiLocale`
+(falling back to `navigator.languages`, then `en`) before Angular
+boots and sets `<html lang>` to the resolved value, so the document
+language is correct before the first paint. Translations live in the
+JS bundle, so chrome appears in the right locale on the first frame
+without a network round-trip.
 
 ## Example
 
@@ -227,47 +242,13 @@ When adding or refactoring translations:
 
 Open changes. Remove items as they ship.
 
-## Library wiring
+## Per-feature scopes
 
-- Install `@jsverse/transloco` and `@jsverse/transloco-messageformat`.
-- `provideTransloco` in `app.config.ts` with
-  `availableLangs: ['en', 'uk']`, `defaultLang: 'en'`,
-  `reRenderOnLangChange: true`, `prodMode: !isDevMode()`.
-- `TranslocoHttpLoader` reads `/i18n/{lang}.json`. Matching factory
-  for `provideTranslocoScope` resolves
-  `/i18n/{scope}/{lang}.json` for feature scopes (or sibling
-  `i18n/{lang}.json` files inside each feature folder, served via
-  Angular's asset graph).
-- Register Ukrainian locale data via
-  `registerLocaleData(localeUk, 'uk')` at bootstrap so `DatePipe` /
-  `DecimalPipe` recognize the locale.
-- `LOCALE_ID` factory bound to `TranslocoService.langChanges$`.
-
-## SSR
-
-- Server-side resolver reads `Accept-Language`, calls
-  `setDefaultLang` + `setActiveLang` before initial render.
-- Client-side hydration prefers `localStorage.uiLocale`; falls back
-  to whatever the server picked.
-
-## Locale switching
-
-- `LocaleService` (`shared/services/locale.service.ts`) — signal-backed
-  active locale, persists to `localStorage.uiLocale`, calls into
-  transloco, drives the `LOCALE_ID` factory.
-- `<app-locale-toggle>` in `shared/ui/locale-toggle/` — sibling of
-  `<app-theme-toggle>` in the user dropdown.
-- `<html lang>` bound to the active UI locale via `LocaleService`
-  (mirrors how `ThemeService` toggles `.dark`).
-
-## Seed translation files
-
-- `public/i18n/{en,uk}.json` with the `general` scope populated:
-  actions (save / cancel / confirm / delete / edit), fields (name /
-  status), messages (loading / saveSuccess / saveError), validation
-  (required / email / minLength / maxLength / pattern).
-- Per-feature `en.json` + `uk.json` skeletons created as each feature
-  is wired through transloco.
+- First feature wired through `provideTranslocoScope` becomes the
+  template for the rest. Pick `auth` (smallest surface) and put a
+  loader factory next to its lazy route that imports
+  `./i18n/en.json` and `./i18n/uk.json` via TS for parity with the
+  global loader.
 
 ## Migration
 

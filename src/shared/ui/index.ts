@@ -4,6 +4,7 @@ export * from './entity-list-pane';
 export * from './entity-picker';
 export * from './entity-ref';
 export * from './in-game-date-input';
+export * from './locale-toggle';
 export * from './markdown-text';
 export * from './page-header';
 export * from './rich-text-input';

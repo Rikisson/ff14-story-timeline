@@ -20,7 +20,7 @@ import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
-import { GhostButtonComponent, ThemeToggleComponent } from '@shared/ui';
+import { GhostButtonComponent, LocaleToggleComponent, ThemeToggleComponent } from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
 @Component({
@@ -31,6 +31,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     RouterLinkActive,
     AuthButtonComponent,
     GhostButtonComponent,
+    LocaleToggleComponent,
     ThemeToggleComponent,
     UniverseSelectorComponent,
   ],
