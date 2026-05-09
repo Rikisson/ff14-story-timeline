@@ -49,12 +49,11 @@ import { formatInGameDate } from '@shared/utils';
                 <span>{{ g('field.dateEra') }}</span>
                 <select
                   class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-                  [value]="value()?.era ?? ''"
                   (change)="onEra($event)"
                 >
-                  <option value="">—</option>
+                  <option value="" [selected]="!value()?.era">—</option>
                   @for (e of eras(); track e.id) {
-                    <option [value]="e.id">{{ e.name }}</option>
+                    <option [value]="e.id" [selected]="value()?.era === e.id">{{ e.name }}</option>
                   }
                 </select>
               </label>
@@ -79,12 +78,11 @@ import { formatInGameDate } from '@shared/utils';
               @if (months().length > 0) {
                 <select
                   class="h-9 rounded-md border border-border-strong bg-surface text-foreground px-2 text-sm"
-                  [value]="value()?.month ?? ''"
                   (change)="onField('month', $event)"
                 >
-                  <option value="">—</option>
+                  <option value="" [selected]="value()?.month === undefined">—</option>
                   @for (m of months(); track m.id; let i = $index) {
-                    <option [value]="i + 1">{{ m.name }}</option>
+                    <option [value]="i + 1" [selected]="value()?.month === i + 1">{{ m.name }}</option>
                   }
                 </select>
               } @else {
