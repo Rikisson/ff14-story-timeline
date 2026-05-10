@@ -50,13 +50,15 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 Client and Worker code are committed; deploying R2 requires a Cloudflare account and is staged for when one is provisioned. The Worker source lives at `cloudflare/media-signer/`; setup steps are documented in its README.
 
-Setup checklist (Cloudflare side):
+Setup checklist (Cloudflare side, single environment — localhost dev and the deployed app share one bucket and one Worker):
 
-- Create R2 buckets `narrative-dev` and `narrative-prod`; configure each for public reads.
-- Bind a custom domain to each bucket (or note the `*.r2.dev` URL); set CORS to allow `PUT, DELETE` from the app origin.
-- Create R2 API tokens scoped to each bucket; capture the access key id / secret.
-- Run `wrangler login` then deploy the Worker to dev and prod (`pnpm deploy:dev` / `pnpm deploy:prod`); push secrets via `pnpm secret:dev` / `pnpm secret:prod`.
+- Create one R2 bucket; configure it for public reads.
+- Bind a custom domain (or note the `*.r2.dev` URL); set CORS to allow `PUT, DELETE` from `http://localhost:4200` *and* the deployed origin.
+- Create one R2 API token scoped to the bucket; capture the access key id / secret.
+- Fill in `R2_BUCKET`, `R2_PUBLIC_BASE`, and `ALLOWED_ORIGINS` (comma-separated) in `cloudflare/media-signer/wrangler.toml`. Run `wrangler login` then `pnpm deploy`; push secrets via `pnpm secret:put`.
 - Paste the Worker URL (`signerUrl`) and bucket public base (`publicBase`) into `src/app/r2.config.ts`.
+
+Split into per-environment buckets and Workers (the `[env.dev]` / `[env.prod]` shape that `wrangler.toml` was originally drafted for) when real users would notice if a deploy broke things.
 
 Worker contract (`POST /sign-upload`, `POST /sign-delete`):
 

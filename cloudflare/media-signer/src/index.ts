@@ -6,7 +6,7 @@ interface Env {
   PRESIGN_TTL_SECONDS: string;
   R2_BUCKET: string;
   R2_PUBLIC_BASE: string;
-  ALLOWED_ORIGIN: string;
+  ALLOWED_ORIGINS: string;
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
@@ -33,14 +33,15 @@ const FILENAME = /^[\w.\-]+$/;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const cors = corsHeaders(env, request.headers.get('Origin'));
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders(env) });
+      return new Response(null, { status: 204, headers: cors });
     }
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
     try {
       if (route !== 'POST /sign-upload' && route !== 'POST /sign-delete') {
-        return error(env, 404, 'Not found');
+        return errorResp(cors, 404, 'Not found');
       }
       const uid = await verifyAuth(request, env);
       const body = parseBody(await request.json());
@@ -48,7 +49,7 @@ export default {
       const method = url.pathname === '/sign-upload' ? 'PUT' : 'DELETE';
       const signed = await signR2Url(env, body, method);
       const responseKey = method === 'PUT' ? 'uploadUrl' : 'deleteUrl';
-      return json(env, { [responseKey]: signed });
+      return jsonResp(cors, { [responseKey]: signed });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       const status = message.startsWith('AUTH:')
@@ -56,7 +57,7 @@ export default {
         : message.startsWith('FORBIDDEN:')
           ? 403
           : 400;
-      return error(env, status, message);
+      return errorResp(cors, status, message);
     }
   },
 };
@@ -137,9 +138,17 @@ function arrayStringField(field: FirestoreField | undefined): string[] {
   return values.map((v) => v.stringValue ?? '').filter((s) => s.length > 0);
 }
 
-function corsHeaders(env: Env): Record<string, string> {
+function corsHeaders(env: Env, origin: string | null): Record<string, string> {
+  // Multiple allowed origins (e.g. localhost + GitHub Pages) — CORS only
+  // permits one value per response, so echo back the request's Origin if it
+  // appears in the allowlist; otherwise fall back to the first allowed entry.
+  const allowed = (env.ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const echo = origin && allowed.includes(origin) ? origin : (allowed[0] ?? '*');
   return {
-    'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
+    'Access-Control-Allow-Origin': echo,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '86400',
@@ -147,13 +156,13 @@ function corsHeaders(env: Env): Record<string, string> {
   };
 }
 
-function json(env: Env, body: unknown, status = 200): Response {
+function jsonResp(cors: Record<string, string>, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders(env) },
+    headers: { 'Content-Type': 'application/json', ...cors },
   });
 }
 
-function error(env: Env, status: number, message: string): Response {
-  return json(env, { error: message }, status);
+function errorResp(cors: Record<string, string>, status: number, message: string): Response {
+  return jsonResp(cors, { error: message }, status);
 }

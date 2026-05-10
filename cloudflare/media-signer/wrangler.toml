@@ -3,29 +3,18 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Defaults applied to every environment unless overridden in [env.<name>].
+# Single-environment setup: localhost dev and production both hit this Worker
+# and the same R2 bucket. Split into [env.dev] / [env.prod] when real users
+# would notice if a deploy broke things.
+
 [vars]
 FIREBASE_PROJECT_ID = "ff14-story-timeline"
 PRESIGN_TTL_SECONDS = "300"
+R2_BUCKET = ""             # bucket name created in the Cloudflare R2 dashboard
+R2_PUBLIC_BASE = ""        # custom domain or *.r2.dev URL, no trailing slash
+ALLOWED_ORIGINS = ""       # comma-separated, e.g. http://localhost:4200,https://<you>.github.io
 
-# Per-environment config. Bucket name, public base URL, and allowed origin
-# differ between dev and prod. Secrets (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
-# R2_SECRET_ACCESS_KEY) are not declared here — set them via:
-#   pnpm --filter @narrative/media-signer secret:dev R2_ACCESS_KEY_ID
-# (and so on for each secret, per environment).
-
-[env.dev]
-name = "media-signer-dev"
-
-[env.dev.vars]
-R2_BUCKET = "narrative-dev"
-R2_PUBLIC_BASE = ""        # e.g. https://media-dev.example.com or the bucket's r2.dev URL
-ALLOWED_ORIGIN = "http://localhost:4200"
-
-[env.prod]
-name = "media-signer-prod"
-
-[env.prod.vars]
-R2_BUCKET = "narrative-prod"
-R2_PUBLIC_BASE = ""        # e.g. https://media.example.com
-ALLOWED_ORIGIN = ""        # e.g. https://rikisson.github.io
+# Secrets (set via `pnpm secret:put <NAME>`):
+#   R2_ACCOUNT_ID
+#   R2_ACCESS_KEY_ID
+#   R2_SECRET_ACCESS_KEY

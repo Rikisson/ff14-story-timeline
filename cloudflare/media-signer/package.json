@@ -5,12 +5,9 @@
   "description": "Cloudflare Worker that issues short-lived presigned R2 URLs for authenticated members.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy:dev": "wrangler deploy --env dev",
-    "deploy:prod": "wrangler deploy --env prod",
-    "secret:dev": "wrangler secret put --env dev",
-    "secret:prod": "wrangler secret put --env prod",
-    "tail:dev": "wrangler tail --env dev",
-    "tail:prod": "wrangler tail --env prod"
+    "deploy": "wrangler deploy",
+    "secret:put": "wrangler secret put",
+    "tail": "wrangler tail"
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",
