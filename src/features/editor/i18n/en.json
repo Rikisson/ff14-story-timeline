@@ -75,6 +75,8 @@
     "descriptionPlaceholder": "What is this story about?",
     "relatedPlaceholder": "Search characters, places, codex entries…",
     "plotlinesPlaceholder": "Search plotlines…",
+    "searchCharacter": "Search characters…",
+    "searchPlace": "Search places…",
     "choiceLabelPlaceholder": "Label (e.g. Yes / Continue)",
     "coverHint": "Used for the catalog card.",
     "spriteDefault": "(default)"

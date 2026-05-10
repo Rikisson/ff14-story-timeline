@@ -261,10 +261,14 @@ export class EditorPage implements HasUnsavedChanges {
   );
 
   protected readonly characterOptions = computed(() =>
-    this.characters.characters().map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
+    this.characters
+      .characters()
+      .map((c) => ({ id: c.id, label: c.name, hint: c.slug, kind: 'character' as const })),
   );
   protected readonly placeOptions = computed(() =>
-    this.places.places().map((p) => ({ id: p.id, label: p.name, slug: p.slug })),
+    this.places
+      .places()
+      .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
   );
   protected readonly characterSprites = computed<Record<string, { id: string; label: string }[]>>(
     () => {

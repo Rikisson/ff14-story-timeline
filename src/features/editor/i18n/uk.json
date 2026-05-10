@@ -75,6 +75,8 @@
     "descriptionPlaceholder": "Про що ця історія?",
     "relatedPlaceholder": "Шукати персонажів, місця, записи кодексу…",
     "plotlinesPlaceholder": "Шукати сюжетні лінії…",
+    "searchCharacter": "Шукати персонажів…",
+    "searchPlace": "Шукати місця…",
     "choiceLabelPlaceholder": "Мітка (напр. Так / Далі)",
     "coverHint": "Використовується для картки в каталозі.",
     "spriteDefault": "(типовий)"
