@@ -46,11 +46,25 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 # Implementation
 
-## R2 migration
+## Cloudflare R2 wiring
 
-The upload pipeline currently writes to Firebase Storage; the rule above states R2. Closing the gap:
+Client and Worker code are committed; deploying R2 requires a Cloudflare account and is staged for when one is provisioned. The Worker source lives at `cloudflare/media-signer/`; setup steps are documented in its README.
 
-- Provision R2 buckets per environment (`narrative-dev`, `narrative-prod`).
-- Wire the upload pipeline to PUT via the S3-compatible API with credentials from environment config; the asset doc's `url` is stamped with the public R2 URL on success.
-- One-shot migration script for existing assets: list → download → re-upload to R2 → patch `_assets` docs with new URLs. Run, verify, delete the Firebase Storage bucket.
-- Cloudflare Worker for signed URLs is deferred until a private-asset use case appears.
+Setup checklist (Cloudflare side):
+
+- Create R2 buckets `narrative-dev` and `narrative-prod`; configure each for public reads.
+- Bind a custom domain to each bucket (or note the `*.r2.dev` URL); set CORS to allow `PUT, DELETE` from the app origin.
+- Create R2 API tokens scoped to each bucket; capture the access key id / secret.
+- Run `wrangler login` then deploy the Worker to dev and prod (`pnpm deploy:dev` / `pnpm deploy:prod`); push secrets via `pnpm secret:dev` / `pnpm secret:prod`.
+- Paste the Worker URL (`signerUrl`) and bucket public base (`publicBase`) into `src/app/r2.config.ts`.
+
+Worker contract (`POST /sign-upload`, `POST /sign-delete`):
+
+```
+Headers: Authorization: Bearer <firebase-id-token>
+Body:    { universeId, kind, assetId, filename }
+```
+
+Returns `{ uploadUrl }` or `{ deleteUrl }` — short-lived presigned R2 URLs. The client `PUT`s/`DELETE`s the asset body directly to that URL. Public read URL is composed client-side as `${publicBase}/universes/{u}/{kind}/{assetId}/{filename}` — never stored separately on the asset doc.
+
+A migration step is intentionally absent: there is no production media to migrate. If real assets exist when R2 is brought up, write a one-shot script that lists `_assets` docs, re-uploads from the old `url` to R2, and patches `url` in a Firestore transaction.

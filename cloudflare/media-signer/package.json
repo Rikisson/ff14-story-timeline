@@ -1,0 +1,24 @@
+{
+  "name": "@narrative/media-signer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker that issues short-lived presigned R2 URLs for authenticated members.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy:dev": "wrangler deploy --env dev",
+    "deploy:prod": "wrangler deploy --env prod",
+    "secret:dev": "wrangler secret put --env dev",
+    "secret:prod": "wrangler secret put --env prod",
+    "tail:dev": "wrangler tail --env dev",
+    "tail:prod": "wrangler tail --env prod"
+  },
+  "dependencies": {
+    "aws4fetch": "^1.0.20",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "typescript": "~5.9.2",
+    "wrangler": "^3.86.0"
+  }
+}

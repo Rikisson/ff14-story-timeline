@@ -8,7 +8,8 @@ narratives.
 
 - Angular 21 (standalone components, signals)
 - NgRx — `@ngrx/signals` for feature stores; `@ngrx/store` for the auth slice
-- Firebase — Auth (Google sign-in), Firestore, Storage
+- Firebase — Auth (Google sign-in) and Firestore
+- Cloudflare R2 for asset binaries, fronted by a small Worker at `cloudflare/media-signer/`
 - Tailwind CSS v4
 - Rete.js for the editor's node-based scene canvas
 - Vitest for unit tests
@@ -23,9 +24,12 @@ pnpm build           # production build into dist/
 pnpm test            # vitest
 ```
 
-The Firebase project is wired up in `src/app/firebase.config.ts`. Firestore
-rules (`firestore.rules`) and Storage rules (`storage.rules`) live at the repo
-root and are deployed manually via the Firebase CLI.
+The Firebase project is wired up in `src/app/firebase.config.ts`; Firestore
+rules (`firestore.rules`) live at the repo root and are deployed manually via
+the Firebase CLI. Asset binaries live in Cloudflare R2 — the upload pipeline
+goes through the Worker in `cloudflare/media-signer/`, configured via
+`src/app/r2.config.ts`. See `docs/media-rules.md` *Implementation* for the
+Cloudflare setup checklist.
 
 ## Project layout
 

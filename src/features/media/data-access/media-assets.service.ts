@@ -12,9 +12,9 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { UniverseStore } from '@features/universes';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
+import { R2ObjectRef, R2Service } from '../../../app/r2/r2.service';
 import {
   AssetDoc,
   AssetKind,
@@ -55,6 +55,7 @@ const MAX_DIMENSIONS: Record<'cover' | 'sprite' | 'background', { w: number; h: 
 @Injectable({ providedIn: 'root' })
 export class MediaAssetsService {
   private readonly firebase = inject(FirebaseService);
+  private readonly r2 = inject(R2Service);
   private readonly universes = inject(UniverseStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -117,19 +118,22 @@ export class MediaAssetsService {
     }
 
     const assetId = crypto.randomUUID();
-    const safeName = sanitizeFilename(input.file.name);
-    const path = `universes/${universeId}/${input.kind}/${assetId}/${safeName}`;
-    const objectRef = ref(this.firebase.storage, path);
+    const filename = sanitizeFilename(input.file.name);
+    const objectRef: R2ObjectRef = { universeId, kind: input.kind, assetId, filename };
 
-    await uploadBytes(objectRef, input.file, {
-      cacheControl: CACHE_CONTROL,
-      contentType: input.file.type,
+    const uploadUrl = await this.r2.signUpload(objectRef);
+    const putRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: input.file,
+      headers: { 'Content-Type': input.file.type, 'Cache-Control': CACHE_CONTROL },
     });
-    const url = await getDownloadURL(objectRef);
+    if (!putRes.ok) {
+      throw new Error(`Upload failed (${putRes.status}).`);
+    }
 
     const stored: StoredAsset = {
       kind: input.kind,
-      url,
+      url: this.r2.publicUrlFor(objectRef),
       label: input.label?.trim() || stripExtension(input.file.name),
       blurDataUrl: input.blurDataUrl,
       tags: input.tags,
@@ -143,7 +147,10 @@ export class MediaAssetsService {
         stored,
       );
     } catch (err) {
-      await deleteObject(objectRef).catch(() => undefined);
+      // Best-effort cleanup so the bucket doesn't accumulate orphans when the
+      // metadata write fails. If the cleanup itself fails, surface the original
+      // error — the orphan is recoverable, the failed write isn't.
+      await this.deleteObject(objectRef).catch(() => undefined);
       throw err;
     }
     const created: AssetDoc = { id: assetId, ...stored };
@@ -179,16 +186,19 @@ export class MediaAssetsService {
 
   async delete(asset: AssetDoc): Promise<void> {
     const universeId = this.requireUniverseId();
-    try {
-      await deleteObject(ref(this.firebase.storage, asset.url));
-    } catch {
-      // Object may already be missing; proceed with doc removal so the
-      // library doesn't keep a row pointing at nothing.
+    const ref = this.r2.parseObjectRef(asset.url);
+    if (ref) {
+      await this.deleteObject(ref).catch(() => undefined);
     }
     await deleteDoc(
       doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, asset.id),
     );
     this._assets.update((curr) => curr.filter((a) => a.id !== asset.id));
+  }
+
+  private async deleteObject(ref: R2ObjectRef): Promise<void> {
+    const deleteUrl = await this.r2.signDelete(ref);
+    await fetch(deleteUrl, { method: 'DELETE' });
   }
 
   private requireUniverseId(): string {
