@@ -1,13 +1,6 @@
 # i18n rules
 
-Two parts:
-- **Rules** — standing constraints on how UI strings are translated,
-  how locale state flows, and how authored prose is tagged.
-- **Implementation** — open i18n changes still to ship. Items are
-  removed when shipped; this section is not a history.
-
-The library is `@jsverse/transloco`. Strings live in JSON, loaded at
-runtime; one bundle ships both locales.
+UI translation, locale state, and content-prose tagging. The library is `@jsverse/transloco`; strings live in JSON, bundled into the JS so first paint doesn't fetch.
 
 ---
 
@@ -214,74 +207,33 @@ without a network round-trip.
 
 ## Example
 
-A trimmed `public/i18n/en.json`:
+`public/i18n/en.json` carries cross-cutting validator copy:
 
 ```json
 {
   "general": {
-    "action": { "save": "Save", "cancel": "Cancel", "delete": "Delete" },
-    "field": { "name": "Name", "status": "Status" },
-    "message": { "loading": "Loading…", "saveSuccess": "Saved" },
     "validation": {
       "required": "This field is required",
-      "email": "Enter a valid email",
       "minLength": "Must be at least {{ min }} characters"
     }
-  },
-  "auth": {
-    "action": { "signIn": "Sign in", "signOut": "Sign out" },
-    "field": { "email": "Email", "password": "Password" },
-    "message": { "signInError": "Sign-in failed: {{ reason }}" }
   }
 }
 ```
 
-A scoped feature file at `src/features/character/i18n/en.json` (no
-scope prefix inside the file — the prefix comes from registration):
+A scoped file at `src/features/character/i18n/en.json` carries field-specific validation; the file does not include its scope prefix — the prefix comes from `provideTranslocoScope`:
 
 ```json
 {
-  "action": { "create": "New character", "edit": "Edit character" },
-  "field": { "name": "Name", "appearance": "Appearance" },
-  "empty": {
-    "list": "This universe has no characters yet.",
-    "search": "No characters match \"{{ query }}\"."
-  },
   "validation": {
     "nameUnique": "A character with this name already exists in {{ universe }}."
   }
 }
 ```
 
-## For AI assistants
-
-When adding or refactoring translations:
-
-1. UI string → translate. Authored prose → entity field, never a
-   translation key.
-2. Pick the smallest scope the string belongs to. Promote to `general`
-   only when three scopes share it.
-3. camelCase keys, max three levels (`scope.group.key`), no deeper
-   nesting. Scope and group are singular; the key is free-form.
-4. Cross-cutting validator messages live at `general.validation.*`;
-   field-specific validation goes in the scope's `validation` group.
-5. ICU MessageFormat for plurals and selects. Never concatenate
-   translated fragments.
-6. Use `*transloco="let t; prefix: '<scope>'"` at the template root
-   over the `| transloco` pipe; the directive subscribes once and folds
-   the scope prefix in. (`read:` is deprecated; don't use it.)
-7. New content-prose surfaces apply the `appContentLang` directive
-   (from `@features/universes`).
-8. Add keys to **both** `en.json` and `uk.json` in the same change.
-   The Ukrainian value can be a TODO marker (`"⟦TODO⟧ Save"`) when no
-   translation is ready, but the key must exist in both files so
-   missing-key warnings stay clean.
+When adding a key, add it to both `en.json` and `uk.json` in the same change; an untranslated value can be a TODO marker (`"⟦TODO⟧ …"`) so missing-key warnings stay clean.
 
 ---
 
 # Implementation
 
-Open changes. Remove items as they ship.
-
-*(Empty — every shipped i18n pass is currently reflected in the rules
-above.)*
+*(Empty — every shipped i18n pass is reflected in the rules above.)*

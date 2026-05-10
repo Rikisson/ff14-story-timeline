@@ -1,14 +1,6 @@
 # Media rules
 
-Two parts:
-- **Rules** — standing constraints on how media files are stored,
-  authored, and loaded.
-- **Implementation** — open media changes still to ship. Items are
-  removed when shipped; this section is not a history.
-
-Engine-level rendering concerns (scene composition, crossfade, audio
-host, loading indicators) live in `narrative-engine-impl.md` under
-*Scene rendering layers*.
+How asset binaries and metadata are stored, authored, and loaded. Engine-level rendering (scene composition, crossfade, audio host, loading indicators) lives in `narrative-engine-impl.md` *Scene rendering layers*. Storage backend posture lives in `backend-rules.md`.
 
 ---
 
@@ -16,9 +8,9 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 ## Storage
 
-- Metadata in Firestore, binaries in Firebase Storage.
-- Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. The path encodes only the universe and the asset kind; ownership is never encoded in the path. The same asset can be referenced by any number of entities.
-- Set `cacheControl: 'public, max-age=31536000'` on every upload.
+- Metadata in Firestore, binaries in Cloudflare R2 (see `backend-rules.md` *Binary storage*).
+- Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. Path encodes universe and asset kind only — never ownership. The same asset can be referenced by any number of entities.
+- `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP; reject or transcode other formats at upload.
 - Audio binaries are Opus or AAC, ≤ 128 kbps for ambient tracks.
@@ -39,7 +31,7 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 ## Editor
 
-- Uploads register a new doc in `_assets` and a binary in Storage; both writes succeed or both are rolled back.
+- Uploads register a new doc in `_assets` and a binary in storage; both writes succeed or both are rolled back.
 - Uploads enforce max file size and max dimensions before write; oversize files are rejected with a clear error.
 - Owner entity edit pages select from the universe asset library (filtered by kind) to populate their asset-ID arrays. Reorder and remove are local operations on the entity; rename and delete-from-library happen on the asset doc itself.
 - Scene editor picks asset references — no scene-level uploads bypass the library. Per-scene overrides (e.g. a flashback background) still register in the library; one-offs can be pruned later.
@@ -54,4 +46,11 @@ host, loading indicators) live in `narrative-engine-impl.md` under
 
 # Implementation
 
-Open changes. Remove items as they ship.
+## R2 migration
+
+The upload pipeline currently writes to Firebase Storage; the rule above states R2. Closing the gap:
+
+- Provision R2 buckets per environment (`narrative-dev`, `narrative-prod`).
+- Wire the upload pipeline to PUT via the S3-compatible API with credentials from environment config; the asset doc's `url` is stamped with the public R2 URL on success.
+- One-shot migration script for existing assets: list → download → re-upload to R2 → patch `_assets` docs with new URLs. Run, verify, delete the Firebase Storage bucket.
+- Cloudflare Worker for signed URLs is deferred until a private-asset use case appears.

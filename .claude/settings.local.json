@@ -33,7 +33,10 @@
       "Bash(curl -sS http://localhost:4200/i18n/en.json)",
       "Bash(curl *)",
       "Bash(grep *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "PowerShell(head *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\rikis\\\\WebstormProjects\\\\ff14-story-timeline\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

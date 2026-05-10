@@ -1,10 +1,6 @@
 # Narrative engine — rules and implementation
 
-Two parts:
-- **Rules** — standing constraints. The engine works this way; PRs that
-  violate these need explicit justification.
-- **Implementation** — open changes still to ship. Items are removed
-  when shipped; this section is not a history.
+Engine semantics — entities, references, scenes, calendar, and how a story is staged for a reader.
 
 ---
 
@@ -54,55 +50,31 @@ than absent fields, and a queryable shape is meaningless if the data
 isn't there. Surface advanced fields behind a collapsible drawer
 rather than a flat form.
 
-## Reference tiers
+## References
 
-References appear on two surfaces — typed pickers and inline
-`${kind:<guid>}[…]` tokens — and fields fall into four semantic tiers.
-The same picker UX serves all of them, but the meanings are not
-interchangeable:
+References live on two surfaces — typed pickers and inline `${kind:<guid>}[…]` tokens — and fall into four semantic tiers. The picker UX is the same across tiers; the meanings are not.
 
-| Tier        | Surface                                                       | Purpose                | Drives runtime? |
-|-------------|---------------------------------------------------------------|------------------------|-----------------|
-| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                    | Catalog & filtering    | No              |
-| Runtime     | `Scene.characters` / `speaker` / `place`                      | Staging / placement    | Yes             |
-| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs` | World-building | No              |
-| Decorative  | Inline `${…}[…]` in any rich-text body                        | Tooltip / hover-card   | No              |
+| Tier        | Where                                                                  | Purpose             | Drives runtime? |
+|-------------|------------------------------------------------------------------------|---------------------|-----------------|
+| Runtime     | `Scene.characters` / `speaker` / `place`                               | Staging / placement | Yes             |
+| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                             | Catalog & filtering | No              |
+| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs`  | World-building      | No              |
+| Decorative  | Inline `${…}[…]` in any rich-text body                                 | Tooltip / hover     | No              |
 
-Codex refs (`EntityRef<'codex'>`) appear in Curatorial, Factual, and
-Decorative tiers. There is no codex-as-stage-actor — Runtime is
-Character + Place only.
+Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime is Character + Place only.
 
-## Reference topology
+**Picker scope per entity.** Timeline-tier entities (Story, Event) reference lookup-tier entities (Character, Place, Codex) for world-building; lookup-tier entities reference each other; nothing references timeline-tier through pickers — those relationships are encoded by `inGameDate` and (for arc grouping) by the dedicated `plotlineRefs` field.
 
-Picker scope per entity. The principle: timeline-tier entities
-(Story, Event) reference lookup-tier entities (Character, Place,
-Codex) for world-building; lookup-tier entities reference each
-other for structural relationships; nothing references timeline-tier
-through pickers — those relationships are encoded by `inGameDate`
-and (for arc grouping) by the dedicated `plotlineRefs` field.
+| Entity                      | `relatedRefs` accepts   | `plotlineRefs`                    |
+|-----------------------------|-------------------------|-----------------------------------|
+| Story, Event                | character, place, codex | yes (`EntityRef<'plotline'>[]`)   |
+| Character, Place, Codex     | character, place, codex | —                                 |
+| Universe, Plotline          | —                       | —                                 |
 
-| Entity    | `relatedRefs` accepts            | `plotlineRefs` field |
-|-----------|----------------------------------|----------------------|
-| Universe  | —                                | —                    |
-| Plotline  | —                                | —                    |
-| Story     | character, place, codex          | yes (`EntityRef<'plotline'>[]`) |
-| Event     | character, place, codex          | yes (`EntityRef<'plotline'>[]`) |
-| Character | character, place, codex          | —                    |
-| Place     | character, place, codex          | —                    |
-| Codex     | character, place, codex          | —                    |
-
-- **No timeline-to-timeline picker refs.** Story → Event, Event → Story,
-  Event → Event are all derivable from `inGameDate`. Use the timeline view.
-- **No lookup-to-timeline picker refs.** Codex entries that reference
-  events/stories should do so through inline `${ev:…}` / `${st:…}`
-  tokens in description prose, not via the picker.
-- **`plotlineRefs` is the only timeline → timeline-adjacent picker we
-  keep.** Plotline arc grouping is structural metadata that the
-  timeline can't derive from dates alone, so Story/Event get a
-  dedicated typed array. Plotline itself does not reference its members
-  back — membership lives on Story/Event.
-- **Inline `${kind:<guid>}` tokens** stay decorative-tier and accept
-  all kinds — they are a separate surface from picker refs.
+- **No timeline-to-timeline picker refs.** Story↔Event and Event↔Event are derivable from `inGameDate`; use the timeline view.
+- **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${ev:…}` / `${st:…}` token in prose, not the picker.
+- **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
+- **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
 
 ## Scope locks
 
@@ -280,20 +252,9 @@ and (for arc grouping) by the dedicated `plotlineRefs` field.
 
 # Implementation
 
-Open changes. Remove items as they ship.
+## Test coverage
 
-## Tech debt
-
-- Restrict the Firebase API key to the GitHub Pages domain (Cloud
-  Console).
-- Server-side list filtering — composite indexes per filter
-  combination so tight filters don't depend on "View more" thrash
-  through client-side filtering of the loaded page.
-- Test coverage for services, guards, and components (specs exist for
-  editor and player stores).
-- Atomic slug uniqueness via denormalized index doc
-  (`universes/{id}/_slugIndex/{kind}_{slug}`); current check is
-  read-then-write.
+Specs exist for the editor and player stores plus a few utils. Services, route guards, and shared UI primitives are unverified — close that gap before the next major refactor pass.
 
 ## Player
 

@@ -1,15 +1,6 @@
 # Styling rules
 
-Two parts:
-- **Rules** — standing constraints on how the design system, themes, and
-  Tailwind utilities are used across the project.
-- **Implementation** — open styling changes still to ship. Items are
-  removed when shipped; this section is not a history.
-
-Tailwind v4 is the styling layer. Components reference semantic tokens
-defined in `src/styles.css` rather than raw slate/indigo/etc. utilities.
-Themes are switched by toggling a class on `<html>`, which redefines the
-token CSS variables.
+Tailwind v4 is the styling layer. Components reference semantic tokens defined in `src/styles.css` rather than raw palette utilities. Themes are switched by toggling a class on `<html>`, which redefines the token CSS variables.
 
 ---
 
@@ -85,14 +76,15 @@ The token vocabulary:
 
 ## How to write components
 
-- Use semantic utilities: `class="bg-surface text-foreground border-border"`.
-- For form inputs: `border-border-strong bg-surface text-foreground placeholder:text-foreground-faint focus:ring-accent-ring focus:border-accent`.
-- For errors/warnings/success surfaces: `bg-warning text-warning-foreground border-warning-border` (and equivalents for `danger`/`success`).
-- For accent surfaces (selection, focus, drag-over highlights): `bg-accent-soft text-accent-soft-foreground` for the soft variant; `bg-accent text-accent-foreground` for the strong (button-like) variant.
-- For destructive buttons: `bg-danger-strong text-danger-strong-foreground hover:bg-danger-strong-hover active:bg-danger-strong-active focus-visible:ring-danger-strong-ring`.
-- For image hero/cover surfaces: scrim gradient as `bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20`; text/UI on top uses `text-scrim-foreground` (drop with `/90` etc. for de-emphasis).
-- For class bindings, write a single binding per token:
-  `[class.bg-accent-soft]="selected()"`. Don't pair light + `dark:` bindings.
+Reach for the token family that names the role, never the palette. Form inputs always carry `border-border-strong`; role surfaces (`warning` / `danger` / `success`) use the matching `{role}` / `{role}-foreground` / `{role}-border` triplet; accent selection vs. accent button is the soft/strong split (`bg-accent-soft` vs. `bg-accent`); image scrims pair `bg-scrim/N` with `text-scrim-foreground`. For class bindings, write one binding per token (`[class.bg-accent-soft]="selected()"`) — never pair a light utility with a `dark:` sibling.
+
+Two examples covering the awkward cases:
+
+```html
+<input class="border-border-strong bg-surface text-foreground placeholder:text-foreground-faint focus:ring-accent-ring focus:border-accent">
+
+<button uiDanger>…</button>  <!-- prefer the directive over hand-rolling bg-danger-strong/hover/active/ring -->
+```
 
 ## Button hierarchy
 
@@ -174,4 +166,4 @@ selector block. No component code changes.
 
 # Implementation
 
-Open changes. Remove items as they ship.
+*(Empty — every shipped styling pass is reflected in the rules above.)*

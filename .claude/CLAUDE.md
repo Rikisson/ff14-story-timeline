@@ -2,11 +2,12 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 
 ## Docs Reference
 
-Before executing any request, check the `docs` folder for applicable rules. Each doc has a strict **Rules** section (standing constraints) and an **Implementation** section (open backlog; items removed when shipped):
-- `docs/narrative-engine-impl.md` — engine rules (entity tiers, reference tiers, scope locks, inline-ref tokens, scene model, scene rendering layers) and the engine implementation backlog. Consult before touching entity types, picker UX, scene composition, or inline `${kind:<guid>}` references.
-- `docs/media-rules.md` — media rules (storage, schema, editor flow, loading) and the media implementation backlog. Consult before touching uploads, asset pickers, or asset loading.
-- `docs/styling-rules.md` — design token system, theme switching, when `dark:` siblings are allowed, and editor/Rete styling exceptions. Consult before adding color utilities, building new components, or theming changes.
-- `docs/i18n-rules.md` — i18n rules (transloco, locale state, key shape, content-locale tagging) and the i18n implementation backlog. Consult before adding UI strings, touching locale switching, or wiring per-feature translations.
+Before executing any request, check the `docs` folder for applicable rules. Every doc is split into **Rules** (standing constraints) and **Implementation** (open backlog; items removed when shipped, never demoted to a history log):
+- `docs/narrative-engine-impl.md` — entity tiers, references, scope locks, inline-ref tokens, scene model, scene rendering. Consult before touching entity types, picker UX, scene composition, or `${kind:<guid>}` references.
+- `docs/backend-rules.md` — Firestore/R2/Auth posture, realtime listener policy, pagination, search, cost canaries. Consult before touching the data layer, asset storage, or anything that affects the bill.
+- `docs/media-rules.md` — asset schema, upload flow, loading. Consult before touching uploads, asset pickers, or asset loading.
+- `docs/styling-rules.md` — design tokens, theme switching, button hierarchy, editor/Rete styling exceptions. Consult before adding color utilities, building new components, or theming changes.
+- `docs/i18n-rules.md` — transloco usage, locale state, key shape, content-locale tagging. Consult before adding UI strings, touching locale switching, or wiring per-feature translations.
 
 If a request conflicts with documented rules or architecture:
 - Point out the conflict
