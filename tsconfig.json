@@ -24,8 +24,6 @@
       "@features/places": ["src/features/places/index.ts"],
       "@features/events": ["src/features/events/index.ts"],
       "@features/plotlines": ["src/features/plotlines/index.ts"],
-      "@features/items": ["src/features/items/index.ts"],
-      "@features/factions": ["src/features/factions/index.ts"],
       "@features/codex": ["src/features/codex/index.ts"],
       "@features/calendar": ["src/features/calendar/index.ts"],
       "@features/media": ["src/features/media/index.ts"],
