@@ -8,56 +8,31 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
 import { TimelineEvent } from '@features/events';
 import { Plotline } from '@features/plotlines';
 import { Story } from '@features/stories';
 import { SortDirection } from './catalog-filters.component';
-import { buildTimelineLanes } from './catalog-timeline-lanes';
+import { buildTimelineLanes, UNASSIGNED_LANE_KEY } from './catalog-timeline-lanes';
 import { TimelineLaneComponent } from './timeline-lane.component';
-import catalogEn from './i18n/en.json';
-import catalogUk from './i18n/uk.json';
 
 const PAGE_STEP = 25;
 
 @Component({
   selector: 'app-catalog-timeline',
-  imports: [TimelineLaneComponent, TranslocoDirective],
-  providers: [
-    provideTranslocoScope({
-      scope: 'catalog',
-      loader: {
-        en: () => Promise.resolve(catalogEn),
-        uk: () => Promise.resolve(catalogUk),
-      },
-    }),
-  ],
+  imports: [TimelineLaneComponent],
   template: `
-    <ng-container *transloco="let t; prefix: 'catalog'">
-      <div class="flex flex-col gap-6">
-        @if (selectedPlotlineIds().length > 0) {
-          <label class="flex items-center gap-2 self-start text-sm text-foreground-muted">
-            <input
-              type="checkbox"
-              [checked]="showUnassigned()"
-              (change)="toggleUnassigned($event)"
-            />
-            {{ t('action.showUnassigned') }}
-          </label>
-        }
-
-        @for (lane of lanes(); track lane.key) {
-          <app-timeline-lane
-            [lane]="lane"
-            [sortDirection]="sortDirection()"
-            [pageSize]="pageSizeFor(lane.key)"
-            [serverHasMore]="serverHasMore()"
-            (loadMore)="loadMoreLane(lane.key)"
-          />
-        }
-      </div>
-    </ng-container>
+    <div class="flex flex-col gap-6">
+      @for (lane of lanes(); track lane.key) {
+        <app-timeline-lane
+          [lane]="lane"
+          [sortDirection]="sortDirection()"
+          [pageSize]="pageSizeFor(lane.key)"
+          [serverHasMore]="serverHasMore()"
+          (loadMore)="loadMoreLane(lane.key)"
+        />
+      }
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -75,7 +50,6 @@ export class CatalogTimelineComponent {
 
   private readonly calendar = inject(CalendarService);
 
-  protected readonly showUnassigned = signal(true);
   private readonly pageSizes = signal<Record<string, number>>({});
   private resetSignature = '';
 
@@ -83,28 +57,35 @@ export class CatalogTimelineComponent {
     () => this.storiesHasMore() || this.eventsHasMore(),
   );
 
+  // "Unassigned" is exposed as a synthetic plotline option in the filter, so
+  // we split the incoming selection: real plotline IDs drive lane partitioning,
+  // and the sentinel separately controls whether the unassigned lane renders.
+  private readonly realSelectedPlotlineIds = computed(() =>
+    this.selectedPlotlineIds().filter((id) => id !== UNASSIGNED_LANE_KEY),
+  );
+  private readonly includeUnassignedLane = computed(() =>
+    this.selectedPlotlineIds().includes(UNASSIGNED_LANE_KEY),
+  );
+
   protected readonly lanes = computed(() =>
     buildTimelineLanes({
       stories: this.stories(),
       events: this.events(),
       plotlines: this.plotlines(),
-      selectedPlotlineIds: this.selectedPlotlineIds(),
-      showUnassignedLane: this.showUnassigned(),
+      selectedPlotlineIds: this.realSelectedPlotlineIds(),
+      showUnassignedLane: this.includeUnassignedLane(),
       sortDirection: this.sortDirection(),
       eraOrdinalLookup: (id) => this.calendar.eraOrdinalLookup(id),
     }),
   );
 
   constructor() {
-    // Reset per-lane page sizes when the user changes filters, sort, or the
-    // unassigned-lane toggle — but NOT when the source arrays grow due to a
-    // server-side loadMore (which we want to preserve accumulated pageSize for).
+    // Reset per-lane page sizes when the user changes filters or sort — but
+    // NOT when the source arrays grow due to a server-side loadMore (which we
+    // want to preserve accumulated pageSize for). The unassigned sentinel is
+    // part of selectedPlotlineIds, so toggling it is captured by the same key.
     effect(() => {
-      const sig = [
-        this.selectedPlotlineIds().join('|'),
-        this.sortDirection(),
-        this.showUnassigned() ? '1' : '0',
-      ].join('::');
+      const sig = [this.selectedPlotlineIds().join('|'), this.sortDirection()].join('::');
       if (sig !== this.resetSignature) {
         this.resetSignature = sig;
         this.pageSizes.set({});
@@ -123,9 +104,5 @@ export class CatalogTimelineComponent {
     }));
     if (this.eventsHasMore()) this.loadMoreEvents.emit();
     if (this.storiesHasMore()) this.loadMoreStories.emit();
-  }
-
-  protected toggleUnassigned(event: Event): void {
-    this.showUnassigned.set((event.target as HTMLInputElement).checked);
   }
 }

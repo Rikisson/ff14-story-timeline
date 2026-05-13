@@ -87,12 +87,13 @@ export function buildTimelineLanes(args: BuildArgs): TimelineLane[] {
     });
   }
 
-  if (selectedPlotlineIds.length === 0) {
+  // Default lane only when the user has expressed no preference at all —
+  // neither a real plotline nor the synthetic "Unassigned" selection.
+  if (selectedPlotlineIds.length === 0 && !showUnassignedLane) {
     return [partitionLane(DEFAULT_LANE_KEY, '', undefined, baseCards, sortDirection, eraOrdinalLookup)];
   }
 
   const lanes: TimelineLane[] = [];
-  const selectedSet = new Set(selectedPlotlineIds);
   for (const id of selectedPlotlineIds) {
     const plotline = plotlineById.get(id);
     if (!plotline) continue;
@@ -105,9 +106,11 @@ export function buildTimelineLanes(args: BuildArgs): TimelineLane[] {
   }
 
   if (showUnassignedLane) {
-    const unassigned = baseCards.filter(
-      (c) => !c.plotlines.some((p) => selectedSet.has(p.id)),
-    );
+    // "Unassigned" is a literal property of an item — it has no surviving
+    // plotline refs — not a relative complement of the current selection.
+    // This lets the user pick "Unassigned" alone and get a focused view of
+    // unattached items.
+    const unassigned = baseCards.filter((c) => c.plotlines.length === 0);
     lanes.push(
       partitionLane(
         UNASSIGNED_LANE_KEY,

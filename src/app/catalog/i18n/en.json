@@ -20,8 +20,7 @@
     "delete": "Delete",
     "oldestFirst": "Oldest first",
     "newestFirst": "Newest first",
-    "clearFilters": "Clear filters",
-    "showUnassigned": "Show unassigned items"
+    "clearFilters": "Clear filters"
   },
   "message": {
     "subtitle": "Branching scenes you can play through, scoped to this universe.",

@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CharactersService } from '@features/characters';
 import { TimelineEvent } from '@features/events';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { Story } from '@features/stories';
 import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
+import { UNASSIGNED_LANE_KEY } from './catalog-timeline-lanes';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
@@ -158,6 +160,13 @@ export class CatalogFiltersComponent {
   private readonly charactersService = inject(CharactersService);
   private readonly placesService = inject(PlacesService);
   private readonly plotlinesService = inject(PlotlinesService);
+  private readonly transloco = inject(TranslocoService);
+  // Plotline options include a synthetic "Unassigned" entry whose label tracks
+  // the active language; activeLang is read inside the computed so changes
+  // re-translate the entry.
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected readonly characterOptions = computed<ComboboxOption[]>(() =>
     this.charactersService
@@ -171,12 +180,23 @@ export class CatalogFiltersComponent {
       .map((p) => ({ id: p.id, label: p.name, kind: 'place' as const }))
       .sort((a, b) => a.label.localeCompare(b.label)),
   );
-  protected readonly plotlineOptions = computed<ComboboxOption[]>(() =>
-    this.plotlinesService
+  // Real plotlines sorted by title, with a synthetic "Unassigned" entry pinned
+  // at the end. Picking it in the filter surfaces items with no plotlineRefs as
+  // their own lane on the timeline — replacing the old "Show unassigned"
+  // checkbox with the same selection vocabulary used for real plotlines.
+  protected readonly plotlineOptions = computed<ComboboxOption[]>(() => {
+    this.activeLang();
+    const real = this.plotlinesService
       .plotlines()
       .map((p) => ({ id: p.id, label: p.title, kind: 'plotline' as const }))
-      .sort((a, b) => a.label.localeCompare(b.label)),
-  );
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const unassigned: ComboboxOption = {
+      id: UNASSIGNED_LANE_KEY,
+      label: this.transloco.translate('catalog.field.unassigned'),
+      kind: 'plotline' as const,
+    };
+    return [...real, unassigned];
+  });
   protected readonly hasActive = computed(() => {
     const v = this.value();
     return v.characters.length > 0 || v.places.length > 0 || v.plotlines.length > 0;
