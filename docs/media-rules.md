@@ -14,7 +14,6 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP on disk. Cover and background uploads accept JPEG, PNG, WebP, or AVIF and are downscaled + transcoded to WebP in-browser before the PUT. Sprite uploads accept WebP only — authored transparency is preserved bit-exact.
 - Cover uploads emit two objects under the same asset directory: the full-res image and a 640w `.thumb.webp` variant for card slots. Both URLs live on the asset doc; consumers rendering at card scale prefer the thumb and fall back to the full URL for pre-thumb assets.
-- Cover uploads also derive a ~12px-wide WebP blur and store it as `blurDataUrl` (data URL) on the asset doc. Consumers paint it as a CSS background on the tile container so the card never flashes empty while the thumb decodes.
 - Audio binaries are Opus or AAC, ≤ 128 kbps for ambient tracks.
 
 ## Schema

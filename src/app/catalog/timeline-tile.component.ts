@@ -60,14 +60,6 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
         [class.border-surface-muted]="!!accentColor()"
         [style.borderLeftColor]="accentColor()"
       >
-        <!-- 12px-wide WebP blur as CSS background. Fills the tile until the
-             real thumb decodes, eliminating the flash of an empty card on scroll. -->
-        <div
-          class="absolute inset-0 bg-cover bg-center"
-          [style.background-image]="blurBgImage()"
-          aria-hidden="true"
-        ></div>
-
         @if (thumbUrl(); as u) {
           <img
             [ngSrc]="u"
@@ -152,12 +144,6 @@ export class TimelineTileComponent {
 
   protected readonly thumbUrl = computed(() => this.media.thumbUrlFor(this.coverAssetId()));
   protected readonly fullUrl = computed(() => this.media.urlFor(this.coverAssetId()));
-  protected readonly blurDataUrl = computed(() => this.media.blurDataUrlFor(this.coverAssetId()));
-
-  protected readonly blurBgImage = computed(() => {
-    const u = this.blurDataUrl();
-    return u ? `url(${u})` : null;
-  });
 
   // When the lane itself carries a plotline color, suppress per-tile chips —
   // the lane border already conveys the plotline. Mixed-plotline cards in the

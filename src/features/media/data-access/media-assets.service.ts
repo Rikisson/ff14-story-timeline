@@ -71,8 +71,6 @@ const WEBP_QUALITY = 0.75;
 const THUMB_WIDTH = 640;
 const THUMB_QUALITY = 0.7;
 const THUMB_SUFFIX = '.thumb';
-const BLUR_WIDTH = 12;
-const BLUR_QUALITY = 0.5;
 
 @Injectable({ providedIn: 'root' })
 export class MediaAssetsService {
@@ -121,10 +119,6 @@ export class MediaAssetsService {
     return asset?.thumbUrl ?? asset?.url;
   }
 
-  blurDataUrlFor(assetId: string | undefined | null): string | undefined {
-    return this.byId(assetId)?.blurDataUrl;
-  }
-
   async refresh(universeId?: string): Promise<void> {
     const id = universeId ?? this.universes.activeUniverseId();
     const seq = ++this.refreshSeq;
@@ -149,13 +143,11 @@ export class MediaAssetsService {
 
     let file = input.file;
     let thumbFile: File | undefined;
-    let derivedBlurDataUrl: string | undefined;
     if (isImageKind(input.kind)) {
       if (isTranscodedKind(input.kind)) {
         const processed = await processImage(input.kind, file);
         file = processed.full;
         thumbFile = processed.thumb;
-        derivedBlurDataUrl = processed.blurDataUrl;
       } else {
         await assertImageDimensions(input.kind, file);
       }
@@ -194,9 +186,7 @@ export class MediaAssetsService {
       url: this.r2.publicUrlFor(objectRef),
       thumbUrl: thumbRef ? this.r2.publicUrlFor(thumbRef) : undefined,
       label: input.label?.trim() || stripExtension(input.file.name),
-      // Caller-supplied blurDataUrl wins (lets future flows override the derived
-      // placeholder); otherwise use the tiny WebP encoded from the source bitmap.
-      blurDataUrl: input.blurDataUrl ?? derivedBlurDataUrl,
+      blurDataUrl: input.blurDataUrl,
       tags: input.tags,
       authorUid,
       createdAt: Date.now(),
@@ -341,7 +331,7 @@ async function assertImageDimensions(
 async function processImage(
   kind: 'cover' | 'background',
   file: File,
-): Promise<{ full: File; thumb?: File; blurDataUrl?: string }> {
+): Promise<{ full: File; thumb?: File }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   try {
     const minW = MIN_WIDTH[kind];
@@ -365,10 +355,7 @@ async function processImage(
       THUMB_QUALITY,
       THUMB_SUFFIX,
     );
-    // ~12px-wide WebP encoded as a data URL. Used as a CSS background placeholder
-    // on consumer tiles to mask the flash of an empty card while the thumb decodes.
-    const blurDataUrl = await encodeBlurDataUrl(bitmap);
-    return { full, thumb, blurDataUrl };
+    return { full, thumb };
   } finally {
     bitmap.close();
   }
@@ -399,25 +386,6 @@ async function encodeBitmapToWebP(
   return new File([blob], `${stripExtension(sourceName)}${suffix}.webp`, { type: 'image/webp' });
 }
 
-async function encodeBlurDataUrl(bitmap: ImageBitmap): Promise<string> {
-  const targetH = Math.max(1, Math.round((bitmap.height / bitmap.width) * BLUR_WIDTH));
-  const canvas = document.createElement('canvas');
-  canvas.width = BLUR_WIDTH;
-  canvas.height = targetH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas 2D context unavailable.');
-  ctx.drawImage(bitmap, 0, 0, BLUR_WIDTH, targetH);
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/webp', BLUR_QUALITY),
-  );
-  if (!blob) throw new Error('Blur encoding failed.');
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed.'));
-    reader.readAsDataURL(blob);
-  });
-}
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]/g, '_');
