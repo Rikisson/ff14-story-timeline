@@ -21,5 +21,12 @@
     "defaultPickerTitle": "Pick asset",
     "pickCoverTitle": "Pick a cover image",
     "selectAsset": "Select {{ label }}"
+  },
+  "hint": {
+    "upload": {
+      "cover": "JPEG, PNG, WebP or AVIF. Wide images work best (16:9), at least 1280px wide. Larger images are downscaled and re-encoded as WebP automatically.",
+      "background": "JPEG, PNG, WebP or AVIF. Wide images work best (16:9), at least 1280px wide. Larger images are downscaled and re-encoded as WebP automatically.",
+      "sprite": "WebP only — keep transparency intact. Portrait orientation, up to 1600×2400."
+    }
   }
 }

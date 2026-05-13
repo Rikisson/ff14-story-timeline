@@ -89,6 +89,10 @@ import mediaUk from '../i18n/uk.json';
               />
             </div>
 
+            @if (uploadHintKey(); as hintKey) {
+              <p class="m-0 px-4 pb-2 text-xs text-foreground-faint">{{ t(hintKey) }}</p>
+            }
+
             @if (uploadError(); as e) {
               <p class="m-0 px-4 py-2 text-sm text-danger-foreground">{{ e }}</p>
             }
@@ -223,7 +227,22 @@ export class AssetPickerComponent {
 
   protected readonly isAudio = computed(() => AUDIO_ASSET_KINDS.includes(this.kind()));
 
-  protected readonly acceptAttr = computed(() => (this.isAudio() ? 'audio/*' : 'image/webp'));
+  // Cover and background go through an in-browser transcode → accept common
+  // photo formats. Sprite stays a WebP passthrough so authored transparency
+  // is preserved bit-exact.
+  protected readonly acceptAttr = computed(() => {
+    if (this.isAudio()) return 'audio/*';
+    return this.kind() === 'sprite'
+      ? 'image/webp'
+      : 'image/jpeg,image/png,image/webp,image/avif';
+  });
+
+  // Key is relative to the `media` transloco prefix used in the template.
+  protected readonly uploadHintKey = computed(() => {
+    const k = this.kind();
+    if (AUDIO_ASSET_KINDS.includes(k)) return null;
+    return `hint.upload.${k}` as const;
+  });
 
   protected readonly allForKind = computed(() =>
     this.media.assets().filter((a) => a.kind === this.kind()),

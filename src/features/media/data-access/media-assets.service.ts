@@ -28,7 +28,13 @@ import {
 const ASSETS_COLLECTION = '_assets';
 const CACHE_CONTROL = 'public, max-age=31536000';
 
-const IMAGE_MIME = 'image/webp';
+const SPRITE_INPUT_MIME = 'image/webp';
+const TRANSCODED_INPUT_MIMES: readonly string[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+];
 const AUDIO_MIMES: readonly string[] = [
   'audio/webm',
   'audio/ogg',
@@ -39,18 +45,29 @@ const AUDIO_MIMES: readonly string[] = [
 ];
 
 const MAX_BYTES: Record<AssetKind, number> = {
-  cover: 5 * 1024 * 1024,
+  cover: 10 * 1024 * 1024,
   sprite: 5 * 1024 * 1024,
-  background: 8 * 1024 * 1024,
+  background: 10 * 1024 * 1024,
   ambient: 15 * 1024 * 1024,
   sfx: 5 * 1024 * 1024,
 };
 
 const MAX_DIMENSIONS: Record<'cover' | 'sprite' | 'background', { w: number; h: number }> = {
-  cover: { w: 1600, h: 1600 },
+  cover: { w: 2560, h: 1440 },
   sprite: { w: 1600, h: 2400 },
   background: { w: 2560, h: 1440 },
 };
+
+// Kinds that get transcoded + downscaled in-browser before upload.
+// Sprite stays a pure WebP passthrough so authored transparency is preserved bit-exact.
+const TRANSCODED_IMAGE_KINDS: readonly AssetKind[] = ['cover', 'background'];
+
+const MIN_WIDTH: Record<'cover' | 'background', number> = {
+  cover: 1280,
+  background: 1280,
+};
+
+const WEBP_QUALITY = 0.75;
 
 @Injectable({ providedIn: 'root' })
 export class MediaAssetsService {
@@ -113,19 +130,25 @@ export class MediaAssetsService {
   async upload(input: AssetUploadInput, authorUid: string): Promise<AssetDoc> {
     const universeId = this.requireUniverseId();
     assertMimeAndSize(input.kind, input.file);
+
+    let file = input.file;
     if (isImageKind(input.kind)) {
-      await assertImageDimensions(input.kind, input.file);
+      if (isTranscodedKind(input.kind)) {
+        file = await processImage(input.kind, file);
+      } else {
+        await assertImageDimensions(input.kind, file);
+      }
     }
 
     const assetId = crypto.randomUUID();
-    const filename = sanitizeFilename(input.file.name);
+    const filename = sanitizeFilename(file.name);
     const objectRef: R2ObjectRef = { universeId, kind: input.kind, assetId, filename };
 
     const uploadUrl = await this.r2.signUpload(objectRef);
     const putRes = await fetch(uploadUrl, {
       method: 'PUT',
-      body: input.file,
-      headers: { 'Content-Type': input.file.type, 'Cache-Control': CACHE_CONTROL },
+      body: file,
+      headers: { 'Content-Type': file.type, 'Cache-Control': CACHE_CONTROL },
     });
     if (!putRes.ok) {
       throw new Error(`Upload failed (${putRes.status}).`);
@@ -212,11 +235,16 @@ function isImageKind(kind: AssetKind): kind is 'cover' | 'sprite' | 'background'
   return IMAGE_ASSET_KINDS.includes(kind);
 }
 
+function isTranscodedKind(kind: AssetKind): kind is 'cover' | 'background' {
+  return TRANSCODED_IMAGE_KINDS.includes(kind);
+}
+
 function assertMimeAndSize(kind: AssetKind, file: File): void {
   if (isImageKind(kind)) {
-    if (file.type !== IMAGE_MIME) {
+    const accepted = isTranscodedKind(kind) ? TRANSCODED_INPUT_MIMES : [SPRITE_INPUT_MIME];
+    if (!accepted.includes(file.type)) {
       throw new Error(
-        `Unsupported image type for ${kind}: "${file.type || file.name}". Expected ${IMAGE_MIME}.`,
+        `Unsupported image type for ${kind}: "${file.type || file.name}". Expected ${accepted.join(', ')}.`,
       );
     }
   } else if (AUDIO_ASSET_KINDS.includes(kind)) {
@@ -248,6 +276,39 @@ async function assertImageDimensions(
         `Image is too large (${bitmap.width}×${bitmap.height}). Maximum for ${kind} is ${w}×${h}.`,
       );
     }
+  } finally {
+    bitmap.close();
+  }
+}
+
+// Decode → validate minimum width → downscale to per-kind max (preserving aspect ratio)
+// → re-encode as WebP. Returns a fresh File so the rest of the upload path is unchanged.
+async function processImage(kind: 'cover' | 'background', file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  try {
+    const minW = MIN_WIDTH[kind];
+    if (bitmap.width < minW) {
+      throw new Error(
+        `Image is too small (${bitmap.width}×${bitmap.height}). Minimum width for ${kind} is ${minW}px.`,
+      );
+    }
+    const { w: maxW, h: maxH } = MAX_DIMENSIONS[kind];
+    const scale = Math.min(1, maxW / bitmap.width, maxH / bitmap.height);
+    const targetW = Math.max(1, Math.round(bitmap.width * scale));
+    const targetH = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context unavailable.');
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', WEBP_QUALITY),
+    );
+    if (!blob) throw new Error('WebP encoding failed.');
+    return new File([blob], `${stripExtension(file.name)}.webp`, { type: 'image/webp' });
   } finally {
     bitmap.close();
   }

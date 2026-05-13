@@ -12,7 +12,7 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 - Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. Path encodes universe and asset kind only — never ownership. The same asset can be referenced by any number of entities.
 - `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
-- Image binaries are WebP; reject or transcode other formats at upload.
+- Image binaries are WebP on disk. Cover and background uploads accept JPEG, PNG, WebP, or AVIF and are downscaled + transcoded to WebP in-browser before the PUT. Sprite uploads accept WebP only — authored transparency is preserved bit-exact.
 - Audio binaries are Opus or AAC, ≤ 128 kbps for ambient tracks.
 
 ## Schema
@@ -32,7 +32,7 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 ## Editor
 
 - Uploads register a new doc in `_assets` and a binary in storage; both writes succeed or both are rolled back.
-- Uploads enforce max file size and max dimensions before write; oversize files are rejected with a clear error.
+- Uploads enforce max file size and a minimum source width before write. Oversize dimensions are downscaled — not rejected — so the user's first try succeeds; truly broken inputs (wrong mime, unreadable, below the floor) surface a clear error. Per-kind targets: cover and background scale to fit within 2560×1440 with a 1280px-wide floor; sprite stays bounded by 1600×2400.
 - Owner entity edit pages select from the universe asset library (filtered by kind) to populate their asset-ID arrays. Reorder and remove are local operations on the entity; rename and delete-from-library happen on the asset doc itself.
 - Scene editor picks asset references — no scene-level uploads bypass the library. Per-scene overrides (e.g. a flashback background) still register in the library; one-offs can be pruned later.
 - Asset pickers filter by `kind` and by tag.
