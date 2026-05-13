@@ -74,20 +74,18 @@ const SCROLL_STEP = 320;
             }
 
             @if (visibleUndated().length > 0) {
-              <div class="ml-2 flex shrink-0 flex-col gap-2 border-l-2 border-dashed border-border-strong pl-4">
-                <p class="m-0 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
+              <div class="ml-2 flex shrink-0 items-center gap-3 border-l-2 border-dashed border-border-strong pl-4">
+                <p class="m-0 shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
                   {{ t('field.undated') }}
                 </p>
-                <div class="flex gap-3">
-                  @for (card of visibleUndated(); track card.id) {
-                    <div class="w-[300px] shrink-0">
-                      <app-timeline-tile
-                        [card]="card"
-                        [accentColor]="card.laneColor ?? null"
-                      />
-                    </div>
-                  }
-                </div>
+                @for (card of visibleUndated(); track card.id) {
+                  <div class="w-[320px] shrink-0">
+                    <app-timeline-tile
+                      [card]="card"
+                      [accentColor]="card.laneColor ?? null"
+                    />
+                  </div>
+                }
               </div>
             }
 
