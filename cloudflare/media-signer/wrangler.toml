@@ -10,9 +10,9 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 FIREBASE_PROJECT_ID = "ff14-story-timeline"
 PRESIGN_TTL_SECONDS = "300"
-R2_BUCKET = ""             # bucket name created in the Cloudflare R2 dashboard
-R2_PUBLIC_BASE = ""        # custom domain or *.r2.dev URL, no trailing slash
-ALLOWED_ORIGINS = ""       # comma-separated, e.g. http://localhost:4200,https://<you>.github.io
+R2_BUCKET = "narrative"
+R2_PUBLIC_BASE = "https://pub-1bd4f6cfa4d44dc79c37b8dcb7f9d9d6.r2.dev"
+ALLOWED_ORIGINS = "http://localhost:4200,https://rikisson.github.io"
 
 # Secrets (set via `pnpm secret:put <NAME>`):
 #   R2_ACCOUNT_ID

@@ -6,6 +6,6 @@ export interface R2Config {
 }
 
 export const r2Config: R2Config = {
-  signerUrl: '',
-  publicBase: '',
+  signerUrl: 'https://media-signer.rikissona.workers.dev',
+  publicBase: 'https://pub-1bd4f6cfa4d44dc79c37b8dcb7f9d9d6.r2.dev',
 };
