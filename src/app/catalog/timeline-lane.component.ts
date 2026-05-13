@@ -9,10 +9,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { EventCardComponent } from '@features/events';
-import { CatalogCardComponent } from './catalog-card.component';
 import { SortDirection } from './catalog-filters.component';
 import { TimelineCard, TimelineLane } from './catalog-timeline-lanes';
+import { TimelineTileComponent } from './timeline-tile.component';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
@@ -20,7 +19,7 @@ const SCROLL_STEP = 320;
 
 @Component({
   selector: 'app-timeline-lane',
-  imports: [CatalogCardComponent, EventCardComponent, TranslocoDirective],
+  imports: [TimelineTileComponent, TranslocoDirective],
   providers: [
     provideTranslocoScope({
       scope: 'catalog',
@@ -66,22 +65,11 @@ const SCROLL_STEP = 320;
             (focusin)="onFocusIn($event)"
           >
             @for (card of visibleDated(); track card.id) {
-              <div class="w-[280px] shrink-0">
-                @if (card.kind === 'story' && card.story) {
-                  <app-catalog-card
-                    [story]="card.story"
-                    [canEdit]="canManage()"
-                    [accentColor]="card.laneColor ?? null"
-                    [plotlineChips]="card.laneColor ? [] : card.plotlines"
-                  />
-                } @else if (card.event) {
-                  <app-event-card
-                    [event]="card.event"
-                    [canEdit]="false"
-                    [accentColor]="card.laneColor ?? null"
-                    [plotlineChips]="card.laneColor ? [] : card.plotlines"
-                  />
-                }
+              <div class="w-[320px] shrink-0">
+                <app-timeline-tile
+                  [card]="card"
+                  [accentColor]="card.laneColor ?? null"
+                />
               </div>
             }
 
@@ -92,22 +80,11 @@ const SCROLL_STEP = 320;
                 </p>
                 <div class="flex gap-3">
                   @for (card of visibleUndated(); track card.id) {
-                    <div class="w-[260px] shrink-0">
-                      @if (card.kind === 'story' && card.story) {
-                        <app-catalog-card
-                          [story]="card.story"
-                          [canEdit]="canManage()"
-                          [accentColor]="card.laneColor ?? null"
-                          [plotlineChips]="card.laneColor ? [] : card.plotlines"
-                        />
-                      } @else if (card.event) {
-                        <app-event-card
-                          [event]="card.event"
-                          [canEdit]="false"
-                          [accentColor]="card.laneColor ?? null"
-                          [plotlineChips]="card.laneColor ? [] : card.plotlines"
-                        />
-                      }
+                    <div class="w-[300px] shrink-0">
+                      <app-timeline-tile
+                        [card]="card"
+                        [accentColor]="card.laneColor ?? null"
+                      />
                     </div>
                   }
                 </div>
@@ -136,7 +113,6 @@ const SCROLL_STEP = 320;
 export class TimelineLaneComponent {
   readonly lane = input.required<TimelineLane>();
   readonly sortDirection = input<SortDirection>('asc');
-  readonly canManage = input<boolean>(false);
   readonly pageSize = input.required<number>();
   readonly serverHasMore = input<boolean>(false);
 

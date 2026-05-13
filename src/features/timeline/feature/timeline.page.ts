@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth';
 import { EventsService, TimelineEvent } from '@features/events';
 import { PlotlinesService } from '@features/plotlines';
 import { StoriesService, Story } from '@features/stories';
-import { UniverseStore } from '@features/universes';
 import { PageHeaderComponent } from '@shared/ui';
 import {
   CatalogFilters,
@@ -62,7 +60,6 @@ import timelineUk from '../i18n/uk.json';
             [plotlines]="plotlines()"
             [selectedPlotlineIds]="filters().plotlines"
             [sortDirection]="sortDirection()"
-            [canManage]="canCreate()"
             [storiesHasMore]="storiesService.hasMore()"
             [eventsHasMore]="eventsService.hasMore()"
             (loadMoreStories)="storiesService.loadMorePublished()"
@@ -78,13 +75,7 @@ export class TimelinePage {
   protected readonly storiesService = inject(StoriesService);
   protected readonly eventsService = inject(EventsService);
   private readonly plotlinesService = inject(PlotlinesService);
-  private readonly universes = inject(UniverseStore);
-  protected readonly user = inject(AuthStore).user;
   protected readonly plotlines = this.plotlinesService.plotlines;
-
-  protected readonly canCreate = computed(
-    () => !!this.user() && this.universes.isMemberOfActive(),
-  );
 
   protected readonly published = this.storiesService.publishedStories;
   protected readonly allEvents = this.eventsService.events;

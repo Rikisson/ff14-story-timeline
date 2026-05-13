@@ -51,7 +51,6 @@ const PAGE_STEP = 25;
           <app-timeline-lane
             [lane]="lane"
             [sortDirection]="sortDirection()"
-            [canManage]="canManage()"
             [pageSize]="pageSizeFor(lane.key)"
             [serverHasMore]="serverHasMore()"
             (loadMore)="loadMoreLane(lane.key)"
@@ -68,7 +67,6 @@ export class CatalogTimelineComponent {
   readonly plotlines = input<Plotline[]>([]);
   readonly selectedPlotlineIds = input<string[]>([]);
   readonly sortDirection = input<SortDirection>('asc');
-  readonly canManage = input<boolean>(false);
   readonly storiesHasMore = input<boolean>(false);
   readonly eventsHasMore = input<boolean>(false);
 
