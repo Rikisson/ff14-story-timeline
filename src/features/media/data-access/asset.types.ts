@@ -7,6 +7,10 @@ export interface AssetDoc {
   id: string;
   kind: AssetKind;
   url: string;
+  // 640w WebP variant uploaded alongside the full image for cover assets.
+  // Consumers rendering in card slots should prefer this; falls back to `url`
+  // for assets uploaded before the thumb pipeline existed.
+  thumbUrl?: string;
   label: string;
   blurDataUrl?: string;
   tags?: string[];

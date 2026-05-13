@@ -13,12 +13,13 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 - `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP on disk. Cover and background uploads accept JPEG, PNG, WebP, or AVIF and are downscaled + transcoded to WebP in-browser before the PUT. Sprite uploads accept WebP only — authored transparency is preserved bit-exact.
+- Cover uploads emit two objects under the same asset directory: the full-res image and a 640w `.thumb.webp` variant for card slots. Both URLs live on the asset doc; consumers rendering at card scale prefer the thumb and fall back to the full URL for pre-thumb assets.
 - Audio binaries are Opus or AAC, ≤ 128 kbps for ambient tracks.
 
 ## Schema
 
 - Asset metadata lives in a central per-universe collection: `universes/{u}/_assets/{assetId}`. One doc per uploaded asset.
-- Asset doc shape: `{ id, kind, url, label, blurDataUrl?, tags?, authorUid, createdAt, updatedAt? }`. `kind` matches the value used in the storage path.
+- Asset doc shape: `{ id, kind, url, thumbUrl?, label, blurDataUrl?, tags?, authorUid, createdAt, updatedAt? }`. `kind` matches the value used in the storage path. `thumbUrl` is populated for cover assets and points at the 640w `.thumb.webp` sibling object.
 - The v1 asset kind set:
   - `cover` — single decorative image per entity (cards, headers).
   - `sprite` — staged character image with alpha; swappable by mood, pose, expression, or outfit.

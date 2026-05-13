@@ -94,7 +94,10 @@ export class EventCardComponent {
   private readonly media = inject(MediaAssetsService);
 
   protected readonly relatedRefs = computed(() => this.event().relatedRefs ?? []);
-  protected readonly coverUrl = computed(() => this.media.urlFor(this.event().coverAssetId));
+  // Card-sized render → use the 640w thumb so the timeline scroll doesn't
+  // pull down full-res covers. Falls back to the full URL for legacy assets
+  // uploaded before the thumb pipeline existed.
+  protected readonly coverUrl = computed(() => this.media.thumbUrlFor(this.event().coverAssetId));
 
   protected readonly formattedDate = computed(() => {
     const d = this.event().inGameDate;

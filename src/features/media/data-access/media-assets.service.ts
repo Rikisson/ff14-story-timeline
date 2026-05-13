@@ -68,6 +68,9 @@ const MIN_WIDTH: Record<'cover' | 'background', number> = {
 };
 
 const WEBP_QUALITY = 0.75;
+const THUMB_WIDTH = 640;
+const THUMB_QUALITY = 0.7;
+const THUMB_SUFFIX = '.thumb';
 
 @Injectable({ providedIn: 'root' })
 export class MediaAssetsService {
@@ -109,6 +112,13 @@ export class MediaAssetsService {
     return this.byId(assetId)?.url;
   }
 
+  // Prefer the 640w thumb when available; fall back to the full image so assets
+  // uploaded before the thumb pipeline still render in card slots.
+  thumbUrlFor(assetId: string | undefined | null): string | undefined {
+    const asset = this.byId(assetId);
+    return asset?.thumbUrl ?? asset?.url;
+  }
+
   async refresh(universeId?: string): Promise<void> {
     const id = universeId ?? this.universes.activeUniverseId();
     const seq = ++this.refreshSeq;
@@ -132,31 +142,49 @@ export class MediaAssetsService {
     assertMimeAndSize(input.kind, input.file);
 
     let file = input.file;
+    let thumbFile: File | undefined;
     if (isImageKind(input.kind)) {
       if (isTranscodedKind(input.kind)) {
-        file = await processImage(input.kind, file);
+        const processed = await processImage(input.kind, file);
+        file = processed.full;
+        thumbFile = processed.thumb;
       } else {
         await assertImageDimensions(input.kind, file);
       }
     }
 
     const assetId = crypto.randomUUID();
-    const filename = sanitizeFilename(file.name);
-    const objectRef: R2ObjectRef = { universeId, kind: input.kind, assetId, filename };
+    const objectRef: R2ObjectRef = {
+      universeId,
+      kind: input.kind,
+      assetId,
+      filename: sanitizeFilename(file.name),
+    };
 
-    const uploadUrl = await this.r2.signUpload(objectRef);
-    const putRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': file.type, 'Cache-Control': CACHE_CONTROL },
-    });
-    if (!putRes.ok) {
-      throw new Error(`Upload failed (${putRes.status}).`);
+    await this.putObject(objectRef, file);
+
+    let thumbRef: R2ObjectRef | undefined;
+    if (thumbFile) {
+      thumbRef = {
+        universeId,
+        kind: input.kind,
+        assetId,
+        filename: sanitizeFilename(thumbFile.name),
+      };
+      try {
+        await this.putObject(thumbRef, thumbFile);
+      } catch (err) {
+        // The full image is already in R2; clean it up so we don't leave an
+        // orphan when the thumb leg fails.
+        await this.deleteObject(objectRef).catch(() => undefined);
+        throw err;
+      }
     }
 
     const stored: StoredAsset = {
       kind: input.kind,
       url: this.r2.publicUrlFor(objectRef),
+      thumbUrl: thumbRef ? this.r2.publicUrlFor(thumbRef) : undefined,
       label: input.label?.trim() || stripExtension(input.file.name),
       blurDataUrl: input.blurDataUrl,
       tags: input.tags,
@@ -174,11 +202,24 @@ export class MediaAssetsService {
       // metadata write fails. If the cleanup itself fails, surface the original
       // error — the orphan is recoverable, the failed write isn't.
       await this.deleteObject(objectRef).catch(() => undefined);
+      if (thumbRef) await this.deleteObject(thumbRef).catch(() => undefined);
       throw err;
     }
     const created: AssetDoc = { id: assetId, ...stored };
     this._assets.update((curr) => [created, ...curr]);
     return created;
+  }
+
+  private async putObject(ref: R2ObjectRef, file: File): Promise<void> {
+    const uploadUrl = await this.r2.signUpload(ref);
+    const res = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type, 'Cache-Control': CACHE_CONTROL },
+    });
+    if (!res.ok) {
+      throw new Error(`Upload failed (${res.status}).`);
+    }
   }
 
   async list(filter: AssetListFilter = {}): Promise<AssetDoc[]> {
@@ -209,8 +250,11 @@ export class MediaAssetsService {
 
   async delete(asset: AssetDoc): Promise<void> {
     const universeId = this.requireUniverseId();
-    const ref = this.r2.parseObjectRef(asset.url);
-    if (ref) {
+    const refs = [asset.url, asset.thumbUrl]
+      .filter((u): u is string => !!u)
+      .map((u) => this.r2.parseObjectRef(u))
+      .filter((r): r is R2ObjectRef => r !== null);
+    for (const ref of refs) {
       await this.deleteObject(ref).catch(() => undefined);
     }
     await deleteDoc(
@@ -282,8 +326,12 @@ async function assertImageDimensions(
 }
 
 // Decode → validate minimum width → downscale to per-kind max (preserving aspect ratio)
-// → re-encode as WebP. Returns a fresh File so the rest of the upload path is unchanged.
-async function processImage(kind: 'cover' | 'background', file: File): Promise<File> {
+// → re-encode as WebP. Covers also get a 640w thumb encoded from the same decoded
+// bitmap so timeline/list cards never have to download the full-res image.
+async function processImage(
+  kind: 'cover' | 'background',
+  file: File,
+): Promise<{ full: File; thumb?: File }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   try {
     const minW = MIN_WIDTH[kind];
@@ -292,26 +340,50 @@ async function processImage(kind: 'cover' | 'background', file: File): Promise<F
         `Image is too small (${bitmap.width}×${bitmap.height}). Minimum width for ${kind} is ${minW}px.`,
       );
     }
-    const { w: maxW, h: maxH } = MAX_DIMENSIONS[kind];
-    const scale = Math.min(1, maxW / bitmap.width, maxH / bitmap.height);
-    const targetW = Math.max(1, Math.round(bitmap.width * scale));
-    const targetH = Math.max(1, Math.round(bitmap.height * scale));
-
-    const canvas = document.createElement('canvas');
-    canvas.width = targetW;
-    canvas.height = targetH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D context unavailable.');
-    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/webp', WEBP_QUALITY),
+    const full = await encodeBitmapToWebP(
+      bitmap,
+      file.name,
+      MAX_DIMENSIONS[kind],
+      WEBP_QUALITY,
+      '',
     );
-    if (!blob) throw new Error('WebP encoding failed.');
-    return new File([blob], `${stripExtension(file.name)}.webp`, { type: 'image/webp' });
+    if (kind !== 'cover') return { full };
+    const thumb = await encodeBitmapToWebP(
+      bitmap,
+      file.name,
+      { w: THUMB_WIDTH, h: Number.MAX_SAFE_INTEGER },
+      THUMB_QUALITY,
+      THUMB_SUFFIX,
+    );
+    return { full, thumb };
   } finally {
     bitmap.close();
   }
+}
+
+async function encodeBitmapToWebP(
+  bitmap: ImageBitmap,
+  sourceName: string,
+  maxDims: { w: number; h: number },
+  quality: number,
+  suffix: string,
+): Promise<File> {
+  const scale = Math.min(1, maxDims.w / bitmap.width, maxDims.h / bitmap.height);
+  const targetW = Math.max(1, Math.round(bitmap.width * scale));
+  const targetH = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable.');
+  ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/webp', quality),
+  );
+  if (!blob) throw new Error('WebP encoding failed.');
+  return new File([blob], `${stripExtension(sourceName)}${suffix}.webp`, { type: 'image/webp' });
 }
 
 function sanitizeFilename(name: string): string {
