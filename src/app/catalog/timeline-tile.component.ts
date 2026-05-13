@@ -51,7 +51,7 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
     <ng-container *transloco="let t; prefix: 'catalog'">
       <div
         #root
-        class="group relative aspect-video w-full overflow-hidden rounded-md bg-surface-strong shadow-sm"
+        class="group relative aspect-video w-full overflow-hidden rounded-md bg-surface shadow-sm"
         [class.border]="!accentColor()"
         [class.border-border]="!accentColor()"
         [class.border-l-4]="!!accentColor()"
@@ -65,23 +65,17 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
             [ngSrc]="u"
             alt=""
             fill
-            sizes="320px"
             class="absolute inset-0 object-cover"
           />
-        } @else {
+          <!-- Scrim only when there's an image to read over — without it, the
+               imageless card stays in natural theme tones rather than getting
+               artificially darkened. The scrim token is pure black in both
+               themes, so darkening reads the same way under light or dark. -->
           <div
-            class="absolute inset-0 bg-gradient-to-br from-tone-indigo-border to-surface-stronger"
+            class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/10"
             aria-hidden="true"
           ></div>
         }
-
-        <!-- Always-on dark gradient so the title reads in any theme regardless
-             of the underlying image. Uses the scrim token (pure black) which is
-             intentionally theme-invariant. -->
-        <div
-          class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/10"
-          aria-hidden="true"
-        ></div>
 
         @if (draft()) {
           <span class="absolute left-2 top-2 z-20"><app-tag tone="amber">{{ t('field.draftBadge') }}</app-tag></span>
@@ -89,16 +83,28 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
 
         <div appContentLang class="absolute inset-x-3 bottom-2 z-10 flex flex-col gap-0.5">
           @if (formattedDate(); as d) {
-            <p class="m-0 text-[10px] font-medium uppercase tracking-wider text-scrim-foreground/85 drop-shadow">{{ d }}</p>
+            <p
+              class="m-0 text-[10px] font-medium uppercase tracking-wider"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow]="hasImage()"
+              [class.text-foreground-muted]="!hasImage()"
+            >{{ d }}</p>
           }
-          <h3 class="m-0 line-clamp-2 text-sm font-semibold text-scrim-foreground drop-shadow">{{ title() }}</h3>
+          <h3
+            class="m-0 line-clamp-2 text-sm font-semibold"
+            [class.text-scrim-foreground]="hasImage()"
+            [class.drop-shadow]="hasImage()"
+            [class.text-foreground]="!hasImage()"
+          >{{ title() }}</h3>
           @if (plotlineChips().length > 0) {
             <ul class="m-0 mt-1 flex list-none flex-wrap gap-1 p-0">
               @for (p of plotlineChips(); track p.id) {
                 <li>
                   <span
-                    class="inline-block rounded-full border px-1.5 py-px text-[9px] font-medium text-scrim-foreground"
-                    [style.borderColor]="p.color ?? 'var(--color-scrim-foreground)'"
+                    class="inline-block rounded-full border px-1.5 py-px text-[9px] font-medium"
+                    [class.text-scrim-foreground]="hasImage()"
+                    [class.text-foreground-muted]="!hasImage()"
+                    [style.borderColor]="p.color ?? chipFallbackBorder()"
                   >{{ p.label }}</span>
                 </li>
               }
@@ -144,6 +150,15 @@ export class TimelineTileComponent {
 
   protected readonly thumbUrl = computed(() => this.media.thumbUrlFor(this.coverAssetId()));
   protected readonly fullUrl = computed(() => this.media.urlFor(this.coverAssetId()));
+  protected readonly hasImage = computed(() => !!this.thumbUrl());
+
+  // Plotline chip border falls back to a theme-appropriate neutral when the
+  // user hasn't assigned a color: scrim-foreground (always white) when the
+  // tile carries an image, foreground-subtle otherwise so the chip remains
+  // legible against the natural surface tone.
+  protected readonly chipFallbackBorder = computed(() =>
+    this.hasImage() ? 'var(--color-scrim-foreground)' : 'var(--color-foreground-subtle)',
+  );
 
   // When the lane itself carries a plotline color, suppress per-tile chips —
   // the lane border already conveys the plotline. Mixed-plotline cards in the
