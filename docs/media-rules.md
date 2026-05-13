@@ -10,6 +10,8 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 - Metadata in Firestore, binaries in Cloudflare R2 (see `backend-rules.md` *Binary storage*).
 - Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. Path encodes universe and asset kind only — never ownership. The same asset can be referenced by any number of entities.
+- Uploads and deletes flow through the `media-signer` Worker (`cloudflare/media-signer/`), which checks the caller's Firebase id token + universe membership and returns a short-lived presigned R2 URL. The client `PUT`s/`DELETE`s the asset body directly to that URL; public reads come from the bucket's public base composed client-side as `${publicBase}/universes/{u}/{kind}/{assetId}/{filename}`. Worker contract and Cloudflare setup live in its README.
+- One Worker + one bucket cover both localhost and the deployed app. Split into `[env.dev]` / `[env.prod]` (drafted in `wrangler.toml`) when real users would notice if a deploy broke things.
 - `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP on disk. Cover and background uploads accept JPEG, PNG, WebP, or AVIF and are downscaled + transcoded to WebP in-browser before the PUT. Sprite uploads accept WebP only — authored transparency is preserved bit-exact.
@@ -47,27 +49,4 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 # Implementation
 
-## Cloudflare R2 wiring
-
-Client and Worker code are committed; deploying R2 requires a Cloudflare account and is staged for when one is provisioned. The Worker source lives at `cloudflare/media-signer/`; setup steps are documented in its README.
-
-Setup checklist (Cloudflare side, single environment — localhost dev and the deployed app share one bucket and one Worker):
-
-- Create one R2 bucket; configure it for public reads.
-- Bind a custom domain (or note the `*.r2.dev` URL); set CORS to allow `PUT, DELETE` from `http://localhost:4200` *and* the deployed origin.
-- Create one R2 API token scoped to the bucket; capture the access key id / secret.
-- Fill in `R2_BUCKET`, `R2_PUBLIC_BASE`, and `ALLOWED_ORIGINS` (comma-separated) in `cloudflare/media-signer/wrangler.toml`. Run `wrangler login` then `pnpm deploy`; push secrets via `pnpm secret:put`.
-- Paste the Worker URL (`signerUrl`) and bucket public base (`publicBase`) into `src/app/r2.config.ts`.
-
-Split into per-environment buckets and Workers (the `[env.dev]` / `[env.prod]` shape that `wrangler.toml` was originally drafted for) when real users would notice if a deploy broke things.
-
-Worker contract (`POST /sign-upload`, `POST /sign-delete`):
-
-```
-Headers: Authorization: Bearer <firebase-id-token>
-Body:    { universeId, kind, assetId, filename }
-```
-
-Returns `{ uploadUrl }` or `{ deleteUrl }` — short-lived presigned R2 URLs. The client `PUT`s/`DELETE`s the asset body directly to that URL. Public read URL is composed client-side as `${publicBase}/universes/{u}/{kind}/{assetId}/{filename}` — never stored separately on the asset doc.
-
-A migration step is intentionally absent: there is no production media to migrate. If real assets exist when R2 is brought up, write a one-shot script that lists `_assets` docs, re-uploads from the old `url` to R2, and patches `url` in a Firestore transaction.
+*(Empty — R2 + Worker are wired up and live; the rules above describe the current state.)*
