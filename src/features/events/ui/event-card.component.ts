@@ -4,7 +4,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
 import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
-import { DangerButtonComponent, EntityRefComponent, GhostButtonComponent } from '@shared/ui';
+import { EntityRefComponent, HERO_DANGER, HERO_SECONDARY } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
 
@@ -12,8 +12,6 @@ import { TimelineEvent } from '../data-access/event.types';
   selector: 'app-event-card',
   imports: [
     NgOptimizedImage,
-    GhostButtonComponent,
-    DangerButtonComponent,
     EntityRefComponent,
     TranslocoDirective,
     ContentLangDirective,
@@ -22,59 +20,64 @@ import { TimelineEvent } from '../data-access/event.types';
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
       <article
-        class="flex h-full flex-col overflow-hidden rounded-lg bg-surface shadow-sm"
-        [class.border]="!accentColor()"
-        [class.border-border]="!accentColor()"
-        [class.border-l-4]="!!accentColor()"
-        [class.border-y]="!!accentColor()"
-        [class.border-r]="!!accentColor()"
-        [class.border-surface-muted]="!!accentColor()"
-        [style.borderLeftColor]="accentColor()"
+        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
       >
         @if (coverUrl(); as u) {
-          <div class="relative aspect-video w-full bg-surface-muted">
-            <img [ngSrc]="u" alt="" fill class="object-cover" />
-          </div>
+          <img
+            [ngSrc]="u"
+            alt=""
+            fill
+            class="absolute inset-0 object-cover"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20"
+            aria-hidden="true"
+          ></div>
         }
-        <div class="flex flex-1 flex-col gap-3 p-4">
-          <div class="flex items-start justify-between gap-2">
-            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ event().name }}</h3>
-            @if (canEdit()) {
-              <div class="flex shrink-0 gap-1">
-                <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-                <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-              </div>
+
+        <div
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+        >
+          <div appContentLang class="contents">
+            <h2
+              class="m-0 text-2xl font-bold sm:text-3xl"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow-md]="hasImage()"
+              [class.text-foreground]="!hasImage()"
+            >{{ event().name }}</h2>
+
+            @if (formattedDate(); as d) {
+              <p
+                class="m-0 text-xs font-medium uppercase tracking-wider"
+                [class.text-scrim-foreground]="hasImage()"
+                [class.drop-shadow]="hasImage()"
+                [class.text-foreground-muted]="!hasImage()"
+              >{{ d }}</p>
+            }
+
+            @if (event().description; as desc) {
+              <p
+                class="m-0 max-w-2xl whitespace-pre-line text-sm line-clamp-6"
+                [class.text-scrim-foreground]="hasImage()"
+                [class.drop-shadow]="hasImage()"
+                [class.text-foreground-muted]="!hasImage()"
+              >{{ desc }}</p>
+            }
+
+            @if (relatedRefs().length > 0) {
+              <ul class="m-0 flex list-none flex-wrap items-center justify-center gap-1.5 p-0">
+                @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+                  <li><app-entity-ref [ref]="r" /></li>
+                }
+              </ul>
             }
           </div>
 
-          @if (formattedDate(); as d) {
-            <p appContentLang class="m-0 text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ d }}</p>
-          }
-
-          @if (event().description; as desc) {
-            <p appContentLang class="m-0 line-clamp-4 whitespace-pre-line text-sm text-foreground-muted">{{ desc }}</p>
-          }
-
-          @if (relatedRefs().length > 0) {
-            <div class="flex flex-wrap gap-1.5">
-              @for (r of relatedRefs(); track r.kind + ':' + r.id) {
-                <app-entity-ref [ref]="r" />
-              }
+          @if (canEdit()) {
+            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <button type="button" [class]="heroSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button type="button" [class]="heroDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
             </div>
-          }
-
-          @if (plotlineChips().length > 0) {
-            <ul class="m-0 flex list-none flex-wrap gap-1 p-0">
-              @for (p of plotlineChips(); track p.id) {
-                <li>
-                  <span
-                    class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                    [style.borderColor]="p.color ?? 'var(--color-border-strong)'"
-                    [style.color]="p.color ?? 'var(--color-foreground-subtle)'"
-                  >{{ p.label }}</span>
-                </li>
-              }
-            </ul>
           }
         </div>
       </article>
@@ -85,19 +88,18 @@ import { TimelineEvent } from '../data-access/event.types';
 export class EventCardComponent {
   readonly event = input.required<TimelineEvent>();
   readonly canEdit = input<boolean>(false);
-  readonly accentColor = input<string | null>(null);
-  readonly plotlineChips = input<{ id: string; label: string; color?: string }[]>([]);
   readonly edit = output<void>();
   readonly remove = output<void>();
 
   private readonly calendar = inject(CalendarService);
   private readonly media = inject(MediaAssetsService);
 
+  protected readonly heroSecondaryClass = HERO_SECONDARY;
+  protected readonly heroDangerClass = HERO_DANGER;
+
   protected readonly relatedRefs = computed(() => this.event().relatedRefs ?? []);
-  // Card-sized render → use the 640w thumb so the timeline scroll doesn't
-  // pull down full-res covers. Falls back to the full URL for legacy assets
-  // uploaded before the thumb pipeline existed.
   protected readonly coverUrl = computed(() => this.media.thumbUrlFor(this.event().coverAssetId));
+  protected readonly hasImage = computed(() => !!this.coverUrl());
 
   protected readonly formattedDate = computed(() => {
     const d = this.event().inGameDate;

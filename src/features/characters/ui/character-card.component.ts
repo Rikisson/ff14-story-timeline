@@ -6,9 +6,9 @@ import { ContentLangDirective } from '@features/universes';
 import { Character } from '../data-access/character.types';
 import { EntityResolverService } from '@shared/data-access';
 import {
-  DangerButtonComponent,
   EntityRefComponent,
-  GhostButtonComponent,
+  HERO_DANGER,
+  HERO_SECONDARY,
   MarkdownTextComponent,
 } from '@shared/ui';
 
@@ -16,8 +16,6 @@ import {
   selector: 'app-character-card',
   imports: [
     NgOptimizedImage,
-    GhostButtonComponent,
-    DangerButtonComponent,
     EntityRefComponent,
     MarkdownTextComponent,
     TranslocoDirective,
@@ -27,36 +25,56 @@ import {
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
       <article
-        class="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
+        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
       >
         @if (coverUrl(); as u) {
-          <div class="relative aspect-video w-full bg-surface-muted">
-            <img [ngSrc]="u" alt="" fill class="object-cover" />
-          </div>
+          <img
+            [ngSrc]="u"
+            alt=""
+            fill
+            class="absolute inset-0 object-cover"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20"
+            aria-hidden="true"
+          ></div>
         }
-        <div class="flex flex-1 flex-col gap-3 p-4">
-          <div class="flex items-start justify-between gap-2">
-            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ character().name }}</h3>
-            @if (canEdit()) {
-              <div class="flex shrink-0 gap-1">
-                <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-                <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-              </div>
+
+        <div
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+        >
+          <div appContentLang class="contents">
+            <h2
+              class="m-0 text-2xl font-bold sm:text-3xl"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow-md]="hasImage()"
+              [class.text-foreground]="!hasImage()"
+            >{{ character().name }}</h2>
+
+            @if (character().description; as d) {
+              <app-markdown-text
+                class="line-clamp-6 max-w-2xl text-sm"
+                [class.text-scrim-foreground]="hasImage()"
+                [class.drop-shadow]="hasImage()"
+                [class.text-foreground-muted]="!hasImage()"
+                [text]="d"
+                [options]="inlineRefOptions()"
+              />
+            }
+
+            @if (relatedRefs().length > 0) {
+              <ul class="m-0 flex list-none flex-wrap items-center justify-center gap-1.5 p-0">
+                @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+                  <li><app-entity-ref [ref]="r" /></li>
+                }
+              </ul>
             }
           </div>
-          @if (character().description; as d) {
-            <app-markdown-text
-              appContentLang
-              class="text-sm text-foreground-muted"
-              [text]="d"
-              [options]="inlineRefOptions()"
-            />
-          }
-          @if (relatedRefs().length > 0) {
-            <div class="flex flex-wrap gap-1.5">
-              @for (r of relatedRefs(); track r.kind + ':' + r.id) {
-                <app-entity-ref [ref]="r" />
-              }
+
+          @if (canEdit()) {
+            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <button type="button" [class]="heroSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button type="button" [class]="heroDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
             </div>
           }
         </div>
@@ -74,7 +92,11 @@ export class CharacterCardComponent {
   private readonly entityResolver = inject(EntityResolverService);
   private readonly media = inject(MediaAssetsService);
 
+  protected readonly heroSecondaryClass = HERO_SECONDARY;
+  protected readonly heroDangerClass = HERO_DANGER;
+
   protected readonly relatedRefs = computed(() => this.character().relatedRefs ?? []);
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
   protected readonly coverUrl = computed(() => this.media.urlFor(this.character().coverAssetId));
+  protected readonly hasImage = computed(() => !!this.coverUrl());
 }

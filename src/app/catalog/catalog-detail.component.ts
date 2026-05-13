@@ -1,3 +1,4 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -9,7 +10,9 @@ import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
   EntityRefComponent,
-  GhostButtonComponent,
+  HERO_DANGER,
+  HERO_PRIMARY,
+  HERO_SECONDARY,
   MarkdownTextComponent,
   TagComponent,
 } from '@shared/ui';
@@ -17,22 +20,12 @@ import { formatInGameDate } from '@shared/utils';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
-const HERO_BASE =
-  'inline-flex h-11 items-center justify-center rounded-md px-5 text-sm font-medium ' +
-  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
-const HERO_PRIMARY =
-  HERO_BASE +
-  ' bg-accent text-accent-foreground shadow-lg hover:bg-accent-hover active:bg-accent-active focus-visible:ring-accent-ring';
-const HERO_SECONDARY =
-  HERO_BASE +
-  ' bg-surface/90 text-foreground shadow hover:bg-surface active:bg-surface-muted focus-visible:ring-accent-ring';
-
 @Component({
   selector: 'app-catalog-detail',
   imports: [
+    NgOptimizedImage,
     RouterLink,
     MarkdownTextComponent,
-    GhostButtonComponent,
     EntityRefComponent,
     TagComponent,
     TranslocoDirective,
@@ -47,85 +40,93 @@ const HERO_SECONDARY =
       },
     }),
   ],
-  host: { class: 'block' },
+  host: { class: 'block h-full' },
   template: `
     <ng-container *transloco="let t; prefix: 'catalog'">
       <article
-        class="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
+        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
       >
-        <div
-          class="relative aspect-[2/1] max-h-80 w-full overflow-hidden bg-surface-strong"
-          [style.backgroundImage]="background() ? 'url(' + background() + ')' : null"
-          [style.backgroundSize]="'cover'"
-          [style.backgroundPosition]="'center'"
-        >
-          @if (!background()) {
-            <div
-              class="size-full bg-gradient-to-br from-tone-indigo-border to-surface-stronger"
-              aria-hidden="true"
-            ></div>
-          }
+        @if (background(); as u) {
+          <img
+            [ngSrc]="u"
+            alt=""
+            fill
+            class="absolute inset-0 object-cover"
+          />
           <div
             class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20"
             aria-hidden="true"
           ></div>
+        }
 
-          @if (story().draft) {
-            <span class="absolute left-3 top-3">
-              <app-tag tone="amber">{{ t('field.draftBadge') }}</app-tag>
-            </span>
-          }
+        @if (story().draft) {
+          <span class="absolute left-3 top-3 z-10">
+            <app-tag tone="amber">{{ t('field.draftBadge') }}</app-tag>
+          </span>
+        }
 
-          <div
-            class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
-          >
-            <div appContentLang class="contents">
-              <h2 class="m-0 text-2xl font-bold text-scrim-foreground drop-shadow-md sm:text-3xl">
-                {{ storyTitle() }}
-              </h2>
-              @if (story().description; as d) {
-                <app-markdown-text
-                  class="line-clamp-3 max-w-2xl text-sm text-scrim-foreground/90 drop-shadow"
-                  [text]="d"
-                  [options]="inlineRefOptions()"
-                  [inline]="true"
-                />
-              }
-            </div>
-            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
-              <a
-                [routerLink]="['/play', story().id]"
-                [class]="heroPrimaryClass"
-                [attr.aria-label]="t('tooltip.playStory', { title: storyTitle() })"
+        <div
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+        >
+          <div appContentLang class="contents">
+            <h2
+              class="m-0 text-2xl font-bold sm:text-3xl"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow-md]="hasImage()"
+              [class.text-foreground]="!hasImage()"
+            >{{ storyTitle() }}</h2>
+
+            @if (formattedDate(); as d) {
+              <p
+                class="m-0 text-xs font-medium uppercase tracking-wider"
+                [class.text-scrim-foreground]="hasImage()"
+                [class.drop-shadow]="hasImage()"
+                [class.text-foreground-muted]="!hasImage()"
+              >{{ d }}</p>
+            }
+
+            @if (story().description; as d) {
+              <app-markdown-text
+                class="line-clamp-6 max-w-2xl text-sm"
+                [class.text-scrim-foreground]="hasImage()"
+                [class.drop-shadow]="hasImage()"
+                [class.text-foreground-muted]="!hasImage()"
+                [text]="d"
+                [options]="inlineRefOptions()"
+                [inline]="true"
+              />
+            }
+
+            @if (relatedRefs().length > 0) {
+              <ul class="m-0 flex list-none flex-wrap items-center justify-center gap-1.5 p-0">
+                @for (r of relatedRefs(); track r.kind + ':' + r.id) {
+                  <li><app-entity-ref [ref]="r" /></li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <a
+              [routerLink]="['/play', story().id]"
+              [class]="heroPrimaryClass"
+              [attr.aria-label]="t('tooltip.playStory', { title: storyTitle() })"
+            >
+              {{ t('action.playEmoji') }}
+            </a>
+            @if (canEdit()) {
+              <a [routerLink]="['/edit', story().id]" [class]="heroSecondaryClass">{{ t('action.edit') }}</a>
+              <button
+                type="button"
+                [class]="heroDangerClass"
+                [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
+                (click)="confirmDelete()"
               >
-                {{ t('action.playEmoji') }}
-              </a>
-              @if (canEdit()) {
-                <a [routerLink]="['/edit', story().id]" [class]="heroSecondaryClass">{{ t('action.edit') }}</a>
-                <button
-                  uiGhost
-                  type="button"
-                  class="bg-surface/15 text-foreground hover:bg-surface/25"
-                  [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
-                  (click)="confirmDelete()"
-                >
-                  {{ t('action.delete') }}
-                </button>
-              }
-            </div>
+                {{ t('action.delete') }}
+              </button>
+            }
           </div>
         </div>
-
-        @if (tagsVisible()) {
-          <div class="flex flex-wrap gap-1.5 px-4 py-3">
-            @if (formattedDate(); as d) {
-              <app-tag>{{ d }}</app-tag>
-            }
-            @for (r of relatedRefs(); track r.kind + ':' + r.id) {
-              <app-entity-ref [ref]="r" />
-            }
-          </div>
-        }
       </article>
     </ng-container>
   `,
@@ -144,6 +145,7 @@ export class CatalogDetailComponent {
 
   protected readonly heroPrimaryClass = HERO_PRIMARY;
   protected readonly heroSecondaryClass = HERO_SECONDARY;
+  protected readonly heroDangerClass = HERO_DANGER;
 
   protected readonly storyTitle = computed(
     () => this.story().title || this.transloco.translate('catalog.field.untitled'),
@@ -152,6 +154,7 @@ export class CatalogDetailComponent {
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   protected readonly background = computed(() => this.media.urlFor(this.story().coverAssetId));
+  protected readonly hasImage = computed(() => !!this.background());
 
   protected readonly formattedDate = computed(() => {
     const d = this.story().inGameDate;
@@ -164,11 +167,6 @@ export class CatalogDetailComponent {
   });
 
   protected readonly relatedRefs = computed(() => this.story().relatedRefs ?? []);
-
-  protected readonly tagsVisible = computed(() => {
-    const s = this.story();
-    return !isInGameDateEmpty(s.inGameDate) || (s.relatedRefs ?? []).length > 0;
-  });
 
   protected confirmDelete(): void {
     if (

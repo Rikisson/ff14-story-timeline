@@ -3,6 +3,7 @@ export * from './combobox-picker';
 export * from './entity-list-pane';
 export * from './form-error';
 export * from './entity-ref';
+export * from './hero-buttons';
 export * from './in-game-date-input';
 export * from './locale-toggle';
 export * from './markdown-text';

@@ -3,11 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
-import {
-  DangerButtonComponent,
-  EntityRefComponent,
-  GhostButtonComponent,
-} from '@shared/ui';
+import { EntityRefComponent, HERO_DANGER, HERO_SECONDARY } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntry } from '../data-access/codex-entry.types';
 
@@ -15,8 +11,6 @@ import { CodexEntry } from '../data-access/codex-entry.types';
   selector: 'app-codex-entry-card',
   imports: [
     NgOptimizedImage,
-    GhostButtonComponent,
-    DangerButtonComponent,
     EntityRefComponent,
     TranslocoDirective,
     ContentLangDirective,
@@ -25,44 +19,62 @@ import { CodexEntry } from '../data-access/codex-entry.types';
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
       <article
-        class="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
+        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
       >
         @if (coverUrl(); as u) {
-          <div class="relative aspect-video w-full bg-surface-muted">
-            <img [ngSrc]="u" alt="" fill class="object-cover" />
-          </div>
+          <img
+            [ngSrc]="u"
+            alt=""
+            fill
+            class="absolute inset-0 object-cover"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/20"
+            aria-hidden="true"
+          ></div>
         }
-        <div class="flex flex-1 flex-col gap-3 p-4">
-          <div class="flex items-start justify-between gap-2">
-            <h3 appContentLang class="m-0 flex-1 text-lg font-semibold text-foreground">{{ entry().title }}</h3>
-            <div class="flex shrink-0 items-center gap-2">
-              @if (entry().category; as c) {
-                <span
-                  appContentLang
-                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"
-                  [style.borderColor]="categoryColor() ?? 'var(--color-border-strong)'"
-                  [style.color]="categoryColor() ?? 'var(--color-foreground-subtle)'"
-                >{{ c }}</span>
-              }
-              @if (canEdit()) {
-                <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-                <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-              }
-            </div>
+
+        @if (entry().category; as c) {
+          <span
+            appContentLang
+            class="absolute left-3 top-3 z-10 inline-flex items-center rounded-full border bg-surface/90 px-2 py-0.5 text-xs font-medium shadow-sm"
+            [style.borderColor]="categoryColor() ?? 'var(--color-border-strong)'"
+            [style.color]="categoryColor() ?? 'var(--color-foreground-subtle)'"
+          >{{ c }}</span>
+        }
+
+        <div
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+        >
+          <div appContentLang class="contents">
+            <h2
+              class="m-0 text-2xl font-bold sm:text-3xl"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow-md]="hasImage()"
+              [class.text-foreground]="!hasImage()"
+            >{{ entry().title }}</h2>
+
+            <p
+              class="m-0 max-w-2xl whitespace-pre-line text-sm line-clamp-6"
+              [class.text-scrim-foreground]="hasImage()"
+              [class.drop-shadow]="hasImage()"
+              [class.text-foreground-muted]="!hasImage()"
+            >{{ entry().description }}</p>
+
+            @if ((entry().relatedRefs ?? []).length > 0) {
+              <ul class="m-0 flex list-none flex-wrap items-center justify-center gap-1.5 p-0">
+                @for (r of entry().relatedRefs ?? []; track r.kind + ':' + r.id) {
+                  <li><app-entity-ref [ref]="r" /></li>
+                }
+              </ul>
+            }
           </div>
 
-          <p appContentLang class="m-0 whitespace-pre-line text-sm text-foreground-muted">
-            {{ entry().description }}
-          </p>
-
-          @if ((entry().relatedRefs ?? []).length > 0) {
-            <ul class="flex flex-wrap gap-1.5">
-              @for (r of entry().relatedRefs ?? []; track r.kind + ':' + r.id) {
-                <li>
-                  <app-entity-ref [ref]="r" />
-                </li>
-              }
-            </ul>
+          @if (canEdit()) {
+            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <button type="button" [class]="heroSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button type="button" [class]="heroDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
+            </div>
           }
         </div>
       </article>
@@ -79,10 +91,14 @@ export class CodexEntryCardComponent {
   private readonly categories = inject(CodexCategoriesService);
   private readonly media = inject(MediaAssetsService);
 
+  protected readonly heroSecondaryClass = HERO_SECONDARY;
+  protected readonly heroDangerClass = HERO_DANGER;
+
   protected readonly categoryColor = computed<string | undefined>(() => {
     const cat = this.entry().category?.toLowerCase();
     if (!cat) return undefined;
     return this.categories.categoryByLabel().get(cat)?.color;
   });
   protected readonly coverUrl = computed(() => this.media.urlFor(this.entry().coverAssetId));
+  protected readonly hasImage = computed(() => !!this.coverUrl());
 }
