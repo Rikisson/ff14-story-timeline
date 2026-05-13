@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { SortDirection } from './catalog-filters.component';
-import { TimelineCard, TimelineLane } from './catalog-timeline-lanes';
+import { TimelineCard, TimelineLane, UNASSIGNED_LANE_KEY } from './catalog-timeline-lanes';
 import { TimelineTileComponent } from './timeline-tile.component';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
@@ -34,9 +34,9 @@ const SCROLL_STEP = 320;
       <section
         class="flex flex-col gap-2"
         role="region"
-        [attr.aria-label]="lane().label || t('field.allItems')"
+        [attr.aria-label]="isUnassigned() ? t('field.unassigned') : (lane().label || t('field.allItems'))"
       >
-        @if (lane().label) {
+        @if (lane().label || isUnassigned()) {
           <header class="flex items-center gap-2">
             @if (lane().color) {
               <span
@@ -46,7 +46,7 @@ const SCROLL_STEP = 320;
               ></span>
             }
             <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
-              {{ lane().label }}
+              {{ isUnassigned() ? t('field.unassigned') : lane().label }}
             </h3>
             <span class="text-xs text-foreground-faint">
               ({{ lane().dated.length + lane().undated.length }})
@@ -118,6 +118,8 @@ export class TimelineLaneComponent {
 
   protected readonly rail = viewChild<ElementRef<HTMLDivElement>>('rail');
   protected readonly announcement = signal('');
+
+  protected readonly isUnassigned = computed(() => this.lane().key === UNASSIGNED_LANE_KEY);
 
   protected readonly visibleDated = computed<TimelineCard[]>(() =>
     this.lane().dated.slice(0, this.pageSize()),

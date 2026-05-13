@@ -31,8 +31,9 @@ export interface TimelineLane {
 }
 
 export const DEFAULT_LANE_KEY = '__all__';
+// The label for this lane comes from i18n at the consumer; the empty string
+// here keeps `lane.label` truthy-checks honest (consumers gate on the key).
 export const UNASSIGNED_LANE_KEY = '__unassigned__';
-export const UNASSIGNED_LANE_LABEL = 'Unassigned';
 
 interface BuildArgs {
   stories: Story[];
@@ -110,7 +111,7 @@ export function buildTimelineLanes(args: BuildArgs): TimelineLane[] {
     lanes.push(
       partitionLane(
         UNASSIGNED_LANE_KEY,
-        UNASSIGNED_LANE_LABEL,
+        '',
         undefined,
         unassigned,
         sortDirection,
