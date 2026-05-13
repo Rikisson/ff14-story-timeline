@@ -23,20 +23,20 @@ describe('retryOnTransient', () => {
   });
 
   it('rethrows non-transient FirebaseErrors without retrying', async () => {
-    const fn = vi.fn().mockRejectedValue(fbError('firestore/permission-denied'));
+    const fn = vi.fn().mockRejectedValue(fbError('permission-denied'));
     await expect(retryOnTransient(fn)).rejects.toThrow();
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry failed-precondition without "index" in message', async () => {
-    const fn = vi.fn().mockRejectedValue(fbError('firestore/failed-precondition', 'some other precondition'));
+    const fn = vi.fn().mockRejectedValue(fbError('failed-precondition', 'some other precondition'));
     await expect(retryOnTransient(fn)).rejects.toThrow();
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('retries on firestore/unavailable and returns the eventual result', async () => {
     const fn = vi.fn()
-      .mockRejectedValueOnce(fbError('firestore/unavailable'))
+      .mockRejectedValueOnce(fbError('unavailable'))
       .mockResolvedValueOnce('ok');
     const promise = retryOnTransient(fn);
     await vi.runAllTimersAsync();
@@ -46,7 +46,7 @@ describe('retryOnTransient', () => {
 
   it('retries on firestore/deadline-exceeded', async () => {
     const fn = vi.fn()
-      .mockRejectedValueOnce(fbError('firestore/deadline-exceeded'))
+      .mockRejectedValueOnce(fbError('deadline-exceeded'))
       .mockResolvedValueOnce('ok');
     const promise = retryOnTransient(fn);
     await vi.runAllTimersAsync();
@@ -56,7 +56,7 @@ describe('retryOnTransient', () => {
 
   it('retries on failed-precondition when message contains "index"', async () => {
     const fn = vi.fn()
-      .mockRejectedValueOnce(fbError('firestore/failed-precondition', 'The query requires an index'))
+      .mockRejectedValueOnce(fbError('failed-precondition', 'The query requires an index'))
       .mockResolvedValueOnce('ok');
     const promise = retryOnTransient(fn);
     await vi.runAllTimersAsync();
@@ -66,7 +66,7 @@ describe('retryOnTransient', () => {
 
   it('retries on failed-precondition with mixed-case "Index" in message', async () => {
     const fn = vi.fn()
-      .mockRejectedValueOnce(fbError('firestore/failed-precondition', 'Index not yet built'))
+      .mockRejectedValueOnce(fbError('failed-precondition', 'Index not yet built'))
       .mockResolvedValueOnce('ok');
     const promise = retryOnTransient(fn);
     await vi.runAllTimersAsync();
@@ -75,7 +75,7 @@ describe('retryOnTransient', () => {
   });
 
   it('throws after 5 total attempts for a persistent transient error', async () => {
-    const fn = vi.fn().mockRejectedValue(fbError('firestore/unavailable'));
+    const fn = vi.fn().mockRejectedValue(fbError('unavailable'));
     const promise = retryOnTransient(fn);
     // Attach the rejection handler before advancing timers to avoid an unhandled rejection.
     const assertion = expect(promise).rejects.toThrow();
@@ -86,10 +86,10 @@ describe('retryOnTransient', () => {
 
   it('succeeds on the last allowed attempt', async () => {
     const fn = vi.fn()
-      .mockRejectedValueOnce(fbError('firestore/unavailable'))
-      .mockRejectedValueOnce(fbError('firestore/unavailable'))
-      .mockRejectedValueOnce(fbError('firestore/unavailable'))
-      .mockRejectedValueOnce(fbError('firestore/unavailable'))
+      .mockRejectedValueOnce(fbError('unavailable'))
+      .mockRejectedValueOnce(fbError('unavailable'))
+      .mockRejectedValueOnce(fbError('unavailable'))
+      .mockRejectedValueOnce(fbError('unavailable'))
       .mockResolvedValueOnce('last');
     const promise = retryOnTransient(fn);
     await vi.runAllTimersAsync();

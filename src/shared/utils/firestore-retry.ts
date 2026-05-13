@@ -6,9 +6,9 @@ const BASE_DELAY_MS = 3000;
 function isTransient(err: unknown): boolean {
   if (!(err instanceof FirebaseError)) return false;
   return (
-    err.code === 'firestore/unavailable' ||
-    err.code === 'firestore/deadline-exceeded' ||
-    (err.code === 'firestore/failed-precondition' && err.message.toLowerCase().includes('index'))
+    err.code === 'unavailable' ||
+    err.code === 'deadline-exceeded' ||
+    (err.code === 'failed-precondition' && err.message.toLowerCase().includes('index'))
   );
 }
 
