@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
 import { EntityKind, SlugTakenError } from '@shared/models';
+import { retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../app/firebase/firebase.service';
 
 const PAGE_SIZE = 25;
@@ -84,7 +85,7 @@ export abstract class UniverseEntityService<
       orderBy('createdAt', 'desc'),
       limit(PAGE_SIZE),
     );
-    const snap = await getDocs(q);
+    const snap = await retryOnTransient(() => getDocs(q));
     if (seq !== this.refreshSeq) return;
     this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
     this._hasMore.set(snap.docs.length === PAGE_SIZE);

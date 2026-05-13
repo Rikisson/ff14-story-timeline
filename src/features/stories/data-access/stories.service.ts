@@ -19,6 +19,7 @@ import {
 import { TranslocoService } from '@jsverse/transloco';
 import { UniverseStore } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
+import { retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   StoredStory,
@@ -98,7 +99,7 @@ export class StoriesService {
       orderBy('publishedAt', 'desc'),
       limit(PAGE_SIZE),
     );
-    const snap = await getDocs(q);
+    const snap = await retryOnTransient(() => getDocs(q));
     if (seq !== this.refreshSeq) return;
     this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
     this._hasMore.set(snap.docs.length === PAGE_SIZE);

@@ -28,6 +28,7 @@ export type {
 } from './in-game-date';
 export { resolveValidationError } from './form-validation';
 export type { ResolvedValidationError } from './form-validation';
+export { retryOnTransient } from './firestore-retry';
 export {
   INLINE_REF_BASE_CLASS,
   KIND_PICKER_CLASS,
