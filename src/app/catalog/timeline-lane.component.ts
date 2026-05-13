@@ -38,13 +38,6 @@ const SCROLL_STEP = 320;
       >
         @if (lane().label || isUnassigned()) {
           <header class="flex items-center gap-2">
-            @if (lane().color) {
-              <span
-                class="inline-block size-3 rounded-full"
-                [style.background]="lane().color"
-                aria-hidden="true"
-              ></span>
-            }
             <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
               {{ isUnassigned() ? t('field.unassigned') : lane().label }}
             </h3>
@@ -57,19 +50,22 @@ const SCROLL_STEP = 320;
         @if (lane().dated.length === 0 && lane().undated.length === 0) {
           <p class="m-0 px-1 py-2 text-sm italic text-foreground-faint">{{ t('empty.noItemsLane') }}</p>
         } @else {
+          <!-- Rail doubles as the plotline "track": when the lane has a color,
+               it paints the rail background and the cards sit on top of it.
+               The all-sides padding gives breathing room between the cards and
+               the colored frame, and also lifts the horizontal scrollbar away
+               from the bottom edge of the cards. -->
           <div
             #rail
             tabindex="0"
-            class="flex items-stretch gap-4 overflow-x-auto rounded-md pb-2 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+            class="flex items-stretch gap-4 overflow-x-auto rounded-md p-3 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+            [style.background]="lane().color || null"
             (keydown)="onRailKey($event)"
             (focusin)="onFocusIn($event)"
           >
             @for (card of visibleDated(); track card.id) {
               <div class="w-[320px] shrink-0">
-                <app-timeline-tile
-                  [card]="card"
-                  [accentColor]="card.laneColor ?? null"
-                />
+                <app-timeline-tile [card]="card" />
               </div>
             }
 
@@ -80,10 +76,7 @@ const SCROLL_STEP = 320;
                 </p>
                 @for (card of visibleUndated(); track card.id) {
                   <div class="w-[320px] shrink-0">
-                    <app-timeline-tile
-                      [card]="card"
-                      [accentColor]="card.laneColor ?? null"
-                    />
+                    <app-timeline-tile [card]="card" />
                   </div>
                 }
               </div>

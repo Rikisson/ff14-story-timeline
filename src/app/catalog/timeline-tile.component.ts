@@ -51,14 +51,7 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
     <ng-container *transloco="let t; prefix: 'catalog'">
       <div
         #root
-        class="group relative aspect-video w-full overflow-hidden rounded-md bg-surface shadow-sm"
-        [class.border]="!accentColor()"
-        [class.border-border]="!accentColor()"
-        [class.border-l-4]="!!accentColor()"
-        [class.border-y]="!!accentColor()"
-        [class.border-r]="!!accentColor()"
-        [class.border-surface-muted]="!!accentColor()"
-        [style.borderLeftColor]="accentColor()"
+        class="group relative aspect-video w-full overflow-hidden rounded-md border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:-translate-y-0.5 focus-within:shadow-lg"
       >
         @if (thumbUrl(); as u) {
           <img
@@ -96,20 +89,6 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
             [class.drop-shadow]="hasImage()"
             [class.text-foreground]="!hasImage()"
           >{{ title() }}</h3>
-          @if (plotlineChips().length > 0) {
-            <ul class="m-0 mt-1 flex list-none flex-wrap gap-1 p-0">
-              @for (p of plotlineChips(); track p.id) {
-                <li>
-                  <span
-                    class="inline-block rounded-full border px-1.5 py-px text-[9px] font-medium"
-                    [class.text-scrim-foreground]="hasImage()"
-                    [class.text-foreground-muted]="!hasImage()"
-                    [style.borderColor]="p.color ?? chipFallbackBorder()"
-                  >{{ p.label }}</span>
-                </li>
-              }
-            </ul>
-          }
         </div>
 
         @if (storyLink(); as link) {
@@ -126,7 +105,6 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
 })
 export class TimelineTileComponent {
   readonly card = input.required<TimelineCard>();
-  readonly accentColor = input<string | null>(null);
 
   private readonly calendar = inject(CalendarService);
   private readonly media = inject(MediaAssetsService);
@@ -152,20 +130,6 @@ export class TimelineTileComponent {
   protected readonly fullUrl = computed(() => this.media.urlFor(this.coverAssetId()));
   protected readonly hasImage = computed(() => !!this.thumbUrl());
 
-  // Plotline chip border falls back to a theme-appropriate neutral when the
-  // user hasn't assigned a color: scrim-foreground (always white) when the
-  // tile carries an image, foreground-subtle otherwise so the chip remains
-  // legible against the natural surface tone.
-  protected readonly chipFallbackBorder = computed(() =>
-    this.hasImage() ? 'var(--color-scrim-foreground)' : 'var(--color-foreground-subtle)',
-  );
-
-  // When the lane itself carries a plotline color, suppress per-tile chips —
-  // the lane border already conveys the plotline. Mixed-plotline cards in the
-  // default lane show their chips inline.
-  protected readonly plotlineChips = computed(() =>
-    this.accentColor() ? [] : this.card().plotlines,
-  );
   protected readonly draft = computed(() => this.card().story?.draft ?? false);
 
   protected readonly storyLink = computed<readonly [string, string] | null>(() => {
