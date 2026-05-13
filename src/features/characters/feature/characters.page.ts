@@ -74,16 +74,12 @@ import characterUk from '../i18n/uk.json';
                 }
               </div>
             } @else if (ctrl.selected(); as c) {
-              <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 <app-character-card
                   [character]="c"
                   [canEdit]="ctrl.canCreate()"
                   (edit)="ctrl.startEdit(c)"
                   (remove)="ctrl.confirmRemove(c)"
-                />
-                <app-character-sprite-library
-                  [characterId]="c.id"
-                  [sprites]="c.sprites ?? []"
                 />
               </div>
             } @else {

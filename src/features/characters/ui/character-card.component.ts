@@ -7,9 +7,9 @@ import { Character } from '../data-access/character.types';
 import { EntityResolverService } from '@shared/data-access';
 import {
   EntityRefComponent,
-  HERO_DANGER,
-  HERO_SECONDARY,
   MarkdownTextComponent,
+  UTILITY_DANGER,
+  UTILITY_SECONDARY,
 } from '@shared/ui';
 
 @Component({
@@ -40,8 +40,15 @@ import {
           ></div>
         }
 
+        @if (canEdit()) {
+          <div class="absolute right-3 top-3 z-20 flex items-center gap-2">
+            <button type="button" [class]="utilSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
+            <button type="button" [class]="utilDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
+          </div>
+        }
+
         <div
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-12 text-center"
         >
           <div appContentLang class="contents">
             <h2
@@ -71,12 +78,6 @@ import {
             }
           </div>
 
-          @if (canEdit()) {
-            <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
-              <button type="button" [class]="heroSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
-              <button type="button" [class]="heroDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
-            </div>
-          }
         </div>
       </article>
     </ng-container>
@@ -92,8 +93,8 @@ export class CharacterCardComponent {
   private readonly entityResolver = inject(EntityResolverService);
   private readonly media = inject(MediaAssetsService);
 
-  protected readonly heroSecondaryClass = HERO_SECONDARY;
-  protected readonly heroDangerClass = HERO_DANGER;
+  protected readonly utilSecondaryClass = UTILITY_SECONDARY;
+  protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly relatedRefs = computed(() => this.character().relatedRefs ?? []);
   protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;

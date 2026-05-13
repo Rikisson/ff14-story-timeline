@@ -19,3 +19,18 @@ export const HERO_SECONDARY =
 export const HERO_DANGER =
   HERO_BASE +
   ' bg-danger-strong/90 text-danger-strong-foreground shadow hover:bg-danger-strong active:bg-danger-strong-active focus-visible:ring-danger-strong-ring';
+
+// Smaller variants for utility actions that sit in a corner of the card (e.g.,
+// Edit/Delete at top-right of an entity detail). Same semi-transparent surface
+// bleed-through as HERO_* so they read against any cover.
+const UTILITY_BASE =
+  'inline-flex h-8 items-center justify-center rounded-md px-2.5 text-xs font-medium ' +
+  'shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
+
+export const UTILITY_SECONDARY =
+  UTILITY_BASE +
+  ' bg-surface/85 text-foreground hover:bg-surface focus-visible:ring-accent-ring';
+
+export const UTILITY_DANGER =
+  UTILITY_BASE +
+  ' bg-danger-strong/85 text-danger-strong-foreground hover:bg-danger-strong focus-visible:ring-danger-strong-ring';

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
-import { HERO_DANGER, HERO_SECONDARY, TagComponent, TagTone } from '@shared/ui';
+import { TagComponent, TagTone, UTILITY_DANGER, UTILITY_SECONDARY } from '@shared/ui';
 import { Plotline, PlotlineStatus } from '../data-access/plotline.types';
 import plotlineEn from '../i18n/en.json';
 import plotlineUk from '../i18n/uk.json';
@@ -63,8 +63,15 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
             </span>
           }
 
+          @if (canEdit()) {
+            <div class="absolute right-3 top-3 z-20 flex items-center gap-2">
+              <button type="button" [class]="utilSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button type="button" [class]="utilDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
+            </div>
+          }
+
           <div
-            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-12 text-center"
           >
             <div appContentLang class="contents">
               <div class="flex items-center justify-center gap-3">
@@ -93,12 +100,6 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
               }
             </div>
 
-            @if (canEdit()) {
-              <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
-                <button type="button" [class]="heroSecondaryClass" (click)="edit.emit()">{{ g('action.edit') }}</button>
-                <button type="button" [class]="heroDangerClass" (click)="remove.emit()">{{ g('action.delete') }}</button>
-              </div>
-            }
           </div>
         </article>
       </ng-container>
@@ -114,8 +115,8 @@ export class PlotlineCardComponent {
 
   private readonly media = inject(MediaAssetsService);
 
-  protected readonly heroSecondaryClass = HERO_SECONDARY;
-  protected readonly heroDangerClass = HERO_DANGER;
+  protected readonly utilSecondaryClass = UTILITY_SECONDARY;
+  protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly statusInfo = computed(() => {
     const s = this.plotline().status;

@@ -10,11 +10,11 @@ import { EntityResolverService } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
   EntityRefComponent,
-  HERO_DANGER,
   HERO_PRIMARY,
-  HERO_SECONDARY,
   MarkdownTextComponent,
   TagComponent,
+  UTILITY_DANGER,
+  UTILITY_SECONDARY,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import catalogEn from './i18n/en.json';
@@ -65,8 +65,22 @@ import catalogUk from './i18n/uk.json';
           </span>
         }
 
+        @if (canEdit()) {
+          <div class="absolute right-3 top-3 z-20 flex items-center gap-2">
+            <a [routerLink]="['/edit', story().id]" [class]="utilSecondaryClass">{{ t('action.edit') }}</a>
+            <button
+              type="button"
+              [class]="utilDangerClass"
+              [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
+              (click)="confirmDelete()"
+            >
+              {{ t('action.delete') }}
+            </button>
+          </div>
+        }
+
         <div
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-8 text-center"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-y-auto px-6 py-12 text-center"
         >
           <div appContentLang class="contents">
             <h2
@@ -114,17 +128,6 @@ import catalogUk from './i18n/uk.json';
             >
               {{ t('action.playEmoji') }}
             </a>
-            @if (canEdit()) {
-              <a [routerLink]="['/edit', story().id]" [class]="heroSecondaryClass">{{ t('action.edit') }}</a>
-              <button
-                type="button"
-                [class]="heroDangerClass"
-                [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
-                (click)="confirmDelete()"
-              >
-                {{ t('action.delete') }}
-              </button>
-            }
           </div>
         </div>
       </article>
@@ -144,8 +147,8 @@ export class CatalogDetailComponent {
   private readonly transloco = inject(TranslocoService);
 
   protected readonly heroPrimaryClass = HERO_PRIMARY;
-  protected readonly heroSecondaryClass = HERO_SECONDARY;
-  protected readonly heroDangerClass = HERO_DANGER;
+  protected readonly utilSecondaryClass = UTILITY_SECONDARY;
+  protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly storyTitle = computed(
     () => this.story().title || this.transloco.translate('catalog.field.untitled'),
