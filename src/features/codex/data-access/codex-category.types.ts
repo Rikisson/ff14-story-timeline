@@ -19,3 +19,49 @@ export interface CodexCategoriesConfig {
 }
 
 export const EMPTY_CODEX_CATEGORIES_CONFIG: CodexCategoriesConfig = { categories: [] };
+
+/**
+ * Raised when a folded label or stable key would collide with another
+ * category's folded label or key within the same universe. The conflict
+ * field names the colliding category and value so the UI can surface a
+ * specific message like *Conflicts with "Items — Equipment"*.
+ */
+export class CategoryConflictError extends Error {
+  constructor(
+    public readonly existing: CodexCategory,
+    public readonly value: string,
+  ) {
+    super(`Folded value "${value}" conflicts with category "${existing.label}".`);
+    this.name = 'CategoryConflictError';
+  }
+}
+
+/**
+ * Raised when a delete is attempted on a category that still has codex
+ * entries referencing it via `categoryKey`. The settings UI surfaces the
+ * count and offers a reassign-or-remove flow before re-attempting.
+ */
+export class CategoryInUseError extends Error {
+  constructor(
+    public readonly category: CodexCategory,
+    public readonly usageCount: number,
+  ) {
+    super(
+      `Category "${category.label}" is referenced by ${usageCount} codex ` +
+        `${usageCount === 1 ? 'entry' : 'entries'}; reassign or remove them first.`,
+    );
+    this.name = 'CategoryInUseError';
+  }
+}
+
+/**
+ * Raised when an attempt to rename a category targets a stable `key` that
+ * the caller is implicitly trying to change. Keys are immutable after
+ * creation; the rename must preserve the existing key.
+ */
+export class CategoryKeyImmutableError extends Error {
+  constructor(public readonly id: string, public readonly attemptedKey: string) {
+    super(`Cannot change immutable key on category ${id} to "${attemptedKey}".`);
+    this.name = 'CategoryKeyImmutableError';
+  }
+}

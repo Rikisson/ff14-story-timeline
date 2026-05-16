@@ -11,4 +11,9 @@ export type {
   CodexCategoriesConfig,
   CodexCategory,
 } from './data-access/codex-category.types';
-export { EMPTY_CODEX_CATEGORIES_CONFIG } from './data-access/codex-category.types';
+export {
+  CategoryConflictError,
+  CategoryInUseError,
+  CategoryKeyImmutableError,
+  EMPTY_CODEX_CATEGORIES_CONFIG,
+} from './data-access/codex-category.types';
