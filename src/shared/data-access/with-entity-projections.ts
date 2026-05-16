@@ -8,27 +8,61 @@ import { EntityKind, InGameDate, SlugTakenError } from '@shared/models';
 import { CanonicalisableValue, computeSourceFingerprint, foldLabel } from '@shared/utils';
 
 /**
- * Transactional entity-write helper that fans out a single canonical write
- * to `_directory`, `_timelineEntries`, `_timelineLaneEntries`, and
- * `_slugIndex` rows inside one `runTransaction`. Per
- * `docs/backend-rules.md` *Write discipline* + *Atomic slug uniqueness*.
+ * Projection-write primitives. Per `docs/backend-rules.md` *Write
+ * discipline* + *Atomic slug uniqueness*: every canonical entity write
+ * fans out to `_directory`, `_timelineEntries`, `_timelineLaneEntries`,
+ * and `_slugIndex` rows inside one `runTransaction`. The fan-out is
+ * factored so callers can compose it with their own per-kind logic in
+ * the same transaction — this is not a closed helper that hides the
+ * transaction.
  *
- * The helper exposes two layers:
+ * ## The composable primitives (preferred)
  *
- *   - `applyEntityWrite` / `applyEntityDelete`: pure transaction-body
- *     functions. Compose them inside a caller's own `runTransaction` when
- *     the caller needs to add OCC version checks or write extra docs
- *     (Story metadata + content split is the v1 example).
+ * `applyEntityWrite(tx, firestore, req)` and
+ * `applyEntityDelete(tx, firestore, req)` accept a caller-owned
+ * `Transaction` and contribute their reads + writes to it. Use them
+ * whenever the caller needs to do anything beyond a flat
+ * canonical-plus-projections write — OCC version checks, extra subdoc
+ * writes, multi-entity transactions, etc.
  *
- *   - `writeEntityWithProjections` / `deleteEntityWithProjections`: thin
- *     wrappers that own the `runTransaction`. Use these for entity kinds
- *     without OCC or extra-doc writes (Character / Place / Event /
- *     Plotline / Codex).
+ * StoriesService is the canonical compose example. `saveStory` reads
+ * metadata for the OCC check, calls `applyEntityWrite` for canonical
+ * metadata + projections + slug claim, then writes the `_content/main`
+ * subdoc — all in one `runTransaction`:
  *
- * Secondary computation (`Directory.secondary`) is the caller's
- * responsibility — by the time the request reaches this helper, the
- * string is already resolved. Keeps the helper free of cross-entity
- * reads beyond its own slug / fingerprint diffs.
+ *     return runTransaction(firestore, async (tx) => {
+ *       const metaSnap = await tx.get(metaRef);
+ *       if (metaSnap.exists() && metaSnap.data().version !== expected) {
+ *         throw new StaleStoryError(...);
+ *       }
+ *       await applyEntityWrite(tx, firestore, {
+ *         universeId, kind: 'story', id, canonicalCollection: 'stories',
+ *         canonical, slug, directory, timeline,
+ *       });
+ *       tx.set(contentRef, content);
+ *       return nextVersion;
+ *     });
+ *
+ * Note Firestore's reads-before-writes rule: any tx.get the caller
+ * issues must run before `applyEntityWrite` returns and before any
+ * tx.set / tx.delete. `applyEntityWrite` does its own reads first
+ * (canonical, directory, timeline, new slug claim) and then all writes,
+ * so caller reads must precede the `applyEntityWrite` call.
+ *
+ * ## The convenience wrappers
+ *
+ * `writeEntityWithProjections` / `deleteEntityWithProjections` own
+ * their own `runTransaction` and call the primitive. Use them only for
+ * kinds with no per-kind logic in the write path — Character, Place,
+ * Event, Plotline, Codex via `UniverseEntityService`. Story does NOT
+ * use these.
+ *
+ * ## Caller responsibilities
+ *
+ * Secondary computation (`Directory.secondary`) is the caller's job —
+ * by the time the request reaches this helper, the string is already
+ * resolved. Keeps the helper free of cross-entity reads beyond its own
+ * slug / fingerprint diffs.
  */
 
 const DIRECTORY = '_directory';
