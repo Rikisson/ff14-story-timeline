@@ -27,9 +27,8 @@
 //   - Skips orphan lane cleanup (rows from removed plotlineRefs persist
 //     until the entity is edited again). Orphan removal is a separate
 //     admin task.
-//   - Stories are skipped in v1 because StoriesService isn't yet
-//     integrated with `applyEntityWrite`; the seeder step 10 work and
-//     subsequent Story integration will close that gap.
+//   - Story rebuild reads metadata only (universes/{u}/stories/{id});
+//     the `_content/main` subdoc is never touched.
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
@@ -67,6 +66,7 @@ const KIND_TO_COLLECTION = {
   character: 'characters',
   place: 'places',
   event: 'events',
+  story: 'stories',
   plotline: 'plotlines',
   codexEntry: 'codexEntries',
 };
@@ -253,6 +253,15 @@ function buildDirectoryInputs(kind, entity, ctx) {
         secondary: isInGameDateEmpty(date) ? undefined : formatDateSecondary(date, ctx.calendar) || undefined,
       };
     }
+    case 'story': {
+      const date = entity.inGameDate ?? {};
+      return {
+        label: entity.title,
+        coverAssetId: entity.coverAssetId,
+        secondary: isInGameDateEmpty(date) ? undefined : formatDateSecondary(date, ctx.calendar) || undefined,
+        draft: entity.draft,
+      };
+    }
     case 'plotline':
       return {
         label: entity.title,
@@ -275,11 +284,11 @@ function buildDirectoryInputs(kind, entity, ctx) {
 }
 
 function buildTimelineInputs(kind, entity, ctx) {
-  if (kind !== 'event') return null; // story not integrated in v1
+  if (kind !== 'event' && kind !== 'story') return null;
   const date = entity.inGameDate ?? {};
   const eraOrdinal = (id) => ctx.calendar.eraOrdinalById.get(id);
   return {
-    title: entity.name,
+    title: kind === 'story' ? entity.title : entity.name,
     coverAssetId: entity.coverAssetId,
     inGameDate: date,
     dateSortKey: inGameDateSortKey(date, eraOrdinal),

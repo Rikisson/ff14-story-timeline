@@ -3,7 +3,6 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   collection,
   doc,
-  deleteDoc,
   getDoc,
   getDocs,
   limit,
@@ -11,15 +10,20 @@ import {
   query,
   QueryDocumentSnapshot,
   runTransaction,
-  setDoc,
   startAfter,
   where,
-  writeBatch,
 } from 'firebase/firestore/lite';
 import { TranslocoService } from '@jsverse/transloco';
+import { CalendarService } from '@features/calendar';
 import { UniverseStore } from '@features/universes';
-import { SlugTakenError } from '@shared/models';
-import { retryOnTransient } from '@shared/utils';
+import {
+  applyEntityDelete,
+  applyEntityWrite,
+  DirectoryRowInputs,
+  TimelineRowInputs,
+} from '@shared/data-access';
+import { isInGameDateEmpty } from '@shared/models';
+import { formatInGameDate, inGameDateSortKey, retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   StoredStory,
@@ -30,6 +34,9 @@ import {
 
 const PAGE_SIZE = 25;
 const CONTENT_DOC_PATH = ['_content', 'main'] as const;
+const STORY_SLUG_PREFIX = 'story_';
+const UNTITLED_SLUG_BASE = 'untitled-story';
+const UNTITLED_SLUG_MAX_ATTEMPTS = 1000;
 
 export class StaleStoryError extends Error {
   constructor(public readonly currentVersion: number, public readonly expectedVersion: number) {
@@ -45,6 +52,7 @@ export class StoriesService {
   private readonly firebase = inject(FirebaseService);
   private readonly universes = inject(UniverseStore);
   private readonly transloco = inject(TranslocoService);
+  private readonly calendar = inject(CalendarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _publishedStories = signal<Story[]>([]);
@@ -157,31 +165,60 @@ export class StoriesService {
     return { story, content };
   }
 
+  /**
+   * Save story metadata + content in one `runTransaction`. The OCC version
+   * check, the canonical metadata write, the `_directory` /
+   * `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` fan-out
+   * (via `applyEntityWrite`), and the `_content/main` subdoc write all
+   * commit or all fail together.
+   */
   async saveStory(
     story: Story,
     content: StoryContent,
     expectedVersion: number,
   ): Promise<number> {
     const universeId = this.requireUniverseId();
-    await this.assertSlugAvailable(universeId, story.slug, story.id);
-    const metaRef = this.metaDocRef(universeId, story.id);
     const contentRef = this.contentDocRef(universeId, story.id);
     return runTransaction(this.firebase.firestore, async (tx) => {
-      const snap = await tx.get(metaRef);
-      if (snap.exists()) {
-        const current = (snap.data() as StoredStory).version ?? 0;
+      // Story-specific OCC check. `applyEntityWrite` will read the same
+      // canonical doc later in this transaction; Firestore caches that
+      // read, so there's no extra round-trip.
+      const metaSnap = await tx.get(this.metaDocRef(universeId, story.id));
+      if (metaSnap.exists()) {
+        const current = (metaSnap.data() as StoredStory).version ?? 0;
         if (current !== expectedVersion) {
           throw new StaleStoryError(current, expectedVersion);
         }
       }
       const nextVersion = expectedVersion + 1;
-      const { id: _id, ...metaData } = story;
-      tx.set(metaRef, { ...metaData, version: nextVersion, updatedAt: Date.now() });
+      const { id: _id, ...meta } = story;
+      const canonical: StoredStory = {
+        ...meta,
+        version: nextVersion,
+        updatedAt: Date.now(),
+      };
+
+      await applyEntityWrite(tx, this.firebase.firestore, {
+        universeId,
+        kind: 'story',
+        id: story.id,
+        canonicalCollection: 'stories',
+        canonical: canonical as unknown as Record<string, unknown>,
+        slug: story.slug,
+        directory: this.buildDirectoryInputs({ id: story.id, ...canonical }),
+        timeline: this.buildTimelineInputs({ id: story.id, ...canonical }),
+      });
+
       tx.set(contentRef, content satisfies StoredStoryContent);
       return nextVersion;
     });
   }
 
+  /**
+   * Create a fresh draft. Allocates an untitled slug against `_slugIndex`,
+   * then writes canonical metadata + projections + slug + content all in
+   * one `runTransaction`.
+   */
   async createDraftStory(authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
     const id = crypto.randomUUID();
@@ -204,49 +241,101 @@ export class StoriesService {
         [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] },
       },
     };
-    const batch = writeBatch(this.firebase.firestore);
-    batch.set(this.metaDocRef(universeId, id), metaData);
-    batch.set(this.contentDocRef(universeId, id), contentData);
-    await batch.commit();
+
+    await runTransaction(this.firebase.firestore, async (tx) => {
+      await applyEntityWrite(tx, this.firebase.firestore, {
+        universeId,
+        kind: 'story',
+        id,
+        canonicalCollection: 'stories',
+        canonical: metaData as unknown as Record<string, unknown>,
+        slug,
+        directory: this.buildDirectoryInputs({ id, ...metaData }),
+        timeline: this.buildTimelineInputs({ id, ...metaData }),
+      });
+      tx.set(this.contentDocRef(universeId, id), contentData);
+    });
     return id;
   }
 
-  private async allocateUntitledSlug(universeId: string): Promise<string> {
-    const base = 'untitled-story';
-    for (let i = 0; i < 1000; i++) {
-      const candidate = i === 0 ? base : `${base}-${i + 1}`;
-      const q = query(
-        collection(this.firebase.firestore, 'universes', universeId, 'stories'),
-        where('slug', '==', candidate),
-        limit(1),
-      );
-      const snap = await getDocs(q);
-      if (snap.empty) return candidate;
-    }
-    return `${base}-${Date.now()}`;
-  }
-
-  private async assertSlugAvailable(
-    universeId: string,
-    slug: string,
-    excludeId?: string,
-  ): Promise<void> {
-    const q = query(
-      collection(this.firebase.firestore, 'universes', universeId, 'stories'),
-      where('slug', '==', slug),
-      limit(2),
-    );
-    const snap = await getDocs(q);
-    const taken = snap.docs.some((d) => d.id !== excludeId);
-    if (taken) throw new SlugTakenError('story', slug);
-  }
-
+  /**
+   * Delete metadata + content + projections + slug-index entry in one
+   * `runTransaction`. The helper's read of canonical recovers the
+   * current slug for the `_slugIndex` delete, so callers don't need to
+   * track it.
+   */
   async deleteStory(id: string): Promise<void> {
     const universeId = this.requireUniverseId();
-    const batch = writeBatch(this.firebase.firestore);
-    batch.delete(this.contentDocRef(universeId, id));
-    batch.delete(this.metaDocRef(universeId, id));
-    await batch.commit();
+    const contentRef = this.contentDocRef(universeId, id);
+    await runTransaction(this.firebase.firestore, async (tx) => {
+      await applyEntityDelete(tx, this.firebase.firestore, {
+        universeId,
+        kind: 'story',
+        id,
+        canonicalCollection: 'stories',
+      });
+      tx.delete(contentRef);
+    });
+  }
+
+  private buildDirectoryInputs(story: Story & StoredStory): DirectoryRowInputs {
+    return {
+      label: story.title,
+      coverAssetId: story.coverAssetId,
+      secondary: this.formatDateSecondary(story.inGameDate),
+      draft: story.draft,
+    };
+  }
+
+  private buildTimelineInputs(story: Story & StoredStory): TimelineRowInputs {
+    return {
+      title: story.title,
+      coverAssetId: story.coverAssetId,
+      inGameDate: story.inGameDate,
+      dateSortKey: inGameDateSortKey(story.inGameDate, this.calendar.eraOrdinalLookup),
+      dateKnown: !isInGameDateEmpty(story.inGameDate),
+      plotlineIds: (story.plotlineRefs ?? []).map((r) => r.id),
+      characterIds: (story.relatedRefs ?? [])
+        .filter((r) => r.kind === 'character')
+        .map((r) => r.id),
+      placeIds: (story.relatedRefs ?? [])
+        .filter((r) => r.kind === 'place')
+        .map((r) => r.id),
+    };
+  }
+
+  private formatDateSecondary(date: Story['inGameDate']): string | undefined {
+    if (isInGameDateEmpty(date)) return undefined;
+    const formatted = formatInGameDate(date, {
+      eraName: date.era ? this.calendar.eraNameLookup(date.era) : undefined,
+      monthName:
+        date.month !== undefined ? this.calendar.monthNameLookup(date.month) : undefined,
+      weekdayName: this.calendar.weekdayLookup(date),
+    });
+    return formatted || undefined;
+  }
+
+  /**
+   * Walks `_slugIndex/story_<candidate>` against the new slug-index
+   * collection. Same race as before: between picking a free candidate
+   * and the create transaction's atomic claim, another writer might
+   * grab it — in which case `applyEntityWrite` throws SlugTakenError
+   * and the caller retries.
+   */
+  private async allocateUntitledSlug(universeId: string): Promise<string> {
+    for (let i = 0; i < UNTITLED_SLUG_MAX_ATTEMPTS; i++) {
+      const candidate = i === 0 ? UNTITLED_SLUG_BASE : `${UNTITLED_SLUG_BASE}-${i + 1}`;
+      const slugRef = doc(
+        this.firebase.firestore,
+        'universes',
+        universeId,
+        '_slugIndex',
+        `${STORY_SLUG_PREFIX}${candidate}`,
+      );
+      const snap = await getDoc(slugRef);
+      if (!snap.exists()) return candidate;
+    }
+    return `${UNTITLED_SLUG_BASE}-${Date.now()}`;
   }
 
   private metaDocRef(universeId: string, id: string) {
