@@ -42,7 +42,8 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 ## Loading
 
-- List, timeline, and picker surfaces resolve asset URLs lazily by ID through `AssetThumbResolver` (see `backend-rules.md` *Asset references*). The resolver collects visible `coverAssetId`s, fetches matching `_assets` docs in chunks of up to 30 (Firestore `in` cap), caches by `(universeId, assetId)` for the session, and renders `thumbUrl ?? url`. Universe-wide preload of `_assets` is reserved for surfaces that genuinely need the whole library — the asset library / picker, and the player today as a temporary bridge.
+- **Entity surfaces resolve assets lazily by ID.** List cards, timeline rows, related-ref pickers, plotline selectors, cover slot pickers — anywhere an asset thumb renders alongside an entity it belongs to — go through `AssetThumbResolver` (see `backend-rules.md` *Asset references*). The resolver collects visible `coverAssetId`s, fetches matching `_assets` docs in chunks of up to 30 (Firestore `in` cap), caches by `(universeId, assetId)` for the session, and renders `thumbUrl ?? url`.
+- **Asset-library surfaces preload by kind/tag.** The asset library and asset-library-style pickers (the kind-or-tag filtered list where the asset itself is the subject) query `_assets` directly — preloading the relevant slice is the feature, not a violation. The player today also holds a universe-wide `_assets` preload as a temporary bridge (see `backend-rules.md` *Player bridge*).
 - On scene mount, preload backgrounds and audio of every scene reachable through `Scene.next[]`, scheduled inside `requestIdleCallback`.
 - Skip preloads when `navigator.connection.saveData === true` or `effectiveType` is `slow-2g` or `2g`.
 

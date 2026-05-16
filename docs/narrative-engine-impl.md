@@ -173,35 +173,45 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   managed via the Universe settings *Categories* section
   (`/universe/settings/categories`). Each entry:
   `{ id, key, label, color?, description? }` — `id` is a stable uuid,
-  `key` is a stable folded slug derived from the initial label, and
-  `label` is the only field allowed to change after creation.
-- **Codex entries reference `categoryKey`.** The entry doc stores
-  `categoryKey: string` (stable) plus a denormalized `categoryLabel`
-  snapshot used by list and chip surfaces that haven't hydrated the
-  config. Chip color and the authoritative label resolve through the
-  config by `categoryKey`; `categoryLabel` is a cache, not the source
-  of truth.
+  `key` is a stable folded slug derived from the initial label. Both
+  are immutable after creation; `label`, `color`, and `description`
+  may all change through the settings UI.
+- **Codex entries reference `categoryKey` only.** The canonical entry
+  doc stores `categoryKey: string` and nothing else category-related.
+  Chip color and the resolved label come from the categories config
+  (already a single small doc per universe, always hydrated alongside
+  the active universe). The directory projection's `secondary` field
+  carries the denormalized label so cross-kind list queries don't
+  need to join through the config — that's a projection-side
+  denormalization, refreshed on category rename per
+  `backend-rules.md` *Write discipline*.
 - **Every saved entry's `categoryKey` exists in config.** Typing a
   novel label in the codex form's category field creates a new config
   entry first (uuid + folded key + entered label) and then saves the
-  codex entry against it, all in one batch. A label that matches an
+  codex entry against it, all in the same atomic write (`runTransaction`
+  per `backend-rules.md` *Write discipline*). A label that matches an
   existing entry case-insensitively snaps to that entry's
   `categoryKey` — no duplicate config rows from typing variations of
   the same name. Authoring velocity stays high; no ad-hoc category
   strings escape into entry docs.
 - **Rename keeps identity.** Editing a category's label leaves `id`
   and `key` unchanged; existing entries' `categoryKey` stays valid
-  and chip color is unaffected. Refreshing the denormalized
-  `categoryLabel` across entries is a projection rewrite (see
-  `backend-rules.md` *Write discipline*), not a content migration.
+  and chip color is unaffected. No canonical entry doc needs
+  rewriting — the rename is config-only — and the projection-side
+  label refresh happens through the standard *Write discipline*
+  category-rename trigger.
 - **Delete requires reassignment.** The settings UI blocks delete
   while any codex entry references the category; the author either
   reassigns the entries or removes them first.
-- **No uniqueness validation on label.** Duplicate labels are still
-  the author's responsibility; the visible card grid makes them easy
-  to spot. The stable `id` / `key` means a duplicate label is a UX
-  oversight, not a data hazard — the underlying references stay
-  unambiguous.
+- **Folded labels and keys are unique within the universe.** Creating
+  or renaming a category whose label folds to a slug that already
+  exists — either as another category's folded label or as a stable
+  `key` from a prior label — is rejected by the settings UI. The
+  invariant makes the typeahead auto-snap unambiguous: at any moment
+  at most one category matches a given folded input. Authors who want
+  visually-similar categories give them visually-distinct labels
+  (e.g., "Items — Equipment", "Items — Consumables") so the folded
+  forms differ.
 
 ## Locale
 

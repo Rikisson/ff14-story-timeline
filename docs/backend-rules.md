@@ -38,17 +38,17 @@ Canonical entity docs at `universes/{u}/{kind}/{id}` are the source of truth. Tw
 
 `universes/{u}/_directory/{kind}_{id}` — one row per entity, all kinds in one collection. Carries enough metadata to find, filter, and chip-render an entity without reading the canonical doc:
 
-`{ kind, entityId, label, labelFolded, slug, coverAssetId?, secondary?, categoryKey?, status?, visiblePublic, draft?, updatedAt }`
+`{ kind, entityId, label, labelFolded, slug, coverAssetId?, secondary?, categoryKey?, status?, visiblePublic, draft?, sourceFingerprint, updatedAt }`
 
 Powers related-ref pickers, inline-ref suggestions, plotline filter selectors, resolver chips, and generic "find entity" UI. Prefix search uses `labelFolded` with `startAt(q) / endAt(q + '\uf8ff')` (high-codepoint sentinel), capped at 20 results.
 
-`visiblePublic` is uniform across kinds: `true` by default, and `!draft` for kinds that carry draft state (Story today; other kinds may gain it later without changing the index shape). The same field gates every public-surface query.
+`visiblePublic` is a projection-only field, computed by the projection writer as `canonical.draft !== true`. Canonical docs carry `draft` (where the kind has it) and nothing visibility-derived — keeping the visibility flag out of the domain layer preserves the *Portability posture* rule about query-shape fields. The predicate works uniformly: kinds without draft state (every kind except Story today) have `canonical.draft === undefined` and satisfy `draft !== true`, so `visiblePublic` is `true`; Story rows get `true` when `draft === false` and `false` when `draft === true`. A non-story kind that gains `draft` later picks up the same derivation automatically — the projection schema does not change.
 
 The per-kind `secondary` line follows the rules in `narrative-engine-impl.md` *Scope locks* — the projection writer is responsible for computing it at write time so consumers never have to resolve cross-entity refs to render a list row.
 
 ### Timeline projections
 
-`universes/{u}/_timelineEntries/{kind}_{id}` for the mixed story+event date stream, and `universes/{u}/_timelineLaneEntries/{laneKey}_{kind}_{id}` for plotline-filtered swimlanes. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, updatedAt`. Entries with no plotline land in `laneKey: '__unassigned__'`.
+`universes/{u}/_timelineEntries/{kind}_{id}` for the mixed story+event date stream, and `universes/{u}/_timelineLaneEntries/{laneKey}_{kind}_{id}` for plotline-filtered swimlanes. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`. Entries with no plotline land in `laneKey: '__unassigned__'`.
 
 The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. A multi-plotline UI runs one query per selected lane with its own cursor; `array-contains-any` caps at 10 and forecloses per-lane pagination, so fan-out is the cost shape.
 
@@ -70,9 +70,27 @@ A picker, search input, inline-ref resolver, or timeline view that needs to *fin
 
 `labelFolded` and `titleFolded` use a single shared normalizer: NFKD form, lowercased, diacritics stripped. Every writer of a projection row routes through the same util — divergent folding misses prefix queries silently.
 
+### Date sort keys
+
+`dateSortKey` is produced by a single shared util `inGameDateSortKey(date, calendarConfig)` returning a fixed-width lexically-sortable string. The same util backs `compareInGameDate` in `@shared/utils`, so client-side ordering and Firestore `orderBy('dateSortKey')` never diverge. Partial dates encode missing components as zero-prefixed sentinels: a year-only event sorts before any month-precise event in the same year; an era-only event sorts before any year in the era. Calendar config changes (era reorder, month reorder, era `maxYears` edit) invalidate every sort key and trigger a universe-scope projection rebuild — see *Write discipline*.
+
+### Drift detection
+
+Each projection row carries `sourceFingerprint` — a short stable hash of the row's projected fields, computed at write time. Drift detection works by recomputing the fingerprint from the current canonical doc's projected slice and comparing: equal means current, unequal means a rebuild is due.
+
+This decouples drift from canonical versioning. Story increments `version` on every save (metadata or content per `narrative-engine-impl.md` *Story persistence*); a content-only edit doesn't change any projected field, so the projection row's `sourceFingerprint` stays valid and a drift detector won't flag it. The fingerprint also covers unversioned kinds without special-casing — only the projected slice matters.
+
+Fingerprint computation is deterministic — every writer and the rebuild script must produce the same hash for the same projected slice or the whole mechanism degrades into spurious-rebuild noise. The shared util enforces: object keys serialized in sorted order; string fields trimmed and Unicode-normalized (NFC); reference-ID arrays (`plotlineIds`, `characterIds`, `placeIds`, the resolver-side `relatedRefs` IDs) sorted ascending; absent vs. empty-array vs. explicit-null collapsed to a single canonical form. Sequences whose order is semantically meaningful (none in current projections — scenes aren't projected) preserve order. Hash algorithm is implementation-defined; a short SHA-256 prefix (12 hex chars) is sufficient at the per-universe row counts we expect.
+
+Drift sources: writer bugs, schema migrations, and out-of-band console edits. Firestore `runTransaction` atomicity rules out partial-write failure within a single entity save as a drift source.
+
+### Public read surface
+
+Public list, filter, picker, and timeline queries route through `_directory`, `_timelineEntries`, and `_timelineLaneEntries` and rely on `visiblePublic` for visibility — one rule shape (`allow read: if resource.data.visiblePublic == true || isMember(...)`) covers every kind uniformly. Canonical collections serve detail-by-ID reads, gated per-kind. When a non-story kind gains `draft` later, its canonical-read rule gains the same `draft == false || isMember(...)` clause Story carries today; the projection-read rule never changes.
+
 ### Write discipline
 
-Entity create / update / delete writes canonical + projection docs in a single `writeBatch`:
+Entity create / update / delete uses `runTransaction`, not `writeBatch` — slug claim (read-then-write against `_slugIndex`) and OCC version checks both require the transaction's read-before-write semantics; `writeBatch` is write-only and cannot enforce either. A single transaction writes:
 
 - canonical doc
 - `_directory/{kind}_{id}`
@@ -80,10 +98,13 @@ Entity create / update / delete writes canonical + projection docs in a single `
 - `_timelineLaneEntries/{laneKey}_{kind}_{id}` for story / event only
 - the relevant `_slugIndex/{kind}_{slug}` entries (see *Atomic slug uniqueness* in Implementation)
 
-Two lifecycle transitions invalidate projection rows beyond the canonical edit:
+Projection writes fire on canonical metadata-doc writes only — Story scene/content edits at `_content/main` never touch projections. Writers compare the new projected slice's `sourceFingerprint` against the existing row's and skip the projection legs of the transaction when the fingerprint matches; a cover swap or rename pays the fanout, a body edit doesn't.
+
+Three lifecycle transitions invalidate projection rows beyond the canonical edit:
 
 - **Publish / unpublish** flips `visiblePublic` across every projection row for that entity.
 - **Calendar config change** invalidates `dateSortKey` for every story and event in the universe; a settings-side action triggers a projection rebuild at universe scope.
+- **Category rename** triggers a scoped rebuild of every codex directory row whose `categoryKey` matches the renamed category. The rebuild path — chunked into `writeBatch` commits of ≤500 ops, idempotent on retry because each row's `sourceFingerprint` is derived from its current canonical projected slice, not from prior projection state — handles arbitrary fanout. A single `runTransaction` can't, because Firestore caps transactions at 500 ops and a popular category may have many more entries. `id` and `key` are stable, so canonical codex entry docs aren't touched.
 
 ## Realtime listeners
 
@@ -141,7 +162,7 @@ Firestore bills per operation; spikes are uncapped by default.
 
 ## Atomic slug uniqueness
 
-The current check reads-then-writes across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` mutated inside the same `writeBatch` as the rest of the entity write (see *Write discipline* in Rules), and route every slug check through the same helper.
+The current check reads-then-writes across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` claimed inside the entity-write `runTransaction` (see *Write discipline* in Rules) — the transaction reads the slug doc, throws on collision with a different owner, and `set`s it alongside the canonical and projection writes. Route every slug check through the same helper.
 
 ## Firestore indexes manifest
 
@@ -149,18 +170,31 @@ The current check reads-then-writes across `UniverseEntityService.assertSlugAvai
 
 Day-one combinations:
 
-- `_directory`: `(kind, labelFolded)`, `(visiblePublic, labelFolded)`
+- `_directory`: `(visiblePublic, kind, labelFolded)` for the public per-kind picker (the most-used query), `(visiblePublic, labelFolded)` for cross-kind inline-ref search, `(kind, labelFolded)` for member-only authoring pickers that need draft entities
 - `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey)`
 - `_timelineLaneEntries`: `(visiblePublic, laneKey, dateKnown, dateSortKey)`
 - `codexEntries`: `(categoryKey, titleFolded)`
 
 Character / place timeline filter indexes wait until the timeline UI offers those filters.
 
+## Firestore rules for projections
+
+`_directory`, `_timelineEntries`, `_timelineLaneEntries`, and `_slugIndex` are new collections with no rules yet. The shape for every projection collection follows the *Public read surface* rule:
+
+```
+match /universes/{universeId}/_directory/{rowId} {
+  allow read: if resource.data.visiblePublic == true || isMember(universeId);
+  allow create, update, delete: if isMember(universeId);
+}
+```
+
+Same pattern for `_timelineEntries` and `_timelineLaneEntries`. `_slugIndex` is member-only on both read and write — it has no public consumer because slug lookups happen by exact doc ID, never by query, so a public read rule would only enable enumeration without enabling any feature.
+
 ## Projection writers and rebuild
 
-Per-entity write paths fan out by hand to canonical, directory, and timeline / lane docs. Extract a shared `withEntityProjections` helper so each kind's service writes through one call; the helper owns the batch, the folding, the `secondary` computation, and the lifecycle flips for `visiblePublic`.
+Per-entity write paths fan out by hand to canonical, directory, and timeline / lane docs. Extract a shared `withEntityProjections` helper so each kind's service writes through one `runTransaction` call; the helper owns the slug-claim read, the folding, the `secondary` computation, the `sourceFingerprint` diff that lets unchanged projected slices skip the projection legs, and the lifecycle flips for `visiblePublic`.
 
-Ship a `rebuild-projections {universeId}` script (CLI against a deploy-authenticated context) that walks canonical docs and rewrites every directory / timeline / lane row. Used after schema changes, calendar edits, or partial-batch recovery.
+Ship a `rebuild-projections {universeId}` script (CLI against a deploy-authenticated context) that walks canonical docs and rewrites every directory / timeline / lane row. Used after schema changes, calendar edits, category renames, or out-of-band-edit recovery. Rebuild recomputes `sourceFingerprint` from canonical projected fields and mirrors `canonical.updatedAt` onto every projection row, so rebuilt rows aren't immediately flagged as stale by drift detectors.
 
 ## Search service
 
