@@ -21,3 +21,29 @@ export {
   type EntityWriteRequest,
   type TimelineRowInputs,
 } from './with-entity-projections';
+export {
+  CacheInvalidationBus,
+  type AssetWriteEvent,
+  type EntityWriteEvent,
+} from './cache-invalidation.bus';
+export {
+  AssetThumbResolver,
+  type AssetThumb,
+} from './asset-thumb-resolver.service';
+export {
+  EntityResolverCache,
+  type ResolvedDirectoryRow,
+} from './entity-resolver-cache.service';
+export {
+  EntityDirectoryService,
+  type ByKindOptions,
+  type ByKindResult,
+  type PrefixSearchOptions,
+} from './entity-directory.service';
+export {
+  DirectoryEntitySearchService,
+  ENTITY_SEARCH_SERVICE,
+  EntitySearchService,
+  provideEntitySearchService,
+  type EntitySearchOptions,
+} from './entity-search.service';
