@@ -26,6 +26,10 @@ export type {
   FormatInGameDateOptions,
   WeekdayResolveOptions,
 } from './in-game-date';
+export { inGameDateSortKey } from './in-game-date-sort-key';
+export { foldLabel } from './fold-label';
+export { computeSourceFingerprint } from './source-fingerprint';
+export type { CanonicalisableValue } from './source-fingerprint';
 export { resolveValidationError } from './form-validation';
 export type { ResolvedValidationError } from './form-validation';
 export { retryOnTransient } from './firestore-retry';

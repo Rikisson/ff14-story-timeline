@@ -1,6 +1,7 @@
 import { InGameDate, isInGameDateEmpty } from '@shared/models';
+import { EraOrdinalLookup, inGameDateSortKey } from './in-game-date-sort-key';
 
-export type EraOrdinalLookup = (eraId: string) => number | undefined;
+export type { EraOrdinalLookup };
 
 export interface WeekdayResolveOptions {
   eras: ReadonlyArray<{ id: string; maxYears?: number; resetsWeek?: boolean }>;
@@ -55,8 +56,6 @@ export function getWeekdayIndex(
   return ((dayOffset % n) + n) % n;
 }
 
-const SLOT_KEYS = ['year', 'month', 'day', 'hour', 'minute', 'second'] as const;
-
 export function compareInGameDate(
   a: InGameDate | null | undefined,
   b: InGameDate | null | undefined,
@@ -68,15 +67,10 @@ export function compareInGameDate(
   if (aEmpty) return 1;
   if (bEmpty) return -1;
 
-  const aOrd = a!.era ? (eraOrdinal(a!.era) ?? 0) : 0;
-  const bOrd = b!.era ? (eraOrdinal(b!.era) ?? 0) : 0;
-  if (aOrd !== bOrd) return aOrd - bOrd;
-
-  for (const key of SLOT_KEYS) {
-    const av = a![key] ?? 0;
-    const bv = b![key] ?? 0;
-    if (av !== bv) return av - bv;
-  }
+  const aKey = inGameDateSortKey(a, eraOrdinal);
+  const bKey = inGameDateSortKey(b, eraOrdinal);
+  if (aKey < bKey) return -1;
+  if (aKey > bKey) return 1;
   return 0;
 }
 
