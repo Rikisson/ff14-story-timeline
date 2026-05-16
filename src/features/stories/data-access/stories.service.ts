@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore/lite';
 import { TranslocoService } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
+import { CalendarProjectionContext } from '@features/events';
 import { UniverseStore } from '@features/universes';
 import {
   applyEntityDelete,
@@ -22,9 +23,12 @@ import {
   DirectoryRowInputs,
   TimelineRowInputs,
 } from '@shared/data-access';
-import { isInGameDateEmpty } from '@shared/models';
-import { formatInGameDate, inGameDateSortKey, retryOnTransient } from '@shared/utils';
+import { retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
+import {
+  buildStoryDirectoryInputs,
+  buildStoryTimelineInputs,
+} from './story-projection';
 import {
   StoredStory,
   StoredStoryContent,
@@ -278,41 +282,21 @@ export class StoriesService {
     });
   }
 
-  private buildDirectoryInputs(story: Story & StoredStory): DirectoryRowInputs {
-    return {
-      label: story.title,
-      coverAssetId: story.coverAssetId,
-      secondary: this.formatDateSecondary(story.inGameDate),
-      draft: story.draft,
-    };
+  private buildDirectoryInputs(story: Story): DirectoryRowInputs {
+    return buildStoryDirectoryInputs(story, this.calendarContext());
   }
 
-  private buildTimelineInputs(story: Story & StoredStory): TimelineRowInputs {
-    return {
-      title: story.title,
-      coverAssetId: story.coverAssetId,
-      inGameDate: story.inGameDate,
-      dateSortKey: inGameDateSortKey(story.inGameDate, this.calendar.eraOrdinalLookup),
-      dateKnown: !isInGameDateEmpty(story.inGameDate),
-      plotlineIds: (story.plotlineRefs ?? []).map((r) => r.id),
-      characterIds: (story.relatedRefs ?? [])
-        .filter((r) => r.kind === 'character')
-        .map((r) => r.id),
-      placeIds: (story.relatedRefs ?? [])
-        .filter((r) => r.kind === 'place')
-        .map((r) => r.id),
-    };
+  private buildTimelineInputs(story: Story): TimelineRowInputs {
+    return buildStoryTimelineInputs(story, this.calendarContext());
   }
 
-  private formatDateSecondary(date: Story['inGameDate']): string | undefined {
-    if (isInGameDateEmpty(date)) return undefined;
-    const formatted = formatInGameDate(date, {
-      eraName: date.era ? this.calendar.eraNameLookup(date.era) : undefined,
-      monthName:
-        date.month !== undefined ? this.calendar.monthNameLookup(date.month) : undefined,
-      weekdayName: this.calendar.weekdayLookup(date),
-    });
-    return formatted || undefined;
+  private calendarContext(): CalendarProjectionContext {
+    return {
+      eraOrdinalLookup: this.calendar.eraOrdinalLookup,
+      eraNameLookup: this.calendar.eraNameLookup,
+      monthNameLookup: this.calendar.monthNameLookup,
+      weekdayLookup: this.calendar.weekdayLookup,
+    };
   }
 
   /**

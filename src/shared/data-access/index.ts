@@ -16,11 +16,24 @@ export {
   deleteEntityWithProjections,
   UNASSIGNED_LANE_KEY,
   writeEntityWithProjections,
-  type DirectoryRowInputs,
   type EntityDeleteRequest,
   type EntityWriteRequest,
-  type TimelineRowInputs,
 } from './with-entity-projections';
+export {
+  buildProjectionRows,
+  directoryRowKey,
+  laneIdsOf,
+  slugRowKey,
+  timelineRowKey,
+  type BuiltProjectionRows,
+  type DirectoryRowInputs,
+  type ProjectionRowsInputs,
+  type TimelineRowInputs,
+} from './projection-rows';
+export {
+  ProjectionRebuildService,
+  type RebuildProgress,
+} from './projection-rebuild.service';
 export {
   CacheInvalidationBus,
   type AssetWriteEvent,

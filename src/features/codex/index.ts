@@ -17,3 +17,7 @@ export {
   CategoryKeyImmutableError,
   EMPTY_CODEX_CATEGORIES_CONFIG,
 } from './data-access/codex-category.types';
+export {
+  buildCodexEntryDirectoryInputs,
+  type CodexCategoriesProjectionContext,
+} from './data-access/codex-entry-projection';

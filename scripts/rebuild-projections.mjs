@@ -79,9 +79,15 @@ const PLOTLINE_STATUS_LABEL = {
 
 // ---------------------------------------------------------------------------
 // Inlined shared utils — duplicates src/shared/utils/{fold-label,
-// in-game-date-sort-key, source-fingerprint, in-game-date}.ts so the
-// script runs without a TS transpiler. Specs in the app cover the
-// reference implementation; if those evolve, update here in lockstep.
+// in-game-date-sort-key, source-fingerprint, in-game-date}.ts and the
+// row-construction algorithm in src/shared/data-access/projection-rows.ts +
+// the per-kind builders under src/features/*/data-access/*-projection.ts.
+// Those TS modules are the reference implementation; this script is a port
+// kept in lockstep so the CLI produces byte-identical projection rows to
+// the live write path and the in-app `ProjectionRebuildService`. If you
+// change the row shape, fingerprint algorithm, or any per-kind builder in
+// TS, mirror the change here and rerun pnpm test to confirm the live-path
+// specs still cover the new shape.
 // ---------------------------------------------------------------------------
 
 function foldLabel(value) {

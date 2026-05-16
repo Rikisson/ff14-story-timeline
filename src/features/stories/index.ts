@@ -7,3 +7,7 @@ export type {
   Story,
   StoryContent,
 } from './data-access/story.types';
+export {
+  buildStoryDirectoryInputs,
+  buildStoryTimelineInputs,
+} from './data-access/story-projection';

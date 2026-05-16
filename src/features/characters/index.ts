@@ -5,3 +5,4 @@ export type {
   CharacterDraft,
   StoredCharacter,
 } from './data-access/character.types';
+export { buildCharacterDirectoryInputs } from './data-access/character-projection';

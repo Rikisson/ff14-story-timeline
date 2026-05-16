@@ -7,3 +7,4 @@ export type {
   PlotlineStatus,
   StoredPlotline,
 } from './data-access/plotline.types';
+export { buildPlotlineDirectoryInputs } from './data-access/plotline-projection';
