@@ -30,25 +30,82 @@ Posture is "Firebase for now, schema portable to Postgres later." A migration to
 - `cacheControl: 'public, max-age=31536000'` (already required in `media-rules.md`) works directly with R2's edge caching.
 - **Public-by-default for now.** If per-universe private buckets ever become a requirement, a thin Cloudflare Worker in front of R2 signs URLs against Firebase Auth tokens; the asset doc URL points at the Worker rather than R2 directly. Entity code still doesn't change.
 
+## Query architecture
+
+Canonical entity docs at `universes/{u}/{kind}/{id}` are the source of truth. Two projection types serve query workloads; neither is authoritative, and either can be regenerated from canonical docs.
+
+### Directory projection
+
+`universes/{u}/_directory/{kind}_{id}` — one row per entity, all kinds in one collection. Carries enough metadata to find, filter, and chip-render an entity without reading the canonical doc:
+
+`{ kind, entityId, label, labelFolded, slug, coverAssetId?, secondary?, categoryKey?, status?, visiblePublic, draft?, updatedAt }`
+
+Powers related-ref pickers, inline-ref suggestions, plotline filter selectors, resolver chips, and generic "find entity" UI. Prefix search uses `labelFolded` with `startAt(q) / endAt(q + '\uf8ff')` (high-codepoint sentinel), capped at 20 results.
+
+`visiblePublic` is uniform across kinds: `true` by default, and `!draft` for kinds that carry draft state (Story today; other kinds may gain it later without changing the index shape). The same field gates every public-surface query.
+
+The per-kind `secondary` line follows the rules in `narrative-engine-impl.md` *Scope locks* — the projection writer is responsible for computing it at write time so consumers never have to resolve cross-entity refs to render a list row.
+
+### Timeline projections
+
+`universes/{u}/_timelineEntries/{kind}_{id}` for the mixed story+event date stream, and `universes/{u}/_timelineLaneEntries/{laneKey}_{kind}_{id}` for plotline-filtered swimlanes. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, updatedAt`. Entries with no plotline land in `laneKey: '__unassigned__'`.
+
+The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. A multi-plotline UI runs one query per selected lane with its own cursor; `array-contains-any` caps at 10 and forecloses per-lane pagination, so fan-out is the cost shape.
+
+`dateDisplay` is not stored. The client formats from `inGameDate` through `formatInGameDate` (see `narrative-engine-impl.md` *Calendar*) so a calendar config edit doesn't require a content rewrite.
+
+### Asset references
+
+Projections store `coverAssetId` only; URLs live on `_assets/{assetId}`. List and timeline rendering resolves visible asset IDs lazily through a shared `AssetThumbResolver` that batches `in` queries (Firestore caps `in` at 30), caches by `(universeId, assetId)` for the session, and falls back from `thumbUrl` to `url` for assets uploaded before the thumb pipeline. Loading a universe must never preload the entire `_assets` collection for a public list, timeline, or picker surface.
+
+### Inline-ref resolution
+
+A scene with N `${kind:guid}` tokens hydrates through a shared `EntityResolverCache` that collects unknown IDs across the body and issues batched `in` reads (max 30 per chunk). The cache is session-scoped and keyed by `(universeId, kind, id)`. Per-token `getDoc` is the anti-pattern.
+
+### No partial-array indexes
+
+A picker, search input, inline-ref resolver, or timeline view that needs to *find* entities reads through directory or timeline projections via a query-scoped store. The first-page cache that a per-kind list service happens to hold is not an index; `.find()` over it misses everything past the first page and is a correctness bug, not a perf concern.
+
+### Folded keys
+
+`labelFolded` and `titleFolded` use a single shared normalizer: NFKD form, lowercased, diacritics stripped. Every writer of a projection row routes through the same util — divergent folding misses prefix queries silently.
+
+### Write discipline
+
+Entity create / update / delete writes canonical + projection docs in a single `writeBatch`:
+
+- canonical doc
+- `_directory/{kind}_{id}`
+- `_timelineEntries/{kind}_{id}` for story / event only
+- `_timelineLaneEntries/{laneKey}_{kind}_{id}` for story / event only
+- the relevant `_slugIndex/{kind}_{slug}` entries (see *Atomic slug uniqueness* in Implementation)
+
+Two lifecycle transitions invalidate projection rows beyond the canonical edit:
+
+- **Publish / unpublish** flips `visiblePublic` across every projection row for that entity.
+- **Calendar config change** invalidates `dateSortKey` for every story and event in the universe; a settings-side action triggers a projection rebuild at universe scope.
+
 ## Realtime listeners
 
 `onSnapshot` is opt-in, not the default.
 
 - **Use a listener** for editor auto-save / conflict resolution and player-side cloud-sync slots — both have a clear "another writer may change this while I have it open" story.
-- **Do not use a listener** for catalog browsing, public detail pages, timeline rendering, or any read-only consumer surface. A one-shot `getDocs` + client cache is correct.
+- **Do not use a listener** for catalog browsing, public detail pages, timeline rendering, picker results, or any read-only consumer surface. A one-shot `getDocs` + session cache is correct.
 - Listener charges include rule re-evaluation on reconnect and on rule deploys; on public collections they multiply by audience size.
 
 ## Pagination and filtering
 
+Reads target the projection collections from *Query architecture* above; canonical docs serve detail and edit, not list.
+
 - **Cursor-based only** (`startAfter` / `endBefore`). No arbitrary page-N skips — Firestore can't, and "View more" is the consumer surface anyway.
-- **Every public-list filter combination requires a composite index**, enumerated in `firestore.indexes.json`. Ad-hoc client-side filtering after a loose query is not the answer.
+- **Every filter combination a UI exercises requires a composite index**, enumerated in `firestore.indexes.json`. Ad-hoc client-side filtering after a loose query is not the answer.
 - **Total-count badges use `count()` aggregation** — one read per invocation, not one per matched doc — and are cached client-side for the session.
 - **`array-contains-any` caps at 10 values.** Tag filtering UIs enforce this at the picker; over-10 selections fan out into multiple queries client-side, or are rejected with a clear message.
 
 ## Search
 
-- **Out of scope until full-text search ships.** Until then, list views filter on indexed scalar fields and `array-contains` only.
-- **When search ships, it lives in a separate service.** Candidates in priority order: Typesense (self-hosted on a small VPS), Meilisearch (similar profile), Algolia (only if budget tolerates the price for operational simplicity).
+- **Directory prefix search is the v0 backend.** `_directory` with `labelFolded` ordering and `startAt / endAt` bounds covers exact-prefix lookups across all kinds and is enough for picker and inline-ref hydration. Substring, fuzzy, and field-boost search are out of scope at this tier.
+- **When full-text search ships, it lives behind `EntitySearchService`.** The same interface the directory adapter implements; swapping in Typesense (self-hosted on a small VPS), Meilisearch (similar profile), or Algolia (only if budget tolerates the price) is an adapter swap, not a caller rewrite.
 - **Sync via a write-side hook on entity save.** The search index is authoritative for *finding*; Firestore remains authoritative for the entity itself. Stale indexes are a recoverable bug; stale entities are not.
 - **Search results are ID lists.** Entity hydration goes back through the normal Firestore service so security rules and field shape apply uniformly to search-found and browse-found entities alike.
 
@@ -84,16 +141,36 @@ Firestore bills per operation; spikes are uncapped by default.
 
 ## Atomic slug uniqueness
 
-Current check is read-then-write across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` mutated inside `runTransaction`, and route every slug check through the same helper.
+The current check reads-then-writes across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` mutated inside the same `writeBatch` as the rest of the entity write (see *Write discipline* in Rules), and route every slug check through the same helper.
 
-## Server-side list filtering
+## Firestore indexes manifest
 
-Composite indexes per filter combination so tight filters don't depend on "View more" thrash through client-side filtering of the loaded page. Author the index manifest as the catalog filter UI lands; do not pre-author combos no UI exercises.
+`firestore.indexes.json` doesn't exist yet; create it and wire it through `firebase.json`. Add composite indexes as the UI exercises each combination — don't pre-author combos no picker, list, or timeline view actually runs.
+
+Day-one combinations:
+
+- `_directory`: `(kind, labelFolded)`, `(visiblePublic, labelFolded)`
+- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey)`
+- `_timelineLaneEntries`: `(visiblePublic, laneKey, dateKnown, dateSortKey)`
+- `codexEntries`: `(categoryKey, titleFolded)`
+
+Character / place timeline filter indexes wait until the timeline UI offers those filters.
+
+## Projection writers and rebuild
+
+Per-entity write paths fan out by hand to canonical, directory, and timeline / lane docs. Extract a shared `withEntityProjections` helper so each kind's service writes through one call; the helper owns the batch, the folding, the `secondary` computation, and the lifecycle flips for `visiblePublic`.
+
+Ship a `rebuild-projections {universeId}` script (CLI against a deploy-authenticated context) that walks canonical docs and rewrites every directory / timeline / lane row. Used after schema changes, calendar edits, or partial-batch recovery.
 
 ## Search service
 
-- When the *Catalog → Full-text search* item from `narrative-engine-impl.md` is picked up, evaluate Typesense vs. Meilisearch on a small dataset first; pick the lower-friction option for the first ship.
-- Sync hook design (Cloud Function on Firestore write trigger vs. client-side dual-write) is deferred until the service is picked.
+When the *Catalog → Full-text search* backlog item from `narrative-engine-impl.md` is picked up, evaluate Typesense vs. Meilisearch on a small dataset first; pick the lower-friction option for the first ship. Sync hook design (Cloud Function on Firestore write trigger vs. client-side dual-write) is deferred until the service is picked.
+
+## Player bridge
+
+`CharactersService.characters()` (and the per-kind sibling signals), `MediaAssetsService.assets()`, and `EntityResolverService.allInlineRefOptions` continue to preload universe-wide arrays so the player keeps working without rewrite. New picker, list, timeline, editor, and resolver code paths route through the directory / asset / resolver primitives in *Query architecture* — never through these signals.
+
+Decommission the bridge when the player switches to scene-scoped hydration (see `narrative-engine-impl.md` *Player* backlog); the per-kind list signals collapse to query-store reads and the inline-ref array goes away entirely.
 
 ## Service-layer audit
 
@@ -101,3 +178,4 @@ One-pass sweep to enforce the *Portability posture* rules:
 
 - Any `Timestamp`, `FieldValue`, or `DocumentReference` imported outside `*.service.ts` moves into a service.
 - Any `EntityRef` consumer that branches on `kind` to compute a Firestore-specific value (collection path, ref shape) moves the branch into a resolver service.
+- Any caller that reads a per-kind feature service's list signal (`characters()`, `events()`, etc.) for purposes other than the legacy player bridge moves to a directory / projection query.

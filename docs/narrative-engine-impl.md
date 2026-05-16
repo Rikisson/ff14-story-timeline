@@ -102,7 +102,8 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   - **Story / Event**: formatted in-game date (resolved through the
     calendar config).
   - **Plotline**: capitalized `status` label.
-  - **Codex**: `category` string.
+  - **Codex**: category label, resolved live from the codex categories
+    config via `categoryKey`.
 
 ## Inline-ref tokens
 
@@ -169,20 +170,38 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 ## Codex categories
 
 - **Per-universe config** at `universes/{u}/_meta/codex_categories`,
-  managed via the Universe settings *Categories* section (`/universe/settings/categories`). Each entry:
-  `{ id, label, color?, description? }`.
-- **Codex chip color** resolves through this config via
-  case-insensitive lookup on the entry's `category` string. Entries
-  whose category isn't in the config render with the default chip
-  styling.
-- **Codex form snaps to canonical labels** on save. When the typed
-  category matches an existing config label case-insensitively, the
-  stored string is replaced with the canonical label. New strings pass
-  through as free-form categories — authors aren't blocked from
-  creating ad-hoc categories that aren't in the config yet.
-- **No uniqueness validation** in the constructor. Duplicate labels are
-  the author's responsibility; the visible card grid makes them easy to
-  spot.
+  managed via the Universe settings *Categories* section
+  (`/universe/settings/categories`). Each entry:
+  `{ id, key, label, color?, description? }` — `id` is a stable uuid,
+  `key` is a stable folded slug derived from the initial label, and
+  `label` is the only field allowed to change after creation.
+- **Codex entries reference `categoryKey`.** The entry doc stores
+  `categoryKey: string` (stable) plus a denormalized `categoryLabel`
+  snapshot used by list and chip surfaces that haven't hydrated the
+  config. Chip color and the authoritative label resolve through the
+  config by `categoryKey`; `categoryLabel` is a cache, not the source
+  of truth.
+- **Every saved entry's `categoryKey` exists in config.** Typing a
+  novel label in the codex form's category field creates a new config
+  entry first (uuid + folded key + entered label) and then saves the
+  codex entry against it, all in one batch. A label that matches an
+  existing entry case-insensitively snaps to that entry's
+  `categoryKey` — no duplicate config rows from typing variations of
+  the same name. Authoring velocity stays high; no ad-hoc category
+  strings escape into entry docs.
+- **Rename keeps identity.** Editing a category's label leaves `id`
+  and `key` unchanged; existing entries' `categoryKey` stays valid
+  and chip color is unaffected. Refreshing the denormalized
+  `categoryLabel` across entries is a projection rewrite (see
+  `backend-rules.md` *Write discipline*), not a content migration.
+- **Delete requires reassignment.** The settings UI blocks delete
+  while any codex entry references the category; the author either
+  reassigns the entries or removes them first.
+- **No uniqueness validation on label.** Duplicate labels are still
+  the author's responsibility; the visible card grid makes them easy
+  to spot. The stable `id` / `key` means a duplicate label is a UX
+  oversight, not a data hazard — the underlying references stay
+  unambiguous.
 
 ## Locale
 
@@ -258,6 +277,11 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
 
 ## Player
 
+- Scene-scoped asset and inline-ref hydration. Today the player reads
+  background / audio / sprite URLs and inline-ref labels off
+  universe-wide preloads held by per-entity services; switching to
+  per-scene resolution drops that dependency and lets the bridge
+  globals retire (see `backend-rules.md` *Player bridge*).
 - Multiple save slots per story; cloud sync.
 - Reading-progress badges ("In progress" / "Completed" / "Endings
   N/M").

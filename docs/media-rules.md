@@ -42,6 +42,7 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 ## Loading
 
+- List, timeline, and picker surfaces resolve asset URLs lazily by ID through `AssetThumbResolver` (see `backend-rules.md` *Asset references*). The resolver collects visible `coverAssetId`s, fetches matching `_assets` docs in chunks of up to 30 (Firestore `in` cap), caches by `(universeId, assetId)` for the session, and renders `thumbUrl ?? url`. Universe-wide preload of `_assets` is reserved for surfaces that genuinely need the whole library — the asset library / picker, and the player today as a temporary bridge.
 - On scene mount, preload backgrounds and audio of every scene reachable through `Scene.next[]`, scheduled inside `requestIdleCallback`.
 - Skip preloads when `navigator.connection.saveData === true` or `effectiveType` is `slow-2g` or `2g`.
 
@@ -49,4 +50,6 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 # Implementation
 
-*(Empty — R2 + Worker are wired up and live; the rules above describe the current state.)*
+## Lazy asset resolver
+
+`AssetThumbResolver` does not exist yet. It owns by-ID asset hydration for every list, timeline, picker, and detail surface that needs URLs but not the rest of the asset doc. Ship as a `providedIn: 'root'` service exposing a signal-returning `resolveManyThumbs(ids)`; back it with a session-scoped cache keyed by `(universeId, assetId)`. New code must not reach into `MediaAssetsService.assets()` — that signal is a player-only bridge (see `backend-rules.md` *Player bridge*).
