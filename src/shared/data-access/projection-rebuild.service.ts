@@ -2,17 +2,15 @@ import { computed, inject, Injectable, signal, Signal } from '@angular/core';
 import {
   collection,
   doc,
+  documentId,
   Firestore,
-  getDoc,
   getDocs,
   query,
   where,
   writeBatch,
 } from 'firebase/firestore/lite';
 import { CalendarService } from '@features/calendar';
-import {
-  buildCharacterDirectoryInputs,
-} from '@features/characters';
+import { buildCharacterDirectoryInputs } from '@features/characters';
 import {
   buildCodexEntryDirectoryInputs,
   CodexCategoriesProjectionContext,
@@ -35,13 +33,19 @@ import { CacheInvalidationBus } from './cache-invalidation.bus';
 import {
   buildProjectionRows,
   directoryRowKey,
+  DirectoryRowInputs,
+  ProjectionRowsInputs,
+  slugRowKey,
   timelineRowKey,
+  TimelineRowInputs,
+  UNASSIGNED_LANE_KEY,
 } from './projection-rows';
 
 /**
  * Client-side chunked projection rebuild. Per `docs/backend-rules.md`
- * *Write discipline*: three lifecycle transitions trigger a scoped
- * rebuild that doesn't fit in a single transaction:
+ * *Write discipline* + *Projection writers and rebuild*: three lifecycle
+ * transitions trigger a scoped rebuild that doesn't fit in a single
+ * transaction.
  *
  *   - **Calendar config change** invalidates every story / event's
  *     `dateSortKey`. Call `rebuildForCalendarChange(universeId)` from
@@ -49,30 +53,37 @@ import {
  *     this until the rebuild completes.
  *   - **Category rename** dirties every codex directory row whose
  *     `categoryKey` matches. Call `rebuildForCategoryRename(universeId,
- *     categoryKey)` from the categories settings flow; the UI shows
- *     a toast with progress.
- *   - **Ad-hoc recovery** after schema changes / out-of-band edits.
+ *     categoryKey)` from the categories settings flow; the UI shows a
+ *     toast with progress.
+ *   - **Ad-hoc recovery** after schema changes or out-of-band edits.
  *     `rebuildKind(universeId, kind)` walks a single kind end-to-end.
  *
  * Writes are chunked via `writeBatch` (≤450 ops to leave headroom for
- * one entity's full fan-out under the 500-op cap). The rebuild is
- * idempotent — each row's fingerprint is derived from current canonical
- * state, not from prior projection state — so retrying after partial
- * failure converges on the correct result.
+ * one entity's full fan-out under the 500-op cap).
  *
- * Publishes `entity-write` events on the `CacheInvalidationBus` as
- * rows update so subscribed resolver caches refresh in place.
+ * ## Orphan sweep
  *
- * Row construction uses the shared pure builders in `./projection-rows`
- * + the per-kind `build*DirectoryInputs` / `build*TimelineInputs`
- * modules — the same code the live write path uses, so rebuilt rows
- * carry identical fingerprints to a fresh write.
+ * `rebuildKind` and `rebuildForCalendarChange` invoke an orphan-sweep
+ * pass after the canonical walk: rows in `_directory` /
+ * `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` whose
+ * `entityId` no longer matches any canonical doc (or whose lane key is
+ * no longer in the entity's current `plotlineIds`) are deleted. Without
+ * this, deleted entities and removed-plotline lanes leak as stale rows.
+ *
+ * `rebuildForCategoryRename` does NOT sweep — it's a targeted refresh
+ * of one categoryKey, not a full rebuild, and a sweep would walk every
+ * codex row in the universe just to delete nothing.
+ *
+ * Rebuilt rows carry byte-identical fingerprints to a fresh live write
+ * because both paths go through `buildProjectionRows` + the per-kind
+ * `build*DirectoryInputs` / `build*TimelineInputs` modules.
  */
 
 const BATCH_OP_LIMIT = 450;
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
 const LANE = '_timelineLaneEntries';
+const SLUG_INDEX = '_slugIndex';
 
 const KIND_TO_COLLECTION: Record<EntityKind, string> = {
   character: 'characters',
@@ -82,6 +93,8 @@ const KIND_TO_COLLECTION: Record<EntityKind, string> = {
   plotline: 'plotlines',
   codexEntry: 'codexEntries',
 };
+
+const TIMELINE_KINDS: ReadonlySet<EntityKind> = new Set(['event', 'story']);
 
 export interface RebuildProgress {
   phase: 'idle' | 'starting' | 'processing' | 'done' | 'error';
@@ -96,6 +109,12 @@ export interface RebuildProgress {
 }
 
 const IDLE: RebuildProgress = { phase: 'idle', processed: 0, total: 0 };
+
+interface WalkResult {
+  canonicalIds: Set<string>;
+  /** Only populated for timeline kinds. Maps entityId → set of laneKeys we expect to see. */
+  expectedLanesPerEntity: Map<string, Set<string>>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ProjectionRebuildService {
@@ -112,11 +131,6 @@ export class ProjectionRebuildService {
     return p.phase === 'starting' || p.phase === 'processing';
   });
 
-  /**
-   * Rebuild every story + event in the universe. Used by the calendar
-   * settings save flow — calendar config changes invalidate
-   * `dateSortKey` on every timeline row.
-   */
   async rebuildForCalendarChange(universeId: string): Promise<void> {
     return this.run(async () => {
       await this.calendar.refresh(universeId);
@@ -125,11 +139,6 @@ export class ProjectionRebuildService {
     });
   }
 
-  /**
-   * Rebuild every codex entry whose `categoryKey` matches the given
-   * key. Used by the categories settings rename flow — a label change
-   * propagates to the directory projection's denormalised `secondary`.
-   */
   async rebuildForCategoryRename(
     universeId: string,
     categoryKey: string,
@@ -145,23 +154,15 @@ export class ProjectionRebuildService {
       );
       this.bumpTotal(snap.docs.length);
       this._progress.update((p) => ({ ...p, currentKind: 'codexEntry' }));
-      await this.processCodexBatch(universeId, snap.docs, ctx);
+      await this.writeCodexRows(universeId, snap.docs, ctx);
+      // Intentional: no orphan sweep here — this is a targeted refresh.
     });
   }
 
-  /**
-   * Walks every canonical doc of one kind and rewrites its projection
-   * rows. Used for ad-hoc recovery after schema changes or out-of-band
-   * edits; the CLI script does the same thing against a deploy context.
-   */
   async rebuildKind(universeId: string, kind: EntityKind): Promise<void> {
     return this.run(async () => {
-      if (kind === 'event' || kind === 'story') {
-        await this.calendar.refresh(universeId);
-      }
-      if (kind === 'codexEntry') {
-        await this.categoriesService.refresh(universeId);
-      }
+      if (TIMELINE_KINDS.has(kind)) await this.calendar.refresh(universeId);
+      if (kind === 'codexEntry') await this.categoriesService.refresh(universeId);
       await this.rebuildKindInternal(universeId, kind);
     });
   }
@@ -174,152 +175,113 @@ export class ProjectionRebuildService {
     this.bumpTotal(snap.docs.length);
     this._progress.update((p) => ({ ...p, currentKind: kind }));
 
-    if (kind === 'event') {
-      await this.processEventBatch(universeId, snap.docs);
-    } else if (kind === 'story') {
-      await this.processStoryBatch(universeId, snap.docs);
-    } else if (kind === 'codexEntry') {
-      await this.processCodexBatch(universeId, snap.docs, this.codexContext());
-    } else if (kind === 'plotline') {
-      await this.processSimpleBatch(universeId, kind, snap.docs, (e) => ({
-        directory: buildPlotlineDirectoryInputs(e as never),
-      }));
-    } else if (kind === 'character') {
-      await this.processSimpleBatch(universeId, kind, snap.docs, (e) => ({
-        directory: buildCharacterDirectoryInputs(e as never),
-      }));
-    } else if (kind === 'place') {
-      await this.processSimpleBatch(universeId, kind, snap.docs, (e) => ({
-        directory: buildPlaceDirectoryInputs(e as never),
-      }));
-    }
+    const result = await this.writeKindRows(universeId, kind, snap.docs);
+    await this.sweepOrphans(universeId, kind, result);
   }
 
   // -------------------------------------------------------------------------
-  // Per-kind batching loops. Each pulls the canonical docs, builds rows via
-  // the shared pure builders, and flushes to `writeBatch` chunks of
-  // BATCH_OP_LIMIT ops.
+  // Per-kind canonical walks. Each returns the walked canonical IDs +
+  // (for timeline kinds) the expected lane keys per entity, so the
+  // subsequent sweep pass can identify orphans without re-reading.
   // -------------------------------------------------------------------------
 
-  private async processSimpleBatch(
+  private async writeKindRows(
     universeId: string,
     kind: EntityKind,
-    docs: ReadonlyArray<{ id: string; data: () => Record<string, unknown> }>,
+    docs: ReadonlyArray<FsDoc>,
+  ): Promise<WalkResult> {
+    if (kind === 'event') return this.writeEventRows(universeId, docs);
+    if (kind === 'story') return this.writeStoryRows(universeId, docs);
+    if (kind === 'codexEntry') return this.writeCodexRows(universeId, docs, this.codexContext());
+    if (kind === 'plotline') return this.writeFlatRows(universeId, 'plotline', docs, (e) => buildPlotlineDirectoryInputs(e as never));
+    if (kind === 'character') return this.writeFlatRows(universeId, 'character', docs, (e) => buildCharacterDirectoryInputs(e as never));
+    if (kind === 'place') return this.writeFlatRows(universeId, 'place', docs, (e) => buildPlaceDirectoryInputs(e as never));
+    throw new Error(`Unsupported kind: ${kind satisfies never}`);
+  }
+
+  private writeFlatRows(
+    universeId: string,
+    kind: EntityKind,
+    docs: ReadonlyArray<FsDoc>,
+    buildDirectory: (entity: Record<string, unknown> & { id: string }) => DirectoryRowInputs,
+  ): Promise<WalkResult> {
+    return this.runWalk(universeId, kind, docs, (entity) => ({
+      directory: buildDirectory(entity),
+    }));
+  }
+
+  private writeEventRows(universeId: string, docs: ReadonlyArray<FsDoc>): Promise<WalkResult> {
+    const ctx = this.calendarContext();
+    return this.runWalk(universeId, 'event', docs, (entity) => ({
+      directory: buildEventDirectoryInputs(entity as never, ctx),
+      timeline: buildEventTimelineInputs(entity as never, ctx),
+    }));
+  }
+
+  private writeStoryRows(universeId: string, docs: ReadonlyArray<FsDoc>): Promise<WalkResult> {
+    const ctx = this.calendarContext();
+    return this.runWalk(universeId, 'story', docs, (entity) => ({
+      directory: buildStoryDirectoryInputs(entity as never, ctx),
+      timeline: buildStoryTimelineInputs(entity as never, ctx),
+    }));
+  }
+
+  private writeCodexRows(
+    universeId: string,
+    docs: ReadonlyArray<FsDoc>,
+    ctx: CodexCategoriesProjectionContext,
+  ): Promise<WalkResult> {
+    return this.runWalk(universeId, 'codexEntry', docs, (entity) => ({
+      directory: buildCodexEntryDirectoryInputs(entity as never, ctx),
+    }));
+  }
+
+  private async runWalk(
+    universeId: string,
+    kind: EntityKind,
+    docs: ReadonlyArray<FsDoc>,
     buildInputs: (entity: Record<string, unknown> & { id: string }) => {
-      directory: import('./projection-rows').DirectoryRowInputs;
+      directory: DirectoryRowInputs;
+      timeline?: TimelineRowInputs;
     },
-  ): Promise<void> {
+  ): Promise<WalkResult> {
+    const canonicalIds = new Set<string>();
+    const expectedLanesPerEntity = new Map<string, Set<string>>();
     let batch = writeBatch(this.firebase.firestore);
     let opCount = 0;
+
     for (const d of docs) {
       const raw = d.data();
       const entity = { id: d.id, ...raw };
       const inputs = buildInputs(entity);
-      const rows = await buildProjectionRows(
-        {
-          kind,
-          id: d.id,
-          slug: typeof raw['slug'] === 'string' ? (raw['slug'] as string) : '',
-          directory: inputs.directory,
-        },
-        entitytimestamp(raw),
-      );
-      const ops = [
-        { ref: doc(this.firebase.firestore, 'universes', universeId, DIRECTORY, directoryRowKey(kind, d.id)), data: rows.directoryRow },
-      ];
-      ({ batch, opCount } = await this.applyOps(universeId, batch, opCount, ops));
+      canonicalIds.add(d.id);
+
+      const rowsInputs: ProjectionRowsInputs = {
+        kind,
+        id: d.id,
+        slug: typeof raw['slug'] === 'string' ? (raw['slug'] as string) : '',
+        directory: inputs.directory,
+      };
+      if (inputs.timeline) {
+        rowsInputs.timeline = inputs.timeline;
+        const laneKeys = inputs.timeline.plotlineIds.length === 0
+          ? new Set<string>([UNASSIGNED_LANE_KEY])
+          : new Set<string>(inputs.timeline.plotlineIds);
+        expectedLanesPerEntity.set(d.id, laneKeys);
+      }
+
+      const rows = await buildProjectionRows(rowsInputs, entityTimestamp(raw));
+      const ops = this.opsForRows(universeId, kind, d.id, rows);
+      ({ batch, opCount } = await this.applyOps(batch, opCount, ops));
       this.bumpProcessed();
       this.bus.publishEntityWrite({ universeId, kind, id: d.id });
     }
     if (opCount > 0) await batch.commit();
+
+    return { canonicalIds, expectedLanesPerEntity };
   }
 
-  private async processEventBatch(
-    universeId: string,
-    docs: ReadonlyArray<{ id: string; data: () => Record<string, unknown> }>,
-  ): Promise<void> {
-    const ctx = this.calendarContext();
-    let batch = writeBatch(this.firebase.firestore);
-    let opCount = 0;
-    for (const d of docs) {
-      const entity = { id: d.id, ...d.data() } as never;
-      const rows = await buildProjectionRows(
-        {
-          kind: 'event',
-          id: d.id,
-          slug: String((d.data() as Record<string, unknown>)['slug'] ?? ''),
-          directory: buildEventDirectoryInputs(entity, ctx),
-          timeline: buildEventTimelineInputs(entity, ctx),
-        },
-        entitytimestamp(d.data()),
-      );
-      const ops = this.timelineOps(universeId, 'event', d.id, rows);
-      ({ batch, opCount } = await this.applyOps(universeId, batch, opCount, ops));
-      this.bumpProcessed();
-      this.bus.publishEntityWrite({ universeId, kind: 'event', id: d.id });
-    }
-    if (opCount > 0) await batch.commit();
-  }
-
-  private async processStoryBatch(
-    universeId: string,
-    docs: ReadonlyArray<{ id: string; data: () => Record<string, unknown> }>,
-  ): Promise<void> {
-    const ctx = this.calendarContext();
-    let batch = writeBatch(this.firebase.firestore);
-    let opCount = 0;
-    for (const d of docs) {
-      const entity = { id: d.id, ...d.data() } as never;
-      const rows = await buildProjectionRows(
-        {
-          kind: 'story',
-          id: d.id,
-          slug: String((d.data() as Record<string, unknown>)['slug'] ?? ''),
-          directory: buildStoryDirectoryInputs(entity, ctx),
-          timeline: buildStoryTimelineInputs(entity, ctx),
-        },
-        entitytimestamp(d.data()),
-      );
-      const ops = this.timelineOps(universeId, 'story', d.id, rows);
-      ({ batch, opCount } = await this.applyOps(universeId, batch, opCount, ops));
-      this.bumpProcessed();
-      this.bus.publishEntityWrite({ universeId, kind: 'story', id: d.id });
-    }
-    if (opCount > 0) await batch.commit();
-  }
-
-  private async processCodexBatch(
-    universeId: string,
-    docs: ReadonlyArray<{ id: string; data: () => Record<string, unknown> }>,
-    ctx: CodexCategoriesProjectionContext,
-  ): Promise<void> {
-    let batch = writeBatch(this.firebase.firestore);
-    let opCount = 0;
-    for (const d of docs) {
-      const entity = { id: d.id, ...d.data() } as never;
-      const rows = await buildProjectionRows(
-        {
-          kind: 'codexEntry',
-          id: d.id,
-          slug: String((d.data() as Record<string, unknown>)['slug'] ?? ''),
-          directory: buildCodexEntryDirectoryInputs(entity, ctx),
-        },
-        entitytimestamp(d.data()),
-      );
-      const ops = [
-        {
-          ref: doc(this.firebase.firestore, 'universes', universeId, DIRECTORY, directoryRowKey('codexEntry', d.id)),
-          data: rows.directoryRow,
-        },
-      ];
-      ({ batch, opCount } = await this.applyOps(universeId, batch, opCount, ops));
-      this.bumpProcessed();
-      this.bus.publishEntityWrite({ universeId, kind: 'codexEntry', id: d.id });
-    }
-    if (opCount > 0) await batch.commit();
-  }
-
-  private timelineOps(
+  private opsForRows(
     universeId: string,
     kind: EntityKind,
     id: string,
@@ -346,8 +308,97 @@ export class ProjectionRebuildService {
     return out;
   }
 
+  // -------------------------------------------------------------------------
+  // Orphan sweep
+  // -------------------------------------------------------------------------
+
+  private async sweepOrphans(
+    universeId: string,
+    kind: EntityKind,
+    walk: WalkResult,
+  ): Promise<void> {
+    const fs = this.firebase.firestore;
+    const refs: ReturnType<typeof doc>[] = [];
+
+    // Directory orphans
+    const dirSnap = await getDocs(
+      query(collection(fs, 'universes', universeId, DIRECTORY), where('kind', '==', kind)),
+    );
+    for (const d of dirSnap.docs) {
+      const data = d.data() as { entityId?: string };
+      if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
+        refs.push(doc(fs, 'universes', universeId, DIRECTORY, d.id));
+      }
+    }
+
+    if (TIMELINE_KINDS.has(kind)) {
+      // Timeline orphans
+      const tSnap = await getDocs(
+        query(collection(fs, 'universes', universeId, TIMELINE), where('kind', '==', kind)),
+      );
+      for (const d of tSnap.docs) {
+        const data = d.data() as { entityId?: string };
+        if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
+          refs.push(doc(fs, 'universes', universeId, TIMELINE, d.id));
+        }
+      }
+
+      // Lane orphans: canonical gone OR laneKey no longer expected for this entity
+      const lSnap = await getDocs(
+        query(collection(fs, 'universes', universeId, LANE), where('kind', '==', kind)),
+      );
+      for (const d of lSnap.docs) {
+        const data = d.data() as { entityId?: string; laneKey?: string };
+        if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
+          refs.push(doc(fs, 'universes', universeId, LANE, d.id));
+          continue;
+        }
+        const expected = walk.expectedLanesPerEntity.get(data.entityId);
+        if (!expected || !data.laneKey || !expected.has(data.laneKey)) {
+          refs.push(doc(fs, 'universes', universeId, LANE, d.id));
+        }
+      }
+    }
+
+    // Slug-index orphans (prefix scan: doc IDs are `{kind}_{slug}`)
+    const slugStart = `${kind}_`;
+    // `￿` sorts after every realistic slug character, bounding the range.
+    const slugEnd = `${kind}_￿`;
+    const sSnap = await getDocs(
+      query(
+        collection(fs, 'universes', universeId, SLUG_INDEX),
+        where(documentId(), '>=', slugStart),
+        where(documentId(), '<', slugEnd),
+      ),
+    );
+    for (const d of sSnap.docs) {
+      const data = d.data() as { entityId?: string };
+      if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
+        refs.push(doc(fs, 'universes', universeId, SLUG_INDEX, d.id));
+      }
+    }
+
+    if (refs.length === 0) return;
+
+    let batch = writeBatch(fs);
+    let opCount = 0;
+    for (const ref of refs) {
+      if (opCount >= BATCH_OP_LIMIT) {
+        await batch.commit();
+        batch = writeBatch(fs);
+        opCount = 0;
+      }
+      batch.delete(ref);
+      opCount++;
+    }
+    if (opCount > 0) await batch.commit();
+  }
+
+  // -------------------------------------------------------------------------
+  // Plumbing
+  // -------------------------------------------------------------------------
+
   private async applyOps(
-    _universeId: string,
     batch: ReturnType<typeof writeBatch>,
     opCount: number,
     ops: ReadonlyArray<{ ref: ReturnType<typeof doc>; data: Record<string, unknown> }>,
@@ -403,7 +454,12 @@ export class ProjectionRebuildService {
   }
 }
 
-function entitytimestamp(entity: Record<string, unknown>): number {
+interface FsDoc {
+  id: string;
+  data: () => Record<string, unknown>;
+}
+
+function entityTimestamp(entity: Record<string, unknown>): number {
   const updatedAt = entity['updatedAt'];
   if (typeof updatedAt === 'number') return updatedAt;
   const createdAt = entity['createdAt'];
@@ -411,6 +467,5 @@ function entitytimestamp(entity: Record<string, unknown>): number {
   return Date.now();
 }
 
-// Re-export so the public types are reachable without importing the
-// concrete service module.
+// Re-export so callers can hold a typed Firestore handle.
 export type { Firestore };

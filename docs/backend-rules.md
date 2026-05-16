@@ -121,6 +121,8 @@ Entity create / update / delete uses `runTransaction`, not `writeBatch` — slug
 
 Projection writes fire on canonical metadata-doc writes only — Story scene/content edits at `_content/main` never touch projections. Writers compare the new projected slice's `sourceFingerprint` against the existing row's and skip the projection legs of the transaction when the fingerprint matches; a cover swap or rename pays the fanout, a body edit doesn't.
 
+The shared write helper factors into a composable transaction-body primitive (`applyEntityWrite(tx, ...)` / `applyEntityDelete(tx, ...)`) plus thin `runTransaction` wrappers for kinds with no per-kind logic. Story composes the primitive inside its own `runTransaction` to combine the metadata write, the `_content/main` write, and the OCC version check with the projection fan-out — all atomic. Because Firestore requires every `tx.get` to precede every `tx.set` / `tx.delete`, callers composing the primitive must do their own reads (OCC version check, custom validation) before the `applyEntityWrite` call returns. The primitive itself reads canonical, the existing directory row, the existing timeline row, and the new slug-claim doc up front, then writes.
+
 Three lifecycle transitions invalidate projection rows beyond the canonical edit. v1 has no Cloud Functions; every rebuild is a client-side action initiated by the settings UI that performed the triggering change, with visible progress and chunked writes:
 
 - **Publish / unpublish** flips `visiblePublic` across every projection row for that entity. Single-entity scope; fits in one `runTransaction` alongside the canonical write.
@@ -235,9 +237,16 @@ Same pattern for `_timelineEntries` and `_timelineLaneEntries`. `_slugIndex` is 
 
 ## Projection writers and rebuild
 
-Per-entity write paths fan out by hand to canonical, directory, and timeline / lane docs. Extract a shared `withEntityProjections` helper so each kind's service writes through one `runTransaction` call; the helper owns the slug-claim read, the folding, the `secondary` computation, the `sourceFingerprint` diff that lets unchanged projected slices skip the projection legs, and the lifecycle flips for `visiblePublic`.
+Row construction lives in a pure `buildProjectionRows({ kind, id, slug, directory, timeline? }, updatedAt)` builder that the live write path, the in-app rebuild service, and the CLI ops script all call. Each kind exposes its own pure per-kind input builder (`buildCharacterDirectoryInputs`, `buildEventTimelineInputs`, …) so cross-feature dependencies (Calendar config, Codex categories) flow in as plain context objects rather than Angular injections. The entity services become thin DI wrappers; the rebuild paths never duplicate per-kind logic.
 
-Ship a `rebuild-projections {universeId}` script (CLI against a deploy-authenticated context) that walks canonical docs and rewrites every directory / timeline / lane row. Used after schema changes, calendar edits, category renames, or out-of-band-edit recovery. Rebuild recomputes `sourceFingerprint` from canonical projected fields and mirrors `canonical.updatedAt` onto every projection row, so rebuilt rows aren't immediately flagged as stale by drift detectors.
+Rebuild has two forms:
+
+- **In-app `ProjectionRebuildService`** — `rebuildForCalendarChange(universeId)`, `rebuildForCategoryRename(universeId, categoryKey)`, and `rebuildKind(universeId, kind)`. Exposes a `Signal<RebuildProgress>` (phase / processed / total / currentKind) so the calendar settings save flow can block behind a progress modal and the categories settings rename flow can drive a toast. Each row write publishes an `entity-write` event on the cache-invalidation bus so resolver caches refresh in place.
+- **CLI `scripts/rebuild-projections.mjs`** — plain Node ESM, signs in via Firebase Auth (member of the target universe) and walks the same kinds. Used for deploy-time recovery and out-of-band-edit cleanup. The CLI inlines a port of the pure builders because it runs without a TS transpiler; a header comment in the script points at the TS source as the spec.
+
+Both forms recompute `sourceFingerprint` from canonical projected fields and mirror `canonical.updatedAt` onto every projection row, so rebuilt rows aren't immediately flagged as stale by drift detectors. Both forms chunk writes via `writeBatch` (≤450 ops to leave headroom under the 500-op cap).
+
+Both forms run an orphan-sweep pass per kind after the canonical walk: rows in `_directory` / `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` whose `entityId` no longer matches any canonical doc (or whose lane `laneKey` is no longer in the entity's current `plotlineIds`) are deleted. Without this, deleted entities and removed-plotline lanes leak as stale rows that no live edit ever cleans up. The `rebuildForCategoryRename` path is the one exception — it's a targeted refresh of one key, not a full rebuild, so it skips the sweep.
 
 ## Search service
 

@@ -35,13 +35,14 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   collection,
   doc,
+  documentId,
   getDoc,
   getDocs,
   initializeFirestore,
+  query,
+  where,
   writeBatch,
 } from 'firebase/firestore/lite';
-
-import { createHash } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
 // Firebase config — mirrors src/app/firebase.config.ts. Web API key only;
@@ -59,8 +60,10 @@ const firebaseConfig = {
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
 const LANE = '_timelineLaneEntries';
+const SLUG_INDEX = '_slugIndex';
 const UNASSIGNED_LANE = '__unassigned__';
 const BATCH_OP_LIMIT = 450; // 500 is the hard cap; leave headroom for one entity's full fan-out
+const TIMELINE_KINDS = new Set(['event', 'story']);
 
 const KIND_TO_COLLECTION = {
   character: 'characters',
@@ -234,9 +237,19 @@ function canonicalise(value) {
   return Object.keys(out).length === 0 ? null : out;
 }
 
-function computeSourceFingerprint(slice) {
+async function computeSourceFingerprint(slice) {
   const payload = JSON.stringify(canonicalise(slice));
-  return createHash('sha256').update(payload, 'utf8').digest('hex').slice(0, 12);
+  const bytes = new TextEncoder().encode(payload);
+  // Web Crypto API — same path the live browser code uses. Node 20+
+  // exposes `crypto.subtle` on the global, no node:crypto import needed.
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+  return bytesToHex(new Uint8Array(digest)).slice(0, 12);
+}
+
+function bytesToHex(bytes) {
+  let hex = '';
+  for (const byte of bytes) hex += byte.toString(16).padStart(2, '0');
+  return hex;
 }
 
 // ---------------------------------------------------------------------------
@@ -344,7 +357,7 @@ function setIfDefined(obj, key, value) {
   if (value !== undefined) obj[key] = value;
 }
 
-function buildProjectionRows(firestore, universeId, kind, id, entity, ctx) {
+async function buildProjectionRows(firestore, universeId, kind, id, entity, ctx) {
   const dir = buildDirectoryInputs(kind, entity, ctx);
   const timeline = buildTimelineInputs(kind, entity, ctx);
   const draft = dir.draft;
@@ -385,7 +398,7 @@ function buildProjectionRows(firestore, universeId, kind, id, entity, ctx) {
     laneIds = laneIdsOf(timeline.plotlineIds);
   }
 
-  const fingerprint = computeSourceFingerprint({
+  const fingerprint = await computeSourceFingerprint({
     directory: directoryRow,
     timeline: timelineRow,
   });
@@ -420,7 +433,7 @@ function buildProjectionRows(firestore, universeId, kind, id, entity, ctx) {
       });
     }
   }
-  return ops;
+  return { ops, laneIds };
 }
 
 // ---------------------------------------------------------------------------
@@ -466,13 +479,17 @@ async function rebuildKind(firestore, universeId, kind, ctx) {
   );
   console.log(`  ${kind}: ${snap.docs.length} canonical docs`);
 
+  const canonicalIds = new Set();
+  const expectedLanesPerEntity = new Map();
   let batch = writeBatch(firestore);
   let opCount = 0;
   let committed = 0;
 
   for (const d of snap.docs) {
     const entity = { id: d.id, ...d.data() };
-    const ops = buildProjectionRows(firestore, universeId, kind, d.id, entity, ctx);
+    canonicalIds.add(d.id);
+    const { ops, laneIds } = await buildProjectionRows(firestore, universeId, kind, d.id, entity, ctx);
+    if (laneIds.length > 0) expectedLanesPerEntity.set(d.id, new Set(laneIds));
 
     if (opCount + ops.length > BATCH_OP_LIMIT) {
       await batch.commit();
@@ -493,6 +510,95 @@ async function rebuildKind(firestore, universeId, kind, ctx) {
   }
 
   console.log(`  ${kind}: committed ${committed} projection ops`);
+
+  const swept = await sweepOrphans(firestore, universeId, kind, canonicalIds, expectedLanesPerEntity);
+  console.log(`  ${kind}: swept ${swept} orphaned rows`);
+}
+
+/**
+ * Per-kind orphan sweep — see `ProjectionRebuildService.sweepOrphans`
+ * in src/shared/data-access/projection-rebuild.service.ts for the
+ * reference implementation. Deletes:
+ *
+ *   - `_directory` rows whose entityId isn't in the current canonical set
+ *   - `_timelineEntries` rows whose entityId isn't in the canonical set
+ *     (timeline kinds only)
+ *   - `_timelineLaneEntries` rows whose entityId is gone OR whose
+ *     laneKey is no longer expected for that entity (timeline kinds only)
+ *   - `_slugIndex` rows (doc-ID prefix `{kind}_`) whose entityId is gone
+ */
+async function sweepOrphans(firestore, universeId, kind, canonicalIds, expectedLanesPerEntity) {
+  const refs = [];
+
+  const dirSnap = await getDocs(
+    query(collection(firestore, 'universes', universeId, DIRECTORY), where('kind', '==', kind)),
+  );
+  for (const d of dirSnap.docs) {
+    const data = d.data();
+    if (!data.entityId || !canonicalIds.has(data.entityId)) {
+      refs.push(doc(firestore, 'universes', universeId, DIRECTORY, d.id));
+    }
+  }
+
+  if (TIMELINE_KINDS.has(kind)) {
+    const tSnap = await getDocs(
+      query(collection(firestore, 'universes', universeId, TIMELINE), where('kind', '==', kind)),
+    );
+    for (const d of tSnap.docs) {
+      const data = d.data();
+      if (!data.entityId || !canonicalIds.has(data.entityId)) {
+        refs.push(doc(firestore, 'universes', universeId, TIMELINE, d.id));
+      }
+    }
+
+    const lSnap = await getDocs(
+      query(collection(firestore, 'universes', universeId, LANE), where('kind', '==', kind)),
+    );
+    for (const d of lSnap.docs) {
+      const data = d.data();
+      if (!data.entityId || !canonicalIds.has(data.entityId)) {
+        refs.push(doc(firestore, 'universes', universeId, LANE, d.id));
+        continue;
+      }
+      const expected = expectedLanesPerEntity.get(data.entityId);
+      if (!expected || !data.laneKey || !expected.has(data.laneKey)) {
+        refs.push(doc(firestore, 'universes', universeId, LANE, d.id));
+      }
+    }
+  }
+
+  const slugStart = `${kind}_`;
+  // `￿` sorts after every realistic slug character.
+  const slugEnd = `${kind}_￿`;
+  const sSnap = await getDocs(
+    query(
+      collection(firestore, 'universes', universeId, SLUG_INDEX),
+      where(documentId(), '>=', slugStart),
+      where(documentId(), '<', slugEnd),
+    ),
+  );
+  for (const d of sSnap.docs) {
+    const data = d.data();
+    if (!data.entityId || !canonicalIds.has(data.entityId)) {
+      refs.push(doc(firestore, 'universes', universeId, SLUG_INDEX, d.id));
+    }
+  }
+
+  if (refs.length === 0) return 0;
+
+  let batch = writeBatch(firestore);
+  let opCount = 0;
+  for (const ref of refs) {
+    if (opCount >= BATCH_OP_LIMIT) {
+      await batch.commit();
+      batch = writeBatch(firestore);
+      opCount = 0;
+    }
+    batch.delete(ref);
+    opCount++;
+  }
+  if (opCount > 0) await batch.commit();
+  return refs.length;
 }
 
 async function main() {

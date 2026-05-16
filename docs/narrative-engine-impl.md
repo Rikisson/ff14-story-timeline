@@ -88,6 +88,8 @@ Directory-backed pickers (related-ref pickers, plotline filter, inline-ref sugge
 - **Draft badge for members.** Directory rows with `draft === true` render a small *Draft* pill alongside the entity label so members searching their own catalog see at a glance which results aren't visible to readers.
 - **Category auto-create is affirmative.** See `Codex categories` *Every saved entry's `categoryKey` exists in config* — the typeahead surfaces *Create category "X"* as an explicit option, never creating silently.
 
+Picker styling, the *Draft* pill, loading / empty / error states, the auto-create row, and the progress modals / toasts driven by the rebuild service all live under the standing tokens and component rules in `styling-rules.md`. Every visible string in the picker — placeholders, error copy, "no matches" empty state, *Create category "X"* affirmative, *Draft* pill — goes through Transloco per `i18n-rules.md`; nothing inline.
+
 ## Timeline UX
 
 - **Per-lane pagination is the default.** When the user selects N plotline lanes in the filter, each lane fires its own query against `_timelineLaneEntries` with its own cursor, loading state, and error state. Each lane carries its own *Load more* button — there is no shared global "load more" across lanes.
@@ -240,7 +242,17 @@ Directory-backed pickers (related-ref pickers, plotline filter, inline-ref sugge
   category-rename trigger.
 - **Delete requires reassignment.** The settings UI blocks delete
   while any codex entry references the category; the author either
-  reassigns the entries or removes them first.
+  reassigns the entries or removes them first. The usage check is a
+  non-transactional `where('categoryKey', '==', key)` query before
+  the delete transaction commits — atomic enforcement client-side
+  would need either a query-in-transaction (Firestore does not
+  support) or a maintained per-category usage counter that every
+  codex-entry write maintains. The v1 choice is the UI-only block: a
+  codex entry created in the race window between the check and the
+  delete commit ends up with a `categoryKey` pointing at nothing,
+  the directory projection's `secondary` resolves to `undefined`,
+  and the entry still renders plain — recoverable via the
+  orphaned-categoryKey repair tool below.
 - **Folded labels and keys are unique within the universe.** Creating
   or renaming a category whose label folds to a slug that already
   exists — either as another category's folded label or as a stable
@@ -326,6 +338,11 @@ Directory-backed pickers (related-ref pickers, plotline filter, inline-ref sugge
 ## Test coverage
 
 Specs exist for the editor and player stores plus a few utils. Services, route guards, and shared UI primitives are unverified — close that gap before the next major refactor pass.
+
+## Repair tools
+
+- **Orphaned `categoryKey` repair.** Walks `codexEntries` whose `categoryKey` no longer maps to a row in the `_meta/codex_categories` config (per *Codex categories — Delete requires reassignment*: the v1 UI-only delete block has a small race window where a concurrent create can produce one of these). Surfaces the affected entries and offers a reassign-to-category-X or clear-categoryKey flow.
+- **Broken inline-ref repair.** Walks scenes for `${kind:guid}[…]` tokens whose target entity is missing (per *Inline-ref tokens — Entity delete*). Surfaces a list with the surrounding scene context and offers re-resolution or removal. Same shape as the categoryKey tool; consider sharing the UI shell.
 
 ## Player
 
