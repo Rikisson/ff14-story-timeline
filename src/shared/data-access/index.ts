@@ -10,3 +10,14 @@ export {
   EntityResolverService,
   type ResolvedEntity,
 } from './entity-resolver.service';
+export {
+  applyEntityDelete,
+  applyEntityWrite,
+  deleteEntityWithProjections,
+  UNASSIGNED_LANE_KEY,
+  writeEntityWithProjections,
+  type DirectoryRowInputs,
+  type EntityDeleteRequest,
+  type EntityWriteRequest,
+  type TimelineRowInputs,
+} from './with-entity-projections';
