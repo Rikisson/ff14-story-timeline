@@ -72,9 +72,28 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 | Universe, Plotline          | —                       | —                                 |
 
 - **No timeline-to-timeline picker refs.** Story↔Event and Event↔Event are derivable from `inGameDate`; use the timeline view.
-- **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${ev:…}` / `${st:…}` token in prose, not the picker.
+- **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
 - **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
 - **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
+
+## Picker UX
+
+Directory-backed pickers (related-ref pickers, plotline filter, inline-ref suggestion popup, codex category typeahead) share one interaction contract so they read consistently across the app:
+
+- **Debounced search.** 150–200 ms between keystroke and Firestore query; the debounce timer resets on every keystroke.
+- **Stale-response guard.** Each search has a sequence number; results that arrive after a newer query has fired are dropped, not rendered.
+- **Selected chips resolve independently from the search result page.** A chip's label and avatar come from `EntityResolverCache` by ID, so chips stay rendered even when the current search query doesn't include them in its result set.
+- **Explicit loading / no-results / error states.** A spinner during the in-flight query, a "no matches" empty state with the typed query echoed back, and a recoverable error state with a retry button — never a silently empty list.
+- **Keyboard navigation and ARIA.** Arrow keys move the focus ring through results, Enter selects, Escape clears the query; results are announced via `aria-live` for screen readers; the input carries `aria-controls` pointing at the results list.
+- **Draft badge for members.** Directory rows with `draft === true` render a small *Draft* pill alongside the entity label so members searching their own catalog see at a glance which results aren't visible to readers.
+- **Category auto-create is affirmative.** See `Codex categories` *Every saved entry's `categoryKey` exists in config* — the typeahead surfaces *Create category "X"* as an explicit option, never creating silently.
+
+## Timeline UX
+
+- **Per-lane pagination is the default.** When the user selects N plotline lanes in the filter, each lane fires its own query against `_timelineLaneEntries` with its own cursor, loading state, and error state. Each lane carries its own *Load more* button — there is no shared global "load more" across lanes.
+- **No selected plotlines = one global query** against `_timelineEntries`, single cursor, single *Load more*. Switching from global to filtered (or adding/removing lanes) resets per-lane cursors; the existing pages aren't preserved across filter changes.
+- **Unassigned lane.** When the filter selection includes the synthetic `__unassigned__` lane, it renders alongside selected plotline lanes with the same per-lane semantics.
+- **Selected-lane cap.** See `backend-rules.md` *Cardinality limits* — the UI rejects selecting more than 10 lanes so concurrent query fan-out per pagination step stays bounded.
 
 ## Scope locks
 
@@ -102,15 +121,21 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   - **Story / Event**: formatted in-game date (resolved through the
     calendar config).
   - **Plotline**: capitalized `status` label.
-  - **Codex**: category label, resolved live from the codex categories
-    config via `categoryKey`.
+  - **Codex**: category label, resolved through `categoryKey` — live
+    from the codex categories config on codex-only surfaces (the config
+    is already hydrated there), or from the directory projection's
+    denormalized `secondary` field on cross-kind surfaces (pickers,
+    cross-kind list queries) that don't load the config.
 
 ## Inline-ref tokens
 
 - **Token form:** `${kind:<guid>}[label]`. `kind` is one of
-  `character | place | event | plotline | codex`. Codex entries
-  resolve their category at render time — the token does not encode
-  category (no `${codex.item:…}`).
+  `character | place | story | event | plotline | codex` — the
+  parser-facing inline-token vocabulary. The `codex` prefix maps to
+  EntityKind `codexEntry` through a single lookup table; every other
+  prefix matches its EntityKind verbatim. Codex entries resolve their
+  category at render time — the token does not encode category
+  (no `${codex.item:…}`).
 - **Entity delete:** cascade-fix of inline refs is *not* attempted at
   delete time. Refs become unresolvable and render plain. A "find
   broken refs" maintenance tool can surface them later.
@@ -166,6 +191,12 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   trailing parts drop when an earlier component is missing. The input
   form flags minute-without-hour and second-without-minute as
   validation errors so the data the formatter sees is well-formed.
+- **Config writes are last-writer-wins.** The calendar config doc has
+  no `version` field — concurrent edits are rare in practice (the
+  calendar settings save blocks behind a universe-scope projection
+  rebuild, which serialises sessions naturally), so the OCC discipline
+  the codex categories config carries isn't worth the complexity here.
+  Add `version` if real contention surfaces.
 
 ## Codex categories
 
@@ -176,6 +207,13 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   `key` is a stable folded slug derived from the initial label. Both
   are immutable after creation; `label`, `color`, and `description`
   may all change through the settings UI.
+- **Config writes are transactional, not last-writer-wins.** The
+  config doc carries a `version` field; create / rename / delete /
+  auto-create all run through `runTransaction` (read config + validate
+  uniqueness + apply change + bump version + write any dependent
+  canonical/projection rows in the same transaction). Concurrent
+  settings sessions retry on contention rather than silently
+  overwriting each other.
 - **Codex entries reference `categoryKey` only.** The canonical entry
   doc stores `categoryKey: string` and nothing else category-related.
   Chip color and the resolved label come from the categories config
@@ -185,15 +223,15 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
   need to join through the config — that's a projection-side
   denormalization, refreshed on category rename per
   `backend-rules.md` *Write discipline*.
-- **Every saved entry's `categoryKey` exists in config.** Typing a
-  novel label in the codex form's category field creates a new config
-  entry first (uuid + folded key + entered label) and then saves the
-  codex entry against it, all in the same atomic write (`runTransaction`
-  per `backend-rules.md` *Write discipline*). A label that matches an
-  existing entry case-insensitively snaps to that entry's
+- **Every saved entry's `categoryKey` exists in config.** A label that
+  matches an existing entry case-insensitively snaps to that entry's
   `categoryKey` — no duplicate config rows from typing variations of
-  the same name. Authoring velocity stays high; no ad-hoc category
-  strings escape into entry docs.
+  the same name. A novel label surfaces an explicit *Create category
+  "X"* option in the typeahead; selecting it creates the config entry
+  (uuid + folded key + entered label) and saves the codex entry
+  against it in the same `runTransaction` (per `backend-rules.md`
+  *Write discipline*). Creation is affirmative, never silent — typos
+  don't become categories without the author confirming.
 - **Rename keeps identity.** Editing a category's label leaves `id`
   and `key` unchanged; existing entries' `categoryKey` stays valid
   and chip color is unaffected. No canonical entry doc needs
@@ -206,7 +244,11 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 - **Folded labels and keys are unique within the universe.** Creating
   or renaming a category whose label folds to a slug that already
   exists — either as another category's folded label or as a stable
-  `key` from a prior label — is rejected by the settings UI. The
+  `key` from a prior label — is rejected by the settings UI. Collision
+  validation runs inline on the label input as the author types, names
+  the conflicting category in the error copy ("Conflicts with 'Items —
+  Equipment'"), and gates the save button; the invariant is enforced
+  again transactionally on save in case two sessions race. The
   invariant makes the typeahead auto-snap unambiguous: at any moment
   at most one category matches a given folded input. Authors who want
   visually-similar categories give them visually-distinct labels
@@ -324,6 +366,14 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
 - Co-authoring — Firestore presence + multi-cursor.
 - Import / export (JSON).
 - Print / PDF export of a story walkthrough.
+- Pre-publish validation pass. The publish action surfaces a warning
+  dialog when the story's metadata or content carries any of: inline
+  refs pointing at missing entities, inline refs to draft / unpublished
+  entities, broken `relatedRefs`, or `coverAssetId` / scene
+  `backgroundAssetId` / `audioAssetId` values pointing at deleted
+  assets. Public render still hides non-public refs gracefully (plain
+  text fallback per *Inline-ref tokens*); this surfaces the issue to
+  the author before readers see the empty space.
 
 ## Platform
 

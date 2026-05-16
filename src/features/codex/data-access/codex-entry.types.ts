@@ -4,7 +4,15 @@ export interface CodexEntry {
   id: string;
   slug: string;
   title: string;
+  // Legacy free-form category string; kept while consuming code transitions to
+  // `categoryKey`. New writers should populate both fields; phase 1 cleanup
+  // removes `category` entirely (see docs `narrative-engine-impl.md` *Codex
+  // categories — Codex entries reference categoryKey only*).
   category?: string;
+  // Stable reference into `_meta/codex_categories[].key`. The canonical target
+  // for category identity; resolves chip color and label via the categories
+  // config.
+  categoryKey?: string;
   description: string;
   coverAssetId?: string;
   // Intentionally untyped across all EntityKinds — a codex entry can reference anything in the world.
@@ -20,6 +28,7 @@ export interface CodexEntryDraft {
   slug: string;
   title: string;
   category?: string;
+  categoryKey?: string;
   description: string;
   coverAssetId?: string;
   relatedRefs?: EntityRef[];

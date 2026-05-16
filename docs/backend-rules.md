@@ -84,9 +84,30 @@ Fingerprint computation is deterministic — every writer and the rebuild script
 
 Drift sources: writer bugs, schema migrations, and out-of-band console edits. Firestore `runTransaction` atomicity rules out partial-write failure within a single entity save as a drift source.
 
+### Cardinality limits
+
+Projection fan-out has to be bounded or a single write balloons into hundreds of projection rows and a single timeline render fires hundreds of queries. v1 caps, enforced in forms with clear validation copy:
+
+- **`plotlineRefs` per Story / Event: 10.** Each ref produces one `_timelineLaneEntries` row at write time, so 10 keeps per-entity write fan-out at ≤ 1 directory + 1 timeline + 10 lane = 12 rows.
+- **`relatedRefs` per entity: 50.** Bounds inline-ref hydration size on detail pages; for Story / Event the cap also caps `characterIds[]` / `placeIds[]` array length on timeline projection rows. For Character / Place / Codex, `relatedRefs` doesn't fan out to projections, so the cap is a UX / cost ceiling rather than a fan-out one.
+- **Selected timeline lanes in the filter UI: 10.** Each selected lane fires its own query with its own cursor; the cap bounds concurrent read fan-out per pagination step.
+- **Inline-ref batch hydration per render pass: 30.** Matches Firestore's `in` chunk cap; the resolver chunks larger payloads transparently.
+
+### Cache invalidation
+
+Client-side caches don't auto-invalidate on write. The entity-write helper publishes invalidation events that every session-scoped cache subscribes to:
+
+- **Entity write** invalidates `EntityResolverCache` entries keyed by `(universeId, kind, id)` so the next inline-ref render fetches the new label.
+- **Entity write** dirties matching rows in any active query store (directory, timeline, lane); the store either patches the row in place from the freshly-written projection or refetches the current page.
+- **Asset write / delete** invalidates `AssetThumbResolver` entries keyed by `(universeId, assetId)`. Asset URLs are immutable per asset ID, so this only matters for asset deletes and metadata edits — but the listener is the same shape.
+
+Without these hooks, editor surfaces show stale names / chips / thumbnails after save until the page reloads.
+
 ### Public read surface
 
 Public list, filter, picker, and timeline queries route through `_directory`, `_timelineEntries`, and `_timelineLaneEntries` and rely on `visiblePublic` for visibility — one rule shape (`allow read: if resource.data.visiblePublic == true || isMember(...)`) covers every kind uniformly. Canonical collections serve detail-by-ID reads, gated per-kind. When a non-story kind gains `draft` later, its canonical-read rule gains the same `draft == false || isMember(...)` clause Story carries today; the projection-read rule never changes.
+
+**Firestore rules do not auto-filter query results — they gate each returned doc and reject the whole query if any returned doc fails.** Public callers must include `where('visiblePublic', '==', true)` in every projection query; the rule alone is not a filter. A query that omits the predicate may work for members (`isMember` short-circuits the gate) and fail for guests as soon as one draft row falls into the result page.
 
 ### Write discipline
 
@@ -100,11 +121,12 @@ Entity create / update / delete uses `runTransaction`, not `writeBatch` — slug
 
 Projection writes fire on canonical metadata-doc writes only — Story scene/content edits at `_content/main` never touch projections. Writers compare the new projected slice's `sourceFingerprint` against the existing row's and skip the projection legs of the transaction when the fingerprint matches; a cover swap or rename pays the fanout, a body edit doesn't.
 
-Three lifecycle transitions invalidate projection rows beyond the canonical edit:
+Three lifecycle transitions invalidate projection rows beyond the canonical edit. v1 has no Cloud Functions; every rebuild is a client-side action initiated by the settings UI that performed the triggering change, with visible progress and chunked writes:
 
-- **Publish / unpublish** flips `visiblePublic` across every projection row for that entity.
-- **Calendar config change** invalidates `dateSortKey` for every story and event in the universe; a settings-side action triggers a projection rebuild at universe scope.
-- **Category rename** triggers a scoped rebuild of every codex directory row whose `categoryKey` matches the renamed category. The rebuild path — chunked into `writeBatch` commits of ≤500 ops, idempotent on retry because each row's `sourceFingerprint` is derived from its current canonical projected slice, not from prior projection state — handles arbitrary fanout. A single `runTransaction` can't, because Firestore caps transactions at 500 ops and a popular category may have many more entries. `id` and `key` are stable, so canonical codex entry docs aren't touched.
+- **Publish / unpublish** flips `visiblePublic` across every projection row for that entity. Single-entity scope; fits in one `runTransaction` alongside the canonical write.
+- **Calendar config change** invalidates `dateSortKey` for every story and event in the universe. The calendar settings save blocks behind a progress modal until the universe-scope rebuild completes — stale sort keys would scramble the timeline silently, so the save isn't done until the rebuild is.
+- **Category rename** triggers a scoped rebuild of every codex directory row whose `categoryKey` matches the renamed category. The settings UI shows a toast with progress; rows refresh in place as the rebuild advances. The rebuild path — chunked into `writeBatch` commits of ≤500 ops, idempotent on retry because each row's `sourceFingerprint` is derived from its current canonical projected slice, not from prior projection state — handles arbitrary fanout. A single `runTransaction` can't, because Firestore caps transactions at 500 ops and a popular category may have many more entries. `id` and `key` are stable, so canonical codex entry docs aren't touched.
+- **Category delete** is blocked until every codex entry referencing it has been reassigned or removed; the settings UI surfaces the affected entry count and a reassign-or-remove flow before the delete is allowed to proceed.
 
 ## Realtime listeners
 
@@ -160,9 +182,30 @@ Firestore bills per operation; spikes are uncapped by default.
 - Firestore Usage tab dashboard bookmarked; reads, writes, and storage reviewed weekly during early launch.
 - Restrict the Firebase API key to the GitHub Pages domain (Cloud Console).
 
+## Seed schema
+
+The seeder at `src/mocks/seeder.service.ts` is the source of truth for a fresh database. It must write every collection the new code reads:
+
+- canonical entity docs with the new field shapes (`categoryKey` not `category`, `version` where the kind uses OCC)
+- `_meta/codex_categories` with `{ id, key, label, color?, description?, version }`
+- `_meta/calendar` (no version)
+- `_slugIndex/{kind}_{slug}` for every seeded entity
+- `_directory/{kind}_{id}` rows with computed `labelFolded`, `secondary`, `visiblePublic`, `sourceFingerprint`, `updatedAt`
+- `_timelineEntries/{kind}_{id}` for stories and events
+- `_timelineLaneEntries/{laneKey}_{kind}_{id}` fanned out per `plotlineRefs` entry (with `__unassigned__` for empty)
+
+Production-side rebuild for ongoing recovery (out-of-band edits, calendar / category lifecycle triggers) lives in *Projection writers and rebuild*; the seeder doesn't share that code path because it runs against an empty DB and doesn't need the diff-against-existing logic.
+
 ## Atomic slug uniqueness
 
-The current check reads-then-writes across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` claimed inside the entity-write `runTransaction` (see *Write discipline* in Rules) — the transaction reads the slug doc, throws on collision with a different owner, and `set`s it alongside the canonical and projection writes. Route every slug check through the same helper.
+The current check reads-then-writes across `UniverseEntityService.assertSlugAvailable` and `UniversesService.findBySlug`; concurrent writers can both pass. Replace with a denormalized index doc at `universes/{id}/_slugIndex/{kind}_{slug}` claimed inside the entity-write `runTransaction` (see *Write discipline* in Rules). Full lifecycle, all inside the same transaction as the canonical and projection writes:
+
+- **Create:** transaction reads `_slugIndex/{kind}_{slug}`. If it exists with `entityId` belonging to another entity, throw a typed `SlugTakenError`. Otherwise `set` the slug doc with the new entity's id.
+- **Rename (slug change on existing entity):** transaction reads the new slug doc. If owned by another entity, throw. Otherwise `delete` the old `_slugIndex/{kind}_{oldSlug}` and `set` the new one.
+- **Delete:** transaction `delete`s `_slugIndex/{kind}_{slug}` alongside the canonical entity doc.
+- **Idempotent no-op:** an update that leaves the slug unchanged claims the same doc to itself (already owned) and writes nothing new.
+
+Route every slug check through the same helper so no service path can skip the claim.
 
 ## Firestore indexes manifest
 
