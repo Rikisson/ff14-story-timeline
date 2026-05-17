@@ -48,6 +48,8 @@ import catalogUk from './i18n/uk.json';
             [selectedId]="selectedId()"
             [hasMore]="directory.hasMore()"
             [loadingMore]="directory.loadingMore()"
+            [loading]="directory.loading()"
+            [error]="directory.error()"
             [canCreate]="canCreate()"
             [createLabel]="t('action.newStory')"
             [emptyMessage]="t('empty.list')"

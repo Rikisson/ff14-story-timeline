@@ -63,6 +63,8 @@ import codexUk from '../i18n/uk.json';
             [selectedId]="ctrl.selectedId()"
             [hasMore]="directory.hasMore()"
             [loadingMore]="directory.loadingMore()"
+            [loading]="directory.loading()"
+            [error]="directory.error()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
