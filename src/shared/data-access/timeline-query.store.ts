@@ -48,16 +48,25 @@ export interface TimelineRow {
 
 export type SortDirection = 'asc' | 'desc';
 
-export interface TimelineQueryStoreOptions {
+export interface TimelineStreamStoreOptions {
   universeId: Signal<string | null>;
   /** Members include drafts; public reads must omit them per backend-rules. */
   includeDrafts: Signal<boolean>;
   sortDirection: Signal<SortDirection>;
+  /**
+   * `null` selects the global stream over `_timelineEntries` (no lane
+   * filter). A string selects the per-lane stream over
+   * `_timelineLaneEntries`, filtered by `where('laneKey', '==', X)` —
+   * including the `__unassigned__` sentinel for the no-plotline lane.
+   *
+   * Read reactively at query-build time, so a parent that flips the lane
+   * key (e.g. user toggles a plotline filter) re-fetches against the
+   * right collection automatically. The store must not branch on this in
+   * its constructor — Angular signal inputs aren't bound until change
+   * detection, so a constructor-time read returns the initial value.
+   */
+  laneKey: Signal<string | null>;
   pageSize?: number;
-}
-
-export interface TimelineLaneStoreOptions extends TimelineQueryStoreOptions {
-  laneKey: Signal<string>;
 }
 
 export interface TimelineQueryStore {
@@ -70,19 +79,25 @@ export interface TimelineQueryStore {
   loadMore: () => Promise<void>;
 }
 
-export type TimelineLaneStore = TimelineQueryStore;
-
 /** Sentinel used by the timeline store / caller for the "no plotlines" lane. */
 export { UNASSIGNED_LANE_KEY };
 
 /**
- * Global timeline query store: reads `_timelineEntries` ordered by
- * `dateSortKey`, paginated by cursor. Use this when no plotline lane is
- * selected. See `docs/narrative-engine-impl.md` *Timeline UX* and
+ * Timeline stream store. One instance per rendered lane — global,
+ * per-plotline, or unassigned — driven by the `laneKey` signal:
+ *
+ *   - `null` → reads `_timelineEntries` ordered by `dateSortKey`. The
+ *     mixed story+event date stream with no plotline filter.
+ *   - string → reads `_timelineLaneEntries` filtered by
+ *     `where('laneKey', '==', X)`. Each plotline (and the
+ *     `__unassigned__` sentinel) gets its own instance with its own
+ *     cursor.
+ *
+ * See `docs/narrative-engine-impl.md` *Timeline UX* and
  * `docs/backend-rules.md` *Timeline projections*.
  *
- * Reset semantics: changing `universeId`, `includeDrafts`, or
- * `sortDirection` resets the cursor and re-fetches page 1.
+ * Reset semantics: changing `universeId`, `includeDrafts`,
+ * `sortDirection`, or `laneKey` resets the cursor and re-fetches page 1.
  *
  * Cache invalidation: an `entity-write` event for a row currently in the
  * page refetches the page in place; writes for off-page rows are
@@ -92,56 +107,31 @@ export { UNASSIGNED_LANE_KEY };
  * bus subscription and the reactive reset effect auto-dispose on host
  * destroy.
  */
-export function createTimelineQueryStore(
-  opts: TimelineQueryStoreOptions,
+export function createTimelineStreamStore(
+  opts: TimelineStreamStoreOptions,
 ): TimelineQueryStore {
   return createStore({
     universeId: opts.universeId,
     includeDrafts: opts.includeDrafts,
     sortDirection: opts.sortDirection,
     pageSize: opts.pageSize,
-    extraResetKey: () => '',
-    buildQuery: (firestore, universeId, cursor, pageSize) => {
-      const constraints: QueryConstraint[] = [];
-      if (!opts.includeDrafts()) constraints.push(where('visiblePublic', '==', true));
-      constraints.push(where('dateKnown', '==', true));
-      constraints.push(orderBy('dateSortKey', opts.sortDirection()));
-      if (cursor) constraints.push(startAfter(cursor));
-      constraints.push(limit(pageSize));
-      return query(
-        collection(firestore, 'universes', universeId, TIMELINE_COLLECTION),
-        ...constraints,
-      );
-    },
-  });
-}
-
-/**
- * Per-lane timeline query store: reads `_timelineLaneEntries` filtered
- * by `laneKey`. One instance per selected plotline lane (and one for
- * `__unassigned__` when the unassigned filter is on). Each lane has its
- * own cursor + load-more state per *Per-lane pagination is the default*.
- */
-export function createTimelineLaneStore(
-  opts: TimelineLaneStoreOptions,
-): TimelineLaneStore {
-  return createStore({
-    universeId: opts.universeId,
-    includeDrafts: opts.includeDrafts,
-    sortDirection: opts.sortDirection,
-    pageSize: opts.pageSize,
-    extraResetKey: () => opts.laneKey(),
+    extraResetKey: () => opts.laneKey() ?? '__global__',
     buildQuery: (firestore, universeId, cursor, pageSize) => {
       const lane = opts.laneKey();
       const constraints: QueryConstraint[] = [];
       if (!opts.includeDrafts()) constraints.push(where('visiblePublic', '==', true));
-      constraints.push(where('laneKey', '==', lane));
+      if (lane !== null) constraints.push(where('laneKey', '==', lane));
       constraints.push(where('dateKnown', '==', true));
       constraints.push(orderBy('dateSortKey', opts.sortDirection()));
       if (cursor) constraints.push(startAfter(cursor));
       constraints.push(limit(pageSize));
       return query(
-        collection(firestore, 'universes', universeId, LANE_COLLECTION),
+        collection(
+          firestore,
+          'universes',
+          universeId,
+          lane !== null ? LANE_COLLECTION : TIMELINE_COLLECTION,
+        ),
         ...constraints,
       );
     },

@@ -12,8 +12,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
 import {
-  createTimelineLaneStore,
-  createTimelineQueryStore,
+  createTimelineStreamStore,
   SortDirection,
   TimelineQueryStore,
   UNASSIGNED_LANE_KEY,
@@ -136,25 +135,17 @@ export class TimelineLaneComponent {
   protected readonly isUnassigned = computed(() => this.laneKey() === UNASSIGNED_LANE_KEY);
   protected readonly showHeader = computed(() => !!this.label() || this.isUnassigned());
 
-  protected readonly store: TimelineQueryStore;
-
-  constructor() {
-    const lk = this.laneKey;
-    if (lk() != null) {
-      this.store = createTimelineLaneStore({
-        universeId: this.universeId,
-        includeDrafts: this.effectiveDrafts,
-        sortDirection: this.sortDirection,
-        laneKey: computed(() => lk() ?? UNASSIGNED_LANE_KEY),
-      });
-    } else {
-      this.store = createTimelineQueryStore({
-        universeId: this.universeId,
-        includeDrafts: this.effectiveDrafts,
-        sortDirection: this.sortDirection,
-      });
-    }
-  }
+  // One factory, branched at query-build time inside the store. The
+  // constructor must NOT branch on `this.laneKey()` directly — Angular
+  // signal inputs aren't bound until change detection, so a constructor
+  // read returns the initial value (`null`) for every instance and every
+  // lane silently degrades to the global stream.
+  protected readonly store: TimelineQueryStore = createTimelineStreamStore({
+    universeId: this.universeId,
+    includeDrafts: this.effectiveDrafts,
+    sortDirection: this.sortDirection,
+    laneKey: this.laneKey,
+  });
 
   protected headerLabel(t: (key: string) => string): string {
     if (this.isUnassigned()) return t('field.unassigned');

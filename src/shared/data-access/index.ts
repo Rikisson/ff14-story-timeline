@@ -48,12 +48,9 @@ export {
   type PrefixSearchOptions,
 } from './entity-directory.service';
 export {
-  createTimelineQueryStore,
-  createTimelineLaneStore,
+  createTimelineStreamStore,
   type TimelineQueryStore,
-  type TimelineQueryStoreOptions,
-  type TimelineLaneStore,
-  type TimelineLaneStoreOptions,
+  type TimelineStreamStoreOptions,
   type TimelineRow,
   type SortDirection,
 } from './timeline-query.store';
