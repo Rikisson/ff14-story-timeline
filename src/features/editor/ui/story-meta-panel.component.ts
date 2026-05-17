@@ -1,8 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { AssetPickerComponent, MediaAssetsService } from '@features/media';
+import { AssetPickerComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver } from '@shared/data-access';
 import { EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
 import {
   EntityPickerComponent,
@@ -222,14 +223,16 @@ export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
   readonly update = output<Partial<StoryMeta>>();
 
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
   protected readonly relatedMax = RELATED_REFS_MAX;
   protected readonly plotlineKinds = ['plotline'] as const;
   protected readonly plotlineMax = PLOTLINE_REFS_MAX;
 
-  protected readonly coverUrl = computed(() => this.media.urlFor(this.meta()?.coverAssetId));
+  protected readonly coverUrl = computed(() =>
+    this.assets.resolve(this.meta()?.coverAssetId)()?.url,
+  );
   protected readonly coverSelection = computed(() => {
     const id = this.meta()?.coverAssetId;
     return id ? [id] : [];

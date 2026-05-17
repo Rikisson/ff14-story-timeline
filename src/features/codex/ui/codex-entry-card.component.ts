@@ -1,8 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver } from '@shared/data-access';
 import { EntityRefComponent, UTILITY_DANGER, UTILITY_SECONDARY } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntry } from '../data-access/codex-entry.types';
@@ -90,7 +90,7 @@ export class CodexEntryCardComponent {
   readonly remove = output<void>();
 
   private readonly categories = inject(CodexCategoriesService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly utilSecondaryClass = UTILITY_SECONDARY;
   protected readonly utilDangerClass = UTILITY_DANGER;
@@ -102,6 +102,8 @@ export class CodexEntryCardComponent {
   });
   protected readonly categoryLabel = computed(() => this.resolvedCategory()?.label);
   protected readonly categoryColor = computed(() => this.resolvedCategory()?.color);
-  protected readonly coverUrl = computed(() => this.media.urlFor(this.entry().coverAssetId));
+  protected readonly coverUrl = computed(() =>
+    this.assets.resolve(this.entry().coverAssetId)()?.url,
+  );
   protected readonly hasImage = computed(() => !!this.coverUrl());
 }

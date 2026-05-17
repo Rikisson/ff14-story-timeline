@@ -1,8 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { AssetPickerComponent, MediaAssetsService } from '@features/media';
+import { AssetPickerComponent } from '@features/media';
 import { Scene } from '@features/stories';
+import { AssetThumbResolver } from '@shared/data-access';
 import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import editorEn from '../i18n/en.json';
 import editorUk from '../i18n/uk.json';
@@ -83,15 +84,17 @@ import editorUk from '../i18n/uk.json';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SceneAssetsPanelComponent {
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   readonly backgroundAssetId = input<string | undefined>();
   readonly audioAssetId = input<string | undefined>();
 
   readonly update = output<Partial<Scene>>();
 
-  protected readonly backgroundUrl = computed(() => this.media.urlFor(this.backgroundAssetId()));
-  protected readonly audioUrl = computed(() => this.media.urlFor(this.audioAssetId()));
+  protected readonly backgroundUrl = computed(() =>
+    this.assets.resolve(this.backgroundAssetId())()?.url,
+  );
+  protected readonly audioUrl = computed(() => this.assets.resolve(this.audioAssetId())()?.url);
 
   protected readonly backgroundSelection = computed(() => {
     const id = this.backgroundAssetId();

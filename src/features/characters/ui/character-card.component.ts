@@ -1,10 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver } from '@shared/data-access';
 import { Character } from '../data-access/character.types';
-import { EntityResolverService } from '@shared/data-access';
 import {
   EntityRefComponent,
   MarkdownTextComponent,
@@ -65,7 +64,6 @@ import {
                 [class.drop-shadow]="hasImage()"
                 [class.text-foreground-muted]="!hasImage()"
                 [text]="d"
-                [options]="inlineRefOptions()"
               />
             }
 
@@ -90,14 +88,14 @@ export class CharacterCardComponent {
   readonly edit = output<void>();
   readonly remove = output<void>();
 
-  private readonly entityResolver = inject(EntityResolverService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly utilSecondaryClass = UTILITY_SECONDARY;
   protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly relatedRefs = computed(() => this.character().relatedRefs ?? []);
-  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
-  protected readonly coverUrl = computed(() => this.media.urlFor(this.character().coverAssetId));
+  protected readonly coverUrl = computed(() =>
+    this.assets.resolve(this.character().coverAssetId)()?.url,
+  );
   protected readonly hasImage = computed(() => !!this.coverUrl());
 }

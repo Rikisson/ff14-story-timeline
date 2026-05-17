@@ -1,11 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { AssetThumbResolver } from '@shared/data-access';
 import {
   GhostButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
-import { MediaAssetsService } from '../data-access/media-assets.service';
 import { AssetPickerComponent } from './asset-picker.component';
 import mediaEn from '../i18n/en.json';
 import mediaUk from '../i18n/uk.json';
@@ -66,9 +66,9 @@ export class CoverSlotComponent {
   readonly label = input<string>('');
   readonly picked = output<string | undefined>();
 
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
-  protected readonly url = computed(() => this.media.urlFor(this.assetId()));
+  protected readonly url = computed(() => this.assets.resolve(this.assetId())()?.url);
   protected readonly selection = computed(() => {
     const id = this.assetId();
     return id ? [id] : [];

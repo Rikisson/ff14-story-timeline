@@ -1,5 +1,4 @@
-import { computed, effect, inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable } from '@angular/core';
 import {
   collection as fsCollection,
   deleteDoc,
@@ -12,6 +11,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
+import { CacheInvalidationBus } from '@shared/data-access';
 import { UniverseStore } from '@features/universes';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { R2ObjectRef, R2Service } from '../../../app/r2/r2.service';
@@ -72,70 +72,23 @@ const THUMB_WIDTH = 640;
 const THUMB_QUALITY = 0.7;
 const THUMB_SUFFIX = '.thumb';
 
+/**
+ * Asset write helper + library reader. Per `docs/backend-rules.md`
+ * *Player bridge* (now retired): consumers needing a URL for a single
+ * asset ID resolve through `AssetThumbResolver`, not this service. The
+ * asset library/picker still hits `list()` directly because preloading a
+ * filtered slice IS the feature there.
+ *
+ * Writes publish `asset-write` events on the cache-invalidation bus so
+ * any active `AssetThumbResolver` entry for the changed ID refetches the
+ * new URL/label.
+ */
 @Injectable({ providedIn: 'root' })
 export class MediaAssetsService {
   private readonly firebase = inject(FirebaseService);
   private readonly r2 = inject(R2Service);
   private readonly universes = inject(UniverseStore);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
-  private readonly _assets = signal<AssetDoc[]>([]);
-  readonly assets: Signal<AssetDoc[]> = this._assets.asReadonly();
-
-  private readonly _byId = computed<Record<string, AssetDoc>>(() => {
-    const map: Record<string, AssetDoc> = {};
-    for (const a of this._assets()) map[a.id] = a;
-    return map;
-  });
-
-  private refreshSeq = 0;
-
-  constructor() {
-    if (this.isBrowser) {
-      effect(() => {
-        const id = this.universes.activeUniverseId();
-        if (!id) {
-          this._assets.set([]);
-          return;
-        }
-        void this.refresh(id);
-      });
-    }
-  }
-
-  byId(assetId: string | undefined | null): AssetDoc | undefined {
-    if (!assetId) return undefined;
-    return this._byId()[assetId];
-  }
-
-  urlFor(assetId: string | undefined | null): string | undefined {
-    return this.byId(assetId)?.url;
-  }
-
-  // Prefer the 640w thumb when available; fall back to the full image so assets
-  // uploaded before the thumb pipeline still render in card slots.
-  thumbUrlFor(assetId: string | undefined | null): string | undefined {
-    const asset = this.byId(assetId);
-    return asset?.thumbUrl ?? asset?.url;
-  }
-
-  async refresh(universeId?: string): Promise<void> {
-    const id = universeId ?? this.universes.activeUniverseId();
-    const seq = ++this.refreshSeq;
-    if (!id) {
-      this._assets.set([]);
-      return;
-    }
-    const q = query(
-      fsCollection(this.firebase.firestore, 'universes', id, ASSETS_COLLECTION),
-      orderBy('createdAt', 'desc'),
-    );
-    const snap = await getDocs(q);
-    if (seq !== this.refreshSeq) return;
-    this._assets.set(
-      snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredAsset) })),
-    );
-  }
+  private readonly bus = inject(CacheInvalidationBus);
 
   async upload(input: AssetUploadInput, authorUid: string): Promise<AssetDoc> {
     const universeId = this.requireUniverseId();
@@ -206,7 +159,7 @@ export class MediaAssetsService {
       throw err;
     }
     const created: AssetDoc = { id: assetId, ...stored };
-    this._assets.update((curr) => [created, ...curr]);
+    this.bus.publishAssetWrite({ universeId, assetId });
     return created;
   }
 
@@ -243,9 +196,7 @@ export class MediaAssetsService {
       doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, assetId),
       { label: trimmed, updatedAt: Date.now() },
     );
-    this._assets.update((curr) =>
-      curr.map((a) => (a.id === assetId ? { ...a, label: trimmed, updatedAt: Date.now() } : a)),
-    );
+    this.bus.publishAssetWrite({ universeId, assetId });
   }
 
   async delete(asset: AssetDoc): Promise<void> {
@@ -260,7 +211,7 @@ export class MediaAssetsService {
     await deleteDoc(
       doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, asset.id),
     );
-    this._assets.update((curr) => curr.filter((a) => a.id !== asset.id));
+    this.bus.publishAssetWrite({ universeId, assetId: asset.id });
   }
 
   private async deleteObject(ref: R2ObjectRef): Promise<void> {

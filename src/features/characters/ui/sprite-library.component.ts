@@ -9,7 +9,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { AssetPickerComponent, MediaAssetsService } from '@features/media';
+import { AssetPickerComponent } from '@features/media';
+import { AssetThumbResolver } from '@shared/data-access';
 import {
   DangerButtonComponent,
   GhostButtonComponent,
@@ -115,7 +116,7 @@ export class SpriteLibraryComponent {
   readonly characterId = input.required<string>();
   readonly sprites = input<string[]>([]);
 
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
   private readonly service = inject(CharactersService);
   private readonly transloco = inject(TranslocoService);
   protected readonly picker = viewChild.required(AssetPickerComponent);
@@ -123,11 +124,15 @@ export class SpriteLibraryComponent {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  private readonly resolvedThumbs = this.assets.resolveMany(this.sprites);
   protected readonly resolved = computed<ResolvedSprite[]>(() => {
+    const map = this.resolvedThumbs();
     const out: ResolvedSprite[] = [];
     for (const id of this.sprites()) {
-      const asset = this.media.byId(id);
-      if (asset) out.push({ id: asset.id, label: asset.label, url: asset.url });
+      const thumb = map.get(id);
+      if (thumb) {
+        out.push({ id: thumb.id, label: thumb.label ?? id, url: thumb.url });
+      }
     }
     return out;
   });

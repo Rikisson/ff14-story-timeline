@@ -13,9 +13,9 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService, validateInGameDate } from '@features/calendar';
 import { CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
-import { MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
+import { AssetThumbResolver } from '@shared/data-access';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
@@ -243,7 +243,7 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly places = inject(PlacesService);
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
   private readonly calendarService = inject(CalendarService);
 
   protected readonly dateInvalid = computed(() => {
@@ -267,16 +267,28 @@ export class EditorPage implements HasUnsavedChanges {
       .places()
       .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
   );
+  // Sprite IDs flatten across every character in the universe, then we
+  // resolve them through the shared asset cache — the lookup is shared
+  // with anything else that renders the same thumbs in this session.
+  private readonly allSpriteIds = computed<string[]>(() => {
+    const ids = new Set<string>();
+    for (const c of this.characters.characters()) {
+      for (const id of c.sprites ?? []) ids.add(id);
+    }
+    return [...ids];
+  });
+  private readonly resolvedSprites = this.assets.resolveMany(this.allSpriteIds);
   protected readonly characterSprites = computed<Record<string, { id: string; label: string }[]>>(
     () => {
+      const thumbs = this.resolvedSprites();
       const map: Record<string, { id: string; label: string }[]> = {};
       for (const c of this.characters.characters()) {
         const ids = c.sprites ?? [];
         if (ids.length === 0) continue;
         const resolved = ids
-          .map((id) => this.media.byId(id))
-          .filter((a): a is NonNullable<typeof a> => !!a)
-          .map((a) => ({ id: a.id, label: a.label }));
+          .map((id) => thumbs.get(id))
+          .filter((t): t is NonNullable<typeof t> => !!t)
+          .map((t) => ({ id: t.id, label: t.label ?? t.id }));
         if (resolved.length) map[c.id] = resolved;
       }
       return map;

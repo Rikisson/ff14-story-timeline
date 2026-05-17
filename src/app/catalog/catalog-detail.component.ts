@@ -3,10 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
-import { MediaAssetsService } from '@features/media';
 import { Story } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
-import { EntityResolverService } from '@shared/data-access';
+import { AssetThumbResolver } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import {
   EntityRefComponent,
@@ -106,7 +105,6 @@ import catalogUk from './i18n/uk.json';
                 [class.drop-shadow]="hasImage()"
                 [class.text-foreground-muted]="!hasImage()"
                 [text]="d"
-                [options]="inlineRefOptions()"
                 [inline]="true"
               />
             }
@@ -141,9 +139,8 @@ export class CatalogDetailComponent {
 
   readonly remove = output<string>();
 
-  private readonly entityResolver = inject(EntityResolverService);
   private readonly calendar = inject(CalendarService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
   private readonly transloco = inject(TranslocoService);
 
   protected readonly heroPrimaryClass = HERO_PRIMARY;
@@ -154,9 +151,9 @@ export class CatalogDetailComponent {
     () => this.story().title || this.transloco.translate('catalog.field.untitled'),
   );
 
-  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
-
-  protected readonly background = computed(() => this.media.urlFor(this.story().coverAssetId));
+  protected readonly background = computed(() =>
+    this.assets.resolve(this.story().coverAssetId)()?.url,
+  );
   protected readonly hasImage = computed(() => !!this.background());
 
   protected readonly formattedDate = computed(() => {

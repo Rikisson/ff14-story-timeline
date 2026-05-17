@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, viewChild } from '@angular/core';
-import { EntityResolverService } from '@shared/data-access';
+import { EntityResolverCache } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
 import { KIND_UI_CLASS } from '@shared/utils';
 import { EntityRefHoverService } from './entity-ref-hover.service';
@@ -26,12 +26,12 @@ export class EntityRefComponent {
   readonly ref = input.required<EntityRef>();
   readonly label = input<string | null>(null);
 
-  private readonly resolver = inject(EntityResolverService);
+  private readonly resolver = inject(EntityResolverCache);
   private readonly hover = inject(EntityRefHoverService);
   private readonly anchor = viewChild.required<ElementRef<HTMLElement>>('anchor');
 
-  protected readonly resolved = computed(() => this.resolver.resolve(this.ref()));
-  protected readonly display = computed(() => this.label() ?? this.resolved()?.name ?? '?');
+  protected readonly resolved = computed(() => this.resolver.resolve(this.ref())());
+  protected readonly display = computed(() => this.label() ?? this.resolved()?.label ?? '?');
   protected readonly chipClass = computed(() => KIND_UI_CLASS[this.ref().kind]);
 
   protected onShow(): void {

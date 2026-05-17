@@ -1,8 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver } from '@shared/data-access';
 import { TagComponent, TagTone, UTILITY_DANGER, UTILITY_SECONDARY } from '@shared/ui';
 import { Plotline, PlotlineStatus } from '../data-access/plotline.types';
 import plotlineEn from '../i18n/en.json';
@@ -113,7 +113,7 @@ export class PlotlineCardComponent {
   readonly edit = output<void>();
   readonly remove = output<void>();
 
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly utilSecondaryClass = UTILITY_SECONDARY;
   protected readonly utilDangerClass = UTILITY_DANGER;
@@ -123,6 +123,8 @@ export class PlotlineCardComponent {
     if (!s) return null;
     return { labelKey: STATUS_KEY_SUFFIX[s], tone: STATUS_TONE[s] };
   });
-  protected readonly coverUrl = computed(() => this.media.urlFor(this.plotline().coverAssetId));
+  protected readonly coverUrl = computed(() =>
+    this.assets.resolve(this.plotline().coverAssetId)()?.url,
+  );
   protected readonly hasImage = computed(() => !!this.coverUrl());
 }

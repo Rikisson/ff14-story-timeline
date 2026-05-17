@@ -219,6 +219,11 @@ export class AssetPickerComponent {
   protected readonly tagFilter = signal<string>('');
   protected readonly uploading = signal(false);
   protected readonly uploadError = signal<string | null>(null);
+  // Asset library is fetched per-open via `MediaAssetsService.list()`
+  // (see `docs/media-rules.md` *Loading — Asset-library surfaces preload by
+  // kind/tag*). No universe-wide preload bridge.
+  protected readonly allForKind = signal<AssetDoc[]>([]);
+  private readonly loadingAssets = signal(false);
 
   protected readonly resolvedTitle = computed(() => {
     this.activeLang();
@@ -243,10 +248,6 @@ export class AssetPickerComponent {
     if (AUDIO_ASSET_KINDS.includes(k)) return null;
     return `hint.upload.${k}` as const;
   });
-
-  protected readonly allForKind = computed(() =>
-    this.media.assets().filter((a) => a.kind === this.kind()),
-  );
 
   protected readonly visible = computed(() => {
     const tag = this.tagFilter().trim().toLowerCase();
@@ -277,10 +278,24 @@ export class AssetPickerComponent {
     this.tagFilter.set('');
     this.selection.set([...this.currentSelection()]);
     this.dialog().nativeElement.showModal();
+    void this.refreshAssets();
   }
 
   close(): void {
     this.dialog().nativeElement.close();
+  }
+
+  private async refreshAssets(): Promise<void> {
+    if (this.loadingAssets()) return;
+    this.loadingAssets.set(true);
+    try {
+      const rows = await this.media.list({ kind: this.kind() });
+      this.allForKind.set(rows);
+    } catch (err) {
+      this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+    } finally {
+      this.loadingAssets.set(false);
+    }
   }
 
   protected isSelected(id: string): boolean {
@@ -322,6 +337,9 @@ export class AssetPickerComponent {
       } else {
         this.selection.set([asset.id]);
       }
+      // Prepend so the new asset appears at the top of the grid without a
+      // full re-fetch.
+      this.allForKind.update((curr) => [asset, ...curr]);
     } catch (err) {
       this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
@@ -339,6 +357,9 @@ export class AssetPickerComponent {
     if (!trimmed || trimmed === asset.label) return;
     try {
       await this.media.rename(asset.id, trimmed);
+      this.allForKind.update((curr) =>
+        curr.map((a) => (a.id === asset.id ? { ...a, label: trimmed, updatedAt: Date.now() } : a)),
+      );
     } catch (err) {
       this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     }
@@ -354,6 +375,7 @@ export class AssetPickerComponent {
     try {
       await this.media.delete(asset);
       this.selection.update((curr) => curr.filter((x) => x !== asset.id));
+      this.allForKind.update((curr) => curr.filter((a) => a.id !== asset.id));
     } catch (err) {
       this.uploadError.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     }

@@ -2,8 +2,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
-import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver } from '@shared/data-access';
 import { EntityRefComponent, UTILITY_DANGER, UTILITY_SECONDARY } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
@@ -93,13 +93,16 @@ export class EventCardComponent {
   readonly remove = output<void>();
 
   private readonly calendar = inject(CalendarService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly utilSecondaryClass = UTILITY_SECONDARY;
   protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly relatedRefs = computed(() => this.event().relatedRefs ?? []);
-  protected readonly coverUrl = computed(() => this.media.thumbUrlFor(this.event().coverAssetId));
+  protected readonly coverUrl = computed(() => {
+    const t = this.assets.resolve(this.event().coverAssetId)();
+    return t?.thumbUrl ?? t?.url;
+  });
   protected readonly hasImage = computed(() => !!this.coverUrl());
 
   protected readonly formattedDate = computed(() => {

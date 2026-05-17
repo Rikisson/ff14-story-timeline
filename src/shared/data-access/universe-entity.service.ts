@@ -3,6 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   collection as fsCollection,
   doc,
+  documentId,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -10,6 +12,7 @@ import {
   QueryDocumentSnapshot,
   startAfter,
   updateDoc,
+  where,
 } from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
 import { EntityKind } from '@shared/models';
@@ -23,6 +26,7 @@ import {
 } from './with-entity-projections';
 
 const PAGE_SIZE = 25;
+const FIRESTORE_IN_CHUNK = 30;
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? `${err.name}: ${err.message}` : String(err);
@@ -183,6 +187,44 @@ export abstract class UniverseEntityService<
       canonicalCollection: this.collectionName,
     });
     await this.refresh(universeId);
+  }
+
+  /**
+   * Single canonical fetch by ID. Used by detail surfaces that consume a
+   * full entity (forms, hover popovers, the player's character-sprite
+   * lookup) once the universe-wide preload bridge retires.
+   */
+  async getById(id: string): Promise<TEntity | null> {
+    const universeId = this.requireUniverseId();
+    const ref = doc(this.firebase.firestore, 'universes', universeId, this.collectionName, id);
+    const snap = await retryOnTransient(() => getDoc(ref));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() } as unknown as TEntity;
+  }
+
+  /**
+   * Batched canonical fetch by ID. Chunks at the Firestore `in`-query
+   * cap (30) per `docs/backend-rules.md` *Inline-ref resolution*. Used
+   * by the player to read `sprites[]` off every character staged in a
+   * scene without preloading the whole canonical collection.
+   */
+  async getByIds(ids: readonly string[]): Promise<Map<string, TEntity>> {
+    const out = new Map<string, TEntity>();
+    if (ids.length === 0) return out;
+    const universeId = this.requireUniverseId();
+    const unique = Array.from(new Set(ids));
+    for (let i = 0; i < unique.length; i += FIRESTORE_IN_CHUNK) {
+      const chunk = unique.slice(i, i + FIRESTORE_IN_CHUNK);
+      const q = query(
+        fsCollection(this.firebase.firestore, 'universes', universeId, this.collectionName),
+        where(documentId(), 'in', chunk),
+      );
+      const snap = await getDocs(q);
+      for (const d of snap.docs) {
+        out.set(d.id, { id: d.id, ...d.data() } as unknown as TEntity);
+      }
+    }
+    return out;
   }
 
   /**

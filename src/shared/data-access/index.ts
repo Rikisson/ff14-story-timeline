@@ -6,11 +6,6 @@ export {
   type EntityListMode,
 } from './entity-list-controller';
 export {
-  ENTITY_KIND_LABEL,
-  EntityResolverService,
-  type ResolvedEntity,
-} from './entity-resolver.service';
-export {
   applyEntityDelete,
   applyEntityWrite,
   deleteEntityWithProjections,
@@ -19,6 +14,10 @@ export {
   type EntityDeleteRequest,
   type EntityWriteRequest,
 } from './with-entity-projections';
+export {
+  EntityCanonicalCache,
+  type ResolvedCanonicalEntity,
+} from './entity-canonical-cache.service';
 export {
   buildProjectionRows,
   entityRowKey,

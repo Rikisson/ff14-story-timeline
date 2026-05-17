@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
-import { createEntityListController, EntityResolverService } from '@shared/data-access';
+import { createEntityListController, EntityResolverCache } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
@@ -113,14 +113,12 @@ export class CharactersPage {
     removeLabel: (c) => c.name,
   });
 
-  private readonly entityResolver = inject(EntityResolverService);
+  private readonly resolver = inject(EntityResolverCache);
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.characters().map((c) => {
       const firstRef = (c.relatedRefs ?? [])[0];
-      const secondary = firstRef
-        ? this.entityResolver.resolve(firstRef)?.name
-        : undefined;
+      const secondary = firstRef ? this.resolver.resolve(firstRef)()?.label : undefined;
       return {
         id: c.id,
         label: c.name,

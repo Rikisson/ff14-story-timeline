@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EntityKind } from '@shared/models';
-import { InlineRefOption, renderMarkdown, renderMarkdownInline } from '@shared/utils';
+import { EntityResolverCache } from '@shared/data-access';
+import { EntityKind, EntityRef } from '@shared/models';
+import { InlineRefOption, parseRefs, renderMarkdown, renderMarkdownInline } from '@shared/utils';
 import { EntityRefHoverService } from '../entity-ref/entity-ref-hover.service';
 
 @Component({
@@ -49,19 +50,50 @@ import { EntityRefHoverService } from '../entity-ref/entity-ref-hover.service';
 })
 export class MarkdownTextComponent {
   readonly text = input.required<string>();
+  /**
+   * Caller-supplied label overrides. When omitted, the component
+   * resolves any inline refs in `text` through `EntityResolverCache`
+   * itself, so detail surfaces don't have to precompute the option list.
+   */
   readonly options = input<InlineRefOption[]>([]);
   readonly inline = input<boolean>(false);
 
   private readonly hover = inject(EntityRefHoverService);
+  private readonly resolver = inject(EntityResolverCache);
   private readonly sanitizer = inject(DomSanitizer);
 
+  private readonly textRefs = computed<EntityRef[]>(() => {
+    const seen = new Set<string>();
+    const out: EntityRef[] = [];
+    for (const seg of parseRefs(this.text())) {
+      if (!('ref' in seg)) continue;
+      const key = `${seg.ref.kind}:${seg.ref.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(seg.ref);
+    }
+    return out;
+  });
+  private readonly resolvedRefs = this.resolver.resolveMany(this.textRefs);
+
   protected readonly html = computed<SafeHtml>(() => {
-    const opts = this.options().map((o) => ({ kind: o.kind, id: o.id, label: o.label }));
+    const explicit = this.options();
+    const merged = explicit.length > 0
+      ? explicit.map((o) => ({ kind: o.kind, id: o.id, label: o.label }))
+      : this.optionsFromResolver();
     const raw = this.inline()
-      ? renderMarkdownInline(this.text(), opts)
-      : renderMarkdown(this.text(), opts);
+      ? renderMarkdownInline(this.text(), merged)
+      : renderMarkdown(this.text(), merged);
     return this.sanitizer.bypassSecurityTrustHtml(raw);
   });
+
+  private optionsFromResolver(): { kind: EntityKind; id: string; label: string }[] {
+    const resolved = this.resolvedRefs();
+    return this.textRefs().map((r) => {
+      const row = resolved.get(`${r.kind}:${r.id}`);
+      return { kind: r.kind, id: r.id, label: row?.label ?? r.id };
+    });
+  }
 
   protected onPointer(event: Event): void {
     const target = findRefAnchor(event.target);
