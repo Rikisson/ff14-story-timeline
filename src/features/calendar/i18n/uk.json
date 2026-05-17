@@ -32,7 +32,9 @@
     "presetFf14": "FF14",
     "newEraName": "Ера {{ index }}",
     "newMonthName": "Місяць {{ index }}",
-    "newWeekdayName": "День тижня {{ index }}"
+    "newWeekdayName": "День тижня {{ index }}",
+    "rebuildingHeader": "Оновлюємо ключі сортування хронології…",
+    "rebuildingProgress": "{{ processed }} з {{ total }} елементів"
   },
   "empty": {
     "eras": "Поки немає ер.",

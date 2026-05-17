@@ -218,3 +218,11 @@ html [data-testid='input-socket'] > *.multiple,
 html [data-testid='output-socket'] > *.multiple {
   border-color: var(--color-warning-border);
 }
+
+/* Cross-cutting micro-animations used by `<app-lazy-thumb>` and tile
+ * components when an asset URL resolves. Tailwind's animate-pulse already
+ * lives in the framework; fadeIn doesn't, so it ships here. */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

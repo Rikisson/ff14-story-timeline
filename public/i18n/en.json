@@ -31,6 +31,7 @@
       "relatedKindPlace": "Place",
       "relatedKindCodex": "Codex",
       "status": "Status",
+      "draftPill": "Draft",
       "createdAt": "Created",
       "updatedAt": "Updated",
       "dateEra": "Era",
@@ -76,7 +77,9 @@
       "landingPickTitle": "Pick a universe",
       "landingPickHint": "Use the universe menu in the top-left to choose what to read.",
       "landingSignInHint": "Sign in if you'd like to author or edit.",
-      "tiptapRefHint": "Type $'{' for entity refs"
+      "tiptapRefHint": "Type $'{' for entity refs",
+      "pickerError": "Couldn't load matches",
+      "pickerMaxReached": "Maximum {{ max }} selections."
     },
     "empty": {
       "landingNoUniversesTitle": "No universes available",
@@ -91,7 +94,9 @@
       "noPlotlines": "No plotlines yet.",
       "tiptapNoMatches": "No matches",
       "dateNotSet": "Set in-game date",
-      "dateDisplayOverridePlaceholder": "e.g. Spring of the Wolf, 1577"
+      "dateDisplayOverridePlaceholder": "e.g. Spring of the Wolf, 1577",
+      "pickerStart": "Start typing to search…",
+      "pickerNoMatches": "No matches for \"{{ query }}\""
     },
     "tooltip": {
       "loadingPage": "Loading page",

@@ -14,11 +14,10 @@ import {
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
-import { MediaAssetsService } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { AssetThumbResolver, TimelineRow } from '@shared/data-access';
 import { TagComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
-import { TimelineCard } from './catalog-timeline-lanes';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
@@ -53,21 +52,29 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
         #root
         class="group relative aspect-video w-full overflow-hidden rounded-md border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:-translate-y-0.5 focus-within:shadow-lg"
       >
-        @if (thumbUrl(); as u) {
-          <img
-            [ngSrc]="u"
-            alt=""
-            fill
-            class="absolute inset-0 object-cover"
-          />
-          <!-- Scrim only when there's an image to read over — without it, the
-               imageless card stays in natural theme tones rather than getting
-               artificially darkened. The scrim token is pure black in both
-               themes, so darkening reads the same way under light or dark. -->
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/10"
-            aria-hidden="true"
-          ></div>
+        @if (coverAssetId(); as id) {
+          @if (thumb(); as u) {
+            <img
+              [ngSrc]="u.thumbUrl ?? u.url"
+              alt=""
+              fill
+              class="absolute inset-0 object-cover animate-[fadeIn_180ms_ease-out]"
+            />
+            <!-- Scrim only when there's an image to read over — without it, the
+                 imageless card stays in natural theme tones rather than getting
+                 artificially darkened. -->
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/10"
+              aria-hidden="true"
+            ></div>
+          } @else {
+            <!-- Skeleton: same box, no layout shift when the image fades in.
+                 Per media-rules *Lazy thumbs reserve their box*. -->
+            <div
+              class="absolute inset-0 animate-pulse bg-surface-muted"
+              aria-hidden="true"
+            ></div>
+          }
         }
 
         @if (draft()) {
@@ -104,43 +111,44 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineTileComponent {
-  readonly card = input.required<TimelineCard>();
+  readonly row = input.required<TimelineRow>();
 
   private readonly calendar = inject(CalendarService);
-  private readonly media = inject(MediaAssetsService);
+  private readonly assets = inject(AssetThumbResolver);
   private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   protected readonly title = computed(() => {
-    const c = this.card();
-    if (c.kind === 'story') {
-      return c.story?.title || this.transloco.translate('catalog.field.untitled');
-    }
-    return c.event?.name ?? '';
+    const r = this.row();
+    return r.title || this.transloco.translate('catalog.field.untitled');
   });
 
-  protected readonly coverAssetId = computed(() => {
-    const c = this.card();
-    return c.kind === 'story' ? c.story?.coverAssetId : c.event?.coverAssetId;
+  protected readonly coverAssetId = computed(() => this.row().coverAssetId);
+  // `resolve` is cache-backed by (universeId, assetId), so the per-asset
+  // signal is shared across consumers; the computed re-subscribes when the
+  // row's coverAssetId changes (rare).
+  protected readonly thumb = computed(() => this.assets.resolve(this.coverAssetId())());
+
+  protected readonly hasImage = computed(() => !!this.thumb());
+  protected readonly fullUrl = computed(() => this.thumb()?.url);
+  protected readonly thumbUrl = computed(() => {
+    const t = this.thumb();
+    return t?.thumbUrl ?? t?.url;
   });
 
-  protected readonly thumbUrl = computed(() => this.media.thumbUrlFor(this.coverAssetId()));
-  protected readonly fullUrl = computed(() => this.media.urlFor(this.coverAssetId()));
-  protected readonly hasImage = computed(() => !!this.thumbUrl());
-
-  protected readonly draft = computed(() => this.card().story?.draft ?? false);
+  protected readonly draft = computed(() => this.row().draft);
 
   protected readonly storyLink = computed<readonly [string, string] | null>(() => {
-    const c = this.card();
-    return c.kind === 'story' && c.story ? ['/play', c.story.id] : null;
+    const r = this.row();
+    return r.kind === 'story' ? ['/play', r.id] : null;
   });
 
   protected readonly formattedDate = computed(() => {
-    const c = this.card();
-    if (!c.dated) return '';
-    const d = c.date;
+    const r = this.row();
+    if (!r.dateKnown) return '';
+    const d = r.inGameDate;
     return formatInGameDate(d, {
       eraName: d.era ? this.calendar.eraNameLookup(d.era) : undefined,
       monthName: d.month ? this.calendar.monthNameLookup(d.month) : undefined,
@@ -153,10 +161,9 @@ export class TimelineTileComponent {
   }
 
   // Fires a `<link rel="prefetch">` for the full-res cover once the tile is
-  // ≥50% visible, but only for stories — events don't have a navigation target
-  // that would consume the full image. No-op if the browser lacks the API,
-  // we're prerendering, or the thumb URL is the same as the full URL (no
-  // separate variant exists for legacy assets).
+  // ≥50% visible, but only for stories — events don't have a navigation
+  // target. No-op if the browser lacks the API, we're prerendering, or the
+  // thumb URL equals the full URL (no separate variant for legacy assets).
   private setupPrefetch(): void {
     if (!this.isBrowser || typeof IntersectionObserver === 'undefined') return;
     if (!this.storyLink()) return;
@@ -184,9 +191,7 @@ export class TimelineTileComponent {
   }
 }
 
-// One `<link rel="prefetch">` per URL — repeated calls are idempotent. We
-// keep the inserted links so we don't add duplicates if multiple tiles share
-// the same cover (rare but possible).
+// One `<link rel="prefetch">` per URL — repeated calls are idempotent.
 const prefetched = new Set<string>();
 function prefetch(url: string): void {
   if (prefetched.has(url)) return;

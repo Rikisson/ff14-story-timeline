@@ -1,6 +1,7 @@
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { ProjectionRebuildService } from '../../../app/data-access/projection-rebuild.service';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
 import {
@@ -51,7 +52,19 @@ import calendarUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'calendar'">
       <ng-container *transloco="let g; prefix: 'general'">
-        <section class="flex flex-col gap-6 rounded-lg border border-border bg-surface p-4 shadow-sm">
+        <section class="relative flex flex-col gap-6 rounded-lg border border-border bg-surface p-4 shadow-sm">
+          @if (rebuildProgress(); as p) {
+            <div
+              class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-backdrop text-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              <p class="m-0 text-sm font-semibold">{{ t('message.rebuildingHeader') }}</p>
+              <p class="m-0 text-sm">
+                {{ t('message.rebuildingProgress', { processed: p.processed, total: p.total }) }}
+              </p>
+            </div>
+          }
           <header class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 class="m-0 text-lg font-semibold text-foreground">{{ t('field.header') }}</h2>
@@ -452,6 +465,7 @@ import calendarUk from '../i18n/uk.json';
 })
 export class CalendarSettingsPanelComponent {
   private readonly service = inject(CalendarService);
+  private readonly rebuild = inject(ProjectionRebuildService);
   private readonly universes = inject(UniverseStore);
   private readonly user = inject(AuthStore).user;
   private readonly transloco = inject(TranslocoService);
@@ -511,6 +525,13 @@ export class CalendarSettingsPanelComponent {
     this.errorMessage.set(null);
   }
 
+  /**
+   * Save the calendar config and block on a projection rebuild — every
+   * story and event in the universe has a `dateSortKey` derived from the
+   * calendar's era/month layout, so any save without the rebuild leaves
+   * the timeline silently scrambled. The progress overlay stays up until
+   * the rebuild finishes per `docs/backend-rules.md` *Write discipline*.
+   */
   protected async save(): Promise<void> {
     this.saving.set(true);
     this.errorMessage.set(null);
@@ -518,10 +539,28 @@ export class CalendarSettingsPanelComponent {
       await this.service.save(this.draft());
     } catch (err) {
       this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+      this.saving.set(false);
+      return;
+    }
+    const universeId = this.universes.activeUniverseId();
+    if (!universeId) {
+      this.saving.set(false);
+      return;
+    }
+    try {
+      await this.rebuild.rebuildForCalendarChange(universeId);
+    } catch (err) {
+      this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
       this.saving.set(false);
     }
   }
+
+  /** Bound by the template — surfaces the rebuild progress while we save. */
+  protected readonly rebuildProgress = computed(() => {
+    const p = this.rebuild.progress();
+    return p.phase === 'processing' || p.phase === 'starting' ? p : null;
+  });
 
   protected applyPreset(kind: 'earth' | 'ff14'): void {
     const label = this.transloco.translate(

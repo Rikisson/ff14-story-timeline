@@ -17,7 +17,6 @@ import { MediaAssetsService } from '@features/media';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
-import { EntityResolverService } from '@shared/data-access';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
@@ -124,7 +123,6 @@ import editorUk from '../i18n/uk.json';
             [characterOptions]="characterOptions()"
             [placeOptions]="placeOptions()"
             [characterSprites]="characterSprites()"
-            [inlineRefOptions]="inlineRefOptions()"
             [sceneLabels]="sceneLabels()"
             (update)="onUpdate($event)"
             (updateChoiceLabel)="onChoiceLabel($event)"
@@ -246,7 +244,6 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly events = inject(EventsService);
   private readonly stories = inject(StoriesService);
   private readonly media = inject(MediaAssetsService);
-  private readonly entityResolver = inject(EntityResolverService);
   private readonly calendarService = inject(CalendarService);
 
   protected readonly dateInvalid = computed(() => {
@@ -292,7 +289,6 @@ export class EditorPage implements HasUnsavedChanges {
     }
     return map;
   });
-  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
 
   constructor() {
     this.store.bindLoad(this.id);

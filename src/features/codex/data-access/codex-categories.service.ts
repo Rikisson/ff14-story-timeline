@@ -70,17 +70,6 @@ export class CodexCategoriesService {
     return map;
   });
 
-  /**
-   * Legacy lookup by case-insensitive label, kept while consuming code
-   * transitions from the legacy `category: string` field on entries to
-   * `categoryKey`. Phase 2 removes this in favour of `categoryByKey`.
-   */
-  readonly categoryByLabel = computed<Map<string, CodexCategory>>(() => {
-    const map = new Map<string, CodexCategory>();
-    for (const c of this._config().categories) map.set(c.label.toLowerCase(), c);
-    return map;
-  });
-
   private readonly _refreshError = signal<string | null>(null);
   readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
 
@@ -141,6 +130,27 @@ export class CodexCategoriesService {
    * `categoryKey`; per `docs/backend-rules.md` *Write discipline*
    * that's a recoverable bug, not a data integrity violation.
    */
+  /**
+   * Stand-alone category create. Used by the codex-entry typeahead's
+   * affirmative *Create category "X"* row. Runs `applyCategoryCreate`
+   * inside its own `runTransaction` so concurrent creates can't bypass
+   * the folded-label/key uniqueness check.
+   *
+   * The codex-entry write happens separately — a transient orphan window
+   * exists if the user abandons the form after this resolves, which the
+   * unused-category cleanup can drain later. See *Codex categories —
+   * Every saved entry's `categoryKey` exists in config* in
+   * `narrative-engine-impl.md`.
+   */
+  async createCategory(input: CodexCategoryDraft): Promise<CodexCategory> {
+    const universeId = this.requireUniverseId();
+    const created = await runTransaction(this.firebase.firestore, async (tx) => {
+      return applyCategoryCreate(tx, this.firebase.firestore, universeId, input);
+    });
+    await this.refresh(universeId);
+    return created;
+  }
+
   async save(next: CodexCategoriesConfig, expectedVersion: number): Promise<void> {
     const universeId = this.requireUniverseId();
     const removedKeys = await this.computeRemovedKeys(universeId, next);

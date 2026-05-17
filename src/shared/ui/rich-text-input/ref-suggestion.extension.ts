@@ -48,7 +48,26 @@ function filterOptions(query: string, options: InlineRefOption[]): InlineRefOpti
 
 export const REF_SUGGESTION_KEY = new PluginKey('refSuggestion');
 
+export type FetchInlineRefOptions = (
+  query: string,
+  kind: EntityKind | null,
+  filter: string,
+) => Promise<InlineRefOption[]>;
+
 export interface RefSuggestionConfig {
+  /**
+   * Optional async fetcher consulted on every keystroke. Returns up to
+   * `MAX_RESULTS` options. When provided, takes priority over
+   * `optionsRef`. Per `docs/backend-rules.md` *Inline-ref resolution*,
+   * the canonical fetcher routes through `EntityDirectoryService` so the
+   * suggestion popup doesn't depend on universe-wide preloads.
+   */
+  fetchOptions?: FetchInlineRefOptions;
+  /**
+   * Legacy synchronous source — pre-loaded inline-ref options. Used as a
+   * fallback when `fetchOptions` is unset (e.g. tests, the player bridge
+   * during Phase 2). New callers should set `fetchOptions` instead.
+   */
   optionsRef: { current: InlineRefOption[] };
   renderFactory: () => SuggestionOptions<InlineRefOption, EntityRefAttrs>['render'];
 }
@@ -58,6 +77,7 @@ export const RefSuggestion = Extension.create<RefSuggestionConfig>({
 
   addOptions() {
     return {
+      fetchOptions: undefined,
       optionsRef: { current: [] },
       renderFactory: () => () => ({}),
     };
@@ -65,6 +85,7 @@ export const RefSuggestion = Extension.create<RefSuggestionConfig>({
 
   addProseMirrorPlugins() {
     const optionsRef = this.options.optionsRef;
+    const fetchOptions = this.options.fetchOptions;
     return [
       Suggestion<InlineRefOption, EntityRefAttrs>({
         editor: this.editor,
@@ -72,7 +93,15 @@ export const RefSuggestion = Extension.create<RefSuggestionConfig>({
         pluginKey: REF_SUGGESTION_KEY,
         startOfLine: false,
         allowSpaces: false,
-        items: ({ query }) => filterOptions(query, optionsRef.current),
+        items: ({ query }) => {
+          if (fetchOptions) {
+            const { kind, filter } = parseQuery(query);
+            return fetchOptions(query, kind, filter)
+              .then((opts) => opts.slice(0, MAX_RESULTS))
+              .catch(() => []);
+          }
+          return filterOptions(query, optionsRef.current);
+        },
         command: ({ editor, range, props }) => {
           editor
             .chain()

@@ -6,8 +6,8 @@ import { TimelineEvent } from '@features/events';
 import { PlacesService } from '@features/places';
 import { PlotlinesService } from '@features/plotlines';
 import { Story } from '@features/stories';
+import { UNASSIGNED_LANE_KEY } from '@shared/data-access';
 import { ComboboxOption, ComboboxPickerComponent, GhostButtonComponent } from '@shared/ui';
-import { UNASSIGNED_LANE_KEY } from './catalog-timeline-lanes';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
@@ -88,27 +88,31 @@ export function matchesEvent(event: TimelineEvent, f: CatalogFilters): boolean {
   template: `
     <ng-container *transloco="let t; prefix: 'catalog'">
       <div class="flex flex-wrap items-start gap-4">
-        <label class="flex w-60 flex-col text-sm">
-          <span class="sr-only">{{ t('field.mainCharacter') }}</span>
-          <app-combobox-picker
-            [options]="characterOptions()"
-            [value]="value().characters"
-            [placeholder]="t('empty.searchCharacters')"
-            [emptyMessage]="t('empty.noCharacters')"
-            (valueChange)="setKey('characters', $event)"
-          />
-        </label>
+        @if (showCharacterFilter()) {
+          <label class="flex w-60 flex-col text-sm">
+            <span class="sr-only">{{ t('field.mainCharacter') }}</span>
+            <app-combobox-picker
+              [options]="characterOptions()"
+              [value]="value().characters"
+              [placeholder]="t('empty.searchCharacters')"
+              [emptyMessage]="t('empty.noCharacters')"
+              (valueChange)="setKey('characters', $event)"
+            />
+          </label>
+        }
 
-        <label class="flex w-60 flex-col text-sm">
-          <span class="sr-only">{{ t('field.place') }}</span>
-          <app-combobox-picker
-            [options]="placeOptions()"
-            [value]="value().places"
-            [placeholder]="t('empty.searchPlaces')"
-            [emptyMessage]="t('empty.noPlaces')"
-            (valueChange)="setKey('places', $event)"
-          />
-        </label>
+        @if (showPlaceFilter()) {
+          <label class="flex w-60 flex-col text-sm">
+            <span class="sr-only">{{ t('field.place') }}</span>
+            <app-combobox-picker
+              [options]="placeOptions()"
+              [value]="value().places"
+              [placeholder]="t('empty.searchPlaces')"
+              [emptyMessage]="t('empty.noPlaces')"
+              (valueChange)="setKey('places', $event)"
+            />
+          </label>
+        }
 
         @if (showPlotlineFilter()) {
           <label class="flex w-60 flex-col text-sm">
@@ -152,6 +156,8 @@ export class CatalogFiltersComponent {
   readonly value = input.required<CatalogFilters>();
   readonly showSortControl = input<boolean>(false);
   readonly showPlotlineFilter = input<boolean>(false);
+  readonly showCharacterFilter = input<boolean>(true);
+  readonly showPlaceFilter = input<boolean>(true);
   readonly sortDirection = input<SortDirection>('asc');
   readonly filtersChange = output<CatalogFilters>();
   readonly sortDirectionChange = output<SortDirection>();

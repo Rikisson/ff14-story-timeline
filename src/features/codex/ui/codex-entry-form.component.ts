@@ -3,42 +3,26 @@ import {
   Component,
   computed,
   effect,
-  inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { CharactersService } from '@features/characters';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
-import { PlacesService } from '@features/places';
-import { EntityKind, EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
-  ComboboxOption,
-  ComboboxPickerComponent,
+  EntityPickerComponent,
   GhostButtonComponent,
   PrimaryButtonComponent,
 } from '@shared/ui';
-import { CodexCategoriesService } from '../data-access/codex-categories.service';
-import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntryDraft } from '../data-access/codex-entry.types';
+import { CodexCategoryTypeaheadComponent } from './codex-category-typeahead.component';
 import codexEn from '../i18n/en.json';
 import codexUk from '../i18n/uk.json';
 
-function refKey(ref: EntityRef): string {
-  return `${ref.kind}:${ref.id}`;
-}
-
-function parseRefKey(key: string): EntityRef | null {
-  const idx = key.indexOf(':');
-  if (idx === -1) return null;
-  const kind = key.slice(0, idx) as EntityKind;
-  const id = key.slice(idx + 1);
-  if (!id) return null;
-  return { kind, id };
-}
+/** Per `docs/backend-rules.md` *Cardinality limits*. */
+const RELATED_REFS_MAX = 50;
 
 @Component({
   selector: 'app-codex-entry-form',
@@ -47,7 +31,8 @@ function parseRefKey(key: string): EntityRef | null {
     CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
-    ComboboxPickerComponent,
+    EntityPickerComponent,
+    CodexCategoryTypeaheadComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -91,21 +76,14 @@ function parseRefKey(key: string): EntityRef | null {
               />
               <span class="text-xs text-foreground-faint">{{ g('message.slugHint') }}</span>
             </label>
-            <label class="flex flex-col gap-1 text-sm">
+            <div class="flex flex-col gap-1 text-sm">
               <span class="font-medium text-foreground-muted">{{ t('field.category') }}</span>
-              <input
-                type="text"
-                formControlName="category"
-                class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
-                list="codex-category-options"
+              <app-codex-category-typeahead
+                [value]="categoryKey()"
                 [placeholder]="t('empty.categoryPlaceholder')"
+                (valueChange)="categoryKey.set($event)"
               />
-              <datalist id="codex-category-options">
-                @for (cat of categoryOptions(); track cat.id) {
-                  <option [value]="cat.label"></option>
-                }
-              </datalist>
-            </label>
+            </div>
           </div>
 
           <app-cover-slot
@@ -126,12 +104,12 @@ function parseRefKey(key: string): EntityRef | null {
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
-            <app-combobox-picker
-              [options]="relatedOptions()"
-              [value]="relatedKeys()"
+            <app-entity-picker
+              [value]="related()"
+              [kinds]="relatedKinds"
+              [maxSelections]="relatedMax"
               [placeholder]="g('empty.searchRelated')"
-              [emptyMessage]="g('empty.noRelatedAvailable')"
-              (valueChange)="onRelatedKeys($event)"
+              (valueChange)="related.set($event)"
             />
           </div>
 
@@ -163,60 +141,16 @@ export class CodexEntryFormComponent {
   readonly submitted = output<CodexEntryDraft>();
   readonly cancelled = output<void>();
 
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly codex = inject(CodexEntriesService);
-  private readonly categoriesService = inject(CodexCategoriesService);
-  private readonly transloco = inject(TranslocoService);
-  private readonly activeLang = toSignal(this.transloco.langChanges$, {
-    initialValue: this.transloco.getActiveLang(),
-  });
-
-  protected readonly categoryOptions = this.categoriesService.categories;
-
-  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
-    () => {
-      this.activeLang();
-      return {
-        character: this.transloco.translate('general.field.relatedKindCharacter'),
-        place: this.transloco.translate('general.field.relatedKindPlace'),
-        codexEntry: this.transloco.translate('general.field.relatedKindCodex'),
-      };
-    },
-  );
-
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
-    const labels = this.relatedKindLabels();
-    return [
-      ...this.characters.characters().map((c) => ({
-        id: refKey({ kind: 'character', id: c.id }),
-        label: c.name,
-        hint: labels.character,
-        kind: 'character' as const,
-      })),
-      ...this.places.places().map((p) => ({
-        id: refKey({ kind: 'place', id: p.id }),
-        label: p.name,
-        hint: labels.place,
-        kind: 'place' as const,
-      })),
-      ...this.codex.entries().map((e) => ({
-        id: refKey({ kind: 'codexEntry', id: e.id }),
-        label: e.title,
-        hint: labels.codexEntry,
-        kind: 'codexEntry' as const,
-      })),
-    ];
-  });
+  protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
+  protected readonly relatedMax = RELATED_REFS_MAX;
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly cover = signal<string | undefined>(undefined);
-  protected readonly relatedKeys = computed(() => this.related().map(refKey));
+  protected readonly categoryKey = signal<string | null>(null);
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     title: ['', [Validators.required, Validators.maxLength(120)]],
-    category: [''],
     description: ['', [Validators.required]],
   });
 
@@ -226,36 +160,22 @@ export class CodexEntryFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         title: init?.title ?? '',
-        category: init?.category ?? '',
         description: init?.description ?? '',
       });
       this.related.set(init?.relatedRefs ?? []);
       this.cover.set(init?.coverAssetId);
+      this.categoryKey.set(init?.categoryKey ?? null);
     });
-  }
-
-  protected onRelatedKeys(keys: string[]): void {
-    const refs: EntityRef[] = [];
-    for (const k of keys) {
-      const ref = parseRefKey(k);
-      if (ref) refs.push(ref);
-    }
-    this.related.set(refs);
   }
 
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    const typedCategory = v.category.trim();
-    const matched = typedCategory
-      ? this.categoriesService.categoryByLabel().get(typedCategory.toLowerCase())
-      : undefined;
-    const category = matched?.label ?? (typedCategory || undefined);
     const refs = this.related();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
-      category,
+      categoryKey: this.categoryKey() ?? undefined,
       description: v.description.trim(),
       coverAssetId: this.cover(),
       relatedRefs: refs.length > 0 ? refs : undefined,

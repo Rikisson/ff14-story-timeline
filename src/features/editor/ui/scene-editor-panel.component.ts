@@ -11,7 +11,6 @@ import {
   GhostButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
-import { InlineRefOption } from '@shared/utils';
 import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
 import editorEn from '../i18n/en.json';
 import editorUk from '../i18n/uk.json';
@@ -132,7 +131,6 @@ type SpeakerMode = 'none' | 'character' | 'custom';
             <app-rich-text-input
               appContentLang
               [value]="s.text"
-              [options]="inlineRefOptions()"
               [ariaLabel]="t('tooltip.sceneTextAria')"
               [placeholder]="t('empty.textPlaceholder')"
               (valueChange)="emitTextValue(id, $event)"
@@ -484,7 +482,6 @@ export class SceneEditorPanelComponent {
   readonly characterOptions = input<ComboboxOption[]>([]);
   readonly placeOptions = input<ComboboxOption[]>([]);
   readonly characterSprites = input<Record<string, { id: string; label: string }[]>>({});
-  readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly sceneLabels = input<Record<string, string>>({});
 
   readonly update = output<SceneUpdate>();

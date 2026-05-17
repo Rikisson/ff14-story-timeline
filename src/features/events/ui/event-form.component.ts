@@ -1,40 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { DateValidationError } from '@features/calendar';
-import { CharactersService } from '@features/characters';
-import { CodexEntriesService } from '@features/codex';
 import { CoverSlotComponent } from '@features/media';
-import { PlacesService } from '@features/places';
-import { PlotlinesService } from '@features/plotlines';
 import { ContentLangDirective } from '@features/universes';
-import { EntityKind, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
-  ComboboxOption,
-  ComboboxPickerComponent,
+  EntityPickerComponent,
   GhostButtonComponent,
   InGameDateInputComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
-import { EntityResolverService } from '@shared/data-access';
 import { TimelineEventDraft } from '../data-access/event.types';
 import eventEn from '../i18n/en.json';
 import eventUk from '../i18n/uk.json';
 
-function refKey(ref: EntityRef): string {
-  return `${ref.kind}:${ref.id}`;
-}
-
-function parseRefKey(key: string): EntityRef | null {
-  const idx = key.indexOf(':');
-  if (idx === -1) return null;
-  const kind = key.slice(0, idx) as EntityKind;
-  const id = key.slice(idx + 1);
-  if (!id) return null;
-  return { kind, id };
-}
+/** Per `docs/backend-rules.md` *Cardinality limits*. */
+const RELATED_REFS_MAX = 50;
+const PLOTLINE_REFS_MAX = 10;
 
 @Component({
   selector: 'app-event-form',
@@ -43,7 +27,7 @@ function parseRefKey(key: string): EntityRef | null {
     CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
-    ComboboxPickerComponent,
+    EntityPickerComponent,
     InGameDateInputComponent,
     RichTextInputComponent,
     TranslocoDirective,
@@ -110,7 +94,6 @@ function parseRefKey(key: string): EntityRef | null {
             <app-rich-text-input
               appContentLang
               [value]="description()"
-              [options]="inlineRefOptions()"
               [ariaLabel]="g('tooltip.descriptionAria')"
               [placeholder]="t('empty.descriptionPlaceholder')"
               (valueChange)="onDescription($event)"
@@ -119,23 +102,23 @@ function parseRefKey(key: string): EntityRef | null {
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
-            <app-combobox-picker
-              [options]="relatedOptions()"
-              [value]="relatedKeys()"
+            <app-entity-picker
+              [value]="related()"
+              [kinds]="relatedKinds"
+              [maxSelections]="relatedMax"
               [placeholder]="g('empty.searchRelated')"
-              [emptyMessage]="g('empty.noRelatedAvailable')"
-              (valueChange)="onRelatedKeys($event)"
+              (valueChange)="related.set($event)"
             />
           </div>
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.plotlines') }}</span>
-            <app-combobox-picker
-              [options]="plotlineCombobox()"
-              [value]="plotlineIds()"
+            <app-entity-picker
+              [value]="plotlineValue()"
+              [kinds]="plotlineKinds"
+              [maxSelections]="plotlineMax"
               [placeholder]="g('empty.searchPlotlines')"
-              [emptyMessage]="g('empty.noPlotlines')"
-              (valueChange)="onPlotlineIds($event)"
+              (valueChange)="onPlotlineRefs($event)"
             />
           </div>
 
@@ -167,66 +150,17 @@ export class EventFormComponent {
   readonly submitted = output<TimelineEventDraft>();
   readonly cancelled = output<void>();
 
-  private readonly charactersService = inject(CharactersService);
-  private readonly placesService = inject(PlacesService);
-  private readonly plotlinesService = inject(PlotlinesService);
-  private readonly codexService = inject(CodexEntriesService);
-  private readonly entityResolver = inject(EntityResolverService);
-  private readonly transloco = inject(TranslocoService);
-  private readonly activeLang = toSignal(this.transloco.langChanges$, {
-    initialValue: this.transloco.getActiveLang(),
-  });
-
-  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
-    () => {
-      this.activeLang();
-      return {
-        character: this.transloco.translate('general.field.relatedKindCharacter'),
-        place: this.transloco.translate('general.field.relatedKindPlace'),
-        codexEntry: this.transloco.translate('general.field.relatedKindCodex'),
-      };
-    },
-  );
-
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
-    const labels = this.relatedKindLabels();
-    return [
-      ...this.charactersService.characters().map((c) => ({
-        id: refKey({ kind: 'character', id: c.id }),
-        label: c.name,
-        hint: labels.character,
-        kind: 'character' as const,
-      })),
-      ...this.placesService.places().map((p) => ({
-        id: refKey({ kind: 'place', id: p.id }),
-        label: p.name,
-        hint: labels.place,
-        kind: 'place' as const,
-      })),
-      ...this.codexService.entries().map((c) => ({
-        id: refKey({ kind: 'codexEntry', id: c.id }),
-        label: c.title,
-        hint: labels.codexEntry,
-        kind: 'codexEntry' as const,
-      })),
-    ];
-  });
-
-  protected readonly plotlineCombobox = computed<ComboboxOption[]>(() =>
-    this.plotlinesService
-      .plotlines()
-      .map((p) => ({ id: p.id, label: p.title, hint: p.slug, kind: 'plotline' as const })),
-  );
-
-  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
+  protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
+  protected readonly relatedMax = RELATED_REFS_MAX;
+  protected readonly plotlineKinds = ['plotline'] as const;
+  protected readonly plotlineMax = PLOTLINE_REFS_MAX;
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
   protected readonly description = signal<string>('');
   protected readonly cover = signal<string | undefined>(undefined);
 
-  protected readonly relatedKeys = computed(() => this.related().map(refKey));
-  protected readonly plotlineIds = computed(() => this.plotlineRefs().map((r) => r.id));
+  protected readonly plotlineValue = computed<EntityRef[]>(() => this.plotlineRefs().slice());
 
   protected readonly inGameDate = signal<InGameDate>({});
   protected readonly dateErrors = signal<DateValidationError[]>([]);
@@ -255,17 +189,8 @@ export class EventFormComponent {
     this.inGameDate.set(value);
   }
 
-  protected onRelatedKeys(keys: string[]): void {
-    const refs: EntityRef[] = [];
-    for (const k of keys) {
-      const ref = parseRefKey(k);
-      if (ref) refs.push(ref);
-    }
-    this.related.set(refs);
-  }
-
-  protected onPlotlineIds(ids: string[]): void {
-    this.plotlineRefs.set(ids.map((id) => ({ kind: 'plotline', id })));
+  protected onPlotlineRefs(refs: EntityRef[]): void {
+    this.plotlineRefs.set(refs.filter((r) => r.kind === 'plotline') as EntityRef<'plotline'>[]);
   }
 
   protected onDescription(value: string): void {

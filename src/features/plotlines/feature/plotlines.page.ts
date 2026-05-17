@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { MediaAssetsService } from '@features/media';
 import { createEntityListController } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
@@ -98,7 +97,6 @@ export class PlotlinesPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly plotlines = this.service.plotlines;
-  private readonly media = inject(MediaAssetsService);
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
@@ -125,7 +123,7 @@ export class PlotlinesPage {
       id: p.id,
       label: p.title,
       secondary: p.status ? this.transloco.translate(STATUS_KEY[p.status]) : undefined,
-      thumbnailUrl: this.media.urlFor(p.coverAssetId),
+      coverAssetId: p.coverAssetId,
     }));
   });
 

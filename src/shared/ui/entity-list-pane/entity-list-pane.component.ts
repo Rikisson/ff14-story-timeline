@@ -1,17 +1,24 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { PrimaryButtonComponent, GhostButtonComponent } from '../button';
+import { LazyThumbComponent } from '../lazy-thumb';
 
 export interface ListPaneItem {
   id: string;
   label: string;
   secondary?: string;
+  /**
+   * Asset ID to lazy-resolve via `AssetThumbResolver`. Renders a small
+   * skeleton until the thumb fetches. Preferred over `thumbnailUrl`.
+   */
+  coverAssetId?: string;
+  /** Legacy direct URL; populated when callers haven't migrated yet. */
   thumbnailUrl?: string;
   badge?: { text: string; tone?: 'amber' | 'slate' };
 }
 
 @Component({
   selector: 'app-entity-list-pane',
-  imports: [PrimaryButtonComponent, GhostButtonComponent],
+  imports: [PrimaryButtonComponent, GhostButtonComponent, LazyThumbComponent],
   host: { class: 'block min-h-0' },
   template: `
     <aside
@@ -42,7 +49,12 @@ export interface ListPaneItem {
                   [attr.aria-selected]="item.id === selectedId()"
                   (click)="select.emit(item.id)"
                 >
-                  @if (item.thumbnailUrl) {
+                  @if (item.coverAssetId) {
+                    <app-lazy-thumb
+                      class="size-10 shrink-0 rounded"
+                      [assetId]="item.coverAssetId"
+                    />
+                  } @else if (item.thumbnailUrl) {
                     <img
                       [src]="item.thumbnailUrl"
                       alt=""

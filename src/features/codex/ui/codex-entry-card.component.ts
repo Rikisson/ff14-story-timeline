@@ -52,7 +52,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
                 [class.drop-shadow-md]="hasImage()"
                 [class.text-foreground]="!hasImage()"
               >{{ entry().title }}</h2>
-              @if (entry().category; as c) {
+              @if (categoryLabel(); as c) {
                 <span
                   class="inline-flex items-center rounded-full border bg-surface/90 px-2 py-0.5 text-xs font-medium shadow-sm"
                   [style.borderColor]="categoryColor() ?? 'var(--color-border-strong)'"
@@ -95,11 +95,13 @@ export class CodexEntryCardComponent {
   protected readonly utilSecondaryClass = UTILITY_SECONDARY;
   protected readonly utilDangerClass = UTILITY_DANGER;
 
-  protected readonly categoryColor = computed<string | undefined>(() => {
-    const cat = this.entry().category?.toLowerCase();
-    if (!cat) return undefined;
-    return this.categories.categoryByLabel().get(cat)?.color;
+  private readonly resolvedCategory = computed(() => {
+    const key = this.entry().categoryKey;
+    if (!key) return null;
+    return this.categories.categoryByKey().get(key) ?? null;
   });
+  protected readonly categoryLabel = computed(() => this.resolvedCategory()?.label);
+  protected readonly categoryColor = computed(() => this.resolvedCategory()?.color);
   protected readonly coverUrl = computed(() => this.media.urlFor(this.entry().coverAssetId));
   protected readonly hasImage = computed(() => !!this.coverUrl());
 }

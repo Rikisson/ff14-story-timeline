@@ -3,20 +3,38 @@ import {
   Component,
   computed,
   ElementRef,
+  inject,
   input,
-  output,
   signal,
   viewChild,
 } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { SortDirection } from './catalog-filters.component';
-import { TimelineCard, TimelineLane, UNASSIGNED_LANE_KEY } from './catalog-timeline-lanes';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { AuthStore } from '@features/auth';
+import { UniverseStore } from '@features/universes';
+import {
+  createTimelineLaneStore,
+  createTimelineQueryStore,
+  SortDirection,
+  TimelineQueryStore,
+  UNASSIGNED_LANE_KEY,
+} from '@shared/data-access';
 import { TimelineTileComponent } from './timeline-tile.component';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
 
 const SCROLL_STEP = 320;
 
+/**
+ * Renders a single timeline stream — either the global stream (no
+ * `laneKey`, reads `_timelineEntries`) or one per-lane stream (with
+ * `laneKey`, reads `_timelineLaneEntries`). Owns its own
+ * `TimelineQueryStore` instance, so per-lane cursors stay independent
+ * per `docs/narrative-engine-impl.md` *Timeline UX*.
+ *
+ * Inputs are signals (or values that become signals via Angular's input
+ * mechanism). Changing `sortDirection`, `universeId`, or `laneKey`
+ * resets the lane's cursor and refetches page 1.
+ */
 @Component({
   selector: 'app-timeline-lane',
   imports: [TimelineTileComponent, TranslocoDirective],
@@ -34,62 +52,55 @@ const SCROLL_STEP = 320;
       <section
         class="flex flex-col gap-2"
         role="region"
-        [attr.aria-label]="isUnassigned() ? t('field.unassigned') : (lane().label || t('field.allItems'))"
+        [attr.aria-label]="ariaLabel(t)"
       >
-        @if (lane().label || isUnassigned()) {
+        @if (showHeader()) {
           <header class="flex items-center gap-2">
             <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
-              {{ isUnassigned() ? t('field.unassigned') : lane().label }}
+              {{ headerLabel(t) }}
             </h3>
-            <span class="text-xs text-foreground-faint">
-              ({{ lane().dated.length + lane().undated.length }})
-            </span>
           </header>
         }
 
-        @if (lane().dated.length === 0 && lane().undated.length === 0) {
+        @if (store.loading() && store.rows().length === 0) {
+          <p class="m-0 px-1 py-2 text-sm italic text-foreground-faint" aria-live="polite">
+            {{ tGeneral('message.loading') }}
+          </p>
+        } @else if (store.error()) {
+          <p class="m-0 px-1 py-2 text-sm text-danger-foreground" role="alert">
+            {{ tGeneral('message.refreshError', { resource: headerLabel(t) || t('field.allItems') }) }}
+            <button
+              type="button"
+              class="ml-2 rounded border border-border px-2 py-0.5 text-xs"
+              (click)="store.refresh()"
+            >{{ tGeneral('action.retry') }}</button>
+          </p>
+        } @else if (store.rows().length === 0) {
           <p class="m-0 px-1 py-2 text-sm italic text-foreground-faint">{{ t('empty.noItemsLane') }}</p>
         } @else {
-          <!-- Rail doubles as the plotline "track": when the lane has a color,
-               it paints the rail background and the cards sit on top of it.
-               The all-sides padding gives breathing room between the cards and
-               the colored frame, and also lifts the horizontal scrollbar away
-               from the bottom edge of the cards. -->
           <div
             #rail
             tabindex="0"
             class="flex items-stretch gap-4 overflow-x-auto rounded-md p-3 [overscroll-behavior-x:contain] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-            [style.background]="lane().color || null"
+            [style.background]="color() || null"
             (keydown)="onRailKey($event)"
             (focusin)="onFocusIn($event)"
           >
-            @for (card of visibleDated(); track card.id) {
+            @for (row of store.rows(); track row.kind + ':' + row.id) {
               <div class="w-[320px] shrink-0">
-                <app-timeline-tile [card]="card" />
+                <app-timeline-tile [row]="row" />
               </div>
             }
 
-            @if (visibleUndated().length > 0) {
-              <div class="ml-2 flex shrink-0 items-center gap-3 border-l-2 border-dashed border-border-strong pl-4">
-                <p class="m-0 shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
-                  {{ t('field.undated') }}
-                </p>
-                @for (card of visibleUndated(); track card.id) {
-                  <div class="w-[320px] shrink-0">
-                    <app-timeline-tile [card]="card" />
-                  </div>
-                }
-              </div>
-            }
-
-            @if (hasMore()) {
+            @if (store.hasMore()) {
               <button
                 type="button"
-                class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                [attr.aria-label]="t('tooltip.loadMore', { lane: lane().label || t('field.allItems') })"
-                (click)="loadMore.emit()"
+                class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring disabled:opacity-60"
+                [disabled]="store.loadingMore()"
+                [attr.aria-label]="t('tooltip.loadMore', { lane: headerLabel(t) || t('field.allItems') })"
+                (click)="store.loadMore()"
               >
-                <span class="flex items-center">›</span>
+                <span class="flex items-center">{{ store.loadingMore() ? '…' : '›' }}</span>
               </button>
             }
           </div>
@@ -102,31 +113,64 @@ const SCROLL_STEP = 320;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineLaneComponent {
-  readonly lane = input.required<TimelineLane>();
+  /** null = global stream over `_timelineEntries`; string = per-lane stream. */
+  readonly laneKey = input<string | null>(null);
+  readonly label = input<string>('');
+  readonly color = input<string | undefined>(undefined);
   readonly sortDirection = input<SortDirection>('asc');
-  readonly pageSize = input.required<number>();
-  readonly serverHasMore = input<boolean>(false);
+  readonly includeDrafts = input<boolean>(false);
 
-  readonly loadMore = output<void>();
-
+  private readonly universes = inject(UniverseStore);
+  private readonly auth = inject(AuthStore);
   protected readonly rail = viewChild<ElementRef<HTMLDivElement>>('rail');
   protected readonly announcement = signal('');
 
-  protected readonly isUnassigned = computed(() => this.lane().key === UNASSIGNED_LANE_KEY);
-
-  protected readonly visibleDated = computed<TimelineCard[]>(() =>
-    this.lane().dated.slice(0, this.pageSize()),
-  );
-
-  protected readonly visibleUndated = computed<TimelineCard[]>(() => {
-    const remaining = Math.max(0, this.pageSize() - this.lane().dated.length);
-    return this.lane().undated.slice(0, remaining);
+  protected readonly universeId = computed(() => this.universes.activeUniverseId());
+  // Members may include drafts; the explicit input lets the parent override
+  // (e.g. a public-only debug view), default-derive otherwise.
+  protected readonly effectiveDrafts = computed(() => {
+    if (this.includeDrafts()) return true;
+    return !!this.auth.user() && this.universes.isMemberOfActive();
   });
 
-  protected readonly hasMore = computed(() => {
-    const total = this.lane().dated.length + this.lane().undated.length;
-    return this.pageSize() < total || this.serverHasMore();
-  });
+  protected readonly isUnassigned = computed(() => this.laneKey() === UNASSIGNED_LANE_KEY);
+  protected readonly showHeader = computed(() => !!this.label() || this.isUnassigned());
+
+  protected readonly store: TimelineQueryStore;
+
+  constructor() {
+    const lk = this.laneKey;
+    if (lk() != null) {
+      this.store = createTimelineLaneStore({
+        universeId: this.universeId,
+        includeDrafts: this.effectiveDrafts,
+        sortDirection: this.sortDirection,
+        laneKey: computed(() => lk() ?? UNASSIGNED_LANE_KEY),
+      });
+    } else {
+      this.store = createTimelineQueryStore({
+        universeId: this.universeId,
+        includeDrafts: this.effectiveDrafts,
+        sortDirection: this.sortDirection,
+      });
+    }
+  }
+
+  protected headerLabel(t: (key: string) => string): string {
+    if (this.isUnassigned()) return t('field.unassigned');
+    return this.label();
+  }
+
+  protected ariaLabel(t: (key: string) => string): string {
+    if (this.isUnassigned()) return t('field.unassigned');
+    return this.label() || t('field.allItems');
+  }
+
+  private readonly transloco = inject(TranslocoService);
+
+  protected tGeneral(key: string, params?: Record<string, unknown>): string {
+    return this.transloco.translate('general.' + key, params);
+  }
 
   protected onRailKey(event: KeyboardEvent): void {
     const el = this.rail()?.nativeElement;

@@ -11,11 +11,15 @@
   "action": {
     "create": "+ Add entry",
     "addCategory": "+ Add category",
+    "createCategoryAffirm": "Create category \"{{ label }}\"",
     "reset": "Reset"
   },
   "message": {
     "categoriesSubtitle": "Color-coded buckets for codex entries. Authors can still type free-form categories on entries; pickers surface this canonical set.",
-    "unsavedChanges": "Unsaved changes"
+    "unsavedChanges": "Unsaved changes",
+    "categoryConflict": "Conflicts with \"{{ other }}\"",
+    "rebuildingCategory": "Refreshing category projections… {{ processed }} of {{ total }}",
+    "inUseHint": "{{ count }} codex entries still reference this category. Reassign or remove them, then try again."
   },
   "empty": {
     "list": "No codex entries yet.",

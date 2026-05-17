@@ -32,7 +32,9 @@
     "presetFf14": "FF14",
     "newEraName": "Era {{ index }}",
     "newMonthName": "Month {{ index }}",
-    "newWeekdayName": "Weekday {{ index }}"
+    "newWeekdayName": "Weekday {{ index }}",
+    "rebuildingHeader": "Refreshing timeline sort keys…",
+    "rebuildingProgress": "{{ processed }} of {{ total }} entries"
   },
   "empty": {
     "eras": "No eras yet.",

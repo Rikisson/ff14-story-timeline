@@ -24,10 +24,12 @@ import Italic from '@tiptap/extension-italic';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
+import { UniverseStore } from '@features/universes';
+import { EntityDirectoryService } from '@shared/data-access';
 import { InlineRefOption, markdownToTiptapHtml, tiptapJsonToMarkdown } from '@shared/utils';
 import { EntityRefNode } from './entity-ref-node';
 import { createSuggestionRender } from './ref-suggestion-renderer';
-import { RefSuggestion } from './ref-suggestion.extension';
+import { FetchInlineRefOptions, RefSuggestion } from './ref-suggestion.extension';
 
 @Component({
   selector: 'app-rich-text-input',
@@ -104,6 +106,11 @@ import { RefSuggestion } from './ref-suggestion.extension';
 })
 export class RichTextInputComponent {
   readonly value = input.required<string>();
+  /**
+   * Legacy pre-loaded suggestion list. Kept for tests and any caller
+   * that wants to inject a fixed set; live editor surfaces should leave
+   * this empty and let the directory-backed fetcher do the work.
+   */
   readonly options = input<InlineRefOption[]>([]);
   readonly placeholder = input<string>('');
   readonly ariaLabel = input<string>('');
@@ -113,6 +120,8 @@ export class RichTextInputComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly transloco = inject(TranslocoService);
+  private readonly directory = inject(EntityDirectoryService);
+  private readonly universes = inject(UniverseStore);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private editor: Editor | null = null;
@@ -163,6 +172,26 @@ export class RichTextInputComponent {
     const renderer = createSuggestionRender({
       getNoMatchesLabel: () => this.transloco.translate('general.empty.tiptapNoMatches'),
     });
+    const fetchOptions: FetchInlineRefOptions = async (_query, kind, filter) => {
+      const universeId = this.universes.activeUniverseId();
+      if (!universeId) return [];
+      const rows = await this.directory.prefixSearch({
+        universeId,
+        query: filter,
+        kind: kind ?? undefined,
+        // Authors editing inline refs are universe members; surfacing draft
+        // entities matches the picker UX (a *Draft* badge is not part of
+        // the suggestion row, but the inserted ref still renders plain for
+        // public readers if the target is non-public).
+        includeDrafts: true,
+      });
+      return rows.map<InlineRefOption>((r) => ({
+        kind: r.kind,
+        id: r.id,
+        label: r.label,
+        slug: r.slug,
+      }));
+    };
     this.editor = new Editor({
       element: this.hostRef().nativeElement,
       extensions: [
@@ -176,6 +205,7 @@ export class RichTextInputComponent {
         Placeholder.configure({ placeholder: this.placeholder() }),
         EntityRefNode,
         RefSuggestion.configure({
+          fetchOptions,
           optionsRef: this.optionsRef,
           renderFactory: () => renderer,
         }),

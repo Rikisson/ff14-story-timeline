@@ -31,6 +31,7 @@
       "relatedKindPlace": "Місце",
       "relatedKindCodex": "Кодекс",
       "status": "Статус",
+      "draftPill": "Чернетка",
       "createdAt": "Створено",
       "updatedAt": "Оновлено",
       "dateEra": "Ера",
@@ -76,7 +77,9 @@
       "landingPickTitle": "Оберіть всесвіт",
       "landingPickHint": "Скористайтеся меню всесвітів у верхньому лівому куті, щоб обрати, що читати.",
       "landingSignInHint": "Увійдіть, щоб мати змогу створювати або редагувати.",
-      "tiptapRefHint": "Введіть $'{' для посилань на сутності"
+      "tiptapRefHint": "Введіть $'{' для посилань на сутності",
+      "pickerError": "Не вдалося завантажити збіги",
+      "pickerMaxReached": "Максимум {{ max }} варіантів."
     },
     "empty": {
       "landingNoUniversesTitle": "Немає доступних всесвітів",
@@ -91,7 +94,9 @@
       "noPlotlines": "Поки немає сюжетних ліній.",
       "tiptapNoMatches": "Немає збігів",
       "dateNotSet": "Задати внутрішньоігрову дату",
-      "dateDisplayOverridePlaceholder": "напр. Весна Вовка, 1577"
+      "dateDisplayOverridePlaceholder": "напр. Весна Вовка, 1577",
+      "pickerStart": "Почніть друкувати для пошуку…",
+      "pickerNoMatches": "Немає збігів для «{{ query }}»"
     },
     "tooltip": {
       "loadingPage": "Завантаження сторінки",

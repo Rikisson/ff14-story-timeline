@@ -8,14 +8,24 @@ import {
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
+import { foldLabel } from '@shared/utils';
+import { ProjectionRebuildService } from '../../../app/data-access/projection-rebuild.service';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import {
+  CategoryInUseError,
   CodexCategoriesConfig,
   CodexCategory,
   StaleCategoriesError,
 } from '../data-access/codex-category.types';
 import codexEn from '../i18n/en.json';
 import codexUk from '../i18n/uk.json';
+
+interface InlineConflict {
+  /** Index in the draft list of the OTHER category that conflicts. */
+  withIndex: number;
+  /** That other category's label, for the error copy. */
+  withLabel: string;
+}
 
 function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean {
   if (a.categories.length !== b.categories.length) return false;
@@ -75,7 +85,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
                 uiPrimary
                 type="button"
                 [loading]="saving()"
-                [disabled]="!dirty() || saving() || !canEdit()"
+                [disabled]="!dirty() || saving() || !canEdit() || hasConflicts()"
                 (click)="save()"
               >
                 {{ g('action.save') }}
@@ -84,7 +94,20 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
           </header>
 
           @if (errorMessage(); as e) {
-            <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+            <p class="m-0 text-sm text-danger-foreground">
+              {{ e }}
+              @if (inUseError(); as ue) {
+                <span class="block mt-1">
+                  {{ t('message.inUseHint', { count: ue.usageCount }) }}
+                </span>
+              }
+            </p>
+          }
+
+          @if (rebuildProgress(); as p) {
+            <p class="m-0 text-sm text-warning-foreground" role="status">
+              {{ t('message.rebuildingCategory', { processed: p.processed, total: p.total }) }}
+            </p>
           }
 
           @if (categories().length === 0) {
@@ -95,18 +118,28 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
             >
               @for (cat of categories(); track cat.id; let i = $index) {
                 <li
-                  class="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-sm"
+                  class="flex flex-col gap-2 rounded-lg border bg-surface p-3 shadow-sm"
+                  [class.border-danger-border]="conflictByIndex().has(i)"
+                  [class.border-border]="!conflictByIndex().has(i)"
                 >
                   <div class="flex items-center gap-2">
                     <input
                       type="text"
-                      class="h-10 flex-1 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                      class="h-10 flex-1 rounded-md border bg-surface text-foreground placeholder:text-foreground-faint px-3 text-sm"
+                      [class.border-danger-border]="conflictByIndex().has(i)"
+                      [class.border-border-strong]="!conflictByIndex().has(i)"
                       [value]="cat.label"
                       [disabled]="!canEdit()"
                       [placeholder]="t('empty.categoryLabelPlaceholder')"
                       [attr.aria-label]="t('tooltip.labelAria')"
+                      [attr.aria-invalid]="conflictByIndex().has(i) ? 'true' : null"
                       (input)="updateCategory(i, { label: text($event) })"
                     />
+                    @if (conflictByIndex().get(i); as conflict) {
+                      <span class="sr-only" role="alert">
+                        {{ t('message.categoryConflict', { other: conflict.withLabel }) }}
+                      </span>
+                    }
                     <input
                       type="color"
                       class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-border-strong bg-surface p-1"
@@ -125,6 +158,11 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
                     [attr.aria-label]="t('tooltip.descriptionAria')"
                     (input)="updateCategory(i, { description: text($event) || undefined })"
                   />
+                  @if (conflictByIndex().get(i); as conflict) {
+                    <p class="m-0 text-xs text-danger-foreground">
+                      {{ t('message.categoryConflict', { other: conflict.withLabel }) }}
+                    </p>
+                  }
                   @if (canEdit()) {
                     <div class="mt-auto flex justify-end">
                       <button uiDanger type="button" (click)="removeCategory(i)">{{ g('action.remove') }}</button>
@@ -142,6 +180,7 @@ function sameConfig(a: CodexCategoriesConfig, b: CodexCategoriesConfig): boolean
 })
 export class CodexCategoriesSettingsPanelComponent {
   protected readonly service = inject(CodexCategoriesService);
+  protected readonly rebuild = inject(ProjectionRebuildService);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
 
@@ -154,10 +193,73 @@ export class CodexCategoriesSettingsPanelComponent {
 
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly inUseError = signal<CategoryInUseError | null>(null);
 
   protected readonly dirty = computed(
     () => !sameConfig(this.draft(), this.service.config()),
   );
+
+  /**
+   * Inline collision check per `docs/narrative-engine-impl.md` *Codex
+   * categories — Folded labels and keys are unique within the universe*.
+   * Returns the conflicting category's metadata so the panel can name
+   * it ("Conflicts with 'Items — Equipment'") rather than just rejecting
+   * with a generic error.
+   *
+   * Mirrors the transactional check in
+   * `CodexCategoriesService.finaliseSave`, so an inline-clean draft is
+   * also valid against the saved config (modulo the OCC race window).
+   */
+  protected readonly conflictByIndex = computed<Map<number, InlineConflict>>(() => {
+    const cats = this.categories();
+    const out = new Map<number, InlineConflict>();
+    for (let i = 0; i < cats.length; i++) {
+      const cat = cats[i];
+      const folded = foldLabel(cat.label);
+      if (!folded) continue;
+      for (let j = 0; j < cats.length; j++) {
+        if (i === j) continue;
+        const other = cats[j];
+        const otherFolded = foldLabel(other.label);
+        if (otherFolded && otherFolded === folded) {
+          out.set(i, { withIndex: j, withLabel: other.label || '(unnamed)' });
+          break;
+        }
+        if (other.key && other.key === folded) {
+          out.set(i, { withIndex: j, withLabel: other.label || '(unnamed)' });
+          break;
+        }
+      }
+    }
+    return out;
+  });
+
+  protected readonly hasConflicts = computed(() => this.conflictByIndex().size > 0);
+
+  /** Bound by the template to render the in-flight rebuild toast. */
+  protected readonly rebuildProgress = computed(() => {
+    const p = this.rebuild.progress();
+    return p.phase === 'processing' || p.phase === 'starting' ? p : null;
+  });
+
+  /**
+   * Renames detected at save time: an existing category whose label
+   * folded to a new value while its `key` stayed the same. Each rename
+   * dirties every codex directory row with that `categoryKey` (the
+   * denormalized `secondary` label), so a `rebuildForCategoryRename`
+   * pass runs after the config write per `docs/backend-rules.md`
+   * *Write discipline*.
+   */
+  private detectRenamedKeys(prev: CodexCategory[], next: CodexCategory[]): string[] {
+    const prevById = new Map(prev.map((c) => [c.id, c]));
+    const out: string[] = [];
+    for (const n of next) {
+      const p = prevById.get(n.id);
+      if (!p || !n.key) continue;
+      if (foldLabel(p.label) !== foldLabel(n.label)) out.push(n.key);
+    }
+    return out;
+  }
 
   constructor() {
     let lastServerSnapshot = this.service.config();
@@ -178,8 +280,12 @@ export class CodexCategoriesSettingsPanelComponent {
   }
 
   protected async save(): Promise<void> {
+    if (this.hasConflicts()) return;
     this.saving.set(true);
     this.errorMessage.set(null);
+    this.inUseError.set(null);
+    const prevCategories = this.service.config().categories;
+    const nextCategories = this.draft().categories;
     try {
       const expectedVersion = this.service.config().version ?? 0;
       await this.service.save(this.draft(), expectedVersion);
@@ -189,10 +295,31 @@ export class CodexCategoriesSettingsPanelComponent {
         // before retrying their edit. Without the refresh the panel would
         // still show their stale draft.
         await this.service.refresh();
+      } else if (err instanceof CategoryInUseError) {
+        this.inUseError.set(err);
       }
       this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
-    } finally {
       this.saving.set(false);
+      return;
+    }
+    this.saving.set(false);
+
+    // Fire a chunked projection rebuild for each renamed category — the
+    // categories config write only flips `_meta`, so directory rows
+    // carrying the denormalized `secondary` label need a sweep.
+    const renamedKeys = this.detectRenamedKeys(prevCategories, nextCategories);
+    if (renamedKeys.length === 0) return;
+    const universeId = this.universes.activeUniverseId();
+    if (!universeId) return;
+    for (const key of renamedKeys) {
+      try {
+        await this.rebuild.rebuildForCategoryRename(universeId, key);
+      } catch (err) {
+        this.errorMessage.set(
+          err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+        );
+        return;
+      }
     }
   }
 

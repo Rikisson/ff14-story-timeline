@@ -48,3 +48,18 @@ export {
   type ByKindResult,
   type PrefixSearchOptions,
 } from './entity-directory.service';
+export {
+  createTimelineQueryStore,
+  createTimelineLaneStore,
+  type TimelineQueryStore,
+  type TimelineQueryStoreOptions,
+  type TimelineLaneStore,
+  type TimelineLaneStoreOptions,
+  type TimelineRow,
+  type SortDirection,
+} from './timeline-query.store';
+export {
+  createEntityDirectoryQueryStore,
+  type EntityDirectoryQueryStore,
+  type EntityDirectoryQueryStoreOptions,
+} from './entity-directory-query.store';

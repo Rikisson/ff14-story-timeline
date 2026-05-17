@@ -1,46 +1,28 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
-  inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { CharactersService } from '@features/characters';
-import { CodexEntriesService } from '@features/codex';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
-import { PlaceDraft } from '../data-access/place.types';
-import { PlacesService } from '../data-access/places.service';
-import { EntityResolverService } from '@shared/data-access';
-import { EntityKind, EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
-  ComboboxOption,
-  ComboboxPickerComponent,
+  EntityPickerComponent,
   GhostButtonComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
+import { PlaceDraft } from '../data-access/place.types';
 import placeEn from '../i18n/en.json';
 import placeUk from '../i18n/uk.json';
 
-function refKey(ref: EntityRef): string {
-  return `${ref.kind}:${ref.id}`;
-}
-
-function parseRefKey(key: string): EntityRef | null {
-  const idx = key.indexOf(':');
-  if (idx === -1) return null;
-  const kind = key.slice(0, idx) as EntityKind;
-  const id = key.slice(idx + 1);
-  if (!id) return null;
-  return { kind, id };
-}
+/** Per `docs/backend-rules.md` *Cardinality limits*. */
+const RELATED_REFS_MAX = 50;
 
 @Component({
   selector: 'app-place-form',
@@ -50,7 +32,7 @@ function parseRefKey(key: string): EntityRef | null {
     PrimaryButtonComponent,
     GhostButtonComponent,
     RichTextInputComponent,
-    ComboboxPickerComponent,
+    EntityPickerComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -108,7 +90,6 @@ function parseRefKey(key: string): EntityRef | null {
             <app-rich-text-input
               appContentLang
               [value]="description()"
-              [options]="inlineRefOptions()"
               [ariaLabel]="g('tooltip.descriptionAria')"
               [placeholder]="t('empty.descriptionPlaceholder')"
               (valueChange)="onDescription($event)"
@@ -117,12 +98,12 @@ function parseRefKey(key: string): EntityRef | null {
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
-            <app-combobox-picker
-              [options]="relatedOptions()"
-              [value]="relatedKeys()"
+            <app-entity-picker
+              [value]="related()"
+              [kinds]="relatedKinds"
+              [maxSelections]="relatedMax"
               [placeholder]="g('empty.searchRelated')"
-              [emptyMessage]="g('empty.noRelatedAvailable')"
-              (valueChange)="onRelatedKeys($event)"
+              (valueChange)="related.set($event)"
             />
           </div>
 
@@ -154,56 +135,12 @@ export class PlaceFormComponent {
   readonly submitted = output<PlaceDraft>();
   readonly cancelled = output<void>();
 
-  private readonly entityResolver = inject(EntityResolverService);
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly codex = inject(CodexEntriesService);
-  private readonly transloco = inject(TranslocoService);
-  private readonly activeLang = toSignal(this.transloco.langChanges$, {
-    initialValue: this.transloco.getActiveLang(),
-  });
+  protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
+  protected readonly relatedMax = RELATED_REFS_MAX;
 
   protected readonly description = signal<string>('');
   protected readonly cover = signal<string | undefined>(undefined);
   protected readonly related = signal<EntityRef[]>([]);
-  protected readonly inlineRefOptions = this.entityResolver.allInlineRefOptions;
-
-  protected readonly relatedKeys = computed(() => this.related().map(refKey));
-
-  private readonly relatedKindLabels = computed<Record<'character' | 'place' | 'codexEntry', string>>(
-    () => {
-      this.activeLang();
-      return {
-        character: this.transloco.translate('general.field.relatedKindCharacter'),
-        place: this.transloco.translate('general.field.relatedKindPlace'),
-        codexEntry: this.transloco.translate('general.field.relatedKindCodex'),
-      };
-    },
-  );
-
-  protected readonly relatedOptions = computed<ComboboxOption[]>(() => {
-    const labels = this.relatedKindLabels();
-    return [
-      ...this.characters.characters().map((c) => ({
-        id: refKey({ kind: 'character', id: c.id }),
-        label: c.name,
-        hint: labels.character,
-        kind: 'character' as const,
-      })),
-      ...this.places.places().map((p) => ({
-        id: refKey({ kind: 'place', id: p.id }),
-        label: p.name,
-        hint: labels.place,
-        kind: 'place' as const,
-      })),
-      ...this.codex.entries().map((e) => ({
-        id: refKey({ kind: 'codexEntry', id: e.id }),
-        label: e.title,
-        hint: labels.codexEntry,
-        kind: 'codexEntry' as const,
-      })),
-    ];
-  });
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
@@ -225,15 +162,6 @@ export class PlaceFormComponent {
 
   protected onDescription(value: string): void {
     this.description.set(value);
-  }
-
-  protected onRelatedKeys(keys: string[]): void {
-    const refs: EntityRef[] = [];
-    for (const k of keys) {
-      const ref = parseRefKey(k);
-      if (ref) refs.push(ref);
-    }
-    this.related.set(refs);
   }
 
   protected onSubmit(): void {

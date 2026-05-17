@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
-import { MediaAssetsService } from '@features/media';
 import { createEntityListController, EntityResolverService } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
@@ -115,7 +114,6 @@ export class CharactersPage {
   });
 
   private readonly entityResolver = inject(EntityResolverService);
-  private readonly media = inject(MediaAssetsService);
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.characters().map((c) => {
@@ -127,7 +125,7 @@ export class CharactersPage {
         id: c.id,
         label: c.name,
         secondary,
-        thumbnailUrl: this.media.urlFor(c.coverAssetId),
+        coverAssetId: c.coverAssetId,
       };
     }),
   );

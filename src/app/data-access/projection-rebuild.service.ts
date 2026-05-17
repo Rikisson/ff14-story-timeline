@@ -12,22 +12,22 @@ import {
   CalendarProjectionContext,
   CalendarService,
 } from '@features/calendar';
-import { buildCharacterDirectoryInputs } from '@features/characters';
+import { buildCharacterDirectoryInputs } from '../../features/characters/data-access/character-projection';
 import {
   buildCodexEntryDirectoryInputs,
   CodexCategoriesProjectionContext,
-  CodexCategoriesService,
-} from '@features/codex';
+} from '../../features/codex/data-access/codex-entry-projection';
+import { CodexCategoriesService } from '../../features/codex/data-access/codex-categories.service';
 import {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
-} from '@features/events';
-import { buildPlaceDirectoryInputs } from '@features/places';
-import { buildPlotlineDirectoryInputs } from '@features/plotlines';
+} from '../../features/events/data-access/event-projection';
+import { buildPlaceDirectoryInputs } from '../../features/places/data-access/place-projection';
+import { buildPlotlineDirectoryInputs } from '../../features/plotlines/data-access/plotline-projection';
 import {
   buildStoryDirectoryInputs,
   buildStoryTimelineInputs,
-} from '@features/stories';
+} from '../../features/stories/data-access/story-projection';
 import {
   buildProjectionRows,
   CacheInvalidationBus,
