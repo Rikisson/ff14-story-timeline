@@ -43,6 +43,21 @@ const AUDIO_MIMES: readonly string[] = [
   'audio/aac',
   'audio/mpeg',
 ];
+// Filename-extension fallback for audio. Some OSes (notably Windows)
+// report `.webm` as `video/webm` by extension mapping, so the browser's
+// `File.type` lies about the contents. Accept by extension when the
+// MIME isn't already a known audio type — the picker is explicitly
+// an audio surface, so user intent is unambiguous.
+const AUDIO_EXTENSIONS: readonly string[] = [
+  '.webm',
+  '.weba',
+  '.opus',
+  '.ogg',
+  '.oga',
+  '.m4a',
+  '.aac',
+  '.mp3',
+];
 
 const MAX_BYTES: Record<AssetKind, number> = {
   cover: 10 * 1024 * 1024,
@@ -243,9 +258,9 @@ function assertMimeAndSize(kind: AssetKind, file: File): void {
       );
     }
   } else if (AUDIO_ASSET_KINDS.includes(kind)) {
-    if (!AUDIO_MIMES.includes(file.type)) {
+    if (!isAcceptedAudio(file)) {
       throw new Error(
-        `Unsupported audio type for ${kind}: "${file.type || file.name}". Expected Opus or AAC.`,
+        `Unsupported audio type for ${kind}: "${file.type || file.name}". Expected Opus, AAC, or MP3 (.webm, .ogg, .opus, .m4a, .aac, .mp3).`,
       );
     }
   } else {
@@ -257,6 +272,12 @@ function assertMimeAndSize(kind: AssetKind, file: File): void {
       `File is too large (${formatMb(file.size)}). Maximum for ${kind} is ${formatMb(max)}.`,
     );
   }
+}
+
+function isAcceptedAudio(file: File): boolean {
+  if (AUDIO_MIMES.includes(file.type)) return true;
+  const lowered = file.name.toLowerCase();
+  return AUDIO_EXTENSIONS.some((ext) => lowered.endsWith(ext));
 }
 
 async function assertImageDimensions(

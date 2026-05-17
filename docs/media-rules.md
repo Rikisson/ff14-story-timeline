@@ -16,7 +16,7 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP on disk. Cover and background uploads accept JPEG, PNG, WebP, or AVIF and are downscaled + transcoded to WebP in-browser before the PUT. Sprite uploads accept WebP only — authored transparency is preserved bit-exact.
 - Cover uploads emit two objects under the same asset directory: the full-res image and a 640w `.thumb.webp` variant for card slots. Both URLs live on the asset doc; consumers rendering at card scale prefer the thumb and fall back to the full URL for pre-thumb assets.
-- Audio binaries are Opus or AAC, ≤ 128 kbps for ambient tracks.
+- Audio binaries pass through as authored — no in-browser transcode. Accepted containers cover WebM, Ogg, MP4/M4A, MP3, and raw Opus/AAC streams (`.webm`, `.weba`, `.ogg`, `.oga`, `.opus`, `.m4a`, `.aac`, `.mp3`). The upload picker accepts files by extension as well as MIME, because Windows tags `.webm` as `video/webm` by OS mapping and would otherwise hide audio-only WebM in the file dialog. Codec guidance for ambient tracks: Opus or AAC at ≤ 128 kbps. AAC (`.m4a`) and Ogg-Opus play across every browser including Safari; WebM-Opus is fine on Chromium/Firefox but Safari support is intermittent — surface this trade-off in the audio picker's upload hint so authors targeting broad reach default to the safer containers.
 
 ## Schema
 

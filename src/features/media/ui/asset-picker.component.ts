@@ -234,9 +234,12 @@ export class AssetPickerComponent {
 
   // Cover and background go through an in-browser transcode → accept common
   // photo formats. Sprite stays a WebP passthrough so authored transparency
-  // is preserved bit-exact.
+  // is preserved bit-exact. Audio extensions are listed explicitly because
+  // Windows maps `.webm` to `video/webm` by OS extension table — an
+  // `accept="audio/*"` alone would hide WebM-Opus files from the file
+  // picker dialog.
   protected readonly acceptAttr = computed(() => {
-    if (this.isAudio()) return 'audio/*';
+    if (this.isAudio()) return 'audio/*,.webm,.weba,.opus,.ogg,.oga,.m4a,.aac,.mp3';
     return this.kind() === 'sprite'
       ? 'image/webp'
       : 'image/jpeg,image/png,image/webp,image/avif';
@@ -245,7 +248,7 @@ export class AssetPickerComponent {
   // Key is relative to the `media` transloco prefix used in the template.
   protected readonly uploadHintKey = computed(() => {
     const k = this.kind();
-    if (AUDIO_ASSET_KINDS.includes(k)) return null;
+    if (AUDIO_ASSET_KINDS.includes(k)) return 'hint.upload.audio' as const;
     return `hint.upload.${k}` as const;
   });
 
