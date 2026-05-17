@@ -44,14 +44,6 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 
 - **Entity surfaces resolve assets lazily by ID.** List cards, timeline rows, related-ref pickers, plotline selectors, cover slot pickers — anywhere an asset thumb renders alongside an entity it belongs to — go through `AssetThumbResolver` (see `backend-rules.md` *Asset references*). The resolver collects visible `coverAssetId`s, fetches matching `_assets` docs in chunks of up to 30 (Firestore `in` cap), caches by `(universeId, assetId)` for the session, and renders `thumbUrl ?? url`.
 - **Lazy thumbs reserve their box.** The host element fixes the image dimensions (width × aspect-ratio CSS, or an explicit `width`/`height` on the placeholder) before the URL resolves, so the row layout is stable and the page doesn't reflow when the thumb fades in. A skeleton placeholder fills the box during the fetch; once `AssetThumbResolver` returns, render `thumbUrl ?? url` and let the image fade in over the skeleton. No layout shift between skeleton and loaded states.
-- **Asset-library surfaces preload by kind/tag.** The asset library and asset-library-style pickers (the kind-or-tag filtered list where the asset itself is the subject) query `_assets` directly — preloading the relevant slice is the feature, not a violation. The player today also holds a universe-wide `_assets` preload as a temporary bridge (see `backend-rules.md` *Player bridge*).
+- **Asset-library surfaces preload by kind/tag.** The asset library and asset-library-style pickers (the kind-or-tag filtered list where the asset itself is the subject) query `_assets` directly — preloading the relevant slice is the feature, not a violation.
 - On scene mount, preload backgrounds and audio of every scene reachable through `Scene.next[]`, scheduled inside `requestIdleCallback`.
 - Skip preloads when `navigator.connection.saveData === true` or `effectiveType` is `slow-2g` or `2g`.
-
----
-
-# Implementation
-
-## Lazy asset resolver
-
-`AssetThumbResolver` does not exist yet. It owns by-ID asset hydration for every list, timeline, picker, and detail surface that needs URLs but not the rest of the asset doc. Ship as a `providedIn: 'root'` service exposing a signal-returning `resolveManyThumbs(ids)`; back it with a session-scoped cache keyed by `(universeId, assetId)`. New code must not reach into `MediaAssetsService.assets()` — that signal is a player-only bridge (see `backend-rules.md` *Player bridge*).

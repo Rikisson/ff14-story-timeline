@@ -40,7 +40,7 @@ export const SEED_CHARACTERS: Character[] = [
     slug: 'ingrid',
     name: 'Ingrid',
     description:
-      'Bound to House Brann as a girl and nearly destroyed when Sakuya cut the household down. Carries the marks of her former master вЂ” sun-shy, amber-eyed, careful with shadows.',
+      'Bound to House Brann as a girl and nearly destroyed when Sakuya cut the household down. Carries the marks of her former master — sun-shy, amber-eyed, careful with shadows.',
     relatedRefs: [
       { kind: 'codexEntry', id: 'codex-job-rogue' },
       { kind: 'codexEntry', id: 'codex-race-hyur' },
@@ -114,7 +114,7 @@ export const SEED_PLACES: Place[] = [
     id: 'place-thanalan',
     slug: 'thanalan',
     name: 'Thanalan',
-    description: 'The southern desert region of Eorzea вЂ” amber dunes, sandstone steppes, and the coin-bright city of UlвЂ™dah at its heart.',
+    description: 'The southern desert region of Eorzea — amber dunes, sandstone steppes, and the coin-bright city of Ul’dah at its heart.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -130,7 +130,7 @@ export const SEED_PLACES: Place[] = [
     id: 'place-far-east',
     slug: 'far-east',
     name: 'Far East',
-    description: 'The eastern continent of Othard вЂ” Yanxia, the Ruby Sea, and the contested provinces under Garlean shadow.',
+    description: 'The eastern continent of Othard — Yanxia, the Ruby Sea, and the contested provinces under Garlean shadow.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -138,7 +138,7 @@ export const SEED_PLACES: Place[] = [
     id: 'place-yanxia',
     slug: 'yanxia',
     name: 'Yanxia',
-    description: 'Doman homeland вЂ” paddy terraces, mist-bound mountains, and a resistance that never quite died.',
+    description: 'Doman homeland — paddy terraces, mist-bound mountains, and a resistance that never quite died.',
     relatedRefs: [{ kind: 'place', id: 'place-far-east' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
@@ -214,7 +214,7 @@ export const SEED_PLOTLINES: Plotline[] = [
     slug: 'ingrid-flight',
     title: "Ingrid's Flight",
     description:
-      'Ingrid escapes the destruction of her former master and rebuilds a quiet life in UlвЂ™dah, all while searching for what remains of those nights.',
+      'Ingrid escapes the destruction of her former master and rebuilds a quiet life in Ul’dah, all while searching for what remains of those nights.',
     color: '#6366f1',
     status: 'active',
     authorUid: SEED_AUTHOR_UID,
@@ -234,7 +234,7 @@ export const SEED_PLOTLINES: Plotline[] = [
     id: 'plotline-calamity-aftermath',
     slug: 'calamity-aftermath',
     title: 'Calamity Aftermath',
-    description: 'The years immediately following BahamutвЂ™s release and the realmвЂ™s slow recovery.',
+    description: 'The years immediately following Bahamut’s release and the realm’s slow recovery.',
     color: '#f59e0b',
     status: 'resolved',
     authorUid: SEED_AUTHOR_UID,
@@ -281,7 +281,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'syndicate',
     title: 'Syndicate',
     categoryKey: 'faction',
-    description: 'The shadow council that quietly steers UlвЂ™dahn commerce.',
+    description: 'The shadow council that quietly steers Ul’dahn commerce.',
     relatedRefs: [
       { kind: 'place', id: 'place-uldah-pearl-lane' },
       { kind: 'character', id: 'char-marcus' },
@@ -317,7 +317,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'immortal-flames',
     title: 'Immortal Flames',
     categoryKey: 'faction',
-    description: 'UlвЂ™dahвЂ™s standing army and city guard.',
+    description: 'Ul’dah’s standing army and city guard.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -326,7 +326,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'temple-knights',
     title: 'Temple Knights',
     categoryKey: 'faction',
-    description: 'IshgardвЂ™s cathedral guard вЂ” sworn to the Holy See, drilled in winter cold.',
+    description: 'Ishgard’s cathedral guard — sworn to the Holy See, drilled in winter cold.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -335,7 +335,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'twin-adder',
     title: 'Order of the Twin Adder',
     categoryKey: 'faction',
-    description: 'GridaniaвЂ™s standing force, sworn to the Elder Seedseer and the elementals of the Shroud.',
+    description: 'Gridania’s standing force, sworn to the Elder Seedseer and the elementals of the Shroud.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -344,7 +344,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'wood-wailers',
     title: 'Wood Wailers',
     categoryKey: 'faction',
-    description: 'Border keepers of the Black Shroud вЂ” half guard, half ranger, all eye and ear for the wood.',
+    description: 'Border keepers of the Black Shroud — half guard, half ranger, all eye and ear for the wood.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -353,7 +353,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'hyur',
     title: 'Hyur',
     categoryKey: 'race',
-    description: 'The most populous race of Eorzea вЂ” adaptable, ambitious, scattered across every climate and station.',
+    description: 'The most populous race of Eorzea — adaptable, ambitious, scattered across every climate and station.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -362,7 +362,7 @@ export const SEED_CODEX_ENTRIES: CodexEntry[] = [
     slug: 'au-ra',
     title: 'Au Ra',
     categoryKey: 'race',
-    description: 'A scaled people of the Far East вЂ” Raen and Xaela by lineage, marked by horns and a long memory.',
+    description: 'A scaled people of the Far East — Raen and Xaela by lineage, marked by horns and a long memory.',
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -480,7 +480,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
     slug: 'brann-house-attack',
     name: "Attack on Brann's house",
     description:
-      "The night ${ch:char-sakuya}[Sakuya]'s blade ended ${ch:char-brann}[Brann]'s reign вЂ” and nearly ${ch:char-ingrid}[Ingrid]'s existence. Survivors fled toward the ${pl:place-gridania-northern-shroud}[Black Shroud]; Ingrid's path to ${pl:place-uldah-pearl-lane}[Ul'dah] began here. Five years on, the attack is still felt вЂ” see ${ev:event-seventh-umbral-calamity}[the Calamity] for the era it closed.",
+      "The night ${ch:char-sakuya}[Sakuya]'s blade ended ${ch:char-brann}[Brann]'s reign — and nearly ${ch:char-ingrid}[Ingrid]'s existence. Survivors fled toward the ${pl:place-gridania-northern-shroud}[Black Shroud]; Ingrid's path to ${pl:place-uldah-pearl-lane}[Ul'dah] began here. Five years on, the attack is still felt — see ${ev:event-seventh-umbral-calamity}[the Calamity] for the era it closed.",
     inGameDate: { era: FF14_ERA_SEVENTH_UMBRAL_ID, year: 5 },
     relatedRefs: [
       { kind: 'character', id: 'char-ingrid' },
@@ -497,7 +497,7 @@ export const SEED_EVENTS: TimelineEvent[] = [
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
-  // Filler events for pagination testing вЂ” keep the meaningful 3 above by
+  // Filler events for pagination testing — keep the meaningful 3 above by
   // using strictly older createdAt values so orderBy('createdAt','desc') ranks
   // them last.
   ...Array.from(
@@ -519,7 +519,7 @@ export const SEED_STORY: SeedStory = {
   slug: 'shadows-and-provisions',
   title: 'Shadows and Provisions',
   description:
-    "A short, character-driven scene set five years after ${ev:event-seventh-umbral-calamity}[the Calamity]. ${ch:char-ingrid}[Ingrid] surfaces just long enough to ask the question that has haunted her since ${ev:event-brann-house-attack}[the night the blade fell] вЂ” whether ${ch:char-zahir}[Zahir], the only person who ever taught her anything worth keeping, survived the same fire she did. Part of the ${pt:plotline-ingrid-flight}[Ingrid's Flight] arc.",
+    "A short, character-driven scene set five years after ${ev:event-seventh-umbral-calamity}[the Calamity]. ${ch:char-ingrid}[Ingrid] surfaces just long enough to ask the question that has haunted her since ${ev:event-brann-house-attack}[the night the blade fell] — whether ${ch:char-zahir}[Zahir], the only person who ever taught her anything worth keeping, survived the same fire she did. Part of the ${pt:plotline-ingrid-flight}[Ingrid's Flight] arc.",
   inGameDate: {
     era: FF14_ERA_SEVENTH_UMBRAL_ID,
     year: 8,
@@ -545,13 +545,13 @@ export const SEED_STORY: SeedStory = {
   publishedAt: SEED_CREATED_AT,
   scenes: {
     s01_opening: {
-      text: "The amber glow of Ul'dah's sun cast long shadows through the ${pl:place-uldah-pearl-lane}[Pearl Lane], and ${ch:char-ingrid}[Ingrid] found herself unconsciously seeking them as she moved between the market stalls. The late afternoon light made her skin prickle with discomfort, though she endured it better than most of her kind вЂ” a small mercy from her former master's tainted blood.",
+      text: "The amber glow of Ul'dah's sun cast long shadows through the ${pl:place-uldah-pearl-lane}[Pearl Lane], and ${ch:char-ingrid}[Ingrid] found herself unconsciously seeking them as she moved between the market stalls. The late afternoon light made her skin prickle with discomfort, though she endured it better than most of her kind — a small mercy from her former master's tainted blood.",
       position: { x: 0, y: 0 },
       characters: [],
       next: [{ sceneId: 's02_intro' }],
     },
     s02_intro: {
-      text: "Her dark hair caught the light as she paused before a spice merchant's stall, amber eyes вЂ” carefully maintained in their human hue вЂ” scanning the exotic imports. Three years had passed since ${ch:char-sakuya}[Sakuya]'s blade had ended ${ch:char-brann}[Brann]'s reign and nearly ended ${ch:char-ingrid}[Ingrid]'s existence as well. Only her mistress's unexpected mercy had spared her.",
+      text: "Her dark hair caught the light as she paused before a spice merchant's stall, amber eyes — carefully maintained in their human hue — scanning the exotic imports. Three years had passed since ${ch:char-sakuya}[Sakuya]'s blade had ended ${ch:char-brann}[Brann]'s reign and nearly ended ${ch:char-ingrid}[Ingrid]'s existence as well. Only her mistress's unexpected mercy had spared her.",
       position: { x: 320, y: 0 },
       characters: [],
       next: [{ sceneId: 's03_voice' }],
@@ -584,14 +584,14 @@ export const SEED_STORY: SeedStory = {
       next: [{ sceneId: 's07_history' }],
     },
     s07_history: {
-      text: "Marcus had been more than a contact during those desperate weeks after she had fled Ishgard вЂ” he had been her salvation. When she arrived in Ul'dah with nothing but the clothes on her back, Marcus had given her work sorting inventory and moving goods. Simple labor, but it had kept her fed and housed.",
+      text: "Marcus had been more than a contact during those desperate weeks after she had fled Ishgard — he had been her salvation. When she arrived in Ul'dah with nothing but the clothes on her back, Marcus had given her work sorting inventory and moving goods. Simple labor, but it had kept her fed and housed.",
       position: { x: 1920, y: 0 },
       characters: [],
       next: [{ sceneId: 's08_office_offer' }],
     },
     s08_office_offer: {
       speaker: 'Marcus',
-      text: 'Come вЂ” my office is just above. We can speak privately there.',
+      text: 'Come — my office is just above. We can speak privately there.',
       position: { x: 2240, y: 0 },
       characters: [],
       next: [
@@ -621,7 +621,7 @@ export const SEED_STORY: SeedStory = {
     },
     s11_provisions: {
       speaker: 'Ingrid',
-      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey вЂ” the finest quality, nothing that will spoil. About half a dozen people. And I need something else вЂ” ${cx:codex-item-doman-tea}[Doman tea], the genuine article from ${pl:place-doma}[the Far East]. The best quality you can acquire.",
+      text: "That chapter of my life is closed. Which brings me to why I'm here. I need provisions for a month's journey — the finest quality, nothing that will spoil. About half a dozen people. And I need something else — ${cx:codex-item-doman-tea}[Doman tea], the genuine article from ${pl:place-doma}[the Far East]. The best quality you can acquire.",
       position: { x: 3200, y: 0 },
       characters: [],
       next: [{ sceneId: 's12_warn_routes' }],
@@ -641,14 +641,14 @@ export const SEED_STORY: SeedStory = {
     },
     s14_ask: {
       speaker: 'Ingrid',
-      text: "Information, ${ch:char-marcus}[Marcus]. About what happened that night three years ago. There was another in ${ch:char-brann}[Brann]'s service вЂ” ${ch:char-zahir}[Zahir]. An older man, been with the house for a long time. I need to know if he... if anyone survived.",
+      text: "Information, ${ch:char-marcus}[Marcus]. About what happened that night three years ago. There was another in ${ch:char-brann}[Brann]'s service — ${ch:char-zahir}[Zahir]. An older man, been with the house for a long time. I need to know if he... if anyone survived.",
       position: { x: 4160, y: 0 },
       characters: [],
       next: [{ sceneId: 's15_marcus_recall' }],
     },
     s15_marcus_recall: {
       speaker: 'Marcus',
-      text: '${ch:char-zahir}[Zahir]. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network вЂ” ${ch:char-brann}[Brann] had fingers in several ${cx:codex-faction-syndicate}[Syndicate] dealings.',
+      text: '${ch:char-zahir}[Zahir]. Dark hair, carried himself like minor nobility? Spoke with the accent of someone educated in the old ways? I heard of him through the network — ${ch:char-brann}[Brann] had fingers in several ${cx:codex-faction-syndicate}[Syndicate] dealings.',
       position: { x: 4480, y: 0 },
       characters: [],
       next: [{ sceneId: 's16_you_knew' }],
@@ -662,7 +662,7 @@ export const SEED_STORY: SeedStory = {
     },
     s17_marcus_whispers: {
       speaker: 'Marcus',
-      text: "Of him вЂ” never met the man. The attack that night... it was thorough. Most of the household didn't survive. But there were whispers afterward вЂ” someone seen fleeing into the night, heading toward the ${pl:place-gridania-northern-shroud}[Black Shroud]. The descriptions could match your friend.",
+      text: "Of him — never met the man. The attack that night... it was thorough. Most of the household didn't survive. But there were whispers afterward — someone seen fleeing into the night, heading toward the ${pl:place-gridania-northern-shroud}[Black Shroud]. The descriptions could match your friend.",
       position: { x: 5120, y: 0 },
       characters: [],
       next: [{ sceneId: 's18_could_match' }],
@@ -689,14 +689,14 @@ export const SEED_STORY: SeedStory = {
       next: [{ sceneId: 's20b_hope' }],
     },
     s20b_hope: {
-      text: 'Ingrid closed her eyes briefly, allowing herself a moment of possibility. If he had survived вЂ” if he had escaped that night of blood and fire вЂ” then perhaps something good had come from the ashes of that terrible house.',
+      text: 'Ingrid closed her eyes briefly, allowing herself a moment of possibility. If he had survived — if he had escaped that night of blood and fire — then perhaps something good had come from the ashes of that terrible house.',
       position: { x: 6400, y: 0 },
       characters: [],
       next: [{ sceneId: 's21_inquiries' }],
     },
     s21_inquiries: {
       speaker: 'Marcus',
-      text: "I can make inquiries. Carefully, of course. My northern contacts owe me favors. Though I should warn you вЂ” if he survived and he's anything like the man I heard described, he won't have taken kindly to what happened. He might not welcome contact from anyone associated with that night.",
+      text: "I can make inquiries. Carefully, of course. My northern contacts owe me favors. Though I should warn you — if he survived and he's anything like the man I heard described, he won't have taken kindly to what happened. He might not welcome contact from anyone associated with that night.",
       position: { x: 6720, y: 0 },
       characters: [],
       next: [{ sceneId: 's22_safe' }],
@@ -710,7 +710,7 @@ export const SEED_STORY: SeedStory = {
     },
     s23_part_of_service: {
       speaker: 'Marcus',
-      text: 'For an old friend who once helped me sort through a warehouse of mislabeled goods until dawn? Consider it part of the service. The provisions and tea I can have ready by tomorrow evening. The information about your friend will take longer вЂ” maybe a month or two to hear back from my northern sources.',
+      text: 'For an old friend who once helped me sort through a warehouse of mislabeled goods until dawn? Consider it part of the service. The provisions and tea I can have ready by tomorrow evening. The information about your friend will take longer — maybe a month or two to hear back from my northern sources.',
       position: { x: 7360, y: 0 },
       characters: [],
       next: [{ sceneId: 's24_discretion' }],
@@ -737,13 +737,13 @@ export const SEED_STORY: SeedStory = {
     },
     s27_warning: {
       speaker: 'Marcus',
-      text: 'One more thing. About that journey you\'re preparing for вЂ” especially if it\'s heading toward ${pl:place-doma}[Doman territories]. The roads aren\'t just dangerous because of bandits or wild beasts. There have been reports of specialized hunters operating along the eastern routes. The kind who ask uncomfortable questions and carry very specific tools. Whatever business takes you that direction, be extremely careful about who you trust and where you stop for the night.',
+      text: 'One more thing. About that journey you\'re preparing for — especially if it\'s heading toward ${pl:place-doma}[Doman territories]. The roads aren\'t just dangerous because of bandits or wild beasts. There have been reports of specialized hunters operating along the eastern routes. The kind who ask uncomfortable questions and carry very specific tools. Whatever business takes you that direction, be extremely careful about who you trust and where you stop for the night.',
       position: { x: 8640, y: 0 },
       characters: [],
       next: [{ sceneId: 's28_closing' }],
     },
     s28_closing: {
-      text: "Ingrid pulled her hood up and slipped through Ul'dah's winding alleys, keeping to the shadowed paths she had learned during her early days in the city. Tonight, she would inform her mistress that the preparations were underway вЂ” though she would keep the inquiry about Zahir to herself. Some hopes were too fragile to share. But as she walked through the growing shadows, Ingrid allowed herself to imagine вЂ” just for a moment вЂ” that somewhere in the northern reaches of Eorzea, an old friend might be watching the sunset and remembering better days.",
+      text: "Ingrid pulled her hood up and slipped through Ul'dah's winding alleys, keeping to the shadowed paths she had learned during her early days in the city. Tonight, she would inform her mistress that the preparations were underway — though she would keep the inquiry about Zahir to herself. Some hopes were too fragile to share. But as she walked through the growing shadows, Ingrid allowed herself to imagine — just for a moment — that somewhere in the northern reaches of Eorzea, an old friend might be watching the sunset and remembering better days.",
       position: { x: 8960, y: 0 },
       characters: [],
       next: [],
@@ -751,7 +751,7 @@ export const SEED_STORY: SeedStory = {
   },
 };
 
-// Filler stories for pagination testing вЂ” minimal valid Story shape with
+// Filler stories for pagination testing — minimal valid Story shape with
 // strictly older publishedAt than SEED_STORY so the meaningful one ranks first.
 export const SEED_STORIES: SeedStory[] = [
   SEED_STORY,

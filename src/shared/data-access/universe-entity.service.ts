@@ -13,6 +13,7 @@ import { UniverseStore } from '@features/universes';
 import { EntityKind } from '@shared/models';
 import { retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../app/firebase/firebase.service';
+import { CacheInvalidationBus } from './cache-invalidation.bus';
 import {
   DirectoryRowInputs,
   TimelineRowInputs,
@@ -59,6 +60,7 @@ export abstract class UniverseEntityService<
 
   protected readonly firebase = inject(FirebaseService);
   protected readonly universes = inject(UniverseStore);
+  private readonly bus = inject(CacheInvalidationBus);
 
   async create(draft: TDraft, authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
@@ -77,6 +79,7 @@ export abstract class UniverseEntityService<
       slug: draft.slug,
       buildInputs: (merged) => this.buildInputsFor(merged),
     });
+    this.bus.publishEntityWrite({ universeId, kind: this.kind, id });
     return id;
   }
 
@@ -91,6 +94,7 @@ export abstract class UniverseEntityService<
       slug: patch.slug,
       buildInputs: (merged) => this.buildInputsFor(merged),
     });
+    this.bus.publishEntityWrite({ universeId, kind: this.kind, id });
   }
 
   async remove(id: string): Promise<void> {
@@ -101,6 +105,7 @@ export abstract class UniverseEntityService<
       id,
       canonicalCollection: this.collectionName,
     });
+    this.bus.publishEntityWrite({ universeId, kind: this.kind, id });
   }
 
   /**

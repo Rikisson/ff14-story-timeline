@@ -89,10 +89,19 @@ export class MarkdownTextComponent {
 
   private optionsFromResolver(): { kind: EntityKind; id: string; label: string }[] {
     const resolved = this.resolvedRefs();
-    return this.textRefs().map((r) => {
+    // Refs that don't resolve to a directory row are deliberately
+    // omitted — `renderMarkdown` falls back to `[displayText]` plain
+    // text when no option matches, which matches *Inline-ref tokens —
+    // Entity delete* ("Refs become unresolvable and render plain") and
+    // avoids fabricating an anchor + tooltip with the entity ID stuffed
+    // into the label.
+    const out: { kind: EntityKind; id: string; label: string }[] = [];
+    for (const r of this.textRefs()) {
       const row = resolved.get(`${r.kind}:${r.id}`);
-      return { kind: r.kind, id: r.id, label: row?.label ?? r.id };
-    });
+      if (!row) continue;
+      out.push({ kind: r.kind, id: r.id, label: row.label });
+    }
+    return out;
   }
 
   protected onPointer(event: Event): void {

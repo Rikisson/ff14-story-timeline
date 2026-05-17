@@ -249,6 +249,16 @@ export class ProjectionRebuildService {
     const expectedLanesPerEntity = new Map<string, Set<string>>();
     let batch = writeBatch(this.firebase.firestore);
     let opCount = 0;
+    // Cache-bus events MUST fire after the corresponding batch commits,
+    // otherwise active stores refetch the stale row and never get
+    // re-notified once the new data lands. `applyOps` returns the set of
+    // IDs whose ops landed in a now-committed batch — those get
+    // published immediately. The rest stay queued until the final commit
+    // below.
+    let pendingForBatch: string[] = [];
+    const publish = (ids: readonly string[]): void => {
+      for (const id of ids) this.bus.publishEntityWrite({ universeId, kind, id });
+    };
 
     for (const d of docs) {
       const raw = d.data();
@@ -272,11 +282,20 @@ export class ProjectionRebuildService {
 
       const rows = await buildProjectionRows(rowsInputs, entityTimestamp(raw));
       const ops = this.opsForRows(universeId, kind, d.id, rows);
-      ({ batch, opCount } = await this.applyOps(batch, opCount, ops));
+      const result = await this.applyOps(batch, opCount, ops);
+      if (result.committed) {
+        // The mid-loop commit drained `pendingForBatch`'s entries — fire
+        // their invalidation events now that readers will see fresh rows.
+        publish(pendingForBatch);
+        pendingForBatch = [];
+      }
+      batch = result.batch;
+      opCount = result.opCount;
+      pendingForBatch.push(d.id);
       this.bumpProcessed();
-      this.bus.publishEntityWrite({ universeId, kind, id: d.id });
     }
     if (opCount > 0) await batch.commit();
+    publish(pendingForBatch);
 
     return { canonicalIds, expectedLanesPerEntity };
   }
@@ -402,17 +421,24 @@ export class ProjectionRebuildService {
     batch: ReturnType<typeof writeBatch>,
     opCount: number,
     ops: ReadonlyArray<{ ref: ReturnType<typeof doc>; data: Record<string, unknown> }>,
-  ): Promise<{ batch: ReturnType<typeof writeBatch>; opCount: number }> {
+  ): Promise<{
+    batch: ReturnType<typeof writeBatch>;
+    opCount: number;
+    /** True when the incoming `batch` overflowed and we flushed it. */
+    committed: boolean;
+  }> {
+    let committed = false;
     if (opCount + ops.length > BATCH_OP_LIMIT) {
       await batch.commit();
       batch = writeBatch(this.firebase.firestore);
       opCount = 0;
+      committed = true;
     }
     for (const { ref, data } of ops) {
       batch.set(ref, data);
       opCount++;
     }
-    return { batch, opCount };
+    return { batch, opCount, committed };
   }
 
   private async run(fn: () => Promise<void>): Promise<void> {

@@ -10,6 +10,7 @@ import { UniverseStore } from '@features/universes';
 import {
   applyEntityDelete,
   applyEntityWrite,
+  CacheInvalidationBus,
   DirectoryRowInputs,
   TimelineRowInputs,
 } from '@shared/data-access';
@@ -53,6 +54,7 @@ export class StoriesService {
   private readonly universes = inject(UniverseStore);
   private readonly transloco = inject(TranslocoService);
   private readonly calendar = inject(CalendarService);
+  private readonly bus = inject(CacheInvalidationBus);
 
   async getStory(id: string): Promise<Story | undefined> {
     const universeId = this.requireUniverseId();
@@ -88,7 +90,7 @@ export class StoriesService {
   ): Promise<number> {
     const universeId = this.requireUniverseId();
     const contentRef = this.contentDocRef(universeId, story.id);
-    return runTransaction(this.firebase.firestore, async (tx) => {
+    const nextVersion = await runTransaction(this.firebase.firestore, async (tx) => {
       // Story-specific OCC check. `applyEntityWrite` will read the same
       // canonical doc later in this transaction; Firestore caches that
       // read, so there's no extra round-trip.
@@ -99,11 +101,11 @@ export class StoriesService {
           throw new StaleStoryError(current, expectedVersion);
         }
       }
-      const nextVersion = expectedVersion + 1;
+      const next = expectedVersion + 1;
       const { id: _id, ...meta } = story;
       const patch: Record<string, unknown> = {
         ...meta,
-        version: nextVersion,
+        version: next,
         updatedAt: Date.now(),
       };
 
@@ -121,8 +123,10 @@ export class StoriesService {
       });
 
       tx.set(contentRef, content satisfies StoredStoryContent);
-      return nextVersion;
+      return next;
     });
+    this.bus.publishEntityWrite({ universeId, kind: 'story', id: story.id });
+    return nextVersion;
   }
 
   /**
@@ -168,6 +172,7 @@ export class StoriesService {
       });
       tx.set(this.contentDocRef(universeId, id), contentData);
     });
+    this.bus.publishEntityWrite({ universeId, kind: 'story', id });
     return id;
   }
 
@@ -189,6 +194,7 @@ export class StoriesService {
       });
       tx.delete(contentRef);
     });
+    this.bus.publishEntityWrite({ universeId, kind: 'story', id });
   }
 
   private buildDirectoryInputs(story: Story): DirectoryRowInputs {

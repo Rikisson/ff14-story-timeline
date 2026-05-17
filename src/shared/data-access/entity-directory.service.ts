@@ -100,18 +100,25 @@ export class EntityDirectoryService {
    * One-shot batched fetch of N refs without going through
    * `EntityResolverCache`. Use this for non-render paths (e.g.
    * pre-publish validation) where caching would only pollute the
-   * resolver's session map.
+   * resolver's session map. Guests must omit draft rows from the result
+   * for the same rule-reject reason `EntityResolverCache.fetchChunk`
+   * carries — keep the predicate explicit even though pre-publish
+   * callers are typically members.
    */
-  async byIds(opts: { universeId: string; refs: readonly EntityRef[] }): Promise<ResolvedDirectoryRow[]> {
+  async byIds(opts: {
+    universeId: string;
+    refs: readonly EntityRef[];
+    includeDrafts?: boolean;
+  }): Promise<ResolvedDirectoryRow[]> {
     const rowKeys = opts.refs.map((r) => `${r.kind}_${r.id}`);
     if (rowKeys.length === 0) return [];
     const out: ResolvedDirectoryRow[] = [];
     for (let i = 0; i < rowKeys.length; i += FIRESTORE_IN_CHUNK) {
       const chunk = rowKeys.slice(i, i + FIRESTORE_IN_CHUNK);
-      const q = query(
-        this.directoryRef(opts.universeId),
-        where(documentId(), 'in', chunk),
-      );
+      const constraints = opts.includeDrafts
+        ? [where(documentId(), 'in', chunk)]
+        : [where(documentId(), 'in', chunk), where('visiblePublic', '==', true)];
+      const q = query(this.directoryRef(opts.universeId), ...constraints);
       const snap = await getDocs(q);
       for (const d of snap.docs) out.push(projectRow(d.data() as RawDirectoryRow));
     }

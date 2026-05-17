@@ -152,9 +152,17 @@ export class EntityResolverCache {
     rowKeys: string[],
   ): Promise<Map<string, ResolvedDirectoryRow>> {
     const out = new Map<string, ResolvedDirectoryRow>();
+    // Firestore rules gate each returned doc against `visiblePublic ==
+    // true || isMember()`; an `in` query that pulls a draft row will be
+    // rejected wholesale for guests. Members short-circuit through the
+    // `isMember` rule and can omit the predicate to see draft entities.
+    const isMember = this.universes.isMemberOfActive();
+    const constraints = isMember
+      ? [where(documentId(), 'in', rowKeys)]
+      : [where(documentId(), 'in', rowKeys), where('visiblePublic', '==', true)];
     const q = query(
       collection(this.firebase.firestore, 'universes', universeId, DIRECTORY_COLLECTION),
-      where(documentId(), 'in', rowKeys),
+      ...constraints,
     );
     const snap = await getDocs(q);
     for (const d of snap.docs) {

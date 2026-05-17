@@ -55,85 +55,96 @@ function isUsableResume(content: StoryContent, saved: SavedProgress): boolean {
 export function withPlayerMethods() {
   return signalStoreFeature(
     { state: type<PlayerState>() },
-    withMethods((store, stories = inject(StoriesService)) => ({
-      async loadStory(id: string) {
-        patchState(store, { loading: true, error: null, pendingResume: null });
-        try {
-          const result = await stories.getStoryWithContent(id);
-          if (!result) {
-            patchState(store, { loading: false, error: `Story not found: ${id}` });
-            return;
+    withMethods((store, stories = inject(StoriesService)) => {
+      // Stale-response guard. Fast story switches (route changes, the
+      // /play/:id input toggling, universe selection flipping mid-load)
+      // can land an older `getStoryWithContent` after a newer one. Only
+      // the latest invocation's seq writes back into store state; older
+      // resolutions short-circuit.
+      let loadSeq = 0;
+      return {
+        async loadStory(id: string) {
+          const seq = ++loadSeq;
+          patchState(store, { loading: true, error: null, pendingResume: null });
+          try {
+            const result = await stories.getStoryWithContent(id);
+            if (seq !== loadSeq) return;
+            if (!result) {
+              patchState(store, { loading: false, error: `Story not found: ${id}` });
+              return;
+            }
+            const { story, content } = result;
+            const saved = loadSaved(id);
+            const pending = saved && isUsableResume(content, saved) ? saved : null;
+            if (saved && !pending) clearProgress(id);
+            patchState(store, {
+              story,
+              content,
+              currentSceneId: content.startSceneId,
+              history: [content.startSceneId],
+              loading: false,
+              pendingResume: pending,
+            });
+          } catch (err) {
+            if (seq !== loadSeq) return;
+            const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+            patchState(store, { loading: false, error: message });
           }
-          const { story, content } = result;
-          const saved = loadSaved(id);
-          const pending = saved && isUsableResume(content, saved) ? saved : null;
-          if (saved && !pending) clearProgress(id);
-          patchState(store, {
-            story,
-            content,
-            currentSceneId: content.startSceneId,
-            history: [content.startSceneId],
-            loading: false,
-            pendingResume: pending,
+        },
+
+        choose(sceneId: string) {
+          patchState(store, (state) => {
+            if (!state.story || !state.content) return state;
+            const history = [...state.history, sceneId];
+            const isEnd = state.content.scenes[sceneId]?.next.length === 0;
+            if (isEnd) clearProgress(state.story.id);
+            else saveProgress(state.story.id, { sceneId, history });
+            return { currentSceneId: sceneId, history };
           });
-        } catch (err) {
-          const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-          patchState(store, { loading: false, error: message });
-        }
-      },
+        },
 
-      choose(sceneId: string) {
-        patchState(store, (state) => {
-          if (!state.story || !state.content) return state;
-          const history = [...state.history, sceneId];
-          const isEnd = state.content.scenes[sceneId]?.next.length === 0;
-          if (isEnd) clearProgress(state.story.id);
-          else saveProgress(state.story.id, { sceneId, history });
-          return { currentSceneId: sceneId, history };
-        });
-      },
+        back() {
+          patchState(store, (state) => {
+            if (state.history.length <= 1 || !state.story || !state.content) return state;
+            const history = state.history.slice(0, -1);
+            const sceneId = history[history.length - 1];
+            if (sceneId === state.content.startSceneId) clearProgress(state.story.id);
+            else saveProgress(state.story.id, { sceneId, history });
+            return { currentSceneId: sceneId, history };
+          });
+        },
 
-      back() {
-        patchState(store, (state) => {
-          if (state.history.length <= 1 || !state.story || !state.content) return state;
-          const history = state.history.slice(0, -1);
-          const sceneId = history[history.length - 1];
-          if (sceneId === state.content.startSceneId) clearProgress(state.story.id);
-          else saveProgress(state.story.id, { sceneId, history });
-          return { currentSceneId: sceneId, history };
-        });
-      },
+        restart() {
+          patchState(store, (state) => {
+            if (!state.story || !state.content) return state;
+            clearProgress(state.story.id);
+            return {
+              currentSceneId: state.content.startSceneId,
+              history: [state.content.startSceneId],
+              pendingResume: null,
+            };
+          });
+        },
 
-      restart() {
-        patchState(store, (state) => {
-          if (!state.story || !state.content) return state;
-          clearProgress(state.story.id);
-          return {
-            currentSceneId: state.content.startSceneId,
-            history: [state.content.startSceneId],
-            pendingResume: null,
-          };
-        });
-      },
+        resume() {
+          patchState(store, (state) => {
+            if (!state.pendingResume) return state;
+            return {
+              currentSceneId: state.pendingResume.sceneId,
+              history: state.pendingResume.history,
+              pendingResume: null,
+            };
+          });
+        },
 
-      resume() {
-        patchState(store, (state) => {
-          if (!state.pendingResume) return state;
-          return {
-            currentSceneId: state.pendingResume.sceneId,
-            history: state.pendingResume.history,
-            pendingResume: null,
-          };
-        });
-      },
-
-      dismissResume() {
-        patchState(store, (state) => {
-          if (!state.pendingResume || !state.story) return state;
-          clearProgress(state.story.id);
-          return { pendingResume: null };
-        });
-      },
-    })),
+        dismissResume() {
+          patchState(store, (state) => {
+            if (!state.pendingResume || !state.story) return state;
+            clearProgress(state.story.id);
+            return { pendingResume: null };
+          });
+        },
+      };
+    }),
   );
 }

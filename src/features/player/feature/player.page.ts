@@ -206,15 +206,16 @@ export class PlayerPage {
   private readonly resolvedInlineRefs = this.resolver.resolveMany(this.inlineRefs);
   protected readonly inlineRefOptions = computed<InlineRefOption[]>(() => {
     const resolved = this.resolvedInlineRefs();
-    return this.inlineRefs().map<InlineRefOption>((r) => {
+    // Unresolved refs are intentionally omitted so the markdown renderer
+    // emits `[displayText]` plain text rather than an anchor labelled
+    // with the entity ID (see *Inline-ref tokens — Entity delete*).
+    const out: InlineRefOption[] = [];
+    for (const r of this.inlineRefs()) {
       const row = resolved.get(`${r.kind}:${r.id}`);
-      return {
-        kind: r.kind,
-        id: r.id,
-        label: row?.label ?? r.id,
-        slug: row?.slug,
-      };
-    });
+      if (!row) continue;
+      out.push({ kind: r.kind, id: r.id, label: row.label, slug: row.slug });
+    }
+    return out;
   });
 
   constructor() {
