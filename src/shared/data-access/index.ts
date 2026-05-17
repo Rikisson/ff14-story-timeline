@@ -21,19 +21,14 @@ export {
 } from './with-entity-projections';
 export {
   buildProjectionRows,
-  directoryRowKey,
+  entityRowKey,
   laneIdsOf,
   slugRowKey,
-  timelineRowKey,
   type BuiltProjectionRows,
   type DirectoryRowInputs,
   type ProjectionRowsInputs,
   type TimelineRowInputs,
 } from './projection-rows';
-export {
-  ProjectionRebuildService,
-  type RebuildProgress,
-} from './projection-rebuild.service';
 export {
   CacheInvalidationBus,
   type AssetWriteEvent,
@@ -53,10 +48,3 @@ export {
   type ByKindResult,
   type PrefixSearchOptions,
 } from './entity-directory.service';
-export {
-  DirectoryEntitySearchService,
-  ENTITY_SEARCH_SERVICE,
-  EntitySearchService,
-  provideEntitySearchService,
-  type EntitySearchOptions,
-} from './entity-search.service';

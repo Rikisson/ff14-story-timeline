@@ -1,4 +1,4 @@
-import { CalendarProjectionContext, formatDateSecondary } from '@features/events';
+import { CalendarProjectionContext, formatDateSecondary } from '@features/calendar';
 import { DirectoryRowInputs, TimelineRowInputs } from '@shared/data-access';
 import { isInGameDateEmpty } from '@shared/models';
 import { inGameDateSortKey } from '@shared/utils';

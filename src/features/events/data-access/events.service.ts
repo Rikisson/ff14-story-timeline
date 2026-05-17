@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { CalendarService } from '@features/calendar';
+import { CalendarProjectionContext, CalendarService } from '@features/calendar';
 import { EntityKind } from '@shared/models';
 import {
   DirectoryRowInputs,
@@ -9,7 +9,6 @@ import {
 import {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
-  CalendarProjectionContext,
 } from './event-projection';
 import { TimelineEvent, TimelineEventDraft } from './event.types';
 

@@ -16,6 +16,7 @@ export {
   CategoryInUseError,
   CategoryKeyImmutableError,
   EMPTY_CODEX_CATEGORIES_CONFIG,
+  StaleCategoriesError,
 } from './data-access/codex-category.types';
 export {
   buildCodexEntryDirectoryInputs,

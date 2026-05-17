@@ -12,18 +12,13 @@ interface RecordedOp {
 
 let database: Map<string, Record<string, unknown>>;
 let recordedOps: RecordedOp[];
-let getCallsBeforeFirstWrite: number;
 
 vi.mock('firebase/firestore/lite', () => {
   return {
     doc: (_firestore: unknown, ...parts: string[]) => ({ path: parts.join('/') }) as DocRef,
     runTransaction: async (_firestore: unknown, fn: (tx: unknown) => Promise<void>) => {
-      let writeStarted = false;
-      let pendingReads = 0;
       const tx = {
         get: async (ref: DocRef) => {
-          pendingReads++;
-          if (!writeStarted) getCallsBeforeFirstWrite = Math.max(getCallsBeforeFirstWrite, pendingReads);
           const payload = database.get(ref.path);
           return {
             exists: () => payload !== undefined,
@@ -32,12 +27,10 @@ vi.mock('firebase/firestore/lite', () => {
           };
         },
         set: (ref: DocRef, data: Record<string, unknown>) => {
-          writeStarted = true;
           recordedOps.push({ op: 'set', path: ref.path, data });
           database.set(ref.path, data);
         },
         delete: (ref: DocRef) => {
-          writeStarted = true;
           recordedOps.push({ op: 'delete', path: ref.path });
           database.delete(ref.path);
         },
@@ -53,6 +46,7 @@ import {
   UNASSIGNED_LANE_KEY,
   writeEntityWithProjections,
 } from './with-entity-projections';
+import type { DirectoryRowInputs, TimelineRowInputs } from './projection-rows';
 
 const FAKE_FIRESTORE = {} as unknown;
 
@@ -66,6 +60,14 @@ function opsByPath(): Record<string, RecordedOp> {
   return out;
 }
 
+/** Build a buildInputs callback that returns the same fixed values regardless of merged state. */
+function fixedInputs(
+  directory: DirectoryRowInputs,
+  timeline?: TimelineRowInputs,
+): () => { directory: DirectoryRowInputs; timeline?: TimelineRowInputs } {
+  return () => (timeline ? { directory, timeline } : { directory });
+}
+
 const U = 'universes/u1';
 const dirPath = (kind: string, id: string) => `${U}/_directory/${kind}_${id}`;
 const timelinePath = (kind: string, id: string) => `${U}/_timelineEntries/${kind}_${id}`;
@@ -76,7 +78,6 @@ const slugPath = (kind: string, slug: string) => `${U}/_slugIndex/${kind}_${slug
 beforeEach(() => {
   database = new Map();
   recordedOps = [];
-  getCallsBeforeFirstWrite = 0;
 });
 
 describe('writeEntityWithProjections — create', () => {
@@ -86,9 +87,9 @@ describe('writeEntityWithProjections — create', () => {
       kind: 'character',
       id: 'c1',
       canonicalCollection: 'characters',
-      canonical: { slug: 'aria', name: 'Aria' },
+      patch: { slug: 'aria', name: 'Aria' },
       slug: 'aria',
-      directory: { label: 'Aria', secondary: 'Marcus' },
+      buildInputs: fixedInputs({ label: 'Aria', secondary: 'Marcus' }),
     });
 
     const ops = opsByPath();
@@ -121,22 +122,20 @@ describe('writeEntityWithProjections — create', () => {
       kind: 'story',
       id: 's1',
       canonicalCollection: 'stories',
-      canonical: { slug: 'opening', title: 'Opening', draft: false },
+      patch: { slug: 'opening', title: 'Opening', draft: false },
       slug: 'opening',
-      directory: {
-        label: 'Opening',
-        secondary: '15 Spring of 1577',
-        draft: false,
-      },
-      timeline: {
-        title: 'Opening',
-        inGameDate: { era: 'e1', year: 1577, month: 3, day: 15 },
-        dateSortKey: '00010001577031500000000000000',
-        dateKnown: true,
-        plotlineIds: ['pl-arr', 'pl-hw'],
-        characterIds: ['c1'],
-        placeIds: ['p1'],
-      },
+      buildInputs: fixedInputs(
+        { label: 'Opening', secondary: '15 Spring of 1577', draft: false },
+        {
+          title: 'Opening',
+          inGameDate: { era: 'e1', year: 1577, month: 3, day: 15 },
+          dateSortKey: '00010001577031500000000000000',
+          dateKnown: true,
+          plotlineIds: ['pl-arr', 'pl-hw'],
+          characterIds: ['c1'],
+          placeIds: ['p1'],
+        },
+      ),
     });
 
     const ops = opsByPath();
@@ -163,18 +162,20 @@ describe('writeEntityWithProjections — create', () => {
       kind: 'event',
       id: 'e1',
       canonicalCollection: 'events',
-      canonical: { slug: 'fall', name: 'Fall' },
+      patch: { slug: 'fall', name: 'Fall' },
       slug: 'fall',
-      directory: { label: 'Fall' },
-      timeline: {
-        title: 'Fall',
-        inGameDate: { era: 'e1', year: 1572 },
-        dateSortKey: 'k',
-        dateKnown: true,
-        plotlineIds: [],
-        characterIds: [],
-        placeIds: [],
-      },
+      buildInputs: fixedInputs(
+        { label: 'Fall' },
+        {
+          title: 'Fall',
+          inGameDate: { era: 'e1', year: 1572 },
+          dateSortKey: 'k',
+          dateKnown: true,
+          plotlineIds: [],
+          characterIds: [],
+          placeIds: [],
+        },
+      ),
     });
 
     expect(opsByPath()[lanePath(UNASSIGNED_LANE_KEY, 'event', 'e1')]).toBeDefined();
@@ -186,18 +187,20 @@ describe('writeEntityWithProjections — create', () => {
       kind: 'story',
       id: 's-draft',
       canonicalCollection: 'stories',
-      canonical: { slug: 'wip', title: 'WIP', draft: true },
+      patch: { slug: 'wip', title: 'WIP', draft: true },
       slug: 'wip',
-      directory: { label: 'WIP', draft: true },
-      timeline: {
-        title: 'WIP',
-        inGameDate: {},
-        dateSortKey: '0',
-        dateKnown: false,
-        plotlineIds: [],
-        characterIds: [],
-        placeIds: [],
-      },
+      buildInputs: fixedInputs(
+        { label: 'WIP', draft: true },
+        {
+          title: 'WIP',
+          inGameDate: {},
+          dateSortKey: '0',
+          dateKnown: false,
+          plotlineIds: [],
+          characterIds: [],
+          placeIds: [],
+        },
+      ),
     });
 
     const ops = opsByPath();
@@ -206,6 +209,41 @@ describe('writeEntityWithProjections — create', () => {
     expect(ops[lanePath(UNASSIGNED_LANE_KEY, 'story', 's-draft')].data).toMatchObject({
       visiblePublic: false,
       draft: true,
+    });
+  });
+});
+
+describe('writeEntityWithProjections — patch merge', () => {
+  it('preserves existing fields not in the patch (the fix for the stale-write race)', async () => {
+    setDocs({
+      [`${U}/characters/me`]: {
+        slug: 'me',
+        name: 'Me',
+        authorUid: 'user-A',
+        createdAt: 1000,
+        sprites: ['sprite-1', 'sprite-2'],
+      },
+    });
+
+    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+      universeId: 'u1',
+      kind: 'character',
+      id: 'me',
+      canonicalCollection: 'characters',
+      patch: { slug: 'me', name: 'Me Renamed', updatedAt: 2000 },
+      slug: 'me',
+      buildInputs: fixedInputs({ label: 'Me Renamed' }),
+    });
+
+    const ops = opsByPath();
+    // Canonical merge keeps authorUid, createdAt, sprites that weren't in the patch.
+    expect(ops[`${U}/characters/me`].data).toMatchObject({
+      slug: 'me',
+      name: 'Me Renamed',
+      authorUid: 'user-A',
+      createdAt: 1000,
+      sprites: ['sprite-1', 'sprite-2'],
+      updatedAt: 2000,
     });
   });
 });
@@ -220,9 +258,9 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
         kind: 'character',
         id: 'me',
         canonicalCollection: 'characters',
-        canonical: { slug: 'taken' },
+        patch: { slug: 'taken' },
         slug: 'taken',
-        directory: { label: 'Me' },
+        buildInputs: fixedInputs({ label: 'Me' }),
       }),
     ).rejects.toThrow(SlugTakenError);
   });
@@ -238,9 +276,9 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
       kind: 'character',
       id: 'me',
       canonicalCollection: 'characters',
-      canonical: { slug: 'mine' },
+      patch: { slug: 'mine' },
       slug: 'mine',
-      directory: { label: 'Me' },
+      buildInputs: fixedInputs({ label: 'Me' }),
     });
 
     const slugOp = recordedOps.find((o) => o.path === slugPath('character', 'mine'));
@@ -258,9 +296,9 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
       kind: 'character',
       id: 'me',
       canonicalCollection: 'characters',
-      canonical: { slug: 'new-name' },
+      patch: { slug: 'new-name' },
       slug: 'new-name',
-      directory: { label: 'Me' },
+      buildInputs: fixedInputs({ label: 'Me' }),
     });
 
     const ops = opsByPath();
@@ -278,9 +316,9 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
         kind: 'place',
         id: 'p1',
         canonicalCollection: 'places',
-        canonical: { slug: 'ish', name: 'Ish' },
+        patch: { slug: 'ish', name: 'Ish' },
         slug: 'ish',
-        directory: { label: 'Ishgard', secondary: 'A place' },
+        buildInputs: fixedInputs({ label: 'Ishgard', secondary: 'A place' }),
       });
     };
 
@@ -294,9 +332,9 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
       kind: 'place',
       id: 'p1',
       canonicalCollection: 'places',
-      canonical: { slug: 'ish', name: 'Ish v2' }, // canonical changes but projected slice does not
+      patch: { slug: 'ish', name: 'Ish v2' }, // canonical changes but projected slice does not
       slug: 'ish',
-      directory: { label: 'Ishgard', secondary: 'A place' },
+      buildInputs: fixedInputs({ label: 'Ishgard', secondary: 'A place' }),
     });
 
     const ops = opsByPath();
@@ -313,9 +351,9 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
       kind: 'place',
       id: 'p1',
       canonicalCollection: 'places',
-      canonical: { slug: 'ish', name: 'Ish' },
+      patch: { slug: 'ish', name: 'Ish' },
       slug: 'ish',
-      directory: { label: 'Ishgard' },
+      buildInputs: fixedInputs({ label: 'Ishgard' }),
     });
 
     recordedOps = [];
@@ -325,9 +363,9 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
       kind: 'place',
       id: 'p1',
       canonicalCollection: 'places',
-      canonical: { slug: 'ish', name: 'Ish' },
+      patch: { slug: 'ish', name: 'Ish' },
       slug: 'ish',
-      directory: { label: 'Ishgard Restored' },
+      buildInputs: fixedInputs({ label: 'Ishgard Restored' }),
     });
 
     expect(opsByPath()[dirPath('place', 'p1')]).toBeDefined();
@@ -342,18 +380,20 @@ describe('writeEntityWithProjections — lane diff', () => {
       kind: 'story',
       id: 's1',
       canonicalCollection: 'stories',
-      canonical: { slug: 'opening', title: 'Opening', draft: false },
+      patch: { slug: 'opening', title: 'Opening', draft: false },
       slug: 'opening',
-      directory: { label: 'Opening', draft: false },
-      timeline: {
-        title: 'Opening',
-        inGameDate: { era: 'e1', year: 1577 },
-        dateSortKey: 'k1',
-        dateKnown: true,
-        plotlineIds: ['pl-a', 'pl-b'],
-        characterIds: [],
-        placeIds: [],
-      },
+      buildInputs: fixedInputs(
+        { label: 'Opening', draft: false },
+        {
+          title: 'Opening',
+          inGameDate: { era: 'e1', year: 1577 },
+          dateSortKey: 'k1',
+          dateKnown: true,
+          plotlineIds: ['pl-a', 'pl-b'],
+          characterIds: [],
+          placeIds: [],
+        },
+      ),
     });
 
     recordedOps = [];
@@ -363,18 +403,20 @@ describe('writeEntityWithProjections — lane diff', () => {
       kind: 'story',
       id: 's1',
       canonicalCollection: 'stories',
-      canonical: { slug: 'opening', title: 'Opening v2', draft: false },
+      patch: { slug: 'opening', title: 'Opening v2', draft: false },
       slug: 'opening',
-      directory: { label: 'Opening v2', draft: false }, // label change → fingerprint differs
-      timeline: {
-        title: 'Opening v2',
-        inGameDate: { era: 'e1', year: 1577 },
-        dateSortKey: 'k1',
-        dateKnown: true,
-        plotlineIds: ['pl-b', 'pl-c'], // pl-a removed, pl-c added
-        characterIds: [],
-        placeIds: [],
-      },
+      buildInputs: fixedInputs(
+        { label: 'Opening v2', draft: false }, // label change → fingerprint differs
+        {
+          title: 'Opening v2',
+          inGameDate: { era: 'e1', year: 1577 },
+          dateSortKey: 'k1',
+          dateKnown: true,
+          plotlineIds: ['pl-b', 'pl-c'], // pl-a removed, pl-c added
+          characterIds: [],
+          placeIds: [],
+        },
+      ),
     });
 
     const ops = opsByPath();

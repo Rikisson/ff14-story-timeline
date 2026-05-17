@@ -8,7 +8,5 @@ export type {
 export {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
-  formatDateSecondary,
-  type CalendarProjectionContext,
 } from './data-access/event-projection';
 export { EventCardComponent } from './ui/event-card.component';

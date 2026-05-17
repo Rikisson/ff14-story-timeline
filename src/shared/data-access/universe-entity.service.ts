@@ -3,7 +3,6 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   collection as fsCollection,
   doc,
-  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -143,30 +142,35 @@ export abstract class UniverseEntityService<
   async create(draft: TDraft, authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
     const id = crypto.randomUUID();
-    const entity = {
+    const patch = {
       ...draft,
-      id,
       authorUid,
       createdAt: Date.now(),
-    } as unknown as TEntity;
-    await this.writeThroughProjections(universeId, entity);
+    } as unknown as Record<string, unknown>;
+    await writeEntityWithProjections(this.firebase.firestore, {
+      universeId,
+      kind: this.kind,
+      id,
+      canonicalCollection: this.collectionName,
+      patch,
+      slug: draft.slug,
+      buildInputs: (merged) => this.buildInputsFor(merged),
+    });
     await this.refresh(universeId);
     return id;
   }
 
   async update(id: string, patch: TDraft): Promise<void> {
     const universeId = this.requireUniverseId();
-    const existing = await this.loadCanonical(universeId, id);
-    if (!existing) {
-      throw new Error(`${this.collectionName}/${id} not found`);
-    }
-    const entity = {
-      ...existing,
-      ...patch,
+    await writeEntityWithProjections(this.firebase.firestore, {
+      universeId,
+      kind: this.kind,
       id,
-      updatedAt: Date.now(),
-    } as unknown as TEntity;
-    await this.writeThroughProjections(universeId, entity);
+      canonicalCollection: this.collectionName,
+      patch: { ...patch, updatedAt: Date.now() } as unknown as Record<string, unknown>,
+      slug: patch.slug,
+      buildInputs: (merged) => this.buildInputsFor(merged),
+    });
     await this.refresh(universeId);
   }
 
@@ -203,25 +207,13 @@ export abstract class UniverseEntityService<
     return id;
   }
 
-  private async writeThroughProjections(universeId: string, entity: TEntity): Promise<void> {
-    const { id, ...canonical } = entity as unknown as { id: string } & Record<string, unknown>;
-    await writeEntityWithProjections(this.firebase.firestore, {
-      universeId,
-      kind: this.kind,
-      id,
-      canonicalCollection: this.collectionName,
-      canonical,
-      slug: entity.slug,
-      directory: this.toDirectoryInputs(entity),
-      timeline: this.toTimelineInputs(entity),
-    });
-  }
-
-  private async loadCanonical(universeId: string, id: string): Promise<TEntity | null> {
-    const snap = await getDoc(
-      doc(this.firebase.firestore, 'universes', universeId, this.collectionName, id),
-    );
-    if (!snap.exists()) return null;
-    return { id: snap.id, ...(snap.data() as object) } as unknown as TEntity;
+  private buildInputsFor(merged: Record<string, unknown> & { id: string }): {
+    directory: DirectoryRowInputs;
+    timeline?: TimelineRowInputs;
+  } {
+    const entity = merged as unknown as TEntity;
+    const directory = this.toDirectoryInputs(entity);
+    const timeline = this.toTimelineInputs(entity);
+    return timeline ? { directory, timeline } : { directory };
   }
 }

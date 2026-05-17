@@ -1,20 +1,8 @@
+import { CalendarProjectionContext, formatDateSecondary } from '@features/calendar';
 import { DirectoryRowInputs, TimelineRowInputs } from '@shared/data-access';
-import { InGameDate, isInGameDateEmpty } from '@shared/models';
-import { formatInGameDate, inGameDateSortKey } from '@shared/utils';
+import { isInGameDateEmpty } from '@shared/models';
+import { inGameDateSortKey } from '@shared/utils';
 import { TimelineEvent } from './event.types';
-
-/**
- * Calendar context passed to projection builders. Decouples the pure
- * builders from `CalendarService`'s Angular DI so the same code runs
- * inside the live write path and inside `ProjectionRebuildService` /
- * the CLI.
- */
-export interface CalendarProjectionContext {
-  eraOrdinalLookup: (id: string) => number | undefined;
-  eraNameLookup: (id: string) => string | undefined;
-  monthNameLookup: (month: number) => string | undefined;
-  weekdayLookup: (date: InGameDate | null | undefined) => string | undefined;
-}
 
 /**
  * Pure projection-input builders for TimelineEvent. Shared by
@@ -51,17 +39,4 @@ export function buildEventTimelineInputs(
       .filter((r) => r.kind === 'place')
       .map((r) => r.id),
   };
-}
-
-export function formatDateSecondary(
-  date: InGameDate,
-  ctx: CalendarProjectionContext,
-): string | undefined {
-  if (isInGameDateEmpty(date)) return undefined;
-  const formatted = formatInGameDate(date, {
-    eraName: date.era ? ctx.eraNameLookup(date.era) : undefined,
-    monthName: date.month !== undefined ? ctx.monthNameLookup(date.month) : undefined,
-    weekdayName: ctx.weekdayLookup(date),
-  });
-  return formatted || undefined;
 }

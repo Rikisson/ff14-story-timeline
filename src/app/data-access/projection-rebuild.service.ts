@@ -3,13 +3,15 @@ import {
   collection,
   doc,
   documentId,
-  Firestore,
   getDocs,
   query,
   where,
   writeBatch,
 } from 'firebase/firestore/lite';
-import { CalendarService } from '@features/calendar';
+import {
+  CalendarProjectionContext,
+  CalendarService,
+} from '@features/calendar';
 import { buildCharacterDirectoryInputs } from '@features/characters';
 import {
   buildCodexEntryDirectoryInputs,
@@ -19,7 +21,6 @@ import {
 import {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
-  CalendarProjectionContext,
 } from '@features/events';
 import { buildPlaceDirectoryInputs } from '@features/places';
 import { buildPlotlineDirectoryInputs } from '@features/plotlines';
@@ -27,19 +28,18 @@ import {
   buildStoryDirectoryInputs,
   buildStoryTimelineInputs,
 } from '@features/stories';
-import { EntityKind } from '@shared/models';
-import { FirebaseService } from '../../app/firebase/firebase.service';
-import { CacheInvalidationBus } from './cache-invalidation.bus';
 import {
   buildProjectionRows,
-  directoryRowKey,
+  CacheInvalidationBus,
   DirectoryRowInputs,
+  entityRowKey,
   ProjectionRowsInputs,
   slugRowKey,
-  timelineRowKey,
   TimelineRowInputs,
   UNASSIGNED_LANE_KEY,
-} from './projection-rows';
+} from '@shared/data-access';
+import { EntityKind } from '@shared/models';
+import { FirebaseService } from '../firebase/firebase.service';
 
 /**
  * Client-side chunked projection rebuild. Per `docs/backend-rules.md`
@@ -289,13 +289,13 @@ export class ProjectionRebuildService {
   ): Array<{ ref: ReturnType<typeof doc>; data: Record<string, unknown> }> {
     const out: Array<{ ref: ReturnType<typeof doc>; data: Record<string, unknown> }> = [
       {
-        ref: doc(this.firebase.firestore, 'universes', universeId, DIRECTORY, directoryRowKey(kind, id)),
+        ref: doc(this.firebase.firestore, 'universes', universeId, DIRECTORY, entityRowKey(kind, id)),
         data: rows.directoryRow,
       },
     ];
     if (rows.timelineRow) {
       out.push({
-        ref: doc(this.firebase.firestore, 'universes', universeId, TIMELINE, timelineRowKey(kind, id)),
+        ref: doc(this.firebase.firestore, 'universes', universeId, TIMELINE, entityRowKey(kind, id)),
         data: rows.timelineRow,
       });
       for (const lane of rows.laneRows) {
@@ -466,6 +466,3 @@ function entityTimestamp(entity: Record<string, unknown>): number {
   if (typeof createdAt === 'number') return createdAt;
   return Date.now();
 }
-
-// Re-export so callers can hold a typed Firestore handle.
-export type { Firestore };

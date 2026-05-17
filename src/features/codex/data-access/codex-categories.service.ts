@@ -30,6 +30,7 @@ import {
   CodexCategoriesConfig,
   CodexCategory,
   EMPTY_CODEX_CATEGORIES_CONFIG,
+  StaleCategoriesError,
 } from './codex-category.types';
 
 const CONFIG_DOC = 'codex_categories';
@@ -125,14 +126,22 @@ export class CodexCategoriesService {
    * across the final list, generates `key` for any entries that don't
    * have one yet, and enforces key immutability on existing entries.
    *
+   * The OCC check compares `expectedVersion` (the caller's last-seen
+   * config version) against the version read inside the transaction.
+   * Mismatch throws `StaleCategoriesError`; the panel must re-pull, the
+   * author must redo their edit. Without this the retry-on-write-conflict
+   * built into `runTransaction` only protects the doc write, not the
+   * caller's stale draft — a concurrent additive edit would be silently
+   * dropped when the loser's `next` overwrote the winner's categories.
+   *
    * Categories removed by this save must have zero codex entries
-   * referencing them — checked via a pre-transaction `where categoryKey
-   * == removed.key` query per removed category. A race with concurrent
-   * codex entry creation can produce an orphan `categoryKey`; per
-   * `docs/backend-rules.md` *Write discipline*, that's a recoverable bug,
-   * not a data integrity violation.
+   * referencing them — checked via a pre-transaction
+   * `where categoryKey == removed.key` query per removed category. A
+   * race with concurrent codex entry creation can produce an orphan
+   * `categoryKey`; per `docs/backend-rules.md` *Write discipline*
+   * that's a recoverable bug, not a data integrity violation.
    */
-  async save(next: CodexCategoriesConfig): Promise<void> {
+  async save(next: CodexCategoriesConfig, expectedVersion: number): Promise<void> {
     const universeId = this.requireUniverseId();
     const removedKeys = await this.computeRemovedKeys(universeId, next);
     for (const removed of removedKeys) {
@@ -140,46 +149,13 @@ export class CodexCategoriesService {
     }
     await runTransaction(this.firebase.firestore, async (tx) => {
       const current = await readConfig(tx, this.firebase.firestore, universeId);
+      const currentVersion = current.version ?? 0;
+      if (currentVersion !== expectedVersion) {
+        throw new StaleCategoriesError(currentVersion, expectedVersion);
+      }
       const finalised = finaliseSave(current, next);
       writeConfig(tx, this.firebase.firestore, universeId, finalised);
     });
-    await this.refresh(universeId);
-  }
-
-  /** Create a single category transactionally. Returns the persisted row. */
-  async createCategory(input: CodexCategoryDraft): Promise<CodexCategory> {
-    const universeId = this.requireUniverseId();
-    const created = await runTransaction(this.firebase.firestore, (tx) =>
-      applyCategoryCreate(tx, this.firebase.firestore, universeId, input),
-    );
-    await this.refresh(universeId);
-    return created;
-  }
-
-  /** Rename / recolour / re-describe a category. `key` cannot change. */
-  async renameCategory(
-    id: string,
-    patch: Partial<Pick<CodexCategory, 'label' | 'color' | 'description'>>,
-  ): Promise<void> {
-    const universeId = this.requireUniverseId();
-    await runTransaction(this.firebase.firestore, (tx) =>
-      applyCategoryRename(tx, this.firebase.firestore, universeId, id, patch),
-    );
-    await this.refresh(universeId);
-  }
-
-  /**
-   * Delete a category. Throws `CategoryInUseError` if any codex entry
-   * still references it (non-transactional pre-check, see `save` for
-   * the race caveat).
-   */
-  async deleteCategory(id: string): Promise<void> {
-    const universeId = this.requireUniverseId();
-    const cat = this._config().categories.find((c) => c.id === id);
-    if (cat?.key) await this.assertCategoryNotInUse(universeId, cat.key);
-    await runTransaction(this.firebase.firestore, (tx) =>
-      applyCategoryDelete(tx, this.firebase.firestore, universeId, id),
-    );
     await this.refresh(universeId);
   }
 
@@ -208,21 +184,23 @@ export class CodexCategoriesService {
       limit(1),
     );
     const snap = await getDocs(q);
-    if (!snap.empty) {
-      const blocker = this._config().categories.find((c) => c.key === key);
-      throw new CategoryInUseError(
-        blocker ?? { id: key, label: key },
-        snap.size,
+    if (snap.empty) return;
+    const blocker = this._config().categories.find((c) => c.key === key);
+    if (!blocker) {
+      throw new Error(
+        `Category with key "${key}" is referenced by codex entries but is not in the current config.`,
       );
     }
+    throw new CategoryInUseError(blocker, snap.size);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Pure transaction-body helpers — exported for compose with the codex-entry
-// auto-create flow (per docs `narrative-engine-impl.md` *Codex categories —
-// auto-create*: the typeahead's *Create category "X"* path runs category
-// creation and codex-entry creation inside one `runTransaction`).
+// Pure transaction-body helpers. `applyCategoryCreate` is the composable
+// primitive that the codex-entry auto-create flow will call inside its
+// own `runTransaction` (per `docs/narrative-engine-impl.md`
+// *Codex categories — auto-create*: typeahead's *Create category "X"*
+// row creates the config entry and the codex entry in one transaction).
 // ---------------------------------------------------------------------------
 
 export async function applyCategoryCreate(
@@ -250,56 +228,6 @@ export async function applyCategoryCreate(
   };
   writeConfig(tx, firestore, universeId, next);
   return created;
-}
-
-export async function applyCategoryRename(
-  tx: Transaction,
-  firestore: Firestore,
-  universeId: string,
-  id: string,
-  patch: Partial<Pick<CodexCategory, 'label' | 'color' | 'description'>>,
-): Promise<void> {
-  const current = await readConfig(tx, firestore, universeId);
-  const idx = current.categories.findIndex((c) => c.id === id);
-  if (idx < 0) throw new Error(`Category ${id} not found.`);
-  const existing = current.categories[idx];
-  const renamed: CodexCategory = {
-    ...existing,
-    ...(patch.label !== undefined ? { label: patch.label.trim() } : {}),
-    ...(patch.color !== undefined ? { color: patch.color } : {}),
-    ...(patch.description !== undefined ? { description: patch.description } : {}),
-  };
-  if (!renamed.label) throw new Error('Category label cannot be empty.');
-  if (existing.key && renamed.key !== existing.key) {
-    throw new CategoryKeyImmutableError(id, renamed.key ?? '');
-  }
-  // Key stays the existing key; nothing else folds.
-  assertNoConflict(current.categories, renamed, existing.id);
-  const nextCategories = [...current.categories];
-  nextCategories[idx] = renamed;
-  writeConfig(tx, firestore, universeId, {
-    ...current,
-    categories: nextCategories,
-    version: (current.version ?? 0) + 1,
-    updatedAt: Date.now(),
-  });
-}
-
-export async function applyCategoryDelete(
-  tx: Transaction,
-  firestore: Firestore,
-  universeId: string,
-  id: string,
-): Promise<void> {
-  const current = await readConfig(tx, firestore, universeId);
-  const next = current.categories.filter((c) => c.id !== id);
-  if (next.length === current.categories.length) return;
-  writeConfig(tx, firestore, universeId, {
-    ...current,
-    categories: next,
-    version: (current.version ?? 0) + 1,
-    updatedAt: Date.now(),
-  });
 }
 
 // ---------------------------------------------------------------------------

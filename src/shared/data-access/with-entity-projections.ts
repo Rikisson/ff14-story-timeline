@@ -8,11 +8,9 @@ import { EntityKind, SlugTakenError } from '@shared/models';
 import {
   buildProjectionRows,
   DirectoryRowInputs,
-  directoryRowKey,
+  entityRowKey,
   laneIdsOf,
-  ProjectionRowsInputs,
   slugRowKey,
-  timelineRowKey,
   TimelineRowInputs,
   UNASSIGNED_LANE_KEY,
 } from './projection-rows';
@@ -29,55 +27,47 @@ export type { DirectoryRowInputs, TimelineRowInputs };
  * the same transaction — this is not a closed helper that hides the
  * transaction.
  *
+ * ## Patch-merge inside the transaction
+ *
+ * Callers pass a `patch` (partial canonical) plus a `buildInputs`
+ * callback. The helper reads the existing canonical inside the tx,
+ * computes `merged = { ...existing, ...patch }`, calls `buildInputs(merged)`
+ * to derive the projection inputs, and writes the merged result with
+ * `tx.set`. This eliminates the stale-write race that a pre-merge
+ * outside the transaction would expose: a concurrent edit landing
+ * between an outer read and the eventual tx.set would be silently
+ * clobbered by the caller's outdated full doc. With merge-in-tx the
+ * tx's read sees the concurrent edit and the patch is applied on top.
+ *
+ * `patch` semantics: spread over existing. Setting a field to
+ * `undefined` removes it (Firestore + `ignoreUndefinedProperties`).
+ * Fields not present in the patch are preserved from existing.
+ *
  * ## The composable primitives (preferred)
  *
  * `applyEntityWrite(tx, firestore, req)` and
  * `applyEntityDelete(tx, firestore, req)` accept a caller-owned
- * `Transaction` and contribute their reads + writes to it. Use them
- * whenever the caller needs to do anything beyond a flat
- * canonical-plus-projections write — OCC version checks, extra subdoc
- * writes, multi-entity transactions, etc.
+ * `Transaction`. Use them whenever the caller needs anything beyond a
+ * flat canonical-plus-projections write — OCC version checks, extra
+ * subdoc writes, multi-entity transactions.
  *
  * StoriesService is the canonical compose example. `saveStory` reads
  * metadata for the OCC check, calls `applyEntityWrite` for canonical
  * metadata + projections + slug claim, then writes the `_content/main`
- * subdoc — all in one `runTransaction`:
+ * subdoc — all in one `runTransaction`.
  *
- *     return runTransaction(firestore, async (tx) => {
- *       const metaSnap = await tx.get(metaRef);
- *       if (metaSnap.exists() && metaSnap.data().version !== expected) {
- *         throw new StaleStoryError(...);
- *       }
- *       await applyEntityWrite(tx, firestore, {
- *         universeId, kind: 'story', id, canonicalCollection: 'stories',
- *         canonical, slug, directory, timeline,
- *       });
- *       tx.set(contentRef, content);
- *       return nextVersion;
- *     });
- *
- * Note Firestore's reads-before-writes rule: any tx.get the caller
- * issues must run before `applyEntityWrite` returns and before any
- * tx.set / tx.delete. `applyEntityWrite` does its own reads first
- * (canonical, directory, timeline, new slug claim) and then all writes,
- * so caller reads must precede the `applyEntityWrite` call.
+ * Firestore's reads-before-writes rule still applies: caller tx.gets
+ * must precede the `applyEntityWrite` call; `applyEntityWrite` does its
+ * own reads first (canonical, directory, timeline, slug-claim) and then
+ * all writes.
  *
  * ## The convenience wrappers
  *
  * `writeEntityWithProjections` / `deleteEntityWithProjections` own
- * their own `runTransaction` and call the primitive. Use them only for
- * kinds with no per-kind logic in the write path — Character, Place,
- * Event, Plotline, Codex via `UniverseEntityService`. Story does NOT
+ * their own `runTransaction` and call the primitive. Used by
+ * `UniverseEntityService` for kinds without per-kind logic
+ * (Character / Place / Event / Plotline / Codex). Story does NOT
  * use these.
- *
- * ## Caller responsibilities
- *
- * Secondary computation (`Directory.secondary`) is the caller's job —
- * by the time the request reaches this helper, the string is already
- * resolved. Keeps the helper free of cross-entity reads beyond its own
- * slug / fingerprint diffs. The row-shape construction itself lives in
- * `./projection-rows.ts` and is shared with `ProjectionRebuildService`
- * and the CLI rebuild script.
  */
 
 const DIRECTORY = '_directory';
@@ -85,12 +75,33 @@ const TIMELINE = '_timelineEntries';
 const LANE = '_timelineLaneEntries';
 const SLUG_INDEX = '_slugIndex';
 
-export interface EntityWriteRequest extends ProjectionRowsInputs {
+const TIMELINE_KINDS: ReadonlySet<EntityKind> = new Set(['event', 'story']);
+
+export interface EntityWriteRequest {
   universeId: string;
+  kind: EntityKind;
+  id: string;
   /** Canonical collection name (e.g. 'characters', 'events', 'stories'). */
   canonicalCollection: string;
-  /** Canonical doc payload written verbatim. Caller is responsible for OCC version stamps. */
-  canonical: Record<string, unknown>;
+  /**
+   * Partial canonical payload. Spread over the existing doc inside the
+   * transaction. For creates, this IS the full canonical (no existing
+   * to merge against). For updates, patch fields override existing
+   * fields; absent fields are preserved.
+   */
+  patch: Record<string, unknown>;
+  /** Slug claim — written to `_slugIndex/{kind}_{slug}`. */
+  slug: string;
+  /**
+   * Builds projection inputs from the post-merge canonical. The helper
+   * invokes this AFTER computing `merged = { ...existing, ...patch }`
+   * so per-kind builders see authoritative state. The merged value
+   * includes the `id` for convenience.
+   */
+  buildInputs: (merged: Record<string, unknown> & { id: string }) => {
+    directory: DirectoryRowInputs;
+    timeline?: TimelineRowInputs;
+  };
 }
 
 export interface EntityDeleteRequest {
@@ -119,14 +130,14 @@ export async function applyEntityWrite(
   firestore: Firestore,
   req: EntityWriteRequest,
 ): Promise<void> {
-  const { universeId, kind, id, canonicalCollection, canonical, slug, directory, timeline } = req;
+  const { universeId, kind, id, canonicalCollection, patch, slug, buildInputs } = req;
 
   // ---- READ PHASE (all tx.get must happen before any tx.set / tx.delete) ----
 
   const canonicalRef = doc(firestore, 'universes', universeId, canonicalCollection, id);
-  const directoryRef = doc(firestore, 'universes', universeId, DIRECTORY, directoryRowKey(kind, id));
-  const timelineRef = timeline
-    ? doc(firestore, 'universes', universeId, TIMELINE, timelineRowKey(kind, id))
+  const directoryRef = doc(firestore, 'universes', universeId, DIRECTORY, entityRowKey(kind, id));
+  const timelineRef = TIMELINE_KINDS.has(kind)
+    ? doc(firestore, 'universes', universeId, TIMELINE, entityRowKey(kind, id))
     : null;
   const newSlugRef = doc(firestore, 'universes', universeId, SLUG_INDEX, slugRowKey(kind, slug));
 
@@ -137,10 +148,9 @@ export async function applyEntityWrite(
     tx.get(newSlugRef),
   ]);
 
-  const prevCanonical = canonicalSnap.exists() ? (canonicalSnap.data() as Record<string, unknown>) : null;
-  const prevSlug = prevCanonical && typeof prevCanonical['slug'] === 'string'
-    ? (prevCanonical['slug'] as string)
-    : undefined;
+  const existing = canonicalSnap.exists() ? (canonicalSnap.data() as Record<string, unknown>) : {};
+  const merged: Record<string, unknown> & { id: string } = { ...existing, ...patch, id };
+  const prevSlug = typeof existing['slug'] === 'string' ? (existing['slug'] as string) : undefined;
 
   let oldSlugRef: ReturnType<typeof doc> | null = null;
   if (prevSlug && prevSlug !== slug) {
@@ -165,8 +175,9 @@ export async function applyEntityWrite(
 
   // ---- BUILD ROWS (shared with rebuild paths) ----
 
+  const inputs = buildInputs(merged);
   const built = await buildProjectionRows(
-    { kind, id, slug, directory, timeline },
+    { kind, id, slug, directory: inputs.directory, timeline: inputs.timeline },
     Date.now(),
   );
 
@@ -174,7 +185,9 @@ export async function applyEntityWrite(
 
   // ---- WRITE PHASE ----
 
-  tx.set(canonicalRef, canonical);
+  // Strip `id` before writing canonical — id is the doc key, not a field.
+  const { id: _id, ...canonicalToWrite } = merged;
+  tx.set(canonicalRef, canonicalToWrite);
 
   if (!newSlugSnap.exists()) {
     tx.set(newSlugRef, { entityId: id });
@@ -216,8 +229,8 @@ export async function applyEntityDelete(
   const { universeId, kind, id, canonicalCollection } = req;
 
   const canonicalRef = doc(firestore, 'universes', universeId, canonicalCollection, id);
-  const directoryRef = doc(firestore, 'universes', universeId, DIRECTORY, directoryRowKey(kind, id));
-  const timelineRef = doc(firestore, 'universes', universeId, TIMELINE, timelineRowKey(kind, id));
+  const directoryRef = doc(firestore, 'universes', universeId, DIRECTORY, entityRowKey(kind, id));
+  const timelineRef = doc(firestore, 'universes', universeId, TIMELINE, entityRowKey(kind, id));
 
   const [canonicalSnap, timelineSnap] = await Promise.all([
     tx.get(canonicalRef),

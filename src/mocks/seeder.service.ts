@@ -9,9 +9,8 @@ import {
 import {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
-  CalendarProjectionContext,
 } from '@features/events';
-import { Calendar } from '@features/calendar';
+import { Calendar, CalendarProjectionContext } from '@features/calendar';
 import { buildPlaceDirectoryInputs } from '@features/places';
 import { buildPlotlineDirectoryInputs } from '@features/plotlines';
 import {
@@ -21,11 +20,10 @@ import {
 import { DEFAULT_UNIVERSE_LOCALE, StoredUniverse } from '@features/universes';
 import {
   buildProjectionRows,
-  directoryRowKey,
   DirectoryRowInputs,
+  entityRowKey,
   ProjectionRowsInputs,
   slugRowKey,
-  timelineRowKey,
   TimelineRowInputs,
 } from '@shared/data-access';
 import { EntityKind } from '@shared/models';
@@ -179,14 +177,14 @@ export class SeederService {
             { entityId: id },
           ),
           setDoc(
-            doc(db, 'universes', DEFAULT_UNIVERSE_ID, DIRECTORY, directoryRowKey('story', id)),
+            doc(db, 'universes', DEFAULT_UNIVERSE_ID, DIRECTORY, entityRowKey('story', id)),
             rows.directoryRow,
           ),
         ];
         if (rows.timelineRow) {
           ops.push(
             setDoc(
-              doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, timelineRowKey('story', id)),
+              doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, entityRowKey('story', id)),
               rows.timelineRow,
             ),
             ...rows.laneRows.map((lane) =>
@@ -269,14 +267,14 @@ export class SeederService {
             { entityId: id },
           ),
           setDoc(
-            doc(db, 'universes', DEFAULT_UNIVERSE_ID, DIRECTORY, directoryRowKey(opts.kind, id)),
+            doc(db, 'universes', DEFAULT_UNIVERSE_ID, DIRECTORY, entityRowKey(opts.kind, id)),
             rows.directoryRow,
           ),
         ];
         if (rows.timelineRow) {
           ops.push(
             setDoc(
-              doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, timelineRowKey(opts.kind, id)),
+              doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, entityRowKey(opts.kind, id)),
               rows.timelineRow,
             ),
             ...rows.laneRows.map((lane) =>

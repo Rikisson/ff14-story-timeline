@@ -65,3 +65,22 @@ export class CategoryKeyImmutableError extends Error {
     this.name = 'CategoryKeyImmutableError';
   }
 }
+
+/**
+ * Raised when a bulk `save` is attempted against a config doc whose
+ * version no longer matches the caller's last-seen version. The settings
+ * panel must re-pull the config and the author must redo their edit;
+ * blindly retrying with the stale draft would drop concurrent
+ * additions. See `CodexCategoriesService.save` for the OCC contract.
+ */
+export class StaleCategoriesError extends Error {
+  constructor(
+    public readonly currentVersion: number,
+    public readonly expectedVersion: number,
+  ) {
+    super(
+      `Codex categories changed elsewhere (expected v${expectedVersion}, got v${currentVersion}). Reload to see the latest list.`,
+    );
+    this.name = 'StaleCategoriesError';
+  }
+}

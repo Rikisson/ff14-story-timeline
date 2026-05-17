@@ -12,6 +12,7 @@ import { CodexCategoriesService } from '../data-access/codex-categories.service'
 import {
   CodexCategoriesConfig,
   CodexCategory,
+  StaleCategoriesError,
 } from '../data-access/codex-category.types';
 import codexEn from '../i18n/en.json';
 import codexUk from '../i18n/uk.json';
@@ -180,8 +181,15 @@ export class CodexCategoriesSettingsPanelComponent {
     this.saving.set(true);
     this.errorMessage.set(null);
     try {
-      await this.service.save(this.draft());
+      const expectedVersion = this.service.config().version ?? 0;
+      await this.service.save(this.draft(), expectedVersion);
     } catch (err) {
+      if (err instanceof StaleCategoriesError) {
+        // Force re-pull so the user sees what they're about to overwrite
+        // before retrying their edit. Without the refresh the panel would
+        // still show their stale draft.
+        await this.service.refresh();
+      }
       this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     } finally {
       this.saving.set(false);

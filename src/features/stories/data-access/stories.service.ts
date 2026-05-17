@@ -14,8 +14,7 @@ import {
   where,
 } from 'firebase/firestore/lite';
 import { TranslocoService } from '@jsverse/transloco';
-import { CalendarService } from '@features/calendar';
-import { CalendarProjectionContext } from '@features/events';
+import { CalendarProjectionContext, CalendarService } from '@features/calendar';
 import { UniverseStore } from '@features/universes';
 import {
   applyEntityDelete,
@@ -196,7 +195,7 @@ export class StoriesService {
       }
       const nextVersion = expectedVersion + 1;
       const { id: _id, ...meta } = story;
-      const canonical: StoredStory = {
+      const patch: Record<string, unknown> = {
         ...meta,
         version: nextVersion,
         updatedAt: Date.now(),
@@ -207,10 +206,12 @@ export class StoriesService {
         kind: 'story',
         id: story.id,
         canonicalCollection: 'stories',
-        canonical: canonical as unknown as Record<string, unknown>,
+        patch,
         slug: story.slug,
-        directory: this.buildDirectoryInputs({ id: story.id, ...canonical }),
-        timeline: this.buildTimelineInputs({ id: story.id, ...canonical }),
+        buildInputs: (merged) => ({
+          directory: this.buildDirectoryInputs(merged as unknown as Story),
+          timeline: this.buildTimelineInputs(merged as unknown as Story),
+        }),
       });
 
       tx.set(contentRef, content satisfies StoredStoryContent);
@@ -252,10 +253,12 @@ export class StoriesService {
         kind: 'story',
         id,
         canonicalCollection: 'stories',
-        canonical: metaData as unknown as Record<string, unknown>,
+        patch: metaData as unknown as Record<string, unknown>,
         slug,
-        directory: this.buildDirectoryInputs({ id, ...metaData }),
-        timeline: this.buildTimelineInputs({ id, ...metaData }),
+        buildInputs: (merged) => ({
+          directory: this.buildDirectoryInputs(merged as unknown as Story),
+          timeline: this.buildTimelineInputs(merged as unknown as Story),
+        }),
       });
       tx.set(this.contentDocRef(universeId, id), contentData);
     });

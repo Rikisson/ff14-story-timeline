@@ -27,3 +27,7 @@ export type {
   DateErrorType,
   DateValidationError,
 } from './data-access/in-game-date-validation';
+export {
+  formatDateSecondary,
+  type CalendarProjectionContext,
+} from './data-access/calendar-projection';

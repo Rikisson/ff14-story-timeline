@@ -127,11 +127,12 @@ export async function buildProjectionRows(
   return { fingerprint, directoryRow, timelineRow, laneRows };
 }
 
-export function directoryRowKey(kind: EntityKind, id: string): string {
-  return `${kind}_${id}`;
-}
-
-export function timelineRowKey(kind: EntityKind, id: string): string {
+/**
+ * Composite key used by `_directory/{kind}_{id}` AND
+ * `_timelineEntries/{kind}_{id}`. The two collections share the same
+ * row-key shape; only the lane key prepends a `laneKey_` segment.
+ */
+export function entityRowKey(kind: EntityKind, id: string): string {
   return `${kind}_${id}`;
 }
 
