@@ -157,6 +157,14 @@ export class CodexCategoryTypeaheadComponent {
   readonly value = input<string | null>(null);
   readonly placeholder = input<string>('');
   readonly disabled = input<boolean>(false);
+  /**
+   * When `true` (the default — the codex entry form's case), an
+   * affirmative *Create category "X"* row appears for novel labels. When
+   * `false` (filter contexts), the create row is suppressed and unknown
+   * queries just show *no matches*. The filter never wants to create
+   * categories, only pick from existing ones.
+   */
+  readonly allowCreate = input<boolean>(true);
   readonly valueChange = output<string | null>();
 
   private readonly service = inject(CodexCategoriesService);
@@ -189,6 +197,7 @@ export class CodexCategoryTypeaheadComponent {
   });
 
   protected readonly showCreateRow = computed(() => {
+    if (!this.allowCreate()) return false;
     const q = this.query().trim();
     if (!q) return false;
     const folded = foldLabel(q);

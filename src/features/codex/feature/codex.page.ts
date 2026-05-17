@@ -12,6 +12,7 @@ import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@sha
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntry, CodexEntryDraft } from '../data-access/codex-entry.types';
+import { CodexCategoryTypeaheadComponent } from '../ui/codex-category-typeahead.component';
 import { CodexEntryCardComponent } from '../ui/codex-entry-card.component';
 import { CodexEntryFormComponent } from '../ui/codex-entry-form.component';
 import codexEn from '../i18n/en.json';
@@ -21,6 +22,7 @@ import codexUk from '../i18n/uk.json';
   selector: 'app-codex-page',
   host: { class: 'block h-full' },
   imports: [
+    CodexCategoryTypeaheadComponent,
     EntityListPaneComponent,
     CodexEntryCardComponent,
     CodexEntryFormComponent,
@@ -43,20 +45,15 @@ import codexUk from '../i18n/uk.json';
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
         >
-          <label class="flex">
+          <div class="w-60">
             <span class="sr-only">{{ t('field.category') }}</span>
-            <select
-              class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
-              [value]="categoryFilter() ?? ''"
-              [attr.aria-label]="t('field.category')"
-              (change)="onCategoryFilterChange($event)"
-            >
-              <option value="">{{ t('action.allCategories') }}</option>
-              @for (cat of categoriesList(); track cat.id) {
-                <option [value]="cat.key">{{ cat.label }}</option>
-              }
-            </select>
-          </label>
+            <app-codex-category-typeahead
+              [value]="categoryFilter()"
+              [allowCreate]="false"
+              [placeholder]="t('action.filterByCategory')"
+              (valueChange)="categoryFilter.set($event)"
+            />
+          </div>
         </app-page-header>
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
@@ -143,12 +140,6 @@ export class CodexPage {
   });
 
   private readonly categories = inject(CodexCategoriesService);
-  protected readonly categoriesList = this.categories.categories;
-
-  protected onCategoryFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.categoryFilter.set(value ? value : null);
-  }
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     const byKey = this.categories.categoryByKey();
