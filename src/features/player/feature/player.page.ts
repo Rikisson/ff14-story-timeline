@@ -1,15 +1,18 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   input,
   PLATFORM_ID,
   Signal,
   signal,
+  viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -20,17 +23,22 @@ import {
   ResolvedDirectoryRow,
 } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
+import { PlayerPreferencesService } from '@shared/services';
 import {
   GhostButtonComponent,
   PrimaryButtonComponent,
   SecondaryButtonComponent,
 } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
+import { resolveEffectiveBgm } from '../data-access/bgm';
 import { PlayerStore } from '../data-access/player.store';
+import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
 import { ChoiceListComponent } from '../ui/choice-list.component';
+import { PlayerPreferencesDialogComponent } from '../ui/player-preferences-dialog.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import playerEn from '../i18n/en.json';
 import playerUk from '../i18n/uk.json';
+import { BgmController } from './bgm-controller';
 
 @Component({
   selector: 'app-player-page',
@@ -38,6 +46,7 @@ import playerUk from '../i18n/uk.json';
     RouterLink,
     SceneViewComponent,
     ChoiceListComponent,
+    PlayerPreferencesDialogComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
@@ -55,7 +64,7 @@ import playerUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'player'">
-      <div class="mx-auto flex max-w-3xl flex-col gap-4">
+      <div [class]="rootClass()">
         @if (store.loading()) {
           @if (showLoadingIndicator()) {
             <p class="text-foreground-subtle">{{ t('message.loading') }}</p>
@@ -76,6 +85,14 @@ import playerUk from '../i18n/uk.json';
                 {{ t('action.back') }}
               </button>
               <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
+              <button
+                uiSecondary
+                type="button"
+                [attr.aria-label]="t('action.preferences')"
+                (click)="prefsDialog.open()"
+              >
+                {{ t('action.preferencesEmoji') }}
+              </button>
             </div>
           </header>
 
@@ -104,6 +121,7 @@ import playerUk from '../i18n/uk.json';
               [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
               [staged]="stagedView()"
               [inlineRefOptions]="inlineRefOptions()"
+              [textSpeed]="effectiveTextSpeed()"
             />
 
             @if (scene.next.length === 0) {
@@ -120,11 +138,10 @@ import playerUk from '../i18n/uk.json';
           }
 
           <!--
-            Audio host sits above scene-view so ambient tracks survive
-            scene re-renders (per docs/narrative-engine-impl.md *Scene
-            rendering layers*). When consecutive scenes share an audio
-            URL the element stays mounted and the browser does not
-            restart playback.
+            Scene SFX/voice host sits above scene-view so the audio
+            element survives scene re-renders (per
+            docs/narrative-engine-impl.md *Scene rendering layers*). BGM
+            lives in the two hidden slots below.
           -->
           @if (audioUrl(); as a) {
             <audio
@@ -132,16 +149,23 @@ import playerUk from '../i18n/uk.json';
               controls
               preload="auto"
               [src]="a"
+              [volume]="prefs.sfxVolume()"
               [attr.aria-label]="audioLabel()"
             ></audio>
           }
+
+          <!-- BGM crossfade slots — hidden controls; driven by BgmController. -->
+          <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+          <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
         }
       </div>
+
+      <app-player-preferences-dialog #prefsDialog />
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlayerPage {
+export class PlayerPage implements AfterViewInit {
   readonly id = input.required<string>();
   protected readonly store = inject(PlayerStore);
   private readonly characters = inject(CharactersService);
@@ -150,11 +174,26 @@ export class PlayerPage {
   private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  protected readonly prefs = inject(PlayerPreferencesService);
+
+  private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
+  private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
+  private bgmController: BgmController | null = null;
 
   // 500 ms deferral so a fast load (cache hit) renders straight to the
   // scene without a loading flash. Per the player spec the indicator is
   // a delay-gated affordance, not a guarantee.
   protected readonly showLoadingIndicator = signal(false);
+
+  protected readonly rootClass = computed(
+    () => `player-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4`,
+  );
+
+  protected readonly effectiveTextSpeed = computed(() =>
+    resolveEffectiveTextSpeed(this.store.currentScene(), {
+      allowTextAnimations: this.prefs.allowTextAnimations(),
+    }),
+  );
 
   /**
    * Per-scene canonical character cache. Each scene fans out a single
@@ -192,6 +231,17 @@ export class PlayerPage {
   protected readonly backgroundUrl = computed(() => this.backgroundThumb()?.url);
   protected readonly backgroundBlurDataUrl = computed(() => this.backgroundThumb()?.blurDataUrl);
   protected readonly audioUrl = computed(() => this.audioThumb()?.url);
+
+  // BGM target = effective asset ID after applying scene override / silence flag
+  // and story default. Resolved to a URL through the asset cache; the
+  // BgmController owns the actual crossfade between the two audio slots.
+  private readonly bgmTarget = computed(() =>
+    resolveEffectiveBgm(this.store.currentScene(), this.store.story()),
+  );
+  private readonly bgmThumb = computed(() =>
+    this.assets.resolve(this.bgmTarget().assetId ?? undefined)(),
+  );
+  private readonly bgmUrl = computed(() => this.bgmThumb()?.url ?? null);
 
   // Audio host lives outside scene-view (see template comment); the
   // accessible label still mentions the current speaker when available.
@@ -284,6 +334,7 @@ export class PlayerPage {
       if (!target) continue;
       if (target.backgroundAssetId) ids.add(target.backgroundAssetId);
       if (target.audioAssetId) ids.add(target.audioAssetId);
+      if (target.bgmAssetId) ids.add(target.bgmAssetId);
     }
     return [...ids];
   });
@@ -315,6 +366,7 @@ export class PlayerPage {
     });
     this.destroyRef.onDestroy(() => {
       if (pendingIndicator !== null) clearTimeout(pendingIndicator);
+      this.bgmController?.dispose();
     });
 
     // Hydrate canonical character docs for the current scene's stage.
@@ -354,6 +406,31 @@ export class PlayerPage {
       for (const thumb of map.values()) urls.push(thumb.url);
       schedulePrefetch(urls);
     });
+
+    // Drive the BGM controller. Decoupled from playback by design — the
+    // controller does its own crossfade so consecutive same-URL scenes
+    // leave the active audio element playing untouched.
+    effect(() => {
+      const controller = this.bgmController;
+      if (!controller) return;
+      const target = this.bgmTarget();
+      const url = this.bgmUrl();
+      controller.setTarget(target, url);
+    });
+    effect(() => {
+      this.bgmController?.setUserVolume(this.prefs.bgmVolume());
+    });
+  }
+
+  ngAfterViewInit(): void {
+    const a = this.bgmA()?.nativeElement;
+    const b = this.bgmB()?.nativeElement;
+    if (!a || !b) return;
+    this.bgmController = new BgmController(a, b);
+    this.bgmController.setUserVolume(this.prefs.bgmVolume());
+    // Apply the current target now that the controller exists; subsequent
+    // changes are driven by the `effect` above.
+    this.bgmController.setTarget(this.bgmTarget(), this.bgmUrl());
   }
 }
 

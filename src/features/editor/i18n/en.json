@@ -16,6 +16,12 @@
     "background": "Background",
     "audio": "Audio",
     "assets": "Assets",
+    "bgm": "Background music",
+    "sceneBgm": "Scene BGM (override)",
+    "bgmSilence": "Silence on this scene",
+    "bgmTransition": "Transition",
+    "textSpeed": "Text speed",
+    "textSpeedHelp": "Players can disable text animations in their preferences.",
     "relatedEntities": "Related entities",
     "plotlines": "Plotlines",
     "inGameDate": "In-game date",
@@ -29,6 +35,10 @@
     "draftBadge": "Draft",
     "publishedBadge": "Published"
   },
+  "section": {
+    "soundtrack": "Soundtrack",
+    "sceneBgm": "Scene BGM"
+  },
   "action": {
     "addScene": "+ Add scene",
     "save": "Save",
@@ -40,7 +50,20 @@
     "pickCover": "Pick cover",
     "pickBackground": "Pick background",
     "pickAudio": "Pick audio",
+    "pickBgm": "Pick BGM",
+    "replaceBgm": "Replace BGM",
+    "removeBgm": "Remove BGM",
     "backToStories": "Back to stories"
+  },
+  "transition": {
+    "crossfade": "Crossfade",
+    "cut": "Cut"
+  },
+  "speed": {
+    "slow": "Slow",
+    "normal": "Normal",
+    "fast": "Fast",
+    "instant": "Instant"
   },
   "message": {
     "loading": "Loading…",
@@ -79,6 +102,9 @@
     "searchPlace": "Search places…",
     "choiceLabelPlaceholder": "Label (e.g. Yes / Continue)",
     "coverHint": "Used for the catalog card.",
+    "bgmHint": "Loops across every scene unless a scene overrides it.",
+    "bgmOverrideHint": "Leave empty to inherit the story's BGM.",
+    "bgmSilencedHint": "Music will fade out on this scene.",
     "spriteDefault": "(default)"
   },
   "tooltip": {
@@ -88,6 +114,7 @@
     "pickCoverTitle": "Pick a cover image",
     "pickBackgroundTitle": "Pick a scene background",
     "pickAudioTitle": "Pick scene audio",
+    "pickBgmTitle": "Pick background music",
     "storyCoverAlt": "Story cover",
     "sceneBackgroundAlt": "Scene background",
     "descriptionAria": "Description",

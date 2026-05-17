@@ -95,6 +95,33 @@ const PLOTLINE_REFS_MAX = 10;
         </div>
 
         <div class="field">
+          <label>{{ t('field.bgm') }}</label>
+          @if (bgmUrl(); as url) {
+            <audio class="w-full" controls preload="none" [src]="url"></audio>
+            <div class="cover-actions">
+              <button uiSecondary type="button" (click)="bgmPicker.open()">
+                {{ t('action.replaceBgm') }}
+              </button>
+              <button uiGhost type="button" (click)="clearBgm()">
+                {{ t('action.removeBgm') }}
+              </button>
+            </div>
+          } @else {
+            <button uiSecondary type="button" (click)="bgmPicker.open()">
+              {{ t('action.pickBgm') }}
+            </button>
+            <span class="hint">{{ t('empty.bgmHint') }}</span>
+          }
+          <app-asset-picker
+            #bgmPicker
+            kind="ambient"
+            [title]="t('tooltip.pickBgmTitle')"
+            [currentSelection]="bgmSelection()"
+            (picked)="onBgmPicked($event)"
+          />
+        </div>
+
+        <div class="field">
           <label>{{ t('field.description') }}</label>
           <app-rich-text-input
             appContentLang
@@ -238,6 +265,14 @@ export class StoryMetaPanelComponent {
     return id ? [id] : [];
   });
 
+  protected readonly bgmUrl = computed(() =>
+    this.assets.resolve(this.meta()?.bgmAssetId)()?.url,
+  );
+  protected readonly bgmSelection = computed(() => {
+    const id = this.meta()?.bgmAssetId;
+    return id ? [id] : [];
+  });
+
   protected readonly slugValid = computed(() => {
     const m = this.meta();
     if (!m) return true;
@@ -282,5 +317,13 @@ export class StoryMetaPanelComponent {
 
   protected clearCover(): void {
     this.update.emit({ coverAssetId: undefined });
+  }
+
+  protected onBgmPicked(ids: string[]): void {
+    this.update.emit({ bgmAssetId: ids[0] });
+  }
+
+  protected clearBgm(): void {
+    this.update.emit({ bgmAssetId: undefined });
   }
 }

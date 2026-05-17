@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, effect, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, signal, viewChild } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
-import { MarkdownTextComponent } from '@shared/ui';
+import { TextSpeed } from '@features/stories';
+import { TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import playerEn from '../i18n/en.json';
 import playerUk from '../i18n/uk.json';
@@ -31,10 +32,13 @@ type CrossfadeSlot = 'A' | 'B';
  *     slots — the full image fades in on top once it loads.
  *   - The audio host lives in `player.page.ts` above this component so
  *     ambient tracks survive scene re-renders.
+ *   - Scene text reveals via `<app-typewriter-text>` at the authored
+ *     speed; clicking anywhere on the article frame skips a mid-reveal
+ *     to the fully revealed state (standard VN gesture).
  */
 @Component({
   selector: 'app-scene-view',
-  imports: [MarkdownTextComponent, TranslocoDirective, ContentLangDirective],
+  imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective],
   providers: [
     provideTranslocoScope({
       scope: 'player',
@@ -48,6 +52,7 @@ type CrossfadeSlot = 'A' | 'B';
     <ng-container *transloco="let t; prefix: 'player'">
       <article
         class="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface"
+        (click)="onArticleClick($event)"
       >
         <!-- Background layer: blur placeholder underneath, two crossfading slots on top. -->
         <div class="absolute inset-0" aria-hidden="true">
@@ -129,14 +134,17 @@ type CrossfadeSlot = 'A' | 'B';
         <div
           appContentLang
           class="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-scrim/85 via-scrim/55 to-transparent px-5 pb-4 pt-16"
+          style="font-size: var(--scene-font-size, 1rem);"
         >
           @if (speaker(); as s) {
             <p class="m-0 text-sm font-semibold text-scrim-foreground/90">{{ s }}</p>
           }
-          <app-markdown-text
+          <app-typewriter-text
+            #typewriter
             class="text-base leading-relaxed text-scrim-foreground"
             [text]="text()"
             [options]="inlineRefOptions()"
+            [speed]="textSpeed()"
           />
         </div>
       </article>
@@ -151,8 +159,10 @@ export class SceneViewComponent {
   readonly backgroundBlurDataUrl = input<string | undefined>();
   readonly staged = input<StagedView[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
+  readonly textSpeed = input<TextSpeed>('fast');
 
   protected readonly slots = POSITION_SLOTS;
+  private readonly typewriter = viewChild<TypewriterTextComponent>('typewriter');
 
   // Two-slot crossfade state. `frontSlot` flips on each background
   // change; whichever slot becomes the front is opaque, the other
@@ -190,5 +200,18 @@ export class SceneViewComponent {
     return this.staged()
       .filter((s) => !known.has(s.position))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  /**
+   * Click-anywhere-to-skip the typewriter reveal. If the reveal had work
+   * left to finish we stop the event so the same click doesn't also
+   * advance the scene; otherwise the click passes through (which today
+   * is a no-op — the article frame has no other click handlers).
+   */
+  protected onArticleClick(event: MouseEvent): void {
+    const tw = this.typewriter();
+    if (!tw) return;
+    const completed = tw.complete();
+    if (completed) event.stopPropagation();
   }
 }

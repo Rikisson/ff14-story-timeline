@@ -16,6 +16,12 @@
     "background": "Фон",
     "audio": "Аудіо",
     "assets": "Ресурси",
+    "bgm": "Фонова музика",
+    "sceneBgm": "BGM сцени (заміна)",
+    "bgmSilence": "Тиша на цій сцені",
+    "bgmTransition": "Перехід",
+    "textSpeed": "Швидкість тексту",
+    "textSpeedHelp": "Гравці можуть вимкнути анімацію тексту у своїх налаштуваннях.",
     "relatedEntities": "Повʼязані сутності",
     "plotlines": "Сюжетні лінії",
     "inGameDate": "Внутрішньоігрова дата",
@@ -29,6 +35,10 @@
     "draftBadge": "Чернетка",
     "publishedBadge": "Опубліковано"
   },
+  "section": {
+    "soundtrack": "Саундтрек",
+    "sceneBgm": "BGM сцени"
+  },
   "action": {
     "addScene": "+ Додати сцену",
     "save": "Зберегти",
@@ -40,7 +50,20 @@
     "pickCover": "Обрати обкладинку",
     "pickBackground": "Обрати фон",
     "pickAudio": "Обрати аудіо",
+    "pickBgm": "Обрати BGM",
+    "replaceBgm": "Замінити BGM",
+    "removeBgm": "Прибрати BGM",
     "backToStories": "Назад до історій"
+  },
+  "transition": {
+    "crossfade": "Плавно",
+    "cut": "Різко"
+  },
+  "speed": {
+    "slow": "Повільно",
+    "normal": "Звичайно",
+    "fast": "Швидко",
+    "instant": "Миттєво"
   },
   "message": {
     "loading": "Завантаження…",
@@ -79,6 +102,9 @@
     "searchPlace": "Шукати місця…",
     "choiceLabelPlaceholder": "Мітка (напр. Так / Далі)",
     "coverHint": "Використовується для картки в каталозі.",
+    "bgmHint": "Грає на повторі для кожної сцени, доки сцена не вкаже свою.",
+    "bgmOverrideHint": "Залиште порожнім, щоб успадкувати BGM історії.",
+    "bgmSilencedHint": "Музика стихне на цій сцені.",
     "spriteDefault": "(типовий)"
   },
   "tooltip": {
@@ -88,6 +114,7 @@
     "pickCoverTitle": "Обрати обкладинку",
     "pickBackgroundTitle": "Обрати фон сцени",
     "pickAudioTitle": "Обрати аудіо для сцени",
+    "pickBgmTitle": "Обрати фонову музику",
     "storyCoverAlt": "Обкладинка історії",
     "sceneBackgroundAlt": "Фон сцени",
     "descriptionAria": "Опис",

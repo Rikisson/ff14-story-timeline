@@ -226,3 +226,10 @@ html [data-testid='output-socket'] > *.multiple {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Player text-size preference. The player root binds one of these
+ * classes; scene-view consumes the value through `--scene-font-size`. */
+.player-font-small  { --scene-font-size: 0.9rem; }
+.player-font-medium { --scene-font-size: 1rem; }
+.player-font-large  { --scene-font-size: 1.15rem; }
+.player-font-xl     { --scene-font-size: 1.3rem; }

@@ -164,6 +164,17 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   A speaker that is an `EntityRef<'character'>` not present in
   `characters[]` triggers a visible editor prompt rather than silently
   mutating the array.
+- **BGM is a separate concern from scene SFX.** `Story.bgmAssetId`
+  declares the story-wide track. A scene may override with its own
+  `bgmAssetId`, or force quiet with `bgmSilence: true`. The optional
+  `bgmTransition` ('crossfade' | 'cut', default 'crossfade') controls
+  how a change is performed on entry. `Scene.audioAssetId` is reserved
+  for per-scene SFX/voice; it plays simultaneously with the BGM.
+- **Authored text speed per scene.** Each scene carries an optional
+  `textSpeed` ('slow' | 'normal' | 'fast' | 'instant', default 'fast'
+  when unset). The reader may override authoring by disabling text
+  animations in player preferences, in which case every scene renders
+  instantly regardless of the authored value.
 
 ## Calendar
 
@@ -323,7 +334,13 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   background. Not the author's responsibility.
 - **Audio element lives in the player shell.** The `<audio>` host
   sits above `scene-view` so it survives scene re-renders. Cross-scene
-  ambient continuity depends on this.
+  ambient continuity depends on this. BGM is a separate hidden
+  two-slot pair on the same shell: when consecutive scenes resolve to
+  the same effective BGM URL the active slot keeps playing untouched;
+  on change, the next slot fades in (or hard-swaps) per the scene's
+  `bgmTransition`. The scene SFX/voice element stays visible with
+  native controls so readers can stop a voice line they'd rather not
+  hear.
 - **Background swaps use two stacked `<img>` elements with CSS opacity
   crossfade.** Skip the crossfade when the next asset URL equals the
   current.
@@ -335,6 +352,13 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   after 500ms of pending load.** First scene shows the loading state
   until its background is ready; subsequent transitions rely on
   preload.
+- **Text reveal honors the scene's `textSpeed`.** Rendered through a
+  typewriter component that wraps each character behind a hidden span
+  and reveals them at the configured cps. Clicking anywhere on the
+  article frame mid-reveal completes the reveal instantly and absorbs
+  the click so the same gesture doesn't also advance the scene.
+  Choices remain interactive throughout the reveal. The reader can
+  disable the animation globally in player preferences.
 
 ---
 
@@ -349,15 +373,6 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
 - **Orphaned `categoryKey` repair.** Walks `codexEntries` whose `categoryKey` no longer maps to a row in the `_meta/codex_categories` config (per *Codex categories — Delete requires reassignment*: the v1 UI-only delete block has a small race window where a concurrent create can produce one of these). Surfaces the affected entries and offers a reassign-to-category-X or clear-categoryKey flow.
 - **Unused-category sweep.** Walks `_meta/codex_categories` for rows with zero referencing codex entries (per *Codex categories — Every saved entry's `categoryKey` exists in config*: the affirmative-create row commits the config entry before the codex entry is saved, so an abandoned form leaves an unreferenced category). Lists the unused categories and offers bulk delete.
 - **Broken inline-ref repair.** Walks scenes for `${kind:guid}[…]` tokens whose target entity is missing (per *Inline-ref tokens — Entity delete*). Surfaces a list with the surrounding scene context and offers re-resolution or removal. Same shape as the categoryKey tool; consider sharing the UI shell.
-
-## Player
-
-- Multiple save slots per story; cloud sync.
-- Reading-progress badges ("In progress" / "Completed" / "Endings
-  N/M").
-- Player preferences — text speed, font size, BGM volume; persisted.
-- Layered audio — BGM track + per-scene SFX/voice line.
-- PWA / offline reading — manifest + service worker.
 
 ## Catalog
 

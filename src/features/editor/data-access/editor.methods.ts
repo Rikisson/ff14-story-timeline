@@ -27,6 +27,7 @@ export function withEditorMethods() {
               title: story.title,
               description: story.description,
               coverAssetId: story.coverAssetId,
+              bgmAssetId: story.bgmAssetId,
               relatedRefs: story.relatedRefs,
               plotlineRefs: story.plotlineRefs,
               inGameDate: story.inGameDate,

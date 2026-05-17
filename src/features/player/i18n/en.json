@@ -6,7 +6,10 @@
     "resume": "Resume",
     "startOver": "Start over",
     "restart": "Restart",
-    "continue": "Continue"
+    "continue": "Continue",
+    "preferences": "Player preferences",
+    "preferencesEmoji": "⚙",
+    "close": "Close"
   },
   "message": {
     "loading": "Loading…",
@@ -21,5 +24,19 @@
     "position": "Position: {{ slot }}",
     "audioForSpeaker": "Audio for {{ speaker }}",
     "audioGeneric": "Scene audio"
+  },
+  "prefs": {
+    "title": "Preferences",
+    "allowTextAnimations": "Allow text animations",
+    "allowTextAnimationsHelp": "When off, scene text appears instantly.",
+    "fontSize": "Font size",
+    "bgmVolume": "Music volume",
+    "sfxVolume": "Sound effects volume"
+  },
+  "size": {
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large",
+    "xl": "Extra large"
   }
 }

@@ -13,3 +13,4 @@ export * from './rich-text-input';
 export * from './tag';
 export * from './theme-toggle';
 export * from './toggle-button';
+export * from './typewriter';

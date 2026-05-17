@@ -7,6 +7,9 @@ export interface StagedCharacter {
   spriteId?: string;
 }
 
+export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
+export type BgmTransition = 'crossfade' | 'cut';
+
 export interface Scene {
   text: string;
   label?: string;
@@ -15,6 +18,10 @@ export interface Scene {
   characters: StagedCharacter[];
   place?: EntityRef<'place'>;
   audioAssetId?: string;
+  bgmAssetId?: string;
+  bgmSilence?: boolean;
+  bgmTransition?: BgmTransition;
+  textSpeed?: TextSpeed;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
 }
@@ -25,6 +32,7 @@ export interface Story {
   title: string;
   description?: string;
   coverAssetId?: string;
+  bgmAssetId?: string;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
