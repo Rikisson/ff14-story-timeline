@@ -1,5 +1,4 @@
-import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, signal } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { MarkdownTextComponent } from '@shared/ui';
@@ -19,9 +18,23 @@ export interface StagedView {
 const POSITION_SLOTS = ['left', 'center', 'right'] as const;
 type PositionSlot = (typeof POSITION_SLOTS)[number];
 
+type CrossfadeSlot = 'A' | 'B';
+
+/**
+ * Per `docs/narrative-engine-impl.md` *Scene rendering layers*:
+ *   - Three independent DOM layers (background / characters / text scrim)
+ *     are siblings and overlap absolutely inside the article frame.
+ *   - Background swaps use two stacked `<img>` slots with CSS opacity
+ *     crossfade; identical URLs skip the swap so consecutive same-bg
+ *     scenes don't flicker.
+ *   - `blurDataUrl` paints immediately as a placeholder underneath the
+ *     slots — the full image fades in on top once it loads.
+ *   - The audio host lives in `player.page.ts` above this component so
+ *     ambient tracks survive scene re-renders.
+ */
 @Component({
   selector: 'app-scene-view',
-  imports: [NgOptimizedImage, MarkdownTextComponent, TranslocoDirective, ContentLangDirective],
+  imports: [MarkdownTextComponent, TranslocoDirective, ContentLangDirective],
   providers: [
     provideTranslocoScope({
       scope: 'player',
@@ -34,80 +47,94 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
   template: `
     <ng-container *transloco="let t; prefix: 'player'">
       <article
-        class="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
+        class="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface"
       >
-        @if (background(); as bg) {
-          <div class="relative aspect-video w-full">
-            <img [ngSrc]="bg" alt="" fill class="object-cover" />
-          </div>
-        }
+        <!-- Background layer: blur placeholder underneath, two crossfading slots on top. -->
+        <div class="absolute inset-0" aria-hidden="true">
+          @if (backgroundBlurDataUrl(); as blur) {
+            <img
+              [src]="blur"
+              alt=""
+              class="absolute inset-0 size-full scale-105 object-cover blur-xl"
+            />
+          }
+          @if (slotA(); as url) {
+            <img
+              [src]="url"
+              alt=""
+              class="absolute inset-0 size-full object-cover transition-opacity duration-500 ease-out"
+              [class.opacity-0]="frontSlot() !== 'A'"
+            />
+          }
+          @if (slotB(); as url) {
+            <img
+              [src]="url"
+              alt=""
+              class="absolute inset-0 size-full object-cover transition-opacity duration-500 ease-out"
+              [class.opacity-0]="frontSlot() !== 'B'"
+            />
+          }
+        </div>
 
-        @if (staged().length > 0) {
-          <div class="grid grid-cols-3 gap-2 border-b border-border px-4 py-3">
-            @for (slot of slots; track slot) {
-              <div class="flex flex-wrap items-end justify-center gap-2">
-                @for (s of stagedFor(slot); track s.id) {
-                  <figure
-                    class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                    [class.opacity-40]="!s.isSpeaker"
-                  >
-                    @if (s.spriteUrl; as url) {
-                      <img
-                        [ngSrc]="url"
-                        [alt]="s.name"
-                        width="120"
-                        height="120"
-                        class="size-24 rounded-md border border-border object-cover"
-                      />
-                    } @else {
-                      <div
-                        class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
-                      >
-                        {{ t('empty.noSprite') }}
-                      </div>
-                    }
-                    <figcaption class="text-xs font-medium text-foreground-muted">
-                      {{ s.name }}
-                    </figcaption>
-                  </figure>
-                }
-                @for (s of stagedOther(slot); track s.id) {
-                  <figure
-                    class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                    [class.opacity-40]="!s.isSpeaker"
-                    [title]="t('tooltip.position', { slot: s.position })"
-                  >
-                    @if (s.spriteUrl; as url) {
-                      <img
-                        [ngSrc]="url"
-                        [alt]="s.name"
-                        width="120"
-                        height="120"
-                        class="size-24 rounded-md border border-border object-cover"
-                      />
-                    } @else {
-                      <div
-                        class="flex size-24 items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-subtle text-xs text-foreground-faint"
-                      >
-                        {{ t('empty.noSprite') }}
-                      </div>
-                    }
-                    <figcaption class="text-xs font-medium text-foreground-muted">
-                      {{ s.name }}
-                    </figcaption>
-                  </figure>
-                }
-              </div>
-            }
-          </div>
-        }
+        <!-- Character layer: positioned slots, full-saturation sprites untouched by background filters. -->
+        <div class="absolute inset-x-0 bottom-24 grid grid-cols-3 items-end gap-2 px-4">
+          @for (slot of slots; track slot) {
+            <div class="flex flex-wrap items-end justify-center gap-2">
+              @for (s of stagedFor(slot); track s.id) {
+                <figure
+                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
+                  [class.opacity-40]="!s.isSpeaker"
+                >
+                  @if (s.spriteUrl; as url) {
+                    <img
+                      [src]="url"
+                      [alt]="s.name"
+                      class="size-32 object-contain drop-shadow-lg"
+                    />
+                  } @else {
+                    <div
+                      class="flex size-32 items-center justify-center rounded-md border border-dashed border-scrim-foreground/40 bg-scrim/30 text-xs text-scrim-foreground/80"
+                    >
+                      {{ t('empty.noSprite') }}
+                    </div>
+                  }
+                </figure>
+              }
+              @for (s of stagedOther(slot); track s.id) {
+                <figure
+                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
+                  [class.opacity-40]="!s.isSpeaker"
+                  [title]="t('tooltip.position', { slot: s.position })"
+                >
+                  @if (s.spriteUrl; as url) {
+                    <img
+                      [src]="url"
+                      [alt]="s.name"
+                      class="size-32 object-contain drop-shadow-lg"
+                    />
+                  } @else {
+                    <div
+                      class="flex size-32 items-center justify-center rounded-md border border-dashed border-scrim-foreground/40 bg-scrim/30 text-xs text-scrim-foreground/80"
+                    >
+                      {{ t('empty.noSprite') }}
+                    </div>
+                  }
+                </figure>
+              }
+            </div>
+          }
+        </div>
 
-        <div appContentLang class="flex flex-col gap-2 px-5 py-4">
+        <!-- Text scrim layer: gradient + speaker + text. -->
+        <div
+          appContentLang
+          class="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-scrim/85 via-scrim/55 to-transparent px-5 pb-4 pt-16"
+        >
           @if (speaker(); as s) {
-            <p class="m-0 text-sm font-semibold text-foreground-muted">{{ s }}</p>
+            <p class="m-0 text-sm font-semibold text-scrim-foreground/90">{{ s }}</p>
           }
           <app-markdown-text
-            class="text-base leading-relaxed text-foreground"
+            class="text-base leading-relaxed text-scrim-foreground"
             [text]="text()"
             [options]="inlineRefOptions()"
           />
@@ -121,10 +148,35 @@ export class SceneViewComponent {
   readonly text = input.required<string>();
   readonly speaker = input<string | undefined>();
   readonly background = input<string | undefined>();
+  readonly backgroundBlurDataUrl = input<string | undefined>();
   readonly staged = input<StagedView[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
 
   protected readonly slots = POSITION_SLOTS;
+
+  // Two-slot crossfade state. `frontSlot` flips on each background
+  // change; whichever slot becomes the front is opaque, the other
+  // transitions to transparent (and stays mounted briefly so the
+  // outgoing image is visible during the fade).
+  protected readonly slotA = signal<string | undefined>(undefined);
+  protected readonly slotB = signal<string | undefined>(undefined);
+  protected readonly frontSlot = signal<CrossfadeSlot>('A');
+
+  constructor() {
+    effect(() => {
+      const next = this.background();
+      const front = this.frontSlot();
+      const currentFront = front === 'A' ? this.slotA() : this.slotB();
+      if (next === currentFront) return;
+      if (front === 'A') {
+        this.slotB.set(next);
+        this.frontSlot.set('B');
+      } else {
+        this.slotA.set(next);
+        this.frontSlot.set('A');
+      }
+    });
+  }
 
   protected stagedFor(slot: PositionSlot): StagedView[] {
     return this.staged()

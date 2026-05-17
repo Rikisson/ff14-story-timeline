@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -56,7 +57,9 @@ import playerUk from '../i18n/uk.json';
     <ng-container *transloco="let t; prefix: 'player'">
       <div class="mx-auto flex max-w-3xl flex-col gap-4">
         @if (store.loading()) {
-          <p class="text-foreground-subtle">{{ t('message.loading') }}</p>
+          @if (showLoadingIndicator()) {
+            <p class="text-foreground-subtle">{{ t('message.loading') }}</p>
+          }
         } @else if (store.error(); as err) {
           <p class="text-danger-foreground">{{ err }}</p>
           <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
@@ -98,6 +101,7 @@ import playerUk from '../i18n/uk.json';
               [text]="scene.text"
               [speaker]="speakerLabel()"
               [background]="backgroundUrl()"
+              [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
               [staged]="stagedView()"
               [inlineRefOptions]="inlineRefOptions()"
             />
@@ -144,7 +148,13 @@ export class PlayerPage {
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
   private readonly transloco = inject(TranslocoService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  // 500 ms deferral so a fast load (cache hit) renders straight to the
+  // scene without a loading flash. Per the player spec the indicator is
+  // a delay-gated affordance, not a guarantee.
+  protected readonly showLoadingIndicator = signal(false);
 
   /**
    * Per-scene canonical character cache. Each scene fans out a single
@@ -180,6 +190,7 @@ export class PlayerPage {
     this.assets.resolve(this.store.currentScene()?.audioAssetId)(),
   );
   protected readonly backgroundUrl = computed(() => this.backgroundThumb()?.url);
+  protected readonly backgroundBlurDataUrl = computed(() => this.backgroundThumb()?.blurDataUrl);
   protected readonly audioUrl = computed(() => this.audioThumb()?.url);
 
   // Audio host lives outside scene-view (see template comment); the
@@ -281,6 +292,29 @@ export class PlayerPage {
   constructor() {
     effect(() => {
       this.store.loadStory(this.id());
+    });
+
+    // Defer the loading indicator by 500 ms — fast resolves go straight
+    // to the scene with no flicker.
+    let pendingIndicator: ReturnType<typeof setTimeout> | null = null;
+    effect(() => {
+      const loading = this.store.loading();
+      if (pendingIndicator !== null) {
+        clearTimeout(pendingIndicator);
+        pendingIndicator = null;
+      }
+      if (loading) {
+        this.showLoadingIndicator.set(false);
+        pendingIndicator = setTimeout(() => {
+          this.showLoadingIndicator.set(true);
+          pendingIndicator = null;
+        }, 500);
+      } else {
+        this.showLoadingIndicator.set(false);
+      }
+    });
+    this.destroyRef.onDestroy(() => {
+      if (pendingIndicator !== null) clearTimeout(pendingIndicator);
     });
 
     // Hydrate canonical character docs for the current scene's stage.

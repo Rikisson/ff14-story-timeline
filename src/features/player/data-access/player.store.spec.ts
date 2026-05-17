@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { TranslocoService } from '@jsverse/transloco';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StoriesService, Story, StoryContent } from '@features/stories';
 import { PlayerStore } from './player.store';
@@ -36,10 +37,12 @@ function setup() {
     deleteStory: vi.fn(),
     refreshPublished: vi.fn(),
   };
+  const mockTransloco = { translate: (key: string) => key };
   TestBed.configureTestingModule({
     providers: [
       PlayerStore,
       { provide: StoriesService, useValue: mockStories },
+      { provide: TranslocoService, useValue: mockTransloco },
     ],
   });
   return { store: TestBed.inject(PlayerStore), mockStories };

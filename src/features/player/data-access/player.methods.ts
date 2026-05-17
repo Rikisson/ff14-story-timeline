@@ -1,4 +1,6 @@
 import { inject } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
+import { FirebaseError } from 'firebase/app';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { StoriesService, StoryContent } from '@features/stories';
 import { PlayerState, SavedProgress } from './player.state';
@@ -55,7 +57,11 @@ function isUsableResume(content: StoryContent, saved: SavedProgress): boolean {
 export function withPlayerMethods() {
   return signalStoreFeature(
     { state: type<PlayerState>() },
-    withMethods((store, stories = inject(StoriesService)) => {
+    withMethods((
+      store,
+      stories = inject(StoriesService),
+      transloco = inject(TranslocoService),
+    ) => {
       // Stale-response guard. Fast story switches (route changes, the
       // /play/:id input toggling, universe selection flipping mid-load)
       // can land an older `getStoryWithContent` after a newer one. Only
@@ -87,7 +93,17 @@ export function withPlayerMethods() {
             });
           } catch (err) {
             if (seq !== loadSeq) return;
-            const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+            // Draft stories on /play for guests come back as
+            // `permission-denied` from the Firestore rule. Translate
+            // that into the same "unavailable" message we'd show for a
+            // deleted story, rather than leaking the raw Firebase code.
+            const isPermissionDenied =
+              err instanceof FirebaseError && err.code === 'permission-denied';
+            const message = isPermissionDenied
+              ? transloco.translate('player.message.storyUnavailable')
+              : err instanceof Error
+                ? `${err.name}: ${err.message}`
+                : String(err);
             patchState(store, { loading: false, error: message });
           }
         },
