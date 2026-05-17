@@ -1,5 +1,6 @@
 import { computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, filter } from 'rxjs/operators';
 import {
   collection,
   Firestore,
@@ -241,17 +242,21 @@ function createStore(config: StoreConfig): TimelineQueryStore {
     void refresh();
   });
 
+  // Any matching entity-write triggers a refresh — including creates of
+  // off-page entities and updates that move a row in/out of the current
+  // filter. `debounceTime(100)` coalesces bursts (e.g. a chunked rebuild
+  // publishing one event per entity) so a single refetch lands after
+  // the burst settles.
   bus.entityWrites$
-    .pipe(takeUntilDestroyed(destroyRef))
-    .subscribe(({ universeId, kind, id }) => {
-      if (universeId !== config.universeId()) return;
-      if (kind !== 'story' && kind !== 'event') return;
-      if (rows().some((r) => r.id === id && r.kind === kind)) {
-        // Row in the current page changed; refetch the page in place to
-        // pick up the new projection (title, plotline membership, draft
-        // flip…). Off-page writes surface naturally on the next paginate.
-        void refresh();
-      }
+    .pipe(
+      filter(({ universeId, kind }) =>
+        universeId === config.universeId() && (kind === 'story' || kind === 'event'),
+      ),
+      debounceTime(100),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe(() => {
+      void refresh();
     });
 
   return {

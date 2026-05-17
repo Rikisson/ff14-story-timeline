@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, Signal, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  PLATFORM_ID,
+  Signal,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
@@ -116,6 +127,7 @@ export class PlayerPage {
   private readonly characters = inject(CharactersService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
    * Per-scene canonical character cache. Each scene fans out a single
@@ -218,6 +230,28 @@ export class PlayerPage {
     return out;
   });
 
+  /**
+   * Asset IDs reachable from the current scene's `next[]` choices. The
+   * resolver-cache fetches their URLs (warming the cache for the next
+   * navigate), then the preload effect hands those URLs to the browser
+   * as `<link rel="prefetch">` so the binary lands during idle time.
+   * Per `docs/media-rules.md` *Loading*.
+   */
+  private readonly nextSceneAssetIds = computed<readonly string[]>(() => {
+    const content = this.store.content();
+    const scene = this.store.currentScene();
+    if (!content || !scene) return [];
+    const ids = new Set<string>();
+    for (const choice of scene.next) {
+      const target = content.scenes[choice.sceneId];
+      if (!target) continue;
+      if (target.backgroundAssetId) ids.add(target.backgroundAssetId);
+      if (target.audioAssetId) ids.add(target.audioAssetId);
+    }
+    return [...ids];
+  });
+  private readonly nextSceneAssets = this.assets.resolveMany(this.nextSceneAssetIds);
+
   constructor() {
     effect(() => {
       this.store.loadStory(this.id());
@@ -245,5 +279,82 @@ export class PlayerPage {
         });
       });
     });
+
+    // Next-scene preloader. Hand the URLs reachable through
+    // `Scene.next[]` to the browser via `<link rel="prefetch">` so a
+    // tap on a choice navigates instantly. Per `docs/media-rules.md`
+    // *Loading*: scheduled in `requestIdleCallback`, skipped on
+    // save-data / 2g / slow-2g.
+    effect(() => {
+      if (!this.isBrowser) return;
+      if (shouldSkipPreload()) return;
+      const map = this.nextSceneAssets();
+      if (map.size === 0) return;
+      const urls: string[] = [];
+      for (const thumb of map.values()) urls.push(thumb.url);
+      schedulePrefetch(urls);
+    });
   }
+}
+
+// ---------------------------------------------------------------------
+// Idle prefetch helpers. Keeping these as module-level functions so
+// `prefetched` is process-wide — a single asset prefetched on one scene
+// stays prefetched for any other scene that reaches it.
+// ---------------------------------------------------------------------
+
+const prefetched = new Set<string>();
+
+function schedulePrefetch(urls: readonly string[]): void {
+  const pending = urls.filter((u) => u && !prefetched.has(u));
+  if (pending.length === 0) return;
+  const run = () => {
+    for (const u of pending) prefetch(u);
+  };
+  // `requestIdleCallback` is browser-only and not on every platform; the
+  // setTimeout fallback keeps the prefetch off the critical path on
+  // browsers that lack it (Safari ≤ 17.x).
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 2000 });
+  } else {
+    setTimeout(run, 0);
+  }
+}
+
+function prefetch(url: string): void {
+  if (prefetched.has(url)) return;
+  prefetched.add(url);
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  // Best-effort kind hint — actual subresource type is determined by
+  // the response. `as='image'` for likely-image URLs, `as='fetch'`
+  // otherwise so the browser still treats it as low-priority.
+  link.as = isLikelyImageUrl(url) ? 'image' : 'fetch';
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+function isLikelyImageUrl(url: string): boolean {
+  return /\.(webp|jpe?g|png|avif|gif)(\?|$)/i.test(url);
+}
+
+interface NetworkInformationLike {
+  saveData?: boolean;
+  effectiveType?: string;
+}
+
+/**
+ * Honors the user's data-saver / slow-network hints per
+ * `docs/media-rules.md` *Loading*. `navigator.connection` is non-standard
+ * (Chromium-only) — when it's absent we don't preload either, treating
+ * "unknown" the same as "explicit slow" so the player never thrashes a
+ * data-constrained device.
+ */
+function shouldSkipPreload(): boolean {
+  if (typeof navigator === 'undefined') return true;
+  const conn = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
+  if (!conn) return false;
+  if (conn.saveData) return true;
+  const eff = conn.effectiveType;
+  return eff === 'slow-2g' || eff === '2g';
 }

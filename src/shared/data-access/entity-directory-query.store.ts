@@ -1,5 +1,6 @@
 import { computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, filter } from 'rxjs/operators';
 import { QueryDocumentSnapshot } from 'firebase/firestore/lite';
 import { EntityKind } from '@shared/models';
 import {
@@ -35,9 +36,12 @@ export interface EntityDirectoryQueryStore {
  *
  * - Reset semantics: changing `universeId`, `kind`, or `includeDrafts`
  *   resets cursor + refetches page 1.
- * - Cache invalidation: `entity-write` for the matching kind in the
- *   current page triggers a page refetch. Off-page writes surface on the
- *   next paginate.
+ * - Cache invalidation: any `entity-write` for the matching kind
+ *   triggers a page refetch — including off-page creates that may now
+ *   match the active filter and rebuild events whose orphan sweeps
+ *   removed rows. `debounceTime(100)` coalesces burst events (e.g. a
+ *   chunked rebuild emitting one event per entity) so a single refetch
+ *   lands after the burst settles.
  *
  * Must be created in an injection context.
  */
@@ -127,11 +131,15 @@ export function createEntityDirectoryQueryStore(
   });
 
   bus.entityWrites$
-    .pipe(takeUntilDestroyed(destroyRef))
-    .subscribe(({ universeId, kind, id }) => {
-      if (universeId !== opts.universeId()) return;
-      if (kind !== opts.kind()) return;
-      if (rows().some((r) => r.id === id)) void refresh();
+    .pipe(
+      filter(({ universeId, kind }) =>
+        universeId === opts.universeId() && kind === opts.kind(),
+      ),
+      debounceTime(100),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe(() => {
+      void refresh();
     });
 
   return {
