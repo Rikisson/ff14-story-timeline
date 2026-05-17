@@ -39,6 +39,9 @@ export interface ByKindOptions {
   universeId: string;
   kind: EntityKind;
   includeDrafts?: boolean;
+  /** Codex-only: filter to a single category. Requires the matching
+   *  composite index in `firestore.indexes.json`. */
+  categoryKey?: string;
   limit?: number;
   cursor?: QueryDocumentSnapshot;
 }
@@ -83,6 +86,7 @@ export class EntityDirectoryService {
     const constraints: QueryConstraint[] = [];
     if (!opts.includeDrafts) constraints.push(where('visiblePublic', '==', true));
     constraints.push(where('kind', '==', opts.kind));
+    if (opts.categoryKey) constraints.push(where('categoryKey', '==', opts.categoryKey));
     constraints.push(orderBy('labelFolded'));
     if (opts.cursor) constraints.push(startAfter(opts.cursor));
     constraints.push(limit(opts.limit ?? DEFAULT_PREFIX_LIMIT));

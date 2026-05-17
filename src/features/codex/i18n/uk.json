@@ -12,6 +12,7 @@
     "create": "+ Додати запис",
     "addCategory": "+ Додати категорію",
     "createCategoryAffirm": "Створити категорію «{{ label }}»",
+    "allCategories": "Усі категорії",
     "reset": "Скинути"
   },
   "message": {

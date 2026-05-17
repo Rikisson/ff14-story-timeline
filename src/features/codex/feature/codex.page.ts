@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
@@ -42,7 +42,22 @@ import codexUk from '../i18n/uk.json';
         <app-page-header
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
-        />
+        >
+          <label class="flex">
+            <span class="sr-only">{{ t('field.category') }}</span>
+            <select
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+              [value]="categoryFilter() ?? ''"
+              [attr.aria-label]="t('field.category')"
+              (change)="onCategoryFilterChange($event)"
+            >
+              <option value="">{{ t('action.allCategories') }}</option>
+              @for (cat of categoriesList(); track cat.id) {
+                <option [value]="cat.key">{{ cat.label }}</option>
+              }
+            </select>
+          </label>
+        </app-page-header>
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -104,10 +119,13 @@ export class CodexPage {
     () => !!this.user() && this.universes.isMemberOfActive(),
   );
 
+  protected readonly categoryFilter = signal<string | null>(null);
+
   protected readonly directory = createEntityDirectoryQueryStore({
     universeId: computed(() => this.universes.activeUniverseId()),
     kind: computed(() => 'codexEntry' as const),
     includeDrafts: this.memberView,
+    categoryKey: this.categoryFilter,
   });
 
   protected readonly ctrl = createEntityListController<CodexEntry, CodexEntryDraft>({
@@ -125,6 +143,12 @@ export class CodexPage {
   });
 
   private readonly categories = inject(CodexCategoriesService);
+  protected readonly categoriesList = this.categories.categories;
+
+  protected onCategoryFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.categoryFilter.set(value ? value : null);
+  }
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     const byKey = this.categories.categoryByKey();

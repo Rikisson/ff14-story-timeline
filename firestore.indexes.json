@@ -26,6 +26,25 @@
       ]
     },
     {
+      "collectionGroup": "_directory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "categoryKey", "order": "ASCENDING" },
+        { "fieldPath": "labelFolded", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "_directory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "categoryKey", "order": "ASCENDING" },
+        { "fieldPath": "labelFolded", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "_timelineEntries",
       "queryScope": "COLLECTION",
       "fields": [

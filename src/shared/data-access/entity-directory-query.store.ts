@@ -15,6 +15,10 @@ export interface EntityDirectoryQueryStoreOptions {
   kind: Signal<EntityKind>;
   /** Members include drafts; public reads must omit them per backend-rules. */
   includeDrafts: Signal<boolean>;
+  /** Optional category filter. Codex page passes a signal that drives a
+   *  `where('categoryKey', '==', X)` clause; other surfaces leave it
+   *  undefined and the where clause is skipped. */
+  categoryKey?: Signal<string | null>;
   pageSize?: number;
 }
 
@@ -67,7 +71,8 @@ export function createEntityDirectoryQueryStore(
     const u = opts.universeId() ?? '';
     const k = opts.kind();
     const d = opts.includeDrafts() ? '1' : '0';
-    return [u, k, d].join('::');
+    const cat = opts.categoryKey?.() ?? '';
+    return [u, k, d, cat].join('::');
   });
 
   const refresh = async (): Promise<void> => {
@@ -84,6 +89,7 @@ export function createEntityDirectoryQueryStore(
         universeId,
         kind: opts.kind(),
         includeDrafts: opts.includeDrafts(),
+        categoryKey: opts.categoryKey?.() ?? undefined,
         limit: pageSize,
       });
       if (seq !== refreshSeq) return;
@@ -110,6 +116,7 @@ export function createEntityDirectoryQueryStore(
         universeId,
         kind: opts.kind(),
         includeDrafts: opts.includeDrafts(),
+        categoryKey: opts.categoryKey?.() ?? undefined,
         limit: pageSize,
         cursor: c,
       });

@@ -12,6 +12,7 @@
     "create": "+ Add entry",
     "addCategory": "+ Add category",
     "createCategoryAffirm": "Create category \"{{ label }}\"",
+    "allCategories": "All categories",
     "reset": "Reset"
   },
   "message": {

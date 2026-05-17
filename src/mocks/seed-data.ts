@@ -758,11 +758,18 @@ export const SEED_STORIES: SeedStory[] = [
   ...Array.from({ length: 26 }, (_, i): SeedStory => {
     const idx = i + 1;
     const startSceneId = `s01_opening`;
+    // Spread filler dates across both eras so timeline pagination has
+    // something to scroll through — and the unassigned-lane toggle isn't
+    // empty when the timeline filters `dateKnown == true`.
+    const inGameDate =
+      idx <= 13
+        ? { era: FF14_ERA_SIXTH_ASTRAL_ID, year: 1500 + idx }
+        : { era: FF14_ERA_SEVENTH_UMBRAL_ID, year: idx - 13 };
     return {
       id: `story-filler-${String(idx).padStart(2, '0')}`,
       slug: `filler-story-${String(idx).padStart(2, '0')}`,
       title: `Filler story ${idx}`,
-      inGameDate: {},
+      inGameDate,
       startSceneId,
       scenes: {
         [startSceneId]: {

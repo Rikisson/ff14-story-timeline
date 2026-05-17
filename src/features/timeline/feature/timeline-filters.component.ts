@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { SortDirection, UNASSIGNED_LANE_KEY } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
-import { EntityPickerComponent, GhostButtonComponent } from '@shared/ui';
+import { EntityPickerComponent, GhostButtonComponent, ToggleButtonComponent } from '@shared/ui';
 import timelineEn from '../i18n/en.json';
 import timelineUk from '../i18n/uk.json';
 
@@ -27,7 +27,12 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
  */
 @Component({
   selector: 'app-timeline-filters',
-  imports: [EntityPickerComponent, GhostButtonComponent, TranslocoDirective],
+  imports: [
+    EntityPickerComponent,
+    GhostButtonComponent,
+    ToggleButtonComponent,
+    TranslocoDirective,
+  ],
   providers: [
     provideTranslocoScope({
       scope: 'timeline',
@@ -41,9 +46,9 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
     <ng-container *transloco="let t; prefix: 'timeline'">
       <ng-container *transloco="let c; prefix: 'catalog'">
         <ng-container *transloco="let g; prefix: 'general'">
-          <div class="flex flex-wrap items-end gap-4">
-            <label class="flex w-60 flex-col gap-1 text-sm">
-              <span class="font-medium text-foreground-muted">{{ g('field.plotlines') }}</span>
+          <div class="flex flex-wrap items-center gap-4">
+            <label class="w-60">
+              <span class="sr-only">{{ g('field.plotlines') }}</span>
               <app-entity-picker
                 [value]="plotlineRefs()"
                 [kinds]="plotlineKinds"
@@ -52,16 +57,13 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
               />
             </label>
 
-            <label class="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                [checked]="value().showUnassigned"
-                (change)="onUnassigned($event)"
-              />
-              {{ c('field.unassigned') }}
-            </label>
+            <app-toggle-button
+              [label]="c('field.unassigned')"
+              [checked]="value().showUnassigned"
+              (checkedChange)="onUnassigned($event)"
+            />
 
-            <label class="flex flex-col text-sm">
+            <label class="flex">
               <span class="sr-only">{{ c('field.sortByDate') }}</span>
               <select
                 class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
@@ -75,7 +77,7 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
             </label>
 
             @if (hasActive()) {
-              <button uiGhost type="button" class="self-end" (click)="reset.emit()">
+              <button uiGhost type="button" (click)="reset.emit()">
                 {{ c('action.clearFilters') }}
               </button>
             }
@@ -109,11 +111,8 @@ export class TimelineFiltersComponent {
     this.filtersChange.emit({ ...this.value(), plotlines: ids });
   }
 
-  protected onUnassigned(event: Event): void {
-    this.filtersChange.emit({
-      ...this.value(),
-      showUnassigned: (event.target as HTMLInputElement).checked,
-    });
+  protected onUnassigned(showUnassigned: boolean): void {
+    this.filtersChange.emit({ ...this.value(), showUnassigned });
   }
 
   protected onSort(event: Event): void {
