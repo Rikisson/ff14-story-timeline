@@ -22,11 +22,15 @@ import { TextSpeed } from '@features/stories';
 /**
  * Characters per second per authored speed. `'instant'` is the
  * skip-typing branch and never enters the rAF loop.
+ *   - slow: classic VN crawl, comfortable for first-time readers
+ *   - normal: brisk; the everyday default
+ *   - fast: ~2 chars per frame at 60 Hz — visibly animated but
+ *     close to instant for short lines
  */
 const CPS: Record<Exclude<TextSpeed, 'instant'>, number> = {
   slow: 12,
-  normal: 30,
-  fast: 60,
+  normal: 60,
+  fast: 120,
 };
 
 /**
