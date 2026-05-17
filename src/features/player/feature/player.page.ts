@@ -15,7 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
 import {
   AssetThumbResolver,
@@ -39,6 +39,7 @@ import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import playerEn from '../i18n/en.json';
 import playerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
+import { SfxController } from './sfx-controller';
 
 @Component({
   selector: 'app-player-page',
@@ -138,25 +139,17 @@ import { BgmController } from './bgm-controller';
           }
 
           <!--
-            Scene SFX/voice host sits above scene-view so the audio
-            element survives scene re-renders (per
-            docs/narrative-engine-impl.md *Scene rendering layers*). BGM
-            lives in the two hidden slots below.
+            Audio host. Two hidden crossfade pairs sit at the shell
+            level so they survive scene re-renders (per
+            docs/narrative-engine-impl.md *Scene rendering layers*).
+            BgmController loops the BGM pair; SfxController drives the
+            one-shot SFX pair with autoplay + fade-in/out on every
+            scene entry.
           -->
-          @if (audioUrl(); as a) {
-            <audio
-              class="w-full"
-              controls
-              preload="auto"
-              [src]="a"
-              [volume]="prefs.sfxVolume()"
-              [attr.aria-label]="audioLabel()"
-            ></audio>
-          }
-
-          <!-- BGM crossfade slots — hidden controls; driven by BgmController. -->
           <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
           <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+          <audio #sfxA class="sr-only" preload="auto" aria-hidden="true"></audio>
+          <audio #sfxB class="sr-only" preload="auto" aria-hidden="true"></audio>
         }
       </div>
 
@@ -171,14 +164,24 @@ export class PlayerPage {
   private readonly characters = inject(CharactersService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
-  private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly prefs = inject(PlayerPreferencesService);
 
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
+  private readonly sfxA = viewChild<ElementRef<HTMLAudioElement>>('sfxA');
+  private readonly sfxB = viewChild<ElementRef<HTMLAudioElement>>('sfxB');
   private bgmController: BgmController | null = null;
+  private sfxController: SfxController | null = null;
+
+  // Monotonic counter that increments on every scene change (forward
+  // *and* backward). Passed to SfxController.setTarget as the "scene
+  // visit key" so re-entering a scene (e.g., back-nav onto the same
+  // SFX URL) restarts playback from zero. Counter resets on full page
+  // load, which is fine — uniqueness across the lifetime of one player
+  // session is all the controller needs.
+  private readonly sceneEntryKey = signal(0);
 
   // 500 ms deferral so a fast load (cache hit) renders straight to the
   // scene without a loading flash. Per the player spec the indicator is
@@ -225,12 +228,12 @@ export class PlayerPage {
   private readonly backgroundThumb = computed(() =>
     this.assets.resolve(this.store.currentScene()?.backgroundAssetId)(),
   );
-  private readonly audioThumb = computed(() =>
-    this.assets.resolve(this.store.currentScene()?.audioAssetId)(),
+  private readonly sfxThumb = computed(() =>
+    this.assets.resolve(this.store.currentScene()?.sfxAssetId)(),
   );
   protected readonly backgroundUrl = computed(() => this.backgroundThumb()?.url);
   protected readonly backgroundBlurDataUrl = computed(() => this.backgroundThumb()?.blurDataUrl);
-  protected readonly audioUrl = computed(() => this.audioThumb()?.url);
+  private readonly sfxUrl = computed(() => this.sfxThumb()?.url ?? null);
 
   // BGM target = effective asset ID after applying scene override / silence flag
   // and story default. Resolved to a URL through the asset cache; the
@@ -242,15 +245,6 @@ export class PlayerPage {
     this.assets.resolve(this.bgmTarget().assetId ?? undefined)(),
   );
   private readonly bgmUrl = computed(() => this.bgmThumb()?.url ?? null);
-
-  // Audio host lives outside scene-view (see template comment); the
-  // accessible label still mentions the current speaker when available.
-  protected readonly audioLabel = computed(() => {
-    const s = this.speakerLabel();
-    return s
-      ? this.transloco.translate('player.tooltip.audioForSpeaker', { speaker: s })
-      : this.transloco.translate('player.tooltip.audioGeneric');
-  });
 
   private readonly stagedRefs = computed<readonly EntityRef[]>(() => {
     const scene = this.store.currentScene();
@@ -333,7 +327,7 @@ export class PlayerPage {
       const target = content.scenes[choice.sceneId];
       if (!target) continue;
       if (target.backgroundAssetId) ids.add(target.backgroundAssetId);
-      if (target.audioAssetId) ids.add(target.audioAssetId);
+      if (target.sfxAssetId) ids.add(target.sfxAssetId);
       if (target.bgmAssetId) ids.add(target.bgmAssetId);
     }
     return [...ids];
@@ -367,6 +361,16 @@ export class PlayerPage {
     this.destroyRef.onDestroy(() => {
       if (pendingIndicator !== null) clearTimeout(pendingIndicator);
       this.bgmController?.dispose();
+      this.sfxController?.dispose();
+    });
+
+    // Scene-entry counter — increments every time `currentSceneId`
+    // changes (forward via `choose()` *or* backward via `back()`). The
+    // SfxController consumes this as a "scene visit key" so a back-nav
+    // onto the same SFX URL still re-triggers playback from zero.
+    effect(() => {
+      this.store.currentSceneId();
+      untracked(() => this.sceneEntryKey.update((n) => n + 1));
     });
 
     // Hydrate canonical character docs for the current scene's stage.
@@ -438,17 +442,47 @@ export class PlayerPage {
       this.bgmController?.setTarget(target, url);
     });
     effect(() => {
-      this.bgmController?.setUserVolume(this.prefs.bgmVolume());
+      // Read the signal into a local first — `a?.b(c)` short-circuits
+      // argument evaluation when `a` is null, which on first run (before
+      // the controller exists) would leave this effect with zero tracked
+      // dependencies and it would never re-fire when the slider moves.
+      const v = this.prefs.bgmVolume();
+      this.bgmController?.setUserVolume(v);
+    });
+
+    // SfxController follows the same shape as BgmController above.
+    effect(() => {
+      const a = this.sfxA()?.nativeElement;
+      const b = this.sfxB()?.nativeElement;
+      if (!a || !b) return;
+      if (this.sfxController) return;
+      const controller = new SfxController(a, b);
+      this.sfxController = controller;
+      untracked(() => {
+        controller.setUserVolume(this.prefs.sfxVolume());
+        controller.setTarget(this.sfxUrl(), this.sceneEntryKey());
+      });
+    });
+    effect(() => {
+      const url = this.sfxUrl();
+      const key = this.sceneEntryKey();
+      this.sfxController?.setTarget(url, key);
+    });
+    effect(() => {
+      const v = this.prefs.sfxVolume();
+      this.sfxController?.setUserVolume(v);
     });
 
     // First-user-gesture autoplay unblock. Browsers reject `play()` on
     // a fresh tab until the user has interacted with it; if that
-    // happens, `BgmController.wantsPlay` is set. Retrying inside a real
-    // gesture handler succeeds. Capture-phase + once on both pointer
-    // and key so even keyboard-only navigation kicks the BGM awake.
+    // happens, the controllers' `wantsPlay` flags stay set. Retrying
+    // inside a real gesture handler succeeds. Capture-phase + once on
+    // both pointer and key so even keyboard-only navigation kicks audio
+    // awake.
     if (this.isBrowser) {
       const onFirstGesture = (): void => {
         this.bgmController?.unblock();
+        this.sfxController?.unblock();
         document.removeEventListener('pointerdown', onFirstGesture, true);
         document.removeEventListener('keydown', onFirstGesture, true);
       };

@@ -141,7 +141,7 @@ type CrossfadeSlot = 'A' | 'B';
           }
           <app-typewriter-text
             #typewriter
-            class="text-base leading-relaxed text-scrim-foreground"
+            class="leading-relaxed text-scrim-foreground"
             [text]="text()"
             [options]="inlineRefOptions()"
             [speed]="textSpeed()"

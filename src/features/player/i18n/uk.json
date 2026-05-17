@@ -21,9 +21,7 @@
     "noSprite": "немає спрайту"
   },
   "tooltip": {
-    "position": "Позиція: {{ slot }}",
-    "audioForSpeaker": "Аудіо для {{ speaker }}",
-    "audioGeneric": "Звуковий супровід сцени"
+    "position": "Позиція: {{ slot }}"
   },
   "prefs": {
     "title": "Налаштування",

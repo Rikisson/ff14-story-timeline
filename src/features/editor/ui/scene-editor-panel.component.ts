@@ -243,7 +243,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
 
           <app-scene-assets-panel
             [backgroundAssetId]="s.backgroundAssetId"
-            [audioAssetId]="s.audioAssetId"
+            [sfxAssetId]="s.sfxAssetId"
             [bgmAssetId]="s.bgmAssetId"
             [bgmSilence]="s.bgmSilence ?? false"
             [bgmTransition]="s.bgmTransition"

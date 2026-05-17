@@ -168,8 +168,9 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   declares the story-wide track. A scene may override with its own
   `bgmAssetId`, or force quiet with `bgmSilence: true`. The optional
   `bgmTransition` ('crossfade' | 'cut', default 'crossfade') controls
-  how a change is performed on entry. `Scene.audioAssetId` is reserved
-  for per-scene SFX/voice; it plays simultaneously with the BGM.
+  how a change is performed on entry. `Scene.sfxAssetId` is the
+  per-scene one-shot SFX / voice line slot; it plays simultaneously
+  with the BGM and is authored from the `'sfx'` asset kind.
 - **Authored text speed per scene.** Each scene carries an optional
   `textSpeed` ('slow' | 'normal' | 'fast' | 'instant', default 'fast'
   when unset). The reader may override authoring by disabling text
@@ -332,15 +333,21 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 - **Text scrim is the engine's job.** A gradient overlay between the
   character layer and text guarantees readability across any
   background. Not the author's responsibility.
-- **Audio element lives in the player shell.** The `<audio>` host
-  sits above `scene-view` so it survives scene re-renders. Cross-scene
-  ambient continuity depends on this. BGM is a separate hidden
-  two-slot pair on the same shell: when consecutive scenes resolve to
-  the same effective BGM URL the active slot keeps playing untouched;
-  on change, the next slot fades in (or hard-swaps) per the scene's
-  `bgmTransition`. The scene SFX/voice element stays visible with
-  native controls so readers can stop a voice line they'd rather not
-  hear.
+- **Audio lives in the player shell as two hidden crossfade pairs.**
+  Both pairs sit above `scene-view` so the elements survive scene
+  re-renders, and both are driven imperatively by small controllers
+  rather than declarative `[src]` bindings. The BGM pair loops: when
+  consecutive scenes resolve to the same effective BGM URL the active
+  slot keeps playing untouched; on change, the next slot fades in (or
+  hard-swaps) per the scene's `bgmTransition`. The SFX pair is
+  non-looping and treats every scene visit as "play this from the
+  start" — a monotonic scene-entry counter passed alongside the URL
+  distinguishes re-entries (including back-navigation onto the same
+  asset), so the controller re-triggers the clip even when the URL is
+  identical. SFX fades in (~220 ms) on scene entry and fades out over
+  the same window on exit; mid-fade transitions cross over in
+  parallel via the second slot. Volume on both pairs is bound to the
+  reader's preferences (`bgmVolume`, `sfxVolume`).
 - **Background swaps use two stacked `<img>` elements with CSS opacity
   crossfade.** Skip the crossfade when the next asset URL equals the
   current.
@@ -403,8 +410,8 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
   dialog when the story's metadata or content carries any of: inline
   refs pointing at missing entities, inline refs to draft / unpublished
   entities, broken `relatedRefs`, or `coverAssetId` / scene
-  `backgroundAssetId` / `audioAssetId` values pointing at deleted
-  assets. Public render still hides non-public refs gracefully (plain
+  `backgroundAssetId` / `sfxAssetId` / `bgmAssetId` values pointing at
+  deleted assets. Public render still hides non-public refs gracefully (plain
   text fallback per *Inline-ref tokens*); this surfaces the issue to
   the author before readers see the empty space.
 

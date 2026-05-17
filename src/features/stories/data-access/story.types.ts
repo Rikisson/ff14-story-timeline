@@ -17,7 +17,7 @@ export interface Scene {
   backgroundAssetId?: string;
   characters: StagedCharacter[];
   place?: EntityRef<'place'>;
-  audioAssetId?: string;
+  sfxAssetId?: string;
   bgmAssetId?: string;
   bgmSilence?: boolean;
   bgmTransition?: BgmTransition;

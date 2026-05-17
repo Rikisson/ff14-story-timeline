@@ -62,24 +62,25 @@ const BGM_TRANSITIONS: readonly BgmTransition[] = ['crossfade', 'cut'];
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ t('field.audio') }}</label>
-          @if (audioUrl(); as a) {
+          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ t('field.sfx') }}</label>
+          @if (sfxUrl(); as a) {
             <audio class="w-full" controls preload="none" [src]="a"></audio>
             <div class="flex gap-2">
-              <button uiSecondary type="button" (click)="audioPicker.open()">{{ t('action.replace') }}</button>
-              <button uiGhost type="button" (click)="clearAudio()">{{ t('action.remove') }}</button>
+              <button uiSecondary type="button" (click)="sfxPicker.open()">{{ t('action.replace') }}</button>
+              <button uiGhost type="button" (click)="clearSfx()">{{ t('action.remove') }}</button>
             </div>
           } @else {
-            <button uiSecondary type="button" (click)="audioPicker.open()">
-              {{ t('action.pickAudio') }}
+            <button uiSecondary type="button" (click)="sfxPicker.open()">
+              {{ t('action.pickSfx') }}
             </button>
           }
+          <p class="m-0 text-xs text-foreground-faint">{{ t('empty.sfxHint') }}</p>
           <app-asset-picker
-            #audioPicker
-            kind="ambient"
-            [title]="t('tooltip.pickAudioTitle')"
-            [currentSelection]="audioSelection()"
-            (picked)="onAudioPicked($event)"
+            #sfxPicker
+            kind="sfx"
+            [title]="t('tooltip.pickSfxTitle')"
+            [currentSelection]="sfxSelection()"
+            (picked)="onSfxPicked($event)"
           />
         </div>
 
@@ -166,7 +167,7 @@ export class SceneAssetsPanelComponent {
   private readonly assets = inject(AssetThumbResolver);
 
   readonly backgroundAssetId = input<string | undefined>();
-  readonly audioAssetId = input<string | undefined>();
+  readonly sfxAssetId = input<string | undefined>();
   readonly bgmAssetId = input<string | undefined>();
   readonly bgmSilence = input<boolean>(false);
   readonly bgmTransition = input<BgmTransition | undefined>();
@@ -180,7 +181,7 @@ export class SceneAssetsPanelComponent {
   protected readonly backgroundUrl = computed(() =>
     this.assets.resolve(this.backgroundAssetId())()?.url,
   );
-  protected readonly audioUrl = computed(() => this.assets.resolve(this.audioAssetId())()?.url);
+  protected readonly sfxUrl = computed(() => this.assets.resolve(this.sfxAssetId())()?.url);
   protected readonly bgmOverrideUrl = computed(() =>
     this.assets.resolve(this.bgmAssetId())()?.url,
   );
@@ -189,8 +190,8 @@ export class SceneAssetsPanelComponent {
     const id = this.backgroundAssetId();
     return id ? [id] : [];
   });
-  protected readonly audioSelection = computed(() => {
-    const id = this.audioAssetId();
+  protected readonly sfxSelection = computed(() => {
+    const id = this.sfxAssetId();
     return id ? [id] : [];
   });
   protected readonly bgmSelection = computed(() => {
@@ -207,16 +208,16 @@ export class SceneAssetsPanelComponent {
     this.update.emit({ backgroundAssetId: ids[0] });
   }
 
-  protected onAudioPicked(ids: string[]): void {
-    this.update.emit({ audioAssetId: ids[0] });
+  protected onSfxPicked(ids: string[]): void {
+    this.update.emit({ sfxAssetId: ids[0] });
   }
 
   protected clearBackground(): void {
     this.update.emit({ backgroundAssetId: undefined });
   }
 
-  protected clearAudio(): void {
-    this.update.emit({ audioAssetId: undefined });
+  protected clearSfx(): void {
+    this.update.emit({ sfxAssetId: undefined });
   }
 
   protected onBgmPicked(ids: string[]): void {

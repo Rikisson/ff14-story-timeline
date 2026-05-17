@@ -21,9 +21,7 @@
     "noSprite": "no sprite"
   },
   "tooltip": {
-    "position": "Position: {{ slot }}",
-    "audioForSpeaker": "Audio for {{ speaker }}",
-    "audioGeneric": "Scene audio"
+    "position": "Position: {{ slot }}"
   },
   "prefs": {
     "title": "Preferences",

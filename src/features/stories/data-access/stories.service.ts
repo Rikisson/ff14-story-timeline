@@ -65,7 +65,8 @@ export class StoriesService {
   async getStoryContent(id: string): Promise<StoryContent | undefined> {
     const universeId = this.requireUniverseId();
     const snap = await getDoc(this.contentDocRef(universeId, id));
-    return snap.exists() ? (snap.data() as StoredStoryContent) : undefined;
+    if (!snap.exists()) return undefined;
+    return normalizeLegacySceneFields(snap.data() as StoredStoryContent);
   }
 
   async getStoryWithContent(
@@ -257,4 +258,26 @@ export class StoriesService {
     if (!id) throw new Error('No active universe selected.');
     return id;
   }
+}
+
+/**
+ * One-shot read-side migration: legacy stories were authored with
+ * `Scene.audioAssetId`, which has since been renamed to `sfxAssetId`
+ * to reflect its narrower (one-shot SFX/voice) semantics. Map the old
+ * field onto the new one at load time so existing content keeps
+ * playing. The next save rewrites the doc without the legacy key.
+ */
+function normalizeLegacySceneFields(content: StoredStoryContent): StoryContent {
+  const scenes: Record<string, (typeof content.scenes)[string]> = {};
+  for (const [id, scene] of Object.entries(content.scenes)) {
+    const legacy = (scene as { audioAssetId?: string }).audioAssetId;
+    if (legacy && !scene.sfxAssetId) {
+      const { ...rest } = scene as typeof scene & { audioAssetId?: string };
+      delete (rest as { audioAssetId?: string }).audioAssetId;
+      scenes[id] = { ...rest, sfxAssetId: legacy };
+    } else {
+      scenes[id] = scene;
+    }
+  }
+  return { ...content, scenes };
 }
