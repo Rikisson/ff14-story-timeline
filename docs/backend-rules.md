@@ -216,8 +216,8 @@ Route every slug check through the same helper so no service path can skip the c
 Day-one combinations:
 
 - `_directory`: `(visiblePublic, kind, labelFolded)` for the public per-kind picker (the most-used query), `(visiblePublic, labelFolded)` for cross-kind inline-ref search, `(kind, labelFolded)` for member-only authoring pickers that need draft entities
-- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` — the timeline page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored
-- `_timelineLaneEntries`: `(visiblePublic, laneKey, dateKnown, dateSortKey ASC)` and `(visiblePublic, laneKey, dateKnown, dateSortKey DESC)` — same dual-direction rationale
+- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` for public reads; `(dateKnown, dateSortKey ASC)` and `(dateKnown, dateSortKey DESC)` for the member timeline that includes drafts and so drops the `visiblePublic` clause. The page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored for each scope
+- `_timelineLaneEntries`: `(visiblePublic, laneKey, dateKnown, dateSortKey ASC)` and `(visiblePublic, laneKey, dateKnown, dateSortKey DESC)` for public reads; `(laneKey, dateKnown, dateSortKey ASC)` and `(laneKey, dateKnown, dateSortKey DESC)` for the member view — same dual-direction, dual-scope rationale
 - `codexEntries`: `(categoryKey, titleFolded)`
 
 Character / place timeline filter indexes wait until the timeline UI offers those filters.
