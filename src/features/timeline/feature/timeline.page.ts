@@ -1,27 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { PlotlinesService } from '@features/plotlines';
-import { UNASSIGNED_LANE_KEY } from '@shared/data-access';
+import { Plotline, PlotlinesService } from '@features/plotlines';
+import { SortDirection, UNASSIGNED_LANE_KEY } from '@shared/data-access';
 import { PageHeaderComponent } from '@shared/ui';
-import {
-  CatalogFilters,
-  CatalogFiltersComponent,
-  EMPTY_FILTERS,
-  SortDirection,
-} from '../../../app/catalog/catalog-filters.component';
 import {
   CatalogTimelineComponent,
   TimelineLaneDescriptor,
 } from '../../../app/catalog/catalog-timeline.component';
+import {
+  EMPTY_TIMELINE_FILTERS,
+  TimelineFilters,
+  TimelineFiltersComponent,
+} from './timeline-filters.component';
 import timelineEn from '../i18n/en.json';
 import timelineUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-timeline-page',
   imports: [
-    CatalogFiltersComponent,
     CatalogTimelineComponent,
     PageHeaderComponent,
+    TimelineFiltersComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -40,12 +39,8 @@ import timelineUk from '../i18n/uk.json';
           [title]="t('field.title')"
           [subtitle]="t('message.subtitle')"
         >
-          <app-catalog-filters
+          <app-timeline-filters
             [value]="filters()"
-            [showPlotlineFilter]="true"
-            [showCharacterFilter]="false"
-            [showPlaceFilter]="false"
-            [showSortControl]="true"
             [sortDirection]="sortDirection()"
             (filtersChange)="onFiltersChange($event)"
             (sortDirectionChange)="sortDirection.set($event)"
@@ -66,46 +61,60 @@ export class TimelinePage {
   private readonly plotlinesService = inject(PlotlinesService);
   private readonly transloco = inject(TranslocoService);
 
-  protected readonly filters = signal<CatalogFilters>(EMPTY_FILTERS);
+  protected readonly filters = signal<TimelineFilters>(EMPTY_TIMELINE_FILTERS);
   protected readonly sortDirection = signal<SortDirection>('desc');
-  protected readonly EMPTY_FILTERS = EMPTY_FILTERS;
+  protected readonly EMPTY_FILTERS = EMPTY_TIMELINE_FILTERS;
 
   /**
-   * Translates filter selection into the lane descriptors the timeline
-   * renders. No selection at all → one global lane against
-   * `_timelineEntries`. Any selection (real plotlines and/or the synthetic
-   * unassigned sentinel) → one lane per pick against
-   * `_timelineLaneEntries`. See `docs/narrative-engine-impl.md`
-   * *Timeline UX*.
+   * Per-id canonical lookup for the selected plotlines. Refreshed
+   * whenever the selection changes; one batched `in` read covers up to
+   * 30 lanes (`PlotlinesService.getByIds`). Each entry carries label +
+   * color — neither of which lives on the directory projection (color
+   * is plotline-specific authored data).
    */
+  private readonly selectedPlotlines = signal<Map<string, Plotline>>(new Map());
+
   protected readonly lanes = computed<TimelineLaneDescriptor[]>(() => {
-    const sel = this.filters().plotlines;
-    if (sel.length === 0) {
+    const f = this.filters();
+    if (f.plotlines.length === 0 && !f.showUnassigned) {
       return [{ laneKey: null, label: '' }];
     }
-    const plotlines = this.plotlinesService.plotlines();
+    const lookup = this.selectedPlotlines();
     const out: TimelineLaneDescriptor[] = [];
-    for (const id of sel) {
-      if (id === UNASSIGNED_LANE_KEY) {
-        out.push({
-          laneKey: UNASSIGNED_LANE_KEY,
-          label: this.transloco.translate('catalog.field.unassigned'),
-        });
-        continue;
-      }
-      const p = plotlines.find((pl) => pl.id === id);
-      if (p) {
-        out.push({ laneKey: p.id, label: p.title, color: p.color });
-      }
+    for (const id of f.plotlines) {
+      const p = lookup.get(id);
+      if (p) out.push({ laneKey: p.id, label: p.title, color: p.color });
+    }
+    if (f.showUnassigned) {
+      out.push({
+        laneKey: UNASSIGNED_LANE_KEY,
+        label: this.transloco.translate('catalog.field.unassigned'),
+      });
     }
     return out;
   });
 
-  protected onFiltersChange(next: CatalogFilters): void {
-    // Strip non-plotline filters — the timeline filter only acts on plotline
-    // lanes; character / place filtering requires composite indexes not yet
-    // authored (per backend-rules *Pagination and filtering* +
-    // *Day-one combinations*).
-    this.filters.set({ ...EMPTY_FILTERS, plotlines: next.plotlines });
+  protected onFiltersChange(next: TimelineFilters): void {
+    this.filters.set(next);
+  }
+
+  constructor() {
+    effect(() => {
+      const ids = this.filters().plotlines;
+      if (ids.length === 0) {
+        if (this.selectedPlotlines().size > 0) this.selectedPlotlines.set(new Map());
+        return;
+      }
+      const missing = ids.filter((id) => !this.selectedPlotlines().has(id));
+      if (missing.length === 0) return;
+      void this.plotlinesService.getByIds(missing).then((fetched) => {
+        if (fetched.size === 0) return;
+        this.selectedPlotlines.update((curr) => {
+          const next = new Map(curr);
+          for (const [id, p] of fetched) next.set(id, p);
+          return next;
+        });
+      });
+    });
   }
 }

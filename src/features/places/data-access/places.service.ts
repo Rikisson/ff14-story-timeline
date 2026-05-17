@@ -9,8 +9,6 @@ export class PlacesService extends UniverseEntityService<Place, PlaceDraft> {
   protected readonly collectionName = 'places';
   protected readonly kind: EntityKind = 'place';
 
-  readonly places = this.entitiesSignal;
-
   protected toDirectoryInputs(entity: Place): DirectoryRowInputs {
     return buildPlaceDirectoryInputs(entity);
   }

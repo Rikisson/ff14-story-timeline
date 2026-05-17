@@ -252,16 +252,9 @@ Both forms run an orphan-sweep pass per kind after the canonical walk: rows in `
 
 When the *Catalog → Full-text search* backlog item from `narrative-engine-impl.md` is picked up, evaluate Typesense vs. Meilisearch on a small dataset first; pick the lower-friction option for the first ship. Sync hook design (Cloud Function on Firestore write trigger vs. client-side dual-write) is deferred until the service is picked.
 
-## Player bridge
-
-`CharactersService.characters()` (and the per-kind sibling signals), `MediaAssetsService.assets()`, and `EntityResolverService.allInlineRefOptions` continue to preload universe-wide arrays so the player keeps working without rewrite. New picker, list, timeline, editor, and resolver code paths route through the directory / asset / resolver primitives in *Query architecture* — never through these signals.
-
-Decommission the bridge when the player switches to scene-scoped hydration (see `narrative-engine-impl.md` *Player* backlog); the per-kind list signals collapse to query-store reads and the inline-ref array goes away entirely.
-
 ## Service-layer audit
 
 One-pass sweep to enforce the *Portability posture* rules:
 
 - Any `Timestamp`, `FieldValue`, or `DocumentReference` imported outside `*.service.ts` moves into a service.
 - Any `EntityRef` consumer that branches on `kind` to compute a Firestore-specific value (collection path, ref shape) moves the branch into a resolver service.
-- Any caller that reads a per-kind feature service's list signal (`characters()`, `events()`, etc.) for purposes other than the legacy player bridge moves to a directory / projection query.

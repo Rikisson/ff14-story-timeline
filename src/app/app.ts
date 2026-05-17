@@ -14,12 +14,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
-import { CharactersService } from '@features/characters';
-import { CodexCategoriesService, CodexEntriesService } from '@features/codex';
-import { EventsService } from '@features/events';
-import { PlacesService } from '@features/places';
-import { PlotlinesService } from '@features/plotlines';
-import { StoriesService } from '@features/stories';
+import { CodexCategoriesService } from '@features/codex';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { GhostButtonComponent, LocaleToggleComponent, ThemeToggleComponent } from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
@@ -46,12 +41,6 @@ export class App {
   private readonly transloco = inject(TranslocoService);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
-  private readonly characters = inject(CharactersService);
-  private readonly places = inject(PlacesService);
-  private readonly events = inject(EventsService);
-  private readonly stories = inject(StoriesService);
-  private readonly plotlines = inject(PlotlinesService);
-  private readonly codex = inject(CodexEntriesService);
   private readonly codexCategories = inject(CodexCategoriesService);
   private readonly calendar = inject(CalendarService);
 
@@ -75,20 +64,13 @@ export class App {
     { initialValue: false },
   );
 
+  // Per-kind services no longer hold a universe-wide preload, so the
+  // app-level refresh-error banner shrinks to the two config docs that
+  // are still auto-hydrated per universe (categories + calendar).
+  // Page-level read errors surface inside the directory / timeline
+  // stores that own them.
   protected readonly refreshErrors = computed<{ entityKey: string; message: string }[]>(() => {
     const errors: { entityKey: string; message: string }[] = [];
-    const c = this.characters.refreshError();
-    if (c) errors.push({ entityKey: 'characters', message: c });
-    const p = this.places.refreshError();
-    if (p) errors.push({ entityKey: 'places', message: p });
-    const e = this.events.refreshError();
-    if (e) errors.push({ entityKey: 'events', message: e });
-    const s = this.stories.refreshError();
-    if (s) errors.push({ entityKey: 'stories', message: s });
-    const pl = this.plotlines.refreshError();
-    if (pl) errors.push({ entityKey: 'plotlines', message: pl });
-    const cx = this.codex.refreshError();
-    if (cx) errors.push({ entityKey: 'codex', message: cx });
     const ccx = this.codexCategories.refreshError();
     if (ccx) errors.push({ entityKey: 'codexCategories', message: ccx });
     const ca = this.calendar.refreshError();

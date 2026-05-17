@@ -9,8 +9,6 @@ export class CharactersService extends UniverseEntityService<Character, Characte
   protected readonly collectionName = 'characters';
   protected readonly kind: EntityKind = 'character';
 
-  readonly characters = this.entitiesSignal;
-
   protected toDirectoryInputs(entity: Character): DirectoryRowInputs {
     return buildCharacterDirectoryInputs(entity);
   }

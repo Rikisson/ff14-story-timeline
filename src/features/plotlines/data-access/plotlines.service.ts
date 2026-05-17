@@ -9,8 +9,6 @@ export class PlotlinesService extends UniverseEntityService<Plotline, PlotlineDr
   protected readonly collectionName = 'plotlines';
   protected readonly kind: EntityKind = 'plotline';
 
-  readonly plotlines = this.entitiesSignal;
-
   protected toDirectoryInputs(entity: Plotline): DirectoryRowInputs {
     return buildPlotlineDirectoryInputs(entity);
   }

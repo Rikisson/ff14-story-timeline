@@ -3,7 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Place, PlaceDraft, PlacesService } from '@features/places';
-import { createEntityListController, EntityResolverCache } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  createEntityDirectoryQueryStore,
+  createEntityListController,
+} from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
@@ -42,15 +46,15 @@ import placeUk from '../i18n/uk.json';
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
-            [hasMore]="service.hasMore()"
-            [loadingMore]="service.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
-            (loadMore)="service.loadMore()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
@@ -87,14 +91,20 @@ import placeUk from '../i18n/uk.json';
 })
 export class PlacesPage {
   protected readonly service = inject(PlacesService);
+  private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly places = this.service.places;
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'place' as const),
+    includeDrafts: computed(() => true),
+  });
+
   protected readonly ctrl = createEntityListController<Place, PlaceDraft>({
-    entities: this.places,
     service: this.service,
+    lookupById: (id) => this.service.getById(id),
     toDraft: (p) => ({
       slug: p.slug,
       name: p.name,
@@ -105,19 +115,13 @@ export class PlacesPage {
     removeLabel: (p) => p.name,
   });
 
-  private readonly resolver = inject(EntityResolverCache);
-
   protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.places().map((p) => {
-      const firstRef = (p.relatedRefs ?? [])[0];
-      const secondary = firstRef ? this.resolver.resolve(firstRef)()?.label : undefined;
-      return {
-        id: p.id,
-        label: p.name,
-        secondary,
-        coverAssetId: p.coverAssetId,
-      };
-    }),
+    this.directory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
+      secondary: row.secondary,
+      coverAssetId: row.coverAssetId,
+    })),
   );
 
   constructor() {

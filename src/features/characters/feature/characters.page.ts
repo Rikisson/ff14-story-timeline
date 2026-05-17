@@ -3,7 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharacterDraft, CharactersService } from '@features/characters';
-import { createEntityListController, EntityResolverCache } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  createEntityDirectoryQueryStore,
+  createEntityListController,
+} from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
@@ -44,15 +48,15 @@ import characterUk from '../i18n/uk.json';
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
-            [hasMore]="service.hasMore()"
-            [loadingMore]="service.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
-            (loadMore)="service.loadMore()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
@@ -95,14 +99,20 @@ import characterUk from '../i18n/uk.json';
 })
 export class CharactersPage {
   protected readonly service = inject(CharactersService);
+  private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly characters = this.service.characters;
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'character' as const),
+    includeDrafts: computed(() => true),
+  });
+
   protected readonly ctrl = createEntityListController<Character, CharacterDraft>({
-    entities: this.characters,
     service: this.service,
+    lookupById: (id) => this.service.getById(id),
     toDraft: (c) => ({
       slug: c.slug,
       name: c.name,
@@ -113,19 +123,13 @@ export class CharactersPage {
     removeLabel: (c) => c.name,
   });
 
-  private readonly resolver = inject(EntityResolverCache);
-
   protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.characters().map((c) => {
-      const firstRef = (c.relatedRefs ?? [])[0];
-      const secondary = firstRef ? this.resolver.resolve(firstRef)()?.label : undefined;
-      return {
-        id: c.id,
-        label: c.name,
-        secondary,
-        coverAssetId: c.coverAssetId,
-      };
-    }),
+    this.directory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
+      secondary: row.secondary,
+      coverAssetId: row.coverAssetId,
+    })),
   );
 
   constructor() {

@@ -1,16 +1,11 @@
-import { effect, inject, PLATFORM_ID, signal, Signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { inject } from '@angular/core';
 import {
   collection as fsCollection,
   doc,
   documentId,
   getDoc,
   getDocs,
-  limit,
-  orderBy,
   query,
-  QueryDocumentSnapshot,
-  startAfter,
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
@@ -25,13 +20,20 @@ import {
   writeEntityWithProjections,
 } from './with-entity-projections';
 
-const PAGE_SIZE = 25;
 const FIRESTORE_IN_CHUNK = 30;
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-}
-
+/**
+ * Write-side helper for per-kind canonical entities. Reads happen
+ * through the directory projection (`EntityDirectoryQueryStore` for
+ * lists, `EntityResolverCache` for chip / inline-ref hydration) or
+ * through the by-id fetches below for detail surfaces.
+ *
+ * Per `docs/backend-rules.md` *Realtime listeners* and *Query
+ * architecture*: this service does not preload the canonical
+ * collection or expose a universe-wide signal. Writes still fan out
+ * through `writeEntityWithProjections` so directory / timeline rows
+ * stay current and the cache-invalidation bus notifies session caches.
+ */
 export abstract class UniverseEntityService<
   TEntity extends { id: string; slug: string },
   TDraft extends { slug: string },
@@ -57,91 +59,6 @@ export abstract class UniverseEntityService<
 
   protected readonly firebase = inject(FirebaseService);
   protected readonly universes = inject(UniverseStore);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
-  private readonly _entities = signal<TEntity[]>([]);
-  protected readonly entitiesSignal: Signal<TEntity[]> = this._entities.asReadonly();
-
-  private readonly _refreshError = signal<string | null>(null);
-  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
-
-  private readonly _hasMore = signal(false);
-  readonly hasMore: Signal<boolean> = this._hasMore.asReadonly();
-
-  private readonly _loadingMore = signal(false);
-  readonly loadingMore: Signal<boolean> = this._loadingMore.asReadonly();
-
-  private cursor: QueryDocumentSnapshot | null = null;
-  private refreshSeq = 0;
-
-  constructor() {
-    if (this.isBrowser) {
-      effect(() => {
-        const id = this.universes.activeUniverseId();
-        if (!id) {
-          this._entities.set([]);
-          this._hasMore.set(false);
-          this.cursor = null;
-          this._refreshError.set(null);
-          return;
-        }
-        this._refreshError.set(null);
-        this.refresh(id).catch((err) => {
-          console.error(`${this.collectionName} refresh failed`, err);
-          this._refreshError.set(errorMessage(err));
-        });
-      });
-    }
-  }
-
-  async refresh(universeId?: string): Promise<void> {
-    const id = universeId ?? this.universes.activeUniverseId();
-    const seq = ++this.refreshSeq;
-    if (!id) {
-      this._entities.set([]);
-      this._hasMore.set(false);
-      this.cursor = null;
-      return;
-    }
-    const q = query(
-      fsCollection(this.firebase.firestore, 'universes', id, this.collectionName),
-      orderBy('createdAt', 'desc'),
-      limit(PAGE_SIZE),
-    );
-    const snap = await retryOnTransient(() => getDocs(q));
-    if (seq !== this.refreshSeq) return;
-    this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-    this._hasMore.set(snap.docs.length === PAGE_SIZE);
-    this._entities.set(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as TEntity),
-    );
-  }
-
-  async loadMore(): Promise<void> {
-    const id = this.universes.activeUniverseId();
-    if (!id || !this.cursor || !this._hasMore() || this._loadingMore()) return;
-    this._loadingMore.set(true);
-    const seq = this.refreshSeq;
-    try {
-      const q = query(
-        fsCollection(this.firebase.firestore, 'universes', id, this.collectionName),
-        orderBy('createdAt', 'desc'),
-        startAfter(this.cursor),
-        limit(PAGE_SIZE),
-      );
-      const snap = await getDocs(q);
-      if (seq !== this.refreshSeq) return;
-      this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : this.cursor;
-      this._hasMore.set(snap.docs.length === PAGE_SIZE);
-      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as TEntity);
-      this._entities.update((curr) => [...curr, ...next]);
-    } catch (err) {
-      console.error(`${this.collectionName} loadMore failed`, err);
-      this._refreshError.set(errorMessage(err));
-    } finally {
-      this._loadingMore.set(false);
-    }
-  }
 
   async create(draft: TDraft, authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
@@ -160,7 +77,6 @@ export abstract class UniverseEntityService<
       slug: draft.slug,
       buildInputs: (merged) => this.buildInputsFor(merged),
     });
-    await this.refresh(universeId);
     return id;
   }
 
@@ -175,7 +91,6 @@ export abstract class UniverseEntityService<
       slug: patch.slug,
       buildInputs: (merged) => this.buildInputsFor(merged),
     });
-    await this.refresh(universeId);
   }
 
   async remove(id: string): Promise<void> {
@@ -186,13 +101,12 @@ export abstract class UniverseEntityService<
       id,
       canonicalCollection: this.collectionName,
     });
-    await this.refresh(universeId);
   }
 
   /**
    * Single canonical fetch by ID. Used by detail surfaces that consume a
    * full entity (forms, hover popovers, the player's character-sprite
-   * lookup) once the universe-wide preload bridge retires.
+   * lookup) — directory projection only carries the list-pane subset.
    */
   async getById(id: string): Promise<TEntity | null> {
     const universeId = this.requireUniverseId();
@@ -205,8 +119,9 @@ export abstract class UniverseEntityService<
   /**
    * Batched canonical fetch by ID. Chunks at the Firestore `in`-query
    * cap (30) per `docs/backend-rules.md` *Inline-ref resolution*. Used
-   * by the player to read `sprites[]` off every character staged in a
-   * scene without preloading the whole canonical collection.
+   * by the player and editor to read fields the directory projection
+   * doesn't carry (sprite arrays, plotline color, etc.) without
+   * preloading the whole canonical collection.
    */
   async getByIds(ids: readonly string[]): Promise<Map<string, TEntity>> {
     const out = new Map<string, TEntity>();
@@ -240,7 +155,6 @@ export abstract class UniverseEntityService<
       doc(this.firebase.firestore, 'universes', universeId, this.collectionName, id),
       { ...fields, updatedAt: Date.now() },
     );
-    await this.refresh(universeId);
   }
 
   protected requireUniverseId(): string {

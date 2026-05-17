@@ -1,17 +1,8 @@
-import { effect, inject, Injectable, PLATFORM_ID, signal, Signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable } from '@angular/core';
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  QueryDocumentSnapshot,
   runTransaction,
-  startAfter,
-  where,
 } from 'firebase/firestore/lite';
 import { TranslocoService } from '@jsverse/transloco';
 import { CalendarProjectionContext, CalendarService } from '@features/calendar';
@@ -22,7 +13,6 @@ import {
   DirectoryRowInputs,
   TimelineRowInputs,
 } from '@shared/data-access';
-import { retryOnTransient } from '@shared/utils';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   buildStoryDirectoryInputs,
@@ -35,7 +25,6 @@ import {
   StoryContent,
 } from './story.types';
 
-const PAGE_SIZE = 25;
 const CONTENT_DOC_PATH = ['_content', 'main'] as const;
 const STORY_SLUG_PREFIX = 'story_';
 const UNTITLED_SLUG_BASE = 'untitled-story';
@@ -50,103 +39,20 @@ export class StaleStoryError extends Error {
   }
 }
 
+/**
+ * Story write helper + by-id reader. Browsing the published stories list
+ * goes through `EntityDirectoryQueryStore` (kind `story`); the player
+ * loads metadata + content via `getStoryWithContent`. Per
+ * `docs/backend-rules.md` *Realtime listeners* and *Query architecture*
+ * the service no longer preloads a universe-wide signal — every read
+ * happens by ID or through the projection.
+ */
 @Injectable({ providedIn: 'root' })
 export class StoriesService {
   private readonly firebase = inject(FirebaseService);
   private readonly universes = inject(UniverseStore);
   private readonly transloco = inject(TranslocoService);
   private readonly calendar = inject(CalendarService);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
-  private readonly _publishedStories = signal<Story[]>([]);
-  readonly publishedStories: Signal<Story[]> = this._publishedStories.asReadonly();
-
-  private readonly _refreshError = signal<string | null>(null);
-  readonly refreshError: Signal<string | null> = this._refreshError.asReadonly();
-
-  private readonly _hasMore = signal(false);
-  readonly hasMore: Signal<boolean> = this._hasMore.asReadonly();
-
-  private readonly _loadingMore = signal(false);
-  readonly loadingMore: Signal<boolean> = this._loadingMore.asReadonly();
-
-  private cursor: QueryDocumentSnapshot | null = null;
-  private refreshSeq = 0;
-
-  constructor() {
-    if (this.isBrowser) {
-      effect(() => {
-        const id = this.universes.activeUniverseId();
-        if (!id) {
-          this._publishedStories.set([]);
-          this._hasMore.set(false);
-          this.cursor = null;
-          this._refreshError.set(null);
-          return;
-        }
-        this._refreshError.set(null);
-        this.refreshPublished(id).catch((err) => {
-          console.error('StoriesService.refreshPublished failed', err);
-          this._refreshError.set(
-            err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-          );
-        });
-      });
-    }
-  }
-
-  async refreshPublished(universeId?: string): Promise<void> {
-    const id = universeId ?? this.universes.activeUniverseId();
-    const seq = ++this.refreshSeq;
-    if (!id) {
-      this._publishedStories.set([]);
-      this._hasMore.set(false);
-      this.cursor = null;
-      return;
-    }
-    const q = query(
-      collection(this.firebase.firestore, 'universes', id, 'stories'),
-      where('draft', '==', false),
-      orderBy('publishedAt', 'desc'),
-      limit(PAGE_SIZE),
-    );
-    const snap = await retryOnTransient(() => getDocs(q));
-    if (seq !== this.refreshSeq) return;
-    this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-    this._hasMore.set(snap.docs.length === PAGE_SIZE);
-    this._publishedStories.set(
-      snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredStory) })),
-    );
-  }
-
-  async loadMorePublished(): Promise<void> {
-    const id = this.universes.activeUniverseId();
-    if (!id || !this.cursor || !this._hasMore() || this._loadingMore()) return;
-    this._loadingMore.set(true);
-    const seq = this.refreshSeq;
-    try {
-      const q = query(
-        collection(this.firebase.firestore, 'universes', id, 'stories'),
-        where('draft', '==', false),
-        orderBy('publishedAt', 'desc'),
-        startAfter(this.cursor),
-        limit(PAGE_SIZE),
-      );
-      const snap = await getDocs(q);
-      if (seq !== this.refreshSeq) return;
-      this.cursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : this.cursor;
-      this._hasMore.set(snap.docs.length === PAGE_SIZE);
-      const next = snap.docs.map((d) => ({ id: d.id, ...(d.data() as StoredStory) }));
-      this._publishedStories.update((curr) => [...curr, ...next]);
-    } catch (err) {
-      console.error('StoriesService.loadMorePublished failed', err);
-      this._refreshError.set(
-        err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-      );
-    } finally {
-      this._loadingMore.set(false);
-    }
-  }
 
   async getStory(id: string): Promise<Story | undefined> {
     const universeId = this.requireUniverseId();

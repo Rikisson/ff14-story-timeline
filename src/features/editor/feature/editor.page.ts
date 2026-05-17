@@ -4,18 +4,24 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   input,
   PLATFORM_ID,
+  signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService, validateInGameDate } from '@features/calendar';
-import { CharactersService } from '@features/characters';
+import { Character, CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
-import { AssetThumbResolver } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  AssetThumbResolver,
+  createEntityDirectoryQueryStore,
+} from '@shared/data-access';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
@@ -240,11 +246,30 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly characters = inject(CharactersService);
+  // Editor pickers consume directory rows directly (no canonical preload).
+  // PlacesService / EventsService / StoriesService are still injected as
+  // write-helpers used elsewhere on this page; their `entities` signals
+  // are not read here.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly places = inject(PlacesService);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly events = inject(EventsService);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly stories = inject(StoriesService);
   private readonly assets = inject(AssetThumbResolver);
+  private readonly universes = inject(UniverseStore);
   private readonly calendarService = inject(CalendarService);
+
+  private readonly charactersDirectory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'character' as const),
+    includeDrafts: computed(() => true),
+  });
+  private readonly placesDirectory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'place' as const),
+    includeDrafts: computed(() => true),
+  });
 
   protected readonly dateInvalid = computed(() => {
     const meta = this.store.meta();
@@ -258,22 +283,41 @@ export class EditorPage implements HasUnsavedChanges {
   );
 
   protected readonly characterOptions = computed(() =>
-    this.characters
-      .characters()
-      .map((c) => ({ id: c.id, label: c.name, hint: c.slug, kind: 'character' as const })),
+    this.charactersDirectory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
+      hint: row.slug,
+      kind: 'character' as const,
+    })),
   );
   protected readonly placeOptions = computed(() =>
-    this.places
-      .places()
-      .map((p) => ({ id: p.id, label: p.name, hint: p.slug, kind: 'place' as const })),
+    this.placesDirectory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
+      hint: row.slug,
+      kind: 'place' as const,
+    })),
   );
-  // Sprite IDs flatten across every character in the universe, then we
-  // resolve them through the shared asset cache — the lookup is shared
-  // with anything else that renders the same thumbs in this session.
+
+  /**
+   * Sprite lookups scope to the canonical character docs for whichever
+   * characters are staged in the currently-selected scene — universe-wide
+   * preloads are gone (per `docs/backend-rules.md` *Realtime listeners*).
+   * The `getByIds` batch fetch chunks at 30 per `in` query, and the
+   * resolver-side cache lets later scene visits reuse the same docs.
+   */
+  private readonly stagedCharacterIds = computed<string[]>(() => {
+    const ids = new Set<string>();
+    for (const sc of this.store.selectedScene()?.characters ?? []) {
+      ids.add(sc.entity.id);
+    }
+    return [...ids];
+  });
+  private readonly sceneCharacters = signal<Map<string, Character>>(new Map());
   private readonly allSpriteIds = computed<string[]>(() => {
     const ids = new Set<string>();
-    for (const c of this.characters.characters()) {
-      for (const id of c.sprites ?? []) ids.add(id);
+    for (const [, char] of this.sceneCharacters()) {
+      for (const id of char.sprites ?? []) ids.add(id);
     }
     return [...ids];
   });
@@ -282,14 +326,14 @@ export class EditorPage implements HasUnsavedChanges {
     () => {
       const thumbs = this.resolvedSprites();
       const map: Record<string, { id: string; label: string }[]> = {};
-      for (const c of this.characters.characters()) {
-        const ids = c.sprites ?? [];
+      for (const [, char] of this.sceneCharacters()) {
+        const ids = char.sprites ?? [];
         if (ids.length === 0) continue;
         const resolved = ids
           .map((id) => thumbs.get(id))
           .filter((t): t is NonNullable<typeof t> => !!t)
           .map((t) => ({ id: t.id, label: t.label ?? t.id }));
-        if (resolved.length) map[c.id] = resolved;
+        if (resolved.length) map[char.id] = resolved;
       }
       return map;
     },
@@ -304,6 +348,27 @@ export class EditorPage implements HasUnsavedChanges {
 
   constructor() {
     this.store.bindLoad(this.id);
+
+    // Hydrate canonical character docs for the staged characters in the
+    // selected scene — sprite arrays live on canonical and not on the
+    // directory projection.
+    effect(() => {
+      const ids = this.stagedCharacterIds();
+      if (ids.length === 0) {
+        if (this.sceneCharacters().size > 0) this.sceneCharacters.set(new Map());
+        return;
+      }
+      const missing = ids.filter((id) => !this.sceneCharacters().has(id));
+      if (missing.length === 0) return;
+      void this.characters.getByIds(missing).then((fetched) => {
+        if (fetched.size === 0) return;
+        this.sceneCharacters.update((curr) => {
+          const next = new Map(curr);
+          for (const [id, char] of fetched) next.set(id, char);
+          return next;
+        });
+      });
+    });
 
     if (this.isBrowser) {
       const beforeUnload = (event: BeforeUnloadEvent) => {

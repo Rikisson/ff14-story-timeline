@@ -3,18 +3,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
-import { CalendarService } from '@features/calendar';
 import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import { isInGameDateEmpty } from '@shared/models';
+import { createEntityDirectoryQueryStore } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
-import { formatInGameDate } from '@shared/utils';
-import {
-  CatalogFiltersComponent,
-  CatalogFilters,
-  EMPTY_FILTERS,
-  matchesStory,
-} from './catalog-filters.component';
 import { CatalogDetailComponent } from './catalog-detail.component';
 import catalogEn from './i18n/en.json';
 import catalogUk from './i18n/uk.json';
@@ -24,7 +16,6 @@ import catalogUk from './i18n/uk.json';
   host: { class: 'block h-full' },
   imports: [
     CatalogDetailComponent,
-    CatalogFiltersComponent,
     EntityListPaneComponent,
     PageHeaderComponent,
     TranslocoDirective,
@@ -44,13 +35,7 @@ import catalogUk from './i18n/uk.json';
         <app-page-header
           [title]="t('field.title')"
           [subtitle]="t('message.subtitle')"
-        >
-          <app-catalog-filters
-            [value]="filters()"
-            (filtersChange)="filters.set($event)"
-            (reset)="filters.set(EMPTY_FILTERS)"
-          />
-        </app-page-header>
+        />
 
         @if (actionError(); as e) {
           <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
@@ -61,15 +46,15 @@ import catalogUk from './i18n/uk.json';
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="selectedId()"
-            [hasMore]="stories.hasMore()"
-            [loadingMore]="stories.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="canCreate()"
             [createLabel]="t('action.newStory')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.storiesList')"
             (select)="onSelect($event)"
             (create)="createStory()"
-            (loadMore)="stories.loadMorePublished()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.storyDetails')">
@@ -98,7 +83,6 @@ export class CatalogPage {
   private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly calendar = inject(CalendarService);
   private readonly transloco = inject(TranslocoService);
   protected readonly user = inject(AuthStore).user;
 
@@ -106,54 +90,58 @@ export class CatalogPage {
     () => !!this.user() && this.universes.isMemberOfActive(),
   );
 
-  protected readonly published = this.stories.publishedStories;
-  protected readonly filters = signal<CatalogFilters>(EMPTY_FILTERS);
+  // Members see drafts (alongside the *Draft* pill); public reads omit
+  // them. The directory rule enforces visibility, but the query must
+  // include the predicate explicitly for guests.
+  private readonly memberView = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
+
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'story' as const),
+    includeDrafts: this.memberView,
+  });
+
   protected readonly creating = signal(false);
   protected readonly actionError = signal<string | null>(null);
-  protected readonly EMPTY_FILTERS = EMPTY_FILTERS;
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
-  private readonly _selectedId = signal<string | null>(null);
-  protected readonly selectedId = this._selectedId.asReadonly();
+  protected readonly selectedId = computed(() => this.routeId().get('id') ?? null);
 
-  protected readonly filteredStories = computed(() => {
-    const f = this.filters();
-    return this.published().filter((s) => matchesStory(s, f));
-  });
+  // Selected story is lazy-fetched by ID — the list pane carries
+  // projection metadata only.
+  private readonly selectedStory = signal<Story | null>(null);
 
-  protected readonly selected = computed(() => {
-    const id = this.selectedId();
-    return id ? this.published().find((s) => s.id === id) ?? null : null;
-  });
+  protected readonly selected = this.selectedStory.asReadonly();
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.filteredStories().map((s) => ({
-      id: s.id,
-      label: s.title || this.transloco.translate('catalog.field.untitled'),
-      secondary: this.formatDateLabel(s),
-      coverAssetId: s.coverAssetId,
-      badge: s.draft
+    this.directory.rows().map((row) => ({
+      id: row.id,
+      label: row.label || this.transloco.translate('catalog.field.untitled'),
+      secondary: row.secondary,
+      coverAssetId: row.coverAssetId,
+      badge: row.draft
         ? { text: this.transloco.translate('catalog.field.draft'), tone: 'amber' }
         : undefined,
     })),
   );
 
-  private formatDateLabel(s: Story): string | undefined {
-    if (isInGameDateEmpty(s.inGameDate)) return undefined;
-    return (
-      formatInGameDate(s.inGameDate, {
-        eraName: s.inGameDate.era ? this.calendar.eraNameLookup(s.inGameDate.era) : undefined,
-        monthName: s.inGameDate.month
-          ? this.calendar.monthNameLookup(s.inGameDate.month)
-          : undefined,
-        weekdayName: this.calendar.weekdayLookup(s.inGameDate),
-      }) || undefined
-    );
-  }
-
   constructor() {
+    let fetchSeq = 0;
     effect(() => {
-      const id = this.routeId().get('id');
-      this._selectedId.set(id ?? null);
+      const id = this.selectedId();
+      if (!id) {
+        this.selectedStory.set(null);
+        return;
+      }
+      // Re-fetch on universe change so a stale story from the previous
+      // universe doesn't render.
+      this.universes.activeUniverseId();
+      const seq = ++fetchSeq;
+      void this.stories.getStory(id).then((s) => {
+        if (seq !== fetchSeq) return;
+        this.selectedStory.set(s ?? null);
+      });
     });
   }
 
@@ -186,6 +174,6 @@ export class CatalogPage {
     if (this.selectedId() === id) {
       void this.router.navigate(['/library']);
     }
-    void this.stories.refreshPublished();
+    void this.directory.refresh();
   }
 }

@@ -19,8 +19,6 @@ export class EventsService extends UniverseEntityService<TimelineEvent, Timeline
 
   private readonly calendar = inject(CalendarService);
 
-  readonly events = this.entitiesSignal;
-
   protected toDirectoryInputs(entity: TimelineEvent): DirectoryRowInputs {
     return buildEventDirectoryInputs(entity, this.calendarContext());
   }

@@ -346,11 +346,6 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
 
 ## Player
 
-- Scene-scoped asset and inline-ref hydration. Today the player reads
-  background / audio / sprite URLs and inline-ref labels off
-  universe-wide preloads held by per-entity services; switching to
-  per-scene resolution drops that dependency and lets the bridge
-  globals retire (see `backend-rules.md` *Player bridge*).
 - Multiple save slots per story; cloud sync.
 - Reading-progress badges ("In progress" / "Completed" / "Endings
   N/M").

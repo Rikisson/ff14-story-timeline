@@ -2,7 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { createEntityListController } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  createEntityDirectoryQueryStore,
+  createEntityListController,
+} from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
@@ -44,15 +48,15 @@ import codexUk from '../i18n/uk.json';
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
-            [hasMore]="service.hasMore()"
-            [loadingMore]="service.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
-            (loadMore)="service.loadMore()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
@@ -89,14 +93,20 @@ import codexUk from '../i18n/uk.json';
 })
 export class CodexPage {
   protected readonly service = inject(CodexEntriesService);
+  private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly entries = this.service.entries;
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'codexEntry' as const),
+    includeDrafts: computed(() => true),
+  });
+
   protected readonly ctrl = createEntityListController<CodexEntry, CodexEntryDraft>({
-    entities: this.entries,
     service: this.service,
+    lookupById: (id) => this.service.getById(id),
     toDraft: (e) => ({
       slug: e.slug,
       title: e.title,
@@ -112,15 +122,15 @@ export class CodexPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     const byKey = this.categories.categoryByKey();
-    return this.entries().map((e) => ({
-      id: e.id,
-      label: e.title,
+    return this.directory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
       // Codex surfaces have the categories config hydrated already, so the
-      // live label resolves locally — no need to read the projection's
-      // denormalized `secondary`. Cross-kind surfaces (which don't hold
-      // the config) read `secondary` from the directory projection instead.
-      secondary: e.categoryKey ? byKey.get(e.categoryKey)?.label : undefined,
-      coverAssetId: e.coverAssetId,
+      // live label resolves locally from `categoryKey`. Cross-kind surfaces
+      // (which don't hold the config) fall back to the projection's
+      // denormalized `secondary`.
+      secondary: row.categoryKey ? byKey.get(row.categoryKey)?.label : row.secondary,
+      coverAssetId: row.coverAssetId,
     }));
   });
 

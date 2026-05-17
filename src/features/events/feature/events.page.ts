@@ -2,17 +2,18 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { CalendarService } from '@features/calendar';
 import {
   EventCardComponent,
   EventsService,
   TimelineEvent,
   TimelineEventDraft,
 } from '@features/events';
-import { createEntityListController } from '@shared/data-access';
-import { isInGameDateEmpty } from '@shared/models';
+import { UniverseStore } from '@features/universes';
+import {
+  createEntityDirectoryQueryStore,
+  createEntityListController,
+} from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
-import { formatInGameDate } from '@shared/utils';
 import { EventFormComponent } from '../ui/event-form.component';
 import eventEn from '../i18n/en.json';
 import eventUk from '../i18n/uk.json';
@@ -49,15 +50,15 @@ import eventUk from '../i18n/uk.json';
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
-            [hasMore]="service.hasMore()"
-            [loadingMore]="service.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
-            (loadMore)="service.loadMore()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
@@ -94,15 +95,20 @@ import eventUk from '../i18n/uk.json';
 })
 export class EventsPage {
   protected readonly service = inject(EventsService);
-  private readonly calendar = inject(CalendarService);
+  private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly events = this.service.events;
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'event' as const),
+    includeDrafts: computed(() => true),
+  });
+
   protected readonly ctrl = createEntityListController<TimelineEvent, TimelineEventDraft>({
-    entities: this.events,
     service: this.service,
+    lookupById: (id) => this.service.getById(id),
     toDraft: (e) => ({
       slug: e.slug,
       name: e.name,
@@ -116,11 +122,11 @@ export class EventsPage {
   });
 
   protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.events().map((e) => ({
-      id: e.id,
-      label: e.name,
-      secondary: this.formatDateLabel(e),
-      coverAssetId: e.coverAssetId,
+    this.directory.rows().map((row) => ({
+      id: row.id,
+      label: row.label,
+      secondary: row.secondary,
+      coverAssetId: row.coverAssetId,
     })),
   );
 
@@ -143,18 +149,5 @@ export class EventsPage {
 
   protected onSelect(id: string): void {
     void this.router.navigate(['/events', id]);
-  }
-
-  private formatDateLabel(e: TimelineEvent): string | undefined {
-    if (isInGameDateEmpty(e.inGameDate)) return undefined;
-    return (
-      formatInGameDate(e.inGameDate, {
-        eraName: e.inGameDate.era ? this.calendar.eraNameLookup(e.inGameDate.era) : undefined,
-        monthName: e.inGameDate.month
-          ? this.calendar.monthNameLookup(e.inGameDate.month)
-          : undefined,
-        weekdayName: this.calendar.weekdayLookup(e.inGameDate),
-      }) || undefined
-    );
   }
 }

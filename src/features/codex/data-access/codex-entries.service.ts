@@ -22,8 +22,6 @@ export class CodexEntriesService extends UniverseEntityService<CodexEntry, Codex
     return map;
   });
 
-  readonly entries = this.entitiesSignal;
-
   protected toDirectoryInputs(entity: CodexEntry): DirectoryRowInputs {
     return buildCodexEntryDirectoryInputs(entity, this.categoriesContext());
   }

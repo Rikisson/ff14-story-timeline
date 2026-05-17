@@ -2,7 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { createEntityListController } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  createEntityDirectoryQueryStore,
+  createEntityListController,
+} from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
 import { Plotline, PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
@@ -49,15 +53,15 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
             class="md:w-80 md:shrink-0"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
-            [hasMore]="service.hasMore()"
-            [loadingMore]="service.loadingMore()"
+            [hasMore]="directory.hasMore()"
+            [loadingMore]="directory.loadingMore()"
             [canCreate]="ctrl.canCreate()"
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
-            (loadMore)="service.loadMore()"
+            (loadMore)="directory.loadMore()"
           />
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
@@ -94,18 +98,24 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
 })
 export class PlotlinesPage {
   protected readonly service = inject(PlotlinesService);
+  private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly plotlines = this.service.plotlines;
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
   });
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  protected readonly directory = createEntityDirectoryQueryStore({
+    universeId: computed(() => this.universes.activeUniverseId()),
+    kind: computed(() => 'plotline' as const),
+    includeDrafts: computed(() => true),
+  });
+
   protected readonly ctrl = createEntityListController<Plotline, PlotlineDraft>({
-    entities: this.plotlines,
     service: this.service,
+    lookupById: (id) => this.service.getById(id),
     toDraft: (p) => ({
       slug: p.slug,
       title: p.title,
@@ -119,12 +129,17 @@ export class PlotlinesPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     this.activeLang();
-    return this.plotlines().map((p) => ({
-      id: p.id,
-      label: p.title,
-      secondary: p.status ? this.transloco.translate(STATUS_KEY[p.status]) : undefined,
-      coverAssetId: p.coverAssetId,
-    }));
+    return this.directory.rows().map((row) => {
+      const status = row.status as PlotlineStatus | undefined;
+      return {
+        id: row.id,
+        label: row.label,
+        // The directory projection carries the English status label; the
+        // page re-translates via the local `status` field for locale parity.
+        secondary: status ? this.transloco.translate(STATUS_KEY[status]) : undefined,
+        coverAssetId: row.coverAssetId,
+      };
+    });
   });
 
   constructor() {
