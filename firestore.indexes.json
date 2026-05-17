@@ -117,6 +117,14 @@
       ]
     },
     {
+      "collectionGroup": "_assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "codexEntries",
       "queryScope": "COLLECTION",
       "fields": [
