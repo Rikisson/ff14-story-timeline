@@ -5,9 +5,8 @@ import { Scene, StagedCharacter } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
 import {
-  ComboboxOption,
-  ComboboxPickerComponent,
   DangerButtonComponent,
+  EntityPickerComponent,
   GhostButtonComponent,
   RichTextInputComponent,
 } from '@shared/ui';
@@ -39,7 +38,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
   imports: [
     GhostButtonComponent,
     DangerButtonComponent,
-    ComboboxPickerComponent,
+    EntityPickerComponent,
     RichTextInputComponent,
     SceneAssetsPanelComponent,
     TranslocoDirective,
@@ -100,12 +99,12 @@ type SpeakerMode = 'none' | 'character' | 'custom';
             </div>
 
             @if (speakerMode() === 'character') {
-              <app-combobox-picker
-                [options]="characterOptions()"
-                [value]="speakerKeyArray()"
+              <app-entity-picker
+                [value]="speakerRefValue()"
+                [kinds]="characterKinds"
                 [multiple]="false"
+                [includeDrafts]="true"
                 [placeholder]="t('empty.searchCharacter')"
-                [emptyMessage]="t('empty.noCharactersUniverse')"
                 (valueChange)="onSpeakerCharacter(id, $event)"
               />
               @if (speakerNotOnStage()) {
@@ -177,24 +176,24 @@ type SpeakerMode = 'none' | 'character' | 'custom';
                 }
               </ul>
             }
-            <app-combobox-picker
-              [options]="unstagedOptions()"
-              [value]="emptyKeyArray"
+            <app-entity-picker
+              [value]="emptyRefArray"
+              [kinds]="characterKinds"
               [multiple]="false"
+              [includeDrafts]="true"
               [placeholder]="t('empty.searchCharacter')"
-              [emptyMessage]="t('empty.allOnStage')"
               (valueChange)="onAddStaged(id, $event)"
             />
           </fieldset>
 
           <div class="field">
             <label>{{ t('field.place') }}</label>
-            <app-combobox-picker
-              [options]="placeOptions()"
-              [value]="placeKeyArray()"
+            <app-entity-picker
+              [value]="placeRefValue()"
+              [kinds]="placeKinds"
               [multiple]="false"
+              [includeDrafts]="true"
               [placeholder]="t('empty.searchPlace')"
-              [emptyMessage]="t('empty.noPlacesUniverse')"
               (valueChange)="onPlace(id, $event)"
             />
           </div>
@@ -479,9 +478,8 @@ export class SceneEditorPanelComponent {
   readonly sceneId = input.required<string | null>();
   readonly scene = input.required<Scene | null>();
   readonly isStartScene = input.required<boolean>();
-  readonly characterOptions = input<ComboboxOption[]>([]);
-  readonly placeOptions = input<ComboboxOption[]>([]);
   readonly characterSprites = input<Record<string, { id: string; label: string }[]>>({});
+  readonly characterNames = input<Record<string, string>>({});
   readonly sceneLabels = input<Record<string, string>>({});
 
   readonly update = output<SceneUpdate>();
@@ -507,7 +505,9 @@ export class SceneEditorPanelComponent {
     ];
   });
   protected readonly positionOptions = ['left', 'center', 'right'];
-  protected readonly emptyKeyArray: string[] = [];
+  protected readonly characterKinds = ['character'] as const;
+  protected readonly placeKinds = ['place'] as const;
+  protected readonly emptyRefArray: readonly EntityRef[] = [];
 
   protected readonly speakerMode = computed<SpeakerMode>(() => {
     const sp = this.scene()?.speaker;
@@ -516,9 +516,9 @@ export class SceneEditorPanelComponent {
     return 'character';
   });
 
-  protected readonly speakerKeyArray = computed<string[]>(() => {
+  protected readonly speakerRefValue = computed<EntityRef[]>(() => {
     const sp = this.scene()?.speaker;
-    return sp && typeof sp !== 'string' ? [sp.id] : [];
+    return sp && typeof sp !== 'string' ? [sp] : [];
   });
 
   protected readonly speakerString = computed<string>(() => {
@@ -526,9 +526,9 @@ export class SceneEditorPanelComponent {
     return typeof sp === 'string' ? sp : '';
   });
 
-  protected readonly placeKeyArray = computed<string[]>(() => {
+  protected readonly placeRefValue = computed<EntityRef[]>(() => {
     const p = this.scene()?.place;
-    return p ? [p.id] : [];
+    return p ? [p] : [];
   });
 
   protected readonly speakerNotOnStage = computed<boolean>(() => {
@@ -538,13 +538,8 @@ export class SceneEditorPanelComponent {
     return !chars.some((c) => c.entity.id === sp.id);
   });
 
-  protected readonly unstagedOptions = computed<ComboboxOption[]>(() => {
-    const staged = new Set((this.scene()?.characters ?? []).map((c) => c.entity.id));
-    return this.characterOptions().filter((o) => !staged.has(o.id));
-  });
-
   protected characterName(id: string): string {
-    return this.characterOptions().find((o) => o.id === id)?.label ?? id;
+    return this.characterNames()[id] ?? id;
   }
 
   protected spriteOptions(characterId: string): { id: string; label: string }[] {
@@ -568,11 +563,10 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { speaker } });
   }
 
-  protected onSpeakerCharacter(id: string, ids: string[]): void {
-    const characterId = ids[0];
-    const speaker: EntityRef<'character'> | undefined = characterId
-      ? { kind: 'character', id: characterId }
-      : undefined;
+  protected onSpeakerCharacter(id: string, refs: EntityRef[]): void {
+    const ref = refs[0];
+    const speaker: EntityRef<'character'> | undefined =
+      ref && ref.kind === 'character' ? { kind: 'character', id: ref.id } : undefined;
     this.update.emit({ id, patch: { speaker } });
   }
 
@@ -581,11 +575,10 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { speaker: value } });
   }
 
-  protected onPlace(id: string, ids: string[]): void {
-    const placeId = ids[0];
-    const place: EntityRef<'place'> | undefined = placeId
-      ? { kind: 'place', id: placeId }
-      : undefined;
+  protected onPlace(id: string, refs: EntityRef[]): void {
+    const ref = refs[0];
+    const place: EntityRef<'place'> | undefined =
+      ref && ref.kind === 'place' ? { kind: 'place', id: ref.id } : undefined;
     this.update.emit({ id, patch: { place } });
   }
 
@@ -598,13 +591,13 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { characters: next } });
   }
 
-  protected onAddStaged(id: string, ids: string[]): void {
-    const characterId = ids[0];
-    if (!characterId) return;
+  protected onAddStaged(id: string, refs: EntityRef[]): void {
+    const ref = refs[0];
+    if (!ref || ref.kind !== 'character') return;
     const current = this.scene()?.characters ?? [];
-    if (current.some((c) => c.entity.id === characterId)) return;
-    const ref: EntityRef<'character'> = { kind: 'character', id: characterId };
-    const next: StagedCharacter[] = [...current, { entity: ref, position: 'center' }];
+    if (current.some((c) => c.entity.id === ref.id)) return;
+    const charRef: EntityRef<'character'> = { kind: 'character', id: ref.id };
+    const next: StagedCharacter[] = [...current, { entity: charRef, position: 'center' }];
     this.update.emit({ id, patch: { characters: next } });
   }
 

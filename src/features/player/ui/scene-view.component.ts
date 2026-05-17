@@ -1,6 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { MarkdownTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
@@ -112,16 +112,6 @@ type PositionSlot = (typeof POSITION_SLOTS)[number];
             [options]="inlineRefOptions()"
           />
         </div>
-
-        @if (audio(); as a) {
-          <audio
-            class="w-full"
-            controls
-            preload="auto"
-            [src]="a"
-            [attr.aria-label]="audioLabel()"
-          ></audio>
-        }
       </article>
     </ng-container>
   `,
@@ -131,20 +121,10 @@ export class SceneViewComponent {
   readonly text = input.required<string>();
   readonly speaker = input<string | undefined>();
   readonly background = input<string | undefined>();
-  readonly audio = input<string | undefined>();
   readonly staged = input<StagedView[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
 
-  private readonly transloco = inject(TranslocoService);
-
   protected readonly slots = POSITION_SLOTS;
-
-  protected readonly audioLabel = computed(() => {
-    const s = this.speaker();
-    return s
-      ? this.transloco.translate('player.tooltip.audioForSpeaker', { speaker: s })
-      : this.transloco.translate('player.tooltip.audioGeneric');
-  });
 
   protected stagedFor(slot: PositionSlot): StagedView[] {
     return this.staged()

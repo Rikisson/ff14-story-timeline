@@ -6,6 +6,8 @@ import { EntityPickerComponent, GhostButtonComponent, ToggleButtonComponent } fr
 import timelineEn from '../i18n/en.json';
 import timelineUk from '../i18n/uk.json';
 
+const PLOTLINE_REFS_MAX = 10;
+
 export interface TimelineFilters {
   /** Selected plotline IDs (real plotlines only, no `__unassigned__`). */
   plotlines: string[];
@@ -52,6 +54,7 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
               <app-entity-picker
                 [value]="plotlineRefs()"
                 [kinds]="plotlineKinds"
+                [maxSelections]="plotlineMax"
                 [placeholder]="g('empty.searchPlotlines')"
                 (valueChange)="onPlotlineRefs($event)"
               />
@@ -96,6 +99,7 @@ export class TimelineFiltersComponent {
   readonly reset = output<void>();
 
   protected readonly plotlineKinds = ['plotline'] as const;
+  protected readonly plotlineMax = PLOTLINE_REFS_MAX;
 
   protected readonly plotlineRefs = computed<EntityRef[]>(() =>
     this.value().plotlines.map((id) => ({ kind: 'plotline', id })),

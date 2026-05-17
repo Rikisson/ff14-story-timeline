@@ -18,10 +18,7 @@ import { EventsService } from '@features/events';
 import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import {
-  AssetThumbResolver,
-  createEntityDirectoryQueryStore,
-} from '@shared/data-access';
+import { AssetThumbResolver } from '@shared/data-access';
 import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
@@ -126,9 +123,8 @@ import editorUk from '../i18n/uk.json';
             [sceneId]="store.selectedSceneId()"
             [scene]="store.selectedScene()"
             [isStartScene]="isSelectedStart()"
-            [characterOptions]="characterOptions()"
-            [placeOptions]="placeOptions()"
             [characterSprites]="characterSprites()"
+            [characterNames]="characterNames()"
             [sceneLabels]="sceneLabels()"
             (update)="onUpdate($event)"
             (updateChoiceLabel)="onChoiceLabel($event)"
@@ -260,17 +256,6 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly universes = inject(UniverseStore);
   private readonly calendarService = inject(CalendarService);
 
-  private readonly charactersDirectory = createEntityDirectoryQueryStore({
-    universeId: computed(() => this.universes.activeUniverseId()),
-    kind: computed(() => 'character' as const),
-    includeDrafts: computed(() => true),
-  });
-  private readonly placesDirectory = createEntityDirectoryQueryStore({
-    universeId: computed(() => this.universes.activeUniverseId()),
-    kind: computed(() => 'place' as const),
-    includeDrafts: computed(() => true),
-  });
-
   protected readonly dateInvalid = computed(() => {
     const meta = this.store.meta();
     if (!meta) return false;
@@ -280,23 +265,6 @@ export class EditorPage implements HasUnsavedChanges {
   protected readonly isSelectedStart = computed(
     () => this.store.selectedSceneId() !== null
       && this.store.selectedSceneId() === this.store.startSceneId(),
-  );
-
-  protected readonly characterOptions = computed(() =>
-    this.charactersDirectory.rows().map((row) => ({
-      id: row.id,
-      label: row.label,
-      hint: row.slug,
-      kind: 'character' as const,
-    })),
-  );
-  protected readonly placeOptions = computed(() =>
-    this.placesDirectory.rows().map((row) => ({
-      id: row.id,
-      label: row.label,
-      hint: row.slug,
-      kind: 'place' as const,
-    })),
   );
 
   /**
@@ -338,6 +306,16 @@ export class EditorPage implements HasUnsavedChanges {
       return map;
     },
   );
+  // Names for staged-row display. Pulled from the canonical character
+  // docs we already fetch into `sceneCharacters` for sprite lookup, so
+  // no extra reads and no dependency on a directory page cap.
+  protected readonly characterNames = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const [id, char] of this.sceneCharacters()) {
+      map[id] = char.name;
+    }
+    return map;
+  });
   protected readonly sceneLabels = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const [id, scene] of Object.entries(this.store.scenes())) {

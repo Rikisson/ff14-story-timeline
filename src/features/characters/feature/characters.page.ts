@@ -122,6 +122,7 @@ export class CharactersPage {
 
   protected readonly ctrl = createEntityListController<Character, CharacterDraft>({
     service: this.service,
+    kind: 'character',
     lookupById: (id) => this.service.getById(id),
     toDraft: (c) => ({
       slug: c.slug,

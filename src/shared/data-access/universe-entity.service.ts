@@ -153,6 +153,10 @@ export abstract class UniverseEntityService<
    * sprite IDs). MUST NOT be used for any field that appears in the
    * directory or timeline projection — those rows would silently go stale.
    * Use `update` for projected-field changes.
+   *
+   * Still publishes on the cache-invalidation bus so listeners that cache
+   * the canonical doc (e.g. an entity list controller's selected entity)
+   * can refetch.
    */
   protected async patchFields(id: string, fields: Record<string, unknown>): Promise<void> {
     const universeId = this.requireUniverseId();
@@ -160,6 +164,7 @@ export abstract class UniverseEntityService<
       doc(this.firebase.firestore, 'universes', universeId, this.collectionName, id),
       { ...fields, updatedAt: Date.now() },
     );
+    this.bus.publishEntityWrite({ universeId, kind: this.kind, id });
   }
 
   protected requireUniverseId(): string {

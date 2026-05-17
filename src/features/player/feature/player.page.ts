@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
 import {
   AssetThumbResolver,
@@ -98,7 +98,6 @@ import playerUk from '../i18n/uk.json';
               [text]="scene.text"
               [speaker]="speakerLabel()"
               [background]="backgroundUrl()"
-              [audio]="audioUrl()"
               [staged]="stagedView()"
               [inlineRefOptions]="inlineRefOptions()"
             />
@@ -115,6 +114,23 @@ import playerUk from '../i18n/uk.json';
               <app-choice-list [choices]="scene.next" (choose)="store.choose($event)" />
             }
           }
+
+          <!--
+            Audio host sits above scene-view so ambient tracks survive
+            scene re-renders (per docs/narrative-engine-impl.md *Scene
+            rendering layers*). When consecutive scenes share an audio
+            URL the element stays mounted and the browser does not
+            restart playback.
+          -->
+          @if (audioUrl(); as a) {
+            <audio
+              class="w-full"
+              controls
+              preload="auto"
+              [src]="a"
+              [attr.aria-label]="audioLabel()"
+            ></audio>
+          }
         }
       </div>
     </ng-container>
@@ -127,6 +143,7 @@ export class PlayerPage {
   private readonly characters = inject(CharactersService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
+  private readonly transloco = inject(TranslocoService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -164,6 +181,15 @@ export class PlayerPage {
   );
   protected readonly backgroundUrl = computed(() => this.backgroundThumb()?.url);
   protected readonly audioUrl = computed(() => this.audioThumb()?.url);
+
+  // Audio host lives outside scene-view (see template comment); the
+  // accessible label still mentions the current speaker when available.
+  protected readonly audioLabel = computed(() => {
+    const s = this.speakerLabel();
+    return s
+      ? this.transloco.translate('player.tooltip.audioForSpeaker', { speaker: s })
+      : this.transloco.translate('player.tooltip.audioGeneric');
+  });
 
   private readonly stagedRefs = computed<readonly EntityRef[]>(() => {
     const scene = this.store.currentScene();

@@ -1,7 +1,11 @@
-import { computed, effect, inject, signal, Signal, WritableSignal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, signal, Signal, WritableSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs/operators';
 import { TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
+import { EntityKind } from '@shared/models';
+import { CacheInvalidationBus } from './cache-invalidation.bus';
 
 export type EntityListMode =
   | { kind: 'idle' }
@@ -48,10 +52,20 @@ export function createEntityListController<T extends { id: string }, Draft>(opts
   lookupById: (id: string) => Promise<T | null>;
   toDraft: (entity: T) => Draft;
   removeLabel: (entity: T) => string;
+  /**
+   * When set, the controller subscribes to `CacheInvalidationBus` and
+   * refetches the selected entity whenever an entity-write event matches
+   * this kind, the active universe, and the currently selected id. This
+   * keeps the form / detail view in sync with writes that don't go
+   * through `submit` (e.g. `CharactersService.updateSprites`).
+   */
+  kind?: EntityKind;
 }): EntityListController<T, Draft> {
   const universes = inject(UniverseStore);
   const user = inject(AuthStore).user;
   const transloco = inject(TranslocoService);
+  const bus = inject(CacheInvalidationBus);
+  const destroyRef = inject(DestroyRef);
 
   const mode = signal<EntityListMode>({ kind: 'idle' });
   const busy = signal(false);
@@ -108,6 +122,24 @@ export function createEntityListController<T extends { id: string }, Draft>(opts
     universes.activeUniverseId();
     void fetchSelected(id);
   });
+
+  if (opts.kind) {
+    const watchKind = opts.kind;
+    bus.entityWrites$
+      .pipe(
+        filter(
+          (e) =>
+            e.kind === watchKind &&
+            e.universeId === universes.activeUniverseId() &&
+            e.id === selectedId(),
+        ),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe(() => {
+        const id = selectedId();
+        if (id) void fetchSelected(id);
+      });
+  }
 
   return {
     mode: mode.asReadonly(),
