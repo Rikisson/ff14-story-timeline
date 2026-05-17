@@ -35,6 +35,15 @@
       ]
     },
     {
+      "collectionGroup": "_timelineEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
+        { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "dateSortKey", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "_timelineLaneEntries",
       "queryScope": "COLLECTION",
       "fields": [
@@ -42,6 +51,16 @@
         { "fieldPath": "laneKey", "order": "ASCENDING" },
         { "fieldPath": "dateKnown", "order": "ASCENDING" },
         { "fieldPath": "dateSortKey", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "_timelineLaneEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
+        { "fieldPath": "laneKey", "order": "ASCENDING" },
+        { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "dateSortKey", "order": "DESCENDING" }
       ]
     },
     {
