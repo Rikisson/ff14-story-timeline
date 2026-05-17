@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -12,6 +11,7 @@ import {
   PLATFORM_ID,
   Signal,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -165,7 +165,7 @@ import { BgmController } from './bgm-controller';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlayerPage implements AfterViewInit {
+export class PlayerPage {
   readonly id = input.required<string>();
   protected readonly store = inject(PlayerStore);
   private readonly characters = inject(CharactersService);
@@ -407,30 +407,58 @@ export class PlayerPage implements AfterViewInit {
       schedulePrefetch(urls);
     });
 
-    // Drive the BGM controller. Decoupled from playback by design — the
-    // controller does its own crossfade so consecutive same-URL scenes
-    // leave the active audio element playing untouched.
+    // Instantiate the BGM controller the moment its two `<audio>` slots
+    // mount. They live inside the `@else if (store.story(); …)` branch
+    // so they don't exist on first render — `ngAfterViewInit` fires too
+    // early. Watching the viewChild signals lets us hook in as soon as
+    // the elements arrive, regardless of when the story loads.
     effect(() => {
-      const controller = this.bgmController;
-      if (!controller) return;
+      const a = this.bgmA()?.nativeElement;
+      const b = this.bgmB()?.nativeElement;
+      if (!a || !b) return;
+      if (this.bgmController) return;
+      const controller = new BgmController(a, b);
+      this.bgmController = controller;
+      // Apply the current state untracked so this creator effect doesn't
+      // also become reactive to bgmTarget/bgmUrl/bgmVolume — those are
+      // owned by the dedicated effects below.
+      untracked(() => {
+        controller.setUserVolume(this.prefs.bgmVolume());
+        controller.setTarget(this.bgmTarget(), this.bgmUrl());
+      });
+    });
+
+    // Drive the BGM controller on scene/volume changes. Decoupled from
+    // playback by design — the controller does its own crossfade so
+    // consecutive same-URL scenes leave the active audio element playing
+    // untouched.
+    effect(() => {
       const target = this.bgmTarget();
       const url = this.bgmUrl();
-      controller.setTarget(target, url);
+      this.bgmController?.setTarget(target, url);
     });
     effect(() => {
       this.bgmController?.setUserVolume(this.prefs.bgmVolume());
     });
-  }
 
-  ngAfterViewInit(): void {
-    const a = this.bgmA()?.nativeElement;
-    const b = this.bgmB()?.nativeElement;
-    if (!a || !b) return;
-    this.bgmController = new BgmController(a, b);
-    this.bgmController.setUserVolume(this.prefs.bgmVolume());
-    // Apply the current target now that the controller exists; subsequent
-    // changes are driven by the `effect` above.
-    this.bgmController.setTarget(this.bgmTarget(), this.bgmUrl());
+    // First-user-gesture autoplay unblock. Browsers reject `play()` on
+    // a fresh tab until the user has interacted with it; if that
+    // happens, `BgmController.wantsPlay` is set. Retrying inside a real
+    // gesture handler succeeds. Capture-phase + once on both pointer
+    // and key so even keyboard-only navigation kicks the BGM awake.
+    if (this.isBrowser) {
+      const onFirstGesture = (): void => {
+        this.bgmController?.unblock();
+        document.removeEventListener('pointerdown', onFirstGesture, true);
+        document.removeEventListener('keydown', onFirstGesture, true);
+      };
+      document.addEventListener('pointerdown', onFirstGesture, true);
+      document.addEventListener('keydown', onFirstGesture, true);
+      this.destroyRef.onDestroy(() => {
+        document.removeEventListener('pointerdown', onFirstGesture, true);
+        document.removeEventListener('keydown', onFirstGesture, true);
+      });
+    }
   }
 }
 

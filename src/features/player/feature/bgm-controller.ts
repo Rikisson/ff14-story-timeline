@@ -29,6 +29,14 @@ export class BgmController {
   private current: { slot: Slot; url: string } | null = null;
   private userVolume = 0;
   private rafId: number | null = null;
+  /**
+   * Set to `true` when an autoplay attempt was rejected. Most browsers
+   * block `<audio>.play()` until the tab has received a user gesture;
+   * if the first scene's BGM hits this branch we remember it and retry
+   * on the next gesture (see `unblock()`) so lazy stories with one
+   * track-across-the-whole-thing still play once the user clicks.
+   */
+  private wantsPlay = false;
 
   constructor(
     private readonly slotA: HTMLAudioElement,
@@ -50,10 +58,15 @@ export class BgmController {
 
   setTarget(target: BgmTarget, resolvedUrl: string | null): void {
     if (this.current?.url === resolvedUrl && resolvedUrl !== null) {
-      if (this.rafId === null) return;
-      // Mid-fadeout to silence on this URL — cancel and bring back to user volume.
-      this.cancelRamp();
-      this.elFor(this.current.slot).volume = this.userVolume;
+      if (this.rafId !== null) {
+        // Mid-fadeout to silence on this URL — cancel and bring back to user volume.
+        this.cancelRamp();
+        this.elFor(this.current.slot).volume = this.userVolume;
+        return;
+      }
+      // Same URL, no ramp in flight. Retry play() if a previous autoplay
+      // attempt was blocked so a deferred user gesture can resurrect it.
+      if (this.wantsPlay) this.tryPlay(this.elFor(this.current.slot));
       return;
     }
     if (resolvedUrl === null) {
@@ -76,6 +89,18 @@ export class BgmController {
       el.load();
     }
     this.current = null;
+    this.wantsPlay = false;
+  }
+
+  /**
+   * Called from the player page on the first user gesture (pointer or
+   * key). If a prior `play()` was rejected by the autoplay policy, the
+   * `wantsPlay` flag is still set; retrying inside a real gesture frame
+   * succeeds.
+   */
+  unblock(): void {
+    if (!this.wantsPlay || !this.current) return;
+    this.tryPlay(this.elFor(this.current.slot));
   }
 
   private fadeOut(transition: BgmTransition): void {
@@ -111,10 +136,7 @@ export class BgmController {
 
     newEl.src = url;
     newEl.volume = transition === 'cut' ? this.userVolume : 0;
-    void newEl.play().catch(() => {
-      // Autoplay blocked or load failed — the next user gesture (choice
-      // click) will retry naturally on the following scene swap.
-    });
+    this.tryPlay(newEl);
 
     if (transition === 'cut') {
       if (oldEl) {
@@ -162,6 +184,22 @@ export class BgmController {
       this.rafId = requestAnimationFrame(tick);
     };
     this.rafId = requestAnimationFrame(tick);
+  }
+
+  private tryPlay(el: HTMLAudioElement): void {
+    const result = el.play();
+    if (!result || typeof result.then !== 'function') return;
+    result.then(
+      () => {
+        this.wantsPlay = false;
+      },
+      () => {
+        // Autoplay rejected (most browsers block playback until the tab
+        // has received a user gesture). Remember the intent; `unblock()`
+        // and same-URL setTarget calls will retry.
+        this.wantsPlay = true;
+      },
+    );
   }
 
   private cancelRamp(): void {
