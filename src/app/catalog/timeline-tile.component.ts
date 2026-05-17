@@ -52,8 +52,9 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
         #root
         class="group relative aspect-video w-full overflow-hidden rounded-md border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:-translate-y-0.5 focus-within:shadow-lg"
       >
-        @if (coverAssetId(); as id) {
-          @if (thumb(); as u) {
+        @if (coverAssetId()) {
+          @let u = thumb();
+          @if (u) {
             <img
               [ngSrc]="u.thumbUrl ?? u.url"
               alt=""
@@ -67,9 +68,12 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
               class="absolute inset-0 bg-gradient-to-t from-scrim/80 via-scrim/40 to-scrim/10"
               aria-hidden="true"
             ></div>
-          } @else {
-            <!-- Skeleton: same box, no layout shift when the image fades in.
-                 Per media-rules *Lazy thumbs reserve their box*. -->
+          } @else if (u === undefined) {
+            <!-- Skeleton fires only while the asset fetch is in flight.
+                 Once the resolver reports a missing asset the tile
+                 falls through to the bare surface — no perpetual pulse
+                 on deleted covers. Per media-rules Lazy thumbs reserve
+                 their box. -->
             <div
               class="absolute inset-0 animate-pulse bg-surface-muted"
               aria-hidden="true"

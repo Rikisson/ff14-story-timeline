@@ -241,7 +241,11 @@ export class EntityPickerComponent {
         refKey: key,
         kind: ref.kind,
         id: ref.id,
-        label: row?.label ?? ref.id,
+        // Match `<app-entity-ref>`'s fallback: unresolved chips show
+        // `'?'` rather than the raw GUID. A deleted/in-flight ref is
+        // identifiable by its kind colour + position; surfacing the ID
+        // is worse than admitting we can't name it yet.
+        label: row?.label ?? '?',
         draft: row?.draft ?? false,
       };
     });

@@ -13,7 +13,9 @@ import { AssetThumbResolver } from '@shared/data-access';
  * so no layout shift occurs when the URL fades in. Per
  * `docs/media-rules.md` *Loading*: resolves through `AssetThumbResolver`,
  * renders a skeleton placeholder during the fetch, then fades in
- * `thumbUrl ?? url`.
+ * `thumbUrl ?? url`. When the resolver reports the asset doesn't exist
+ * (deleted, never created), the host's `bg-surface-muted` shows as a
+ * stable empty box — the pulse stops.
  *
  * The host element controls the dimensions — pass a sizing class
  * (e.g. `size-10`) on the component selector. The internal img is
@@ -23,14 +25,15 @@ import { AssetThumbResolver } from '@shared/data-access';
   selector: 'app-lazy-thumb',
   host: { class: 'relative inline-block overflow-hidden bg-surface-muted' },
   template: `
-    @if (assetId(); as id) {
-      @if (thumb(); as t) {
+    @if (assetId()) {
+      @let t = thumb();
+      @if (t) {
         <img
           [src]="t.thumbUrl ?? t.url"
           [alt]="alt()"
           class="absolute inset-0 h-full w-full object-cover animate-[fadeIn_180ms_ease-out]"
         />
-      } @else {
+      } @else if (t === undefined) {
         <span class="absolute inset-0 animate-pulse bg-surface-muted" aria-hidden="true"></span>
       }
     }

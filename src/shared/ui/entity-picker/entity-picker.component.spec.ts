@@ -241,13 +241,14 @@ describe('EntityPickerComponent', () => {
       expect(chips[1].textContent).toContain('Vault');
     });
 
-    it('falls back to the id when the resolver has no row yet', () => {
+    it('falls back to "?" when the resolver has no row yet (avoids leaking the raw GUID)', () => {
       const fx = mount(
         { directory, resolver, universes },
         { value: [{ kind: 'character', id: 'c1' }] },
       );
       const chip = (fx.nativeElement as HTMLElement).querySelector('li button');
-      expect(chip?.textContent).toContain('c1');
+      expect(chip?.textContent).toContain('?');
+      expect(chip?.textContent).not.toContain('c1');
     });
 
     it('shows the draft pill on chips marked draft', () => {

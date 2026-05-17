@@ -65,20 +65,38 @@ describe('AssetThumbResolver', () => {
     expect(getDocsMock).not.toHaveBeenCalled();
   });
 
-  it('returns a null signal while the fetch is in flight, then updates when the batch resolves', async () => {
+  it('returns undefined while the fetch is in flight, then updates when the batch resolves', async () => {
     getDocsMock.mockResolvedValueOnce(
       fakeSnap([{ id: 'a1', url: 'https://r2/a1', thumbUrl: 'https://r2/a1.thumb' }]),
     );
     const { resolver } = setup();
 
     const sig = resolver.resolve('a1');
-    expect(sig()).toBeNull();
+    // `undefined` = pending; the consumer (lazy-thumb, timeline-tile)
+    // distinguishes it from `null` (resolved-missing) to stop showing a
+    // skeleton on deleted assets.
+    expect(sig()).toBeUndefined();
 
     await flushMicrotasks();
     await Promise.resolve();
     await Promise.resolve();
 
     expect(sig()).toEqual({ id: 'a1', url: 'https://r2/a1', thumbUrl: 'https://r2/a1.thumb' });
+    expect(getDocsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles a missing asset id at null so consumers stop showing the pending skeleton', async () => {
+    getDocsMock.mockResolvedValueOnce(fakeSnap([]));
+    const { resolver } = setup();
+
+    const sig = resolver.resolve('deleted-asset');
+    expect(sig()).toBeUndefined();
+
+    await flushMicrotasks();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(sig()).toBeNull();
     expect(getDocsMock).toHaveBeenCalledTimes(1);
   });
 

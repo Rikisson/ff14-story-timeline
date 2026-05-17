@@ -37,6 +37,16 @@ const ASSETS_COLLECTION = '_assets';
 const FIRESTORE_IN_CHUNK = 30;
 
 /**
+ * Tristate resolution result. `undefined` is "fetch still in flight",
+ * `null` is "fetch resolved, no doc by this ID" (deleted or never
+ * existed), and an `AssetThumb` is "ready, render the URL". Consumers
+ * that want a skeleton-while-pending UI distinguish `undefined` from
+ * `null`; consumers that only care about "have I got something to
+ * render" can keep treating both falsy values the same way.
+ */
+export type AssetThumbSignalValue = AssetThumb | null | undefined;
+
+/**
  * Session-scoped, by-ID asset hydration for list / timeline / picker /
  * resolver-chip surfaces. Per `docs/backend-rules.md` *Asset references*:
  * caches by `(universeId, assetId)` for the session and batches misses
@@ -44,9 +54,11 @@ const FIRESTORE_IN_CHUNK = 30;
  *
  * Consumers call `resolve(assetId)` for single thumbs (one cover per
  * card) and `resolveMany(idsSignal)` for picker / list bodies that
- * render N rows at once. Both return signals; missing or not-yet-fetched
- * IDs read `null` and can drive a skeleton placeholder. Once the batched
- * fetch lands, the signal updates and the consumer fades in the thumb.
+ * render N rows at once. Both return signals using the tristate above:
+ * `undefined` while the batched fetch is in flight (drives a skeleton),
+ * `null` once the fetch confirms the asset is missing (drives an empty
+ * slot — don't keep the skeleton spinning), and an `AssetThumb` once
+ * the URL is available.
  *
  * Cache invalidation flows through `CacheInvalidationBus`: an
  * `asset-write` event re-queues the asset for fetch and the signal
@@ -59,10 +71,15 @@ export class AssetThumbResolver {
   private readonly universes = inject(UniverseStore);
   private readonly bus = inject(CacheInvalidationBus);
 
-  private readonly cache = new Map<string, WritableSignal<AssetThumb | null>>();
+  private readonly cache = new Map<string, WritableSignal<AssetThumbSignalValue>>();
   private readonly pendingQueue: Array<{ universeId: string; assetId: string }> = [];
   private flushScheduled = false;
-  private readonly nullSignal: Signal<AssetThumb | null> = signal<AssetThumb | null>(null).asReadonly();
+  // Sentinel signal for "no asset ID supplied" and "no active universe"
+  // — these are stable resolved states (not pending) so they return
+  // `null`, never `undefined`.
+  private readonly nullSignal: Signal<AssetThumbSignalValue> = signal<AssetThumbSignalValue>(
+    null,
+  ).asReadonly();
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -70,13 +87,18 @@ export class AssetThumbResolver {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(({ universeId, assetId }) => {
         const key = cacheKey(universeId, assetId);
-        if (!this.cache.has(key)) return;
+        const existing = this.cache.get(key);
+        if (!existing) return;
+        // Reset to pending so consumers re-render their skeleton while
+        // the refetch is in flight (covers asset deletes via metadata
+        // edits — URLs are immutable, but `label` can change).
+        existing.set(undefined);
         this.pendingQueue.push({ universeId, assetId });
         this.scheduleFlush();
       });
   }
 
-  resolve(assetId: string | undefined | null): Signal<AssetThumb | null> {
+  resolve(assetId: string | undefined | null): Signal<AssetThumbSignalValue> {
     if (!assetId) return this.nullSignal;
     const universeId = this.universes.activeUniverseId();
     if (!universeId) return this.nullSignal;
@@ -96,11 +118,13 @@ export class AssetThumbResolver {
     });
   }
 
-  private signalFor(universeId: string, assetId: string): Signal<AssetThumb | null> {
+  private signalFor(universeId: string, assetId: string): Signal<AssetThumbSignalValue> {
     const key = cacheKey(universeId, assetId);
     const existing = this.cache.get(key);
     if (existing) return existing.asReadonly();
-    const sig = signal<AssetThumb | null>(null);
+    // Start at `undefined` so the first read renders the
+    // pending/skeleton state until the batched fetch lands.
+    const sig = signal<AssetThumbSignalValue>(undefined);
     this.cache.set(key, sig);
     this.pendingQueue.push({ universeId, assetId });
     this.scheduleFlush();
@@ -134,6 +158,8 @@ export class AssetThumbResolver {
         const fetched = await this.fetchChunk(universeId, chunk);
         for (const id of chunk) {
           const sig = this.cache.get(cacheKey(universeId, id));
+          // `null` records the resolved-missing state so the consumer
+          // stops showing a pending skeleton for a deleted asset.
           if (sig) sig.set(fetched.get(id) ?? null);
         }
       }
