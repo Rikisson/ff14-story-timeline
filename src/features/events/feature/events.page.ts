@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { AuthStore } from '@features/auth';
 import {
   EventCardComponent,
   EventsService,
@@ -96,14 +97,19 @@ import eventUk from '../i18n/uk.json';
 export class EventsPage {
   protected readonly service = inject(EventsService);
   private readonly universes = inject(UniverseStore);
+  private readonly user = inject(AuthStore).user;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly routeId = toSignal(this.route.paramMap, { requireSync: true });
 
+  private readonly memberView = computed(
+    () => !!this.user() && this.universes.isMemberOfActive(),
+  );
+
   protected readonly directory = createEntityDirectoryQueryStore({
     universeId: computed(() => this.universes.activeUniverseId()),
     kind: computed(() => 'event' as const),
-    includeDrafts: computed(() => true),
+    includeDrafts: this.memberView,
   });
 
   protected readonly ctrl = createEntityListController<TimelineEvent, TimelineEventDraft>({
