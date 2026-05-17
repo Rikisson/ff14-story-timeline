@@ -229,11 +229,16 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   matches an existing entry case-insensitively snaps to that entry's
   `categoryKey` — no duplicate config rows from typing variations of
   the same name. A novel label surfaces an explicit *Create category
-  "X"* option in the typeahead; selecting it creates the config entry
-  (uuid + folded key + entered label) and saves the codex entry
-  against it in the same `runTransaction` (per `backend-rules.md`
-  *Write discipline*). Creation is affirmative, never silent — typos
-  don't become categories without the author confirming.
+  "X"* option in the typeahead; selecting it commits the new config
+  entry (uuid + folded key + entered label) immediately so the
+  typeahead can reflect the selection, and the codex entry saves
+  against it when the author submits the form. Creation is
+  affirmative, never silent — typos don't become categories without
+  the author confirming. The window between affirmative-create and
+  form submit can leave a category with no referencing entry if the
+  author abandons the form; that's an unused row, not a data
+  integrity problem, and is recoverable via the unused-category
+  sweep below — same shape as the orphaned-`categoryKey` repair.
 - **Rename keeps identity.** Editing a category's label leaves `id`
   and `key` unchanged; existing entries' `categoryKey` stays valid
   and chip color is unaffected. No canonical entry doc needs
@@ -342,6 +347,7 @@ Specs exist for the editor and player stores plus a few utils. Services, route g
 ## Repair tools
 
 - **Orphaned `categoryKey` repair.** Walks `codexEntries` whose `categoryKey` no longer maps to a row in the `_meta/codex_categories` config (per *Codex categories — Delete requires reassignment*: the v1 UI-only delete block has a small race window where a concurrent create can produce one of these). Surfaces the affected entries and offers a reassign-to-category-X or clear-categoryKey flow.
+- **Unused-category sweep.** Walks `_meta/codex_categories` for rows with zero referencing codex entries (per *Codex categories — Every saved entry's `categoryKey` exists in config*: the affirmative-create row commits the config entry before the codex entry is saved, so an abandoned form leaves an unreferenced category). Lists the unused categories and offers bulk delete.
 - **Broken inline-ref repair.** Walks scenes for `${kind:guid}[…]` tokens whose target entity is missing (per *Inline-ref tokens — Entity delete*). Surfaces a list with the surrounding scene context and offers re-resolution or removal. Same shape as the categoryKey tool; consider sharing the UI shell.
 
 ## Player

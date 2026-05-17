@@ -1,5 +1,4 @@
 export * from './button';
-export * from './combobox-picker';
 export * from './entity-list-pane';
 export * from './entity-picker';
 export * from './form-error';

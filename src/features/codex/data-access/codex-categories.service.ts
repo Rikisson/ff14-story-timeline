@@ -206,11 +206,14 @@ export class CodexCategoriesService {
 }
 
 // ---------------------------------------------------------------------------
-// Pure transaction-body helpers. `applyCategoryCreate` is the composable
-// primitive that the codex-entry auto-create flow will call inside its
-// own `runTransaction` (per `docs/narrative-engine-impl.md`
-// *Codex categories — auto-create*: typeahead's *Create category "X"*
-// row creates the config entry and the codex entry in one transaction).
+// Pure transaction-body helpers. `applyCategoryCreate` is exported so a
+// future caller that wants to compose the category create into a larger
+// transaction can do so without duplicating the uniqueness validation
+// and version-bump dance. Today the only caller is `createCategory`
+// above, which runs it standalone — the codex-entry write is a separate
+// transaction so the typeahead can reflect the selection immediately
+// (per `docs/narrative-engine-impl.md` *Codex categories — Every saved
+// entry's `categoryKey` exists in config*).
 // ---------------------------------------------------------------------------
 
 export async function applyCategoryCreate(
