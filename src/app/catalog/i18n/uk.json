@@ -7,8 +7,7 @@
     "mainCharacter": "Головний персонаж",
     "place": "Місце",
     "plotline": "Сюжетна лінія",
-    "undated": "Без дати",
-    "allItems": "Усі елементи хронології"
+    "undated": "Без дати"
   },
   "action": {
     "newStory": "+ Нова історія",
@@ -29,14 +28,12 @@
     "searchPlaces": "Шукати місця…",
     "noPlaces": "Поки немає місць.",
     "searchPlotlines": "Шукати сюжетні лінії…",
-    "noPlotlines": "Поки немає сюжетних ліній.",
-    "noItemsLane": "У цій смузі немає елементів."
+    "noPlotlines": "Поки немає сюжетних ліній."
   },
   "tooltip": {
     "storiesList": "Список історій",
     "storyDetails": "Деталі історії",
     "playStory": "Грати: {{ title }}",
-    "deleteStory": "Видалити: {{ title }}",
-    "loadMore": "Завантажити ще 25 елементів у {{ lane }}"
+    "deleteStory": "Видалити: {{ title }}"
   }
 }

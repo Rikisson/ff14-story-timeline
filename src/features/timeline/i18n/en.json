@@ -2,7 +2,8 @@
   "field": {
     "title": "Timeline",
     "sortByDate": "Sort by date",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "allItems": "All timeline items"
   },
   "action": {
     "oldestFirst": "Oldest first",
@@ -13,6 +14,10 @@
     "subtitle": "Stories and events placed on the universe's calendar."
   },
   "empty": {
-    "list": "Nothing to show on the timeline."
+    "list": "Nothing to show on the timeline.",
+    "noItemsLane": "No items in this lane."
+  },
+  "tooltip": {
+    "loadMore": "Load 25 more items into {{ lane }}"
   }
 }

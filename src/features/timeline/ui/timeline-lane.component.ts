@@ -18,8 +18,8 @@ import {
   UNASSIGNED_LANE_KEY,
 } from '@shared/data-access';
 import { TimelineTileComponent } from './timeline-tile.component';
-import catalogEn from './i18n/en.json';
-import catalogUk from './i18n/uk.json';
+import timelineEn from '../i18n/en.json';
+import timelineUk from '../i18n/uk.json';
 
 const SCROLL_STEP = 320;
 
@@ -39,15 +39,15 @@ const SCROLL_STEP = 320;
   imports: [TimelineTileComponent, TranslocoDirective],
   providers: [
     provideTranslocoScope({
-      scope: 'catalog',
+      scope: 'timeline',
       loader: {
-        en: () => Promise.resolve(catalogEn),
-        uk: () => Promise.resolve(catalogUk),
+        en: () => Promise.resolve(timelineEn),
+        uk: () => Promise.resolve(timelineUk),
       },
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'catalog'">
+    <ng-container *transloco="let t; prefix: 'timeline'">
       <section
         class="flex flex-col gap-2"
         role="region"

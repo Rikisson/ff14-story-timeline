@@ -18,8 +18,8 @@ import { ContentLangDirective } from '@features/universes';
 import { AssetThumbResolver, TimelineRow } from '@shared/data-access';
 import { TagComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
-import catalogEn from './i18n/en.json';
-import catalogUk from './i18n/uk.json';
+import catalogEn from '../../../app/catalog/i18n/en.json';
+import catalogUk from '../../../app/catalog/i18n/uk.json';
 
 // Prefetch the full-resolution cover when the tile is comfortably inside the
 // viewport. Stories navigate to /play which renders the full image as the page

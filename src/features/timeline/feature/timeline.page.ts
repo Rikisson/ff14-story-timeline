@@ -6,7 +6,7 @@ import { PageHeaderComponent } from '@shared/ui';
 import {
   CatalogTimelineComponent,
   TimelineLaneDescriptor,
-} from '../../../app/catalog/catalog-timeline.component';
+} from '../ui/catalog-timeline.component';
 import {
   EMPTY_TIMELINE_FILTERS,
   TimelineFilters,

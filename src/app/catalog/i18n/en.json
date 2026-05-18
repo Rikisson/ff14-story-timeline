@@ -7,8 +7,7 @@
     "mainCharacter": "Main character",
     "place": "Place",
     "plotline": "Plotline",
-    "undated": "Undated",
-    "allItems": "All timeline items"
+    "undated": "Undated"
   },
   "action": {
     "newStory": "+ New story",
@@ -29,14 +28,12 @@
     "searchPlaces": "Search places…",
     "noPlaces": "No places yet.",
     "searchPlotlines": "Search plotlines…",
-    "noPlotlines": "No plotlines yet.",
-    "noItemsLane": "No items in this lane."
+    "noPlotlines": "No plotlines yet."
   },
   "tooltip": {
     "storiesList": "Stories list",
     "storyDetails": "Story details",
     "playStory": "Play {{ title }}",
-    "deleteStory": "Delete {{ title }}",
-    "loadMore": "Load 25 more items into {{ lane }}"
+    "deleteStory": "Delete {{ title }}"
   }
 }
