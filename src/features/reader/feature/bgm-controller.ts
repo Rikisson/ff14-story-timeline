@@ -29,14 +29,6 @@ export class BgmController {
   private current: { slot: Slot; url: string } | null = null;
   private userVolume = 0;
   private rafId: number | null = null;
-  /**
-   * Set to `true` when an autoplay attempt was rejected. Most browsers
-   * block `<audio>.play()` until the tab has received a user gesture;
-   * if the first scene's BGM hits this branch we remember it and retry
-   * on the next gesture (see `unblock()`) so lazy stories with one
-   * track-across-the-whole-thing still play once the user clicks.
-   */
-  private wantsPlay = false;
 
   constructor(
     private readonly slotA: HTMLAudioElement,
@@ -58,6 +50,8 @@ export class BgmController {
 
   setTarget(target: BgmTarget, resolvedUrl: string | null): void {
     if (this.current?.url === resolvedUrl && resolvedUrl !== null) {
+      const cur = this.current;
+      const curEl = this.elFor(cur.slot);
       if (this.rafId !== null) {
         // A ramp is mid-flight and the same URL is being re-targeted.
         // Two shapes land here:
@@ -66,17 +60,21 @@ export class BgmController {
         //     OTHER slot is fading out an old track. Cancelling the ramp
         //     skips its onDone, so we must pause the orphan ourselves —
         //     otherwise both tracks keep playing.
-        const cur = this.current;
         this.cancelRamp();
         const otherEl = this.elFor(cur.slot === 'a' ? 'b' : 'a');
         otherEl.pause();
         otherEl.volume = 0;
-        this.elFor(cur.slot).volume = this.userVolume;
+        curEl.volume = this.userVolume;
+        if (curEl.paused) this.tryPlay(curEl);
         return;
       }
-      // Same URL, no ramp in flight. Retry play() if a previous autoplay
-      // attempt was blocked so a deferred user gesture can resurrect it.
-      if (this.wantsPlay) this.tryPlay(this.elFor(this.current.slot));
+      // Same URL, no ramp in flight. If the slot is paused — typically
+      // because the first play() was rejected by the browser's autoplay
+      // policy and never recovered — retry now. `el.paused` is the
+      // synchronous source of truth; the alternative (tracking a flag
+      // set inside the async play() promise) can drift out of sync with
+      // the element's real state.
+      if (curEl.paused) this.tryPlay(curEl);
       return;
     }
     if (resolvedUrl === null) {
@@ -99,18 +97,18 @@ export class BgmController {
       el.load();
     }
     this.current = null;
-    this.wantsPlay = false;
   }
 
   /**
-   * Called from the player page on the first user gesture (pointer or
-   * key). If a prior `play()` was rejected by the autoplay policy, the
-   * `wantsPlay` flag is still set; retrying inside a real gesture frame
-   * succeeds.
+   * Called from the player page on every user gesture (pointer or
+   * key). If the active slot is paused — typically because the initial
+   * `play()` was rejected by the browser's autoplay policy — retrying
+   * inside a real gesture frame succeeds.
    */
   unblock(): void {
-    if (!this.wantsPlay || !this.current) return;
-    this.tryPlay(this.elFor(this.current.slot));
+    if (!this.current) return;
+    const el = this.elFor(this.current.slot);
+    if (el.paused) this.tryPlay(el);
   }
 
   private fadeOut(transition: BgmTransition): void {
@@ -198,18 +196,15 @@ export class BgmController {
 
   private tryPlay(el: HTMLAudioElement): void {
     const result = el.play();
-    if (!result || typeof result.then !== 'function') return;
-    result.then(
-      () => {
-        this.wantsPlay = false;
-      },
-      () => {
-        // Autoplay rejected (most browsers block playback until the tab
-        // has received a user gesture). Remember the intent; `unblock()`
-        // and same-URL setTarget calls will retry.
-        this.wantsPlay = true;
-      },
-    );
+    // Some legacy browsers return undefined from play(); the standard
+    // returns a Promise we can swallow. Rejection (e.g., autoplay
+    // policy) is recovered later via `unblock()` or a same-URL retarget
+    // — both branches check `el.paused` and retry as needed.
+    if (result && typeof result.catch === 'function') {
+      result.catch(() => {
+        // ignore — paused state is the recovery signal.
+      });
+    }
   }
 
   private cancelRamp(): void {

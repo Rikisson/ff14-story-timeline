@@ -34,7 +34,6 @@ export class SfxController {
   private current: CurrentTrack | null = null;
   private userVolume = 0;
   private rafId: number | null = null;
-  private wantsPlay = false;
 
   constructor(
     private readonly slotA: HTMLAudioElement,
@@ -69,8 +68,11 @@ export class SfxController {
       this.rafId === null
     ) {
       // Same URL, same scene visit, no ramp pending — playing or
-      // already played out, nothing to do.
-      if (this.wantsPlay) this.tryPlay(this.elFor(this.current.slot));
+      // already played out, nothing to do. If the slot is paused (e.g.,
+      // the first play() was rejected by autoplay policy and never
+      // recovered), retry on this gesture-adjacent call.
+      const el = this.elFor(this.current.slot);
+      if (el.paused) this.tryPlay(el);
       return;
     }
     this.fadeIn(resolvedUrl, key);
@@ -88,13 +90,13 @@ export class SfxController {
       el.load();
     }
     this.current = null;
-    this.wantsPlay = false;
   }
 
   /** Retry a blocked autoplay attempt on the active slot. */
   unblock(): void {
-    if (!this.wantsPlay || !this.current) return;
-    this.tryPlay(this.elFor(this.current.slot));
+    if (!this.current) return;
+    const el = this.elFor(this.current.slot);
+    if (el.paused) this.tryPlay(el);
   }
 
   private fadeOut(): void {
@@ -145,15 +147,14 @@ export class SfxController {
 
   private tryPlay(el: HTMLAudioElement): void {
     const result = el.play();
-    if (!result || typeof result.then !== 'function') return;
-    result.then(
-      () => {
-        this.wantsPlay = false;
-      },
-      () => {
-        this.wantsPlay = true;
-      },
-    );
+    // play() returns a Promise per spec; some legacy paths return
+    // undefined. Rejection (e.g., autoplay policy) leaves the element
+    // paused, which `unblock()` and same-URL retargets detect and retry.
+    if (result && typeof result.catch === 'function') {
+      result.catch(() => {
+        // ignore — paused state is the recovery signal.
+      });
+    }
   }
 
   private runRamp(opts: {

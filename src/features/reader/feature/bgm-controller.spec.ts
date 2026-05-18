@@ -476,5 +476,49 @@ describe('BgmController', () => {
 
       expect(live.play.mock.calls.length).toBe(callsBefore);
     });
+
+    it('story-default BGM recovers on scene navigation when the initial play was blocked', async () => {
+      // Page-reload symptom: the autoplay-unblock gesture listener
+      // fires before the controller has been constructed (during the
+      // initial story-loading interval), so no `unblock()` is called.
+      // The controller is then created in a non-gesture microtask and
+      // its first `play()` is rejected. With a story-level-only BGM,
+      // every subsequent scene resolves to the same URL — the same-URL
+      // branch must notice the paused slot and retry on its own.
+      rejectFirstPlay(slotA);
+
+      controller.setTarget({ assetId: 'X', transition: 'crossfade' }, URL_X);
+      await settlePlay();
+      flushRaf(900);
+      expect(slotA.paused).toBe(true);
+      expect(slotA.volume).toBeCloseTo(1, 2);
+
+      // Next scene inherits the same story-level URL — no unblock() in
+      // between, just a same-URL retarget.
+      controller.setTarget({ assetId: 'X', transition: 'crossfade' }, URL_X);
+      await settlePlay();
+
+      expect(slotA.paused).toBe(false);
+      expect(slotA.volume).toBeCloseTo(1, 2);
+    });
+
+    it('unblock() can be called repeatedly without restarting an already-playing slot', async () => {
+      // The page-level gesture listener now stays subscribed for the
+      // lifetime of the page, so unblock() fires on every pointer/key
+      // event. Once the slot is playing, those extra calls must be
+      // no-ops — otherwise audio would stutter on every interaction.
+      controller.setTarget({ assetId: 'X', transition: 'cut' }, URL_X);
+      await settlePlay();
+      const live = playing()!;
+      const callsBefore = live.play.mock.calls.length;
+
+      controller.unblock();
+      controller.unblock();
+      controller.unblock();
+      await settlePlay();
+
+      expect(live.play.mock.calls.length).toBe(callsBefore);
+      expect(live.paused).toBe(false);
+    });
   });
 });

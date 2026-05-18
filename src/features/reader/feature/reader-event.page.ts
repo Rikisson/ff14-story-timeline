@@ -373,20 +373,19 @@ export class ReaderEventPage {
       this.bgmController?.setUserVolume(v);
     });
 
-    // First-user-gesture autoplay unblock. Mirrors the story page so a
-    // browser that blocked the initial BGM `play()` picks up on the
-    // first click/key the reader makes.
+    // Autoplay unblock. Stays live for the page's lifetime so any
+    // gesture (not just the first) can recover playback if the
+    // controller was constructed outside a gesture frame and the
+    // browser blocked its initial play(). Mirrors the story page.
     if (this.isBrowser) {
-      const onFirstGesture = (): void => {
+      const onGesture = (): void => {
         this.bgmController?.unblock();
-        document.removeEventListener('pointerdown', onFirstGesture, true);
-        document.removeEventListener('keydown', onFirstGesture, true);
       };
-      document.addEventListener('pointerdown', onFirstGesture, true);
-      document.addEventListener('keydown', onFirstGesture, true);
+      document.addEventListener('pointerdown', onGesture, true);
+      document.addEventListener('keydown', onGesture, true);
       this.destroyRef.onDestroy(() => {
-        document.removeEventListener('pointerdown', onFirstGesture, true);
-        document.removeEventListener('keydown', onFirstGesture, true);
+        document.removeEventListener('pointerdown', onGesture, true);
+        document.removeEventListener('keydown', onGesture, true);
       });
     }
   }

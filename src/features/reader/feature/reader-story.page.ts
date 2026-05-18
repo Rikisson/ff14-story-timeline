@@ -585,24 +585,24 @@ export class ReaderStoryPage {
       this.sfxController?.setUserVolume(v);
     });
 
-    // First-user-gesture autoplay unblock. Browsers reject `play()` on
-    // a fresh tab until the user has interacted with it; if that
-    // happens, the controllers' `wantsPlay` flags stay set. Retrying
-    // inside a real gesture handler succeeds. Capture-phase + once on
-    // both pointer and key so even keyboard-only navigation kicks audio
-    // awake.
+    // Autoplay unblock. Browsers reject `play()` on a fresh tab until
+    // the user has interacted with it. The first gesture may arrive
+    // before the controllers exist (e.g., the user clicks during the
+    // initial story load), in which case the unblock call is a no-op
+    // and the controllers' later setTarget runs outside a gesture
+    // frame. Keep the listener live for the lifetime of the page so
+    // every subsequent gesture gets a chance to retry. `unblock()` is
+    // cheap when there's nothing to do.
     if (this.isBrowser) {
-      const onFirstGesture = (): void => {
+      const onGesture = (): void => {
         this.bgmController?.unblock();
         this.sfxController?.unblock();
-        document.removeEventListener('pointerdown', onFirstGesture, true);
-        document.removeEventListener('keydown', onFirstGesture, true);
       };
-      document.addEventListener('pointerdown', onFirstGesture, true);
-      document.addEventListener('keydown', onFirstGesture, true);
+      document.addEventListener('pointerdown', onGesture, true);
+      document.addEventListener('keydown', onGesture, true);
       this.destroyRef.onDestroy(() => {
-        document.removeEventListener('pointerdown', onFirstGesture, true);
-        document.removeEventListener('keydown', onFirstGesture, true);
+        document.removeEventListener('pointerdown', onGesture, true);
+        document.removeEventListener('keydown', onGesture, true);
       });
     }
   }
