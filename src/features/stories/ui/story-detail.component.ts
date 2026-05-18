@@ -120,7 +120,7 @@ import storyUk from '../i18n/uk.json';
 
           <div class="mt-1 flex flex-wrap items-center justify-center gap-2">
             <a
-              [routerLink]="['/play', story().id]"
+              [routerLink]="['/reader/story', story().id]"
               [class]="heroPrimaryClass"
               [attr.aria-label]="t('tooltip.playStory', { title: storyTitle() })"
             >

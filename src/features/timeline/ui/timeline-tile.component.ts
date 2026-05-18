@@ -146,7 +146,9 @@ export class TimelineTileComponent {
 
   protected readonly storyLink = computed<readonly [string, string] | null>(() => {
     const r = this.row();
-    return r.kind === 'story' ? ['/play', r.id] : null;
+    if (r.kind === 'story') return ['/reader/story', r.id];
+    if (r.kind === 'event') return ['/reader/event', r.id];
+    return null;
   });
 
   protected readonly formattedDate = computed(() => {

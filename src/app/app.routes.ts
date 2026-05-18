@@ -12,9 +12,14 @@ export const routes: Routes = [
     loadChildren: () => import('@features/stories').then((m) => m.STORIES_ROUTES),
   },
   {
-    path: 'play',
+    path: 'reader',
     canActivate: [universeGuard],
     loadChildren: () => import('@features/reader').then((m) => m.READER_ROUTES),
+  },
+  {
+    path: 'play/:id',
+    pathMatch: 'full',
+    redirectTo: 'reader/story/:id',
   },
   {
     path: 'timeline',

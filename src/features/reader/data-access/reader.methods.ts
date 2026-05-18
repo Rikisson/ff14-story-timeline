@@ -75,7 +75,7 @@ export function withReaderMethods() {
       transloco = inject(TranslocoService),
     ) => {
       // Stale-response guard. Fast story switches (route changes, the
-      // /play/:id input toggling, universe selection flipping mid-load)
+      // /reader/story/:id input toggling, universe selection flipping mid-load)
       // can land an older `getStoryWithContent` after a newer one. Only
       // the latest invocation's seq writes back into store state; older
       // resolutions short-circuit.
