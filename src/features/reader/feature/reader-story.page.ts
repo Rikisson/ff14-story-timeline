@@ -101,7 +101,7 @@ import { SfxController } from './sfx-controller';
             [class.pointer-events-none]="chromeIdle()"
             [attr.aria-hidden]="chromeIdle() ? 'true' : null"
           >
-            <header class="mx-auto flex w-full max-w-7xl px-4 pt-3">
+            <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
               <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ story.title }}</h1>
                 <div class="flex items-center gap-2">
@@ -182,6 +182,7 @@ export class ReaderStoryPage {
   protected readonly prefs = inject(ReaderPreferencesService);
   protected readonly layout = inject(LayoutStore);
 
+  private readonly headerEl = viewChild<ElementRef<HTMLElement>>('headerEl');
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
   private readonly sfxA = viewChild<ElementRef<HTMLAudioElement>>('sfxA');
@@ -402,11 +403,14 @@ export class ReaderStoryPage {
 
     // Chrome reveal: the floating header card shows on page load, then
     // hides after `CHROME_IDLE_MS`. After that, it only re-appears while
-    // the pointer sits in the top hover zone (above `HOVER_ZONE_PX`);
-    // moving below the zone re-arms the hide timer.
+    // the pointer sits in the top hover zone, which spans the header's
+    // own top padding, the card itself, and an equal pad below — so the
+    // user can keep the pointer anywhere over the card without triggering
+    // the hide timer. Falls back to `FALLBACK_HOVER_PX` until the header
+    // element mounts.
     if (this.isBrowser) {
       let idleTimer: ReturnType<typeof setTimeout> | null = null;
-      const HOVER_ZONE_PX = 96;
+      const FALLBACK_HOVER_PX = 82;
       const startHideTimer = (): void => {
         if (idleTimer !== null) clearTimeout(idleTimer);
         idleTimer = setTimeout(
@@ -414,8 +418,15 @@ export class ReaderStoryPage {
           ReaderStoryPage.CHROME_IDLE_MS,
         );
       };
+      const hoverZone = (): number => {
+        const el = this.headerEl()?.nativeElement;
+        if (!el) return FALLBACK_HOVER_PX;
+        const rect = el.getBoundingClientRect();
+        const topPad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+        return rect.bottom + topPad;
+      };
       const onMouseMove = (e: MouseEvent): void => {
-        if (e.clientY <= HOVER_ZONE_PX) {
+        if (e.clientY <= hoverZone()) {
           this.chromeIdle.set(false);
           if (idleTimer !== null) {
             clearTimeout(idleTimer);

@@ -97,7 +97,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
             [class.pointer-events-none]="chromeIdle()"
             [attr.aria-hidden]="chromeIdle() ? 'true' : null"
           >
-            <header class="mx-auto flex w-full max-w-7xl px-4 pt-3">
+            <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
               <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ ev.name }}</h1>
                 <div class="flex items-center gap-2">
@@ -155,6 +155,7 @@ export class ReaderEventPage {
   protected readonly prefs = inject(ReaderPreferencesService);
   protected readonly layout = inject(LayoutStore);
 
+  private readonly headerEl = viewChild<ElementRef<HTMLElement>>('headerEl');
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
   private bgmController: BgmController | null = null;
@@ -303,10 +304,11 @@ export class ReaderEventPage {
 
     // Chrome reveal: floating header shows on load, hides after
     // `CHROME_IDLE_MS`, and re-appears only while the pointer is in
-    // the top hover zone. Mirrors the story reader.
+    // the top hover zone — header's top padding + card + equal pad
+    // below. Mirrors the story reader.
     if (this.isBrowser) {
       let idleTimer: ReturnType<typeof setTimeout> | null = null;
-      const HOVER_ZONE_PX = 96;
+      const FALLBACK_HOVER_PX = 82;
       const startHideTimer = (): void => {
         if (idleTimer !== null) clearTimeout(idleTimer);
         idleTimer = setTimeout(
@@ -314,8 +316,15 @@ export class ReaderEventPage {
           ReaderEventPage.CHROME_IDLE_MS,
         );
       };
+      const hoverZone = (): number => {
+        const el = this.headerEl()?.nativeElement;
+        if (!el) return FALLBACK_HOVER_PX;
+        const rect = el.getBoundingClientRect();
+        const topPad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+        return rect.bottom + topPad;
+      };
       const onMouseMove = (e: MouseEvent): void => {
-        if (e.clientY <= HOVER_ZONE_PX) {
+        if (e.clientY <= hoverZone()) {
           this.chromeIdle.set(false);
           if (idleTimer !== null) {
             clearTimeout(idleTimer);
