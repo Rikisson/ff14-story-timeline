@@ -12,7 +12,10 @@ export type ReaderState = {
   history: string[];
   loading: boolean;
   error: string | null;
-  pendingResume: SavedProgress | null;
+  // True when the reader auto-resumed from localStorage on load. Drives
+  // the "Start over" aside in the chrome and clears the first time the
+  // reader navigates (any choose/back) or restarts.
+  resumedFromSave: boolean;
 };
 
 export const initialReaderState: ReaderState = {
@@ -22,5 +25,5 @@ export const initialReaderState: ReaderState = {
   history: [],
   loading: false,
   error: null,
-  pendingResume: null,
+  resumedFromSave: false,
 };

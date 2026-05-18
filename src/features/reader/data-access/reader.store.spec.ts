@@ -89,7 +89,7 @@ describe('ReaderStore', () => {
     store.restart();
     expect(store.currentSceneId()).toBe('a');
     expect(store.history()).toEqual(['a']);
-    expect(store.pendingResume()).toBeNull();
+    expect(store.resumedFromSave()).toBe(false);
   });
 
   it('saves progress to localStorage on choose and retains it at end-scene', () => {
@@ -110,33 +110,32 @@ describe('ReaderStore', () => {
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 
-  it('offers pendingResume when reloading mid-story', async () => {
+  it('auto-resumes to the saved scene on reload and flags resumedFromSave', async () => {
     store.choose('b');
     await store.loadStory('s1'); // simulates a fresh page load
 
-    expect(store.pendingResume()).toEqual({
-      sceneId: 'b',
-      history: ['a', 'b'],
-    });
-    expect(store.currentSceneId()).toBe('a'); // still on start until resume()
-  });
-
-  it('resume jumps to the saved scene and clears the pending banner', async () => {
-    store.choose('b');
-    await store.loadStory('s1');
-    store.resume();
-
     expect(store.currentSceneId()).toBe('b');
     expect(store.history()).toEqual(['a', 'b']);
-    expect(store.pendingResume()).toBeNull();
+    expect(store.resumedFromSave()).toBe(true);
   });
 
-  it('dismissResume clears pending and saved progress', async () => {
+  it('clears resumedFromSave the first time the reader navigates after auto-resume', async () => {
     store.choose('b');
     await store.loadStory('s1');
-    store.dismissResume();
+    expect(store.resumedFromSave()).toBe(true);
 
-    expect(store.pendingResume()).toBeNull();
+    store.choose('c');
+    expect(store.resumedFromSave()).toBe(false);
+  });
+
+  it('restart from the auto-resumed state clears progress and returns to start', async () => {
+    store.choose('b');
+    await store.loadStory('s1');
+    store.restart();
+
+    expect(store.currentSceneId()).toBe('a');
+    expect(store.history()).toEqual(['a']);
+    expect(store.resumedFromSave()).toBe(false);
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 });

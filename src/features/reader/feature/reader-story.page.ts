@@ -25,11 +25,7 @@ import {
 } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
 import { ReaderPreferencesService } from '@shared/services';
-import {
-  GhostButtonComponent,
-  PrimaryButtonComponent,
-  SecondaryButtonComponent,
-} from '@shared/ui';
+import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
 import { ReaderStore } from '../data-access/reader.store';
@@ -50,7 +46,6 @@ import { SfxController } from './sfx-controller';
     SceneViewComponent,
     EndOfContentComponent,
     ReaderPreferencesDialogComponent,
-    PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
     TranslocoDirective,
@@ -105,10 +100,8 @@ import { SfxController } from './sfx-controller';
               <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ story.title }}</h1>
                 <div class="flex items-center gap-2">
-                  @if (store.pendingResume()) {
-                    <p class="sr-only" role="status">{{ t('message.savedSpot') }}</p>
-                    <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
-                    <button uiSecondary type="button" (click)="store.dismissResume()">{{ t('action.startOver') }}</button>
+                  @if (store.resumedFromSave()) {
+                    <button uiSecondary type="button" (click)="store.restart()">{{ t('action.startOver') }}</button>
                   }
                   <button
                     uiGhost

@@ -3,7 +3,6 @@
     "back": "← Back",
     "catalog": "Catalog",
     "backToCatalog": "Back to catalog",
-    "resume": "Resume",
     "startOver": "Start over",
     "restart": "Restart",
     "continue": "Continue",
@@ -18,7 +17,6 @@
   "message": {
     "loading": "Loading…",
     "end": "The end.",
-    "savedSpot": "You have a saved spot in this story.",
     "storyUnavailable": "This story isn't available. The link may be private, or the story may have been removed."
   },
   "empty": {

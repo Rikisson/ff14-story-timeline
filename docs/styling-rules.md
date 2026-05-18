@@ -94,14 +94,14 @@ primary or secondary depending on what else is on the page.
 
 - `uiPrimary` (filled accent) — the page's dominant action. The Add CTA
   on a list page (events, stories, characters), Save on a form or
-  settings panel, Resume on the player aside, Restart on the end screen.
-  At most one Primary visible per region.
+  settings panel, Restart on the end screen. At most one Primary
+  visible per region.
 - `uiSecondary` (filled `surface-muted`) — a meaningful secondary action
   living next to a Primary, or a chrome-level action with no Primary
   competition. Add scene next to Save in the editor header, Add era /
   Add category next to Save in settings, Replace asset next to Remove,
-  Sign in in the app header, Start over offered alongside Resume,
-  player choice buttons that should read as equal-weight options.
+  Sign in in the app header, Start over in the auto-resume reader
+  aside, player choice buttons that should read as equal-weight options.
 - `uiGhost` (transparent) — tertiary, low-emphasis controls. Cancel in
   form footers, Reset, Edit on a card (paired with Delete), Remove for
   asset clearing (paired with Replace), View more pagination, header

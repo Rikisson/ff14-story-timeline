@@ -83,7 +83,7 @@ export function withReaderMethods() {
       return {
         async loadStory(id: string) {
           const seq = ++loadSeq;
-          patchState(store, { loading: true, error: null, pendingResume: null });
+          patchState(store, { loading: true, error: null, resumedFromSave: false });
           try {
             const result = await stories.getStoryWithContent(id);
             if (seq !== loadSeq) return;
@@ -93,15 +93,15 @@ export function withReaderMethods() {
             }
             const { story, content } = result;
             const saved = loadSaved(id);
-            const pending = saved && isUsableResume(content, saved) ? saved : null;
-            if (saved && !pending) clearProgress(id);
+            const usable = saved && isUsableResume(content, saved) ? saved : null;
+            if (saved && !usable) clearProgress(id);
             patchState(store, {
               story,
               content,
-              currentSceneId: content.startSceneId,
-              history: [content.startSceneId],
+              currentSceneId: usable?.sceneId ?? content.startSceneId,
+              history: usable?.history ?? [content.startSceneId],
               loading: false,
-              pendingResume: pending,
+              resumedFromSave: usable !== null,
             });
           } catch (err) {
             if (seq !== loadSeq) return;
@@ -127,9 +127,9 @@ export function withReaderMethods() {
             // Progress is retained even on end-scenes so a reader can
             // chain forward via `nextRefs`, hit the browser back button,
             // and land back on the ending they came from rather than the
-            // start. Only `restart()` and `dismissResume()` clear.
+            // start. Only `restart()` clears.
             saveProgress(state.story.id, { sceneId, history });
-            return { currentSceneId: sceneId, history };
+            return { currentSceneId: sceneId, history, resumedFromSave: false };
           });
         },
 
@@ -140,7 +140,7 @@ export function withReaderMethods() {
             const sceneId = history[history.length - 1];
             if (sceneId === state.content.startSceneId) clearProgress(state.story.id);
             else saveProgress(state.story.id, { sceneId, history });
-            return { currentSceneId: sceneId, history };
+            return { currentSceneId: sceneId, history, resumedFromSave: false };
           });
         },
 
@@ -151,27 +151,8 @@ export function withReaderMethods() {
             return {
               currentSceneId: state.content.startSceneId,
               history: [state.content.startSceneId],
-              pendingResume: null,
+              resumedFromSave: false,
             };
-          });
-        },
-
-        resume() {
-          patchState(store, (state) => {
-            if (!state.pendingResume) return state;
-            return {
-              currentSceneId: state.pendingResume.sceneId,
-              history: state.pendingResume.history,
-              pendingResume: null,
-            };
-          });
-        },
-
-        dismissResume() {
-          patchState(store, (state) => {
-            if (!state.pendingResume || !state.story) return state;
-            clearProgress(state.story.id);
-            return { pendingResume: null };
           });
         },
       };
