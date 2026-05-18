@@ -41,7 +41,7 @@ type CrossfadeSlot = 'A' | 'B';
   imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective],
   providers: [
     provideTranslocoScope({
-      scope: 'player',
+      scope: 'reader',
       loader: {
         en: () => Promise.resolve(readerEn),
         uk: () => Promise.resolve(readerUk),
@@ -49,7 +49,7 @@ type CrossfadeSlot = 'A' | 'B';
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'player'">
+    <ng-container *transloco="let t; prefix: 'reader'">
       <article
         class="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface"
         (click)="onArticleClick($event)"

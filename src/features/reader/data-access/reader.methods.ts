@@ -5,7 +5,8 @@ import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals
 import { StoriesService, StoryContent } from '@features/stories';
 import { ReaderState, SavedProgress } from './reader.state';
 
-const STORAGE_PREFIX = 'ff14-story-timeline:player:';
+const STORAGE_PREFIX = 'ff14-story-timeline:reader:';
+const LEGACY_STORAGE_PREFIX = 'ff14-story-timeline:player:';
 
 function storageKey(storyId: string): string {
   return STORAGE_PREFIX + storyId;
@@ -14,7 +15,18 @@ function storageKey(storyId: string): string {
 function loadSaved(storyId: string): SavedProgress | null {
   if (typeof localStorage === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(storageKey(storyId));
+    let raw = localStorage.getItem(storageKey(storyId));
+    if (raw === null) {
+      // One-time migration from the legacy 'player:' prefix. After the
+      // first read on the new key, the legacy entry is moved across and
+      // cleared so subsequent reads cost a single hit.
+      const legacy = localStorage.getItem(LEGACY_STORAGE_PREFIX + storyId);
+      if (legacy !== null) {
+        localStorage.setItem(storageKey(storyId), legacy);
+        localStorage.removeItem(LEGACY_STORAGE_PREFIX + storyId);
+        raw = legacy;
+      }
+    }
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedProgress>;
     if (
@@ -100,7 +112,7 @@ export function withReaderMethods() {
             const isPermissionDenied =
               err instanceof FirebaseError && err.code === 'permission-denied';
             const message = isPermissionDenied
-              ? transloco.translate('player.message.storyUnavailable')
+              ? transloco.translate('reader.message.storyUnavailable')
               : err instanceof Error
                 ? `${err.name}: ${err.message}`
                 : String(err);

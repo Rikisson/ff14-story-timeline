@@ -227,9 +227,9 @@ html [data-testid='output-socket'] > *.multiple {
   to { opacity: 1; }
 }
 
-/* Player text-size preference. The player root binds one of these
+/* Reader text-size preference. The reader root binds one of these
  * classes; scene-view consumes the value through `--scene-font-size`. */
-.player-font-small  { --scene-font-size: 0.9rem; }
-.player-font-medium { --scene-font-size: 1rem; }
-.player-font-large  { --scene-font-size: 1.15rem; }
-.player-font-xl     { --scene-font-size: 1.3rem; }
+.reader-font-small  { --scene-font-size: 0.9rem; }
+.reader-font-medium { --scene-font-size: 1rem; }
+.reader-font-large  { --scene-font-size: 1.15rem; }
+.reader-font-xl     { --scene-font-size: 1.3rem; }

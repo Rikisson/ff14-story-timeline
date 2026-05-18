@@ -24,7 +24,7 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
   imports: [TranslocoDirective, GhostButtonComponent, ToggleButtonComponent],
   providers: [
     provideTranslocoScope({
-      scope: 'player',
+      scope: 'reader',
       loader: {
         en: () => Promise.resolve(readerEn),
         uk: () => Promise.resolve(readerUk),
@@ -32,7 +32,7 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'player'">
+    <ng-container *transloco="let t; prefix: 'reader'">
       <dialog
         #dialog
         class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"

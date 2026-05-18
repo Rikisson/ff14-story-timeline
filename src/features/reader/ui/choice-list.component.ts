@@ -14,7 +14,7 @@ export interface Choice {
   imports: [SecondaryButtonComponent, TranslocoDirective],
   providers: [
     provideTranslocoScope({
-      scope: 'player',
+      scope: 'reader',
       loader: {
         en: () => Promise.resolve(readerEn),
         uk: () => Promise.resolve(readerUk),
@@ -22,7 +22,7 @@ export interface Choice {
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'player'">
+    <ng-container *transloco="let t; prefix: 'reader'">
       <ul class="flex flex-col items-stretch gap-2">
         @for (choice of choices(); track $index) {
           <li>

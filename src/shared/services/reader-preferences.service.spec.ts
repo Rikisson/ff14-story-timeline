@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReaderPreferencesService } from './reader-preferences.service';
 
-const STORAGE_KEY = 'ff14-story-timeline:player-prefs';
+const STORAGE_KEY = 'ff14-story-timeline:reader-prefs';
 
 function fresh(): ReaderPreferencesService {
   TestBed.resetTestingModule();

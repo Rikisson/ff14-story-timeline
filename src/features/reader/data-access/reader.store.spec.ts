@@ -94,10 +94,10 @@ describe('ReaderStore', () => {
 
   it('saves progress to localStorage on choose and clears it on end-scene', () => {
     store.choose('b');
-    expect(localStorage.getItem('ff14-story-timeline:player:s1')).not.toBeNull();
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
 
     store.choose('c'); // c has no next → end scene
-    expect(localStorage.getItem('ff14-story-timeline:player:s1')).toBeNull();
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 
   it('offers pendingResume when reloading mid-story', async () => {
@@ -127,6 +127,6 @@ describe('ReaderStore', () => {
     store.dismissResume();
 
     expect(store.pendingResume()).toBeNull();
-    expect(localStorage.getItem('ff14-story-timeline:player:s1')).toBeNull();
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 });

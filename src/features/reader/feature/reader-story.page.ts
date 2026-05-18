@@ -57,7 +57,7 @@ import { SfxController } from './sfx-controller';
   providers: [
     ReaderStore,
     provideTranslocoScope({
-      scope: 'player',
+      scope: 'reader',
       loader: {
         en: () => Promise.resolve(readerEn),
         uk: () => Promise.resolve(readerUk),
@@ -65,7 +65,7 @@ import { SfxController } from './sfx-controller';
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'player'">
+    <ng-container *transloco="let t; prefix: 'reader'">
       <div [class]="rootClass()">
         @if (store.loading()) {
           @if (showLoadingIndicator()) {
@@ -200,7 +200,7 @@ export class ReaderStoryPage {
 
   protected readonly rootClass = computed(
     () =>
-      `player-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4${
+      `reader-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4${
         this.layout.chromeHidden() ? '' : ' p-6'
       }`,
   );

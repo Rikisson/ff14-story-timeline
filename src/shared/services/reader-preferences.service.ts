@@ -3,7 +3,8 @@ import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xl';
 
-const STORAGE_KEY = 'ff14-story-timeline:player-prefs';
+const STORAGE_KEY = 'ff14-story-timeline:reader-prefs';
+const LEGACY_STORAGE_KEY = 'ff14-story-timeline:player-prefs';
 const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
 
 interface StoredPrefs {
@@ -59,6 +60,15 @@ export class ReaderPreferencesService {
     let raw: string | null;
     try {
       raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) {
+        // One-time migration from the legacy 'player-prefs' key.
+        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacy !== null) {
+          localStorage.setItem(STORAGE_KEY, legacy);
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+          raw = legacy;
+        }
+      }
     } catch {
       return;
     }
