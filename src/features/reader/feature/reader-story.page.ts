@@ -68,59 +68,63 @@ import { SfxController } from './sfx-controller';
       <div [class]="rootClass()">
         @if (store.loading()) {
           @if (showLoadingIndicator()) {
-            <p class="text-foreground-subtle">{{ t('message.loading') }}</p>
+            <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
           }
         } @else if (store.error(); as err) {
-          <p class="text-danger-foreground">{{ err }}</p>
-          <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
+          <div class="mx-auto w-full max-w-7xl px-4 pt-4">
+            <p class="text-danger-foreground">{{ err }}</p>
+            <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
+          </div>
         } @else if (store.story(); as story) {
-          <header class="flex flex-wrap items-center gap-3">
-            <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
-            <div class="ml-auto flex items-center gap-2">
-              <button
-                uiGhost
-                type="button"
-                [disabled]="!store.canGoBack()"
-                (click)="store.back()"
-              >
-                {{ t('action.back') }}
-              </button>
-              <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
-              <button
-                uiSecondary
-                type="button"
-                [attr.aria-label]="t('action.preferences')"
-                (click)="prefsDialog.open()"
-              >
-                {{ t('action.preferencesEmoji') }}
-              </button>
-              <button
-                uiSecondary
-                type="button"
-                [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
-                (click)="toggleFullscreen()"
-              >
-                {{ t('action.fullscreenEmoji') }}
-              </button>
-            </div>
-          </header>
-
-          @if (store.pendingResume(); as resume) {
-            <aside
-              class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
-              role="status"
-            >
-              <p class="m-0 text-sm text-accent-soft-foreground">
-                {{ t('message.savedSpot') }}
-              </p>
-              <div class="ml-auto flex gap-2">
-                <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
-                <button uiSecondary type="button" (click)="store.dismissResume()">
-                  {{ t('action.startOver') }}
+          <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 pt-4 pb-3">
+            <header class="flex flex-wrap items-center gap-3">
+              <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
+              <div class="ml-auto flex items-center gap-2">
+                <button
+                  uiGhost
+                  type="button"
+                  [disabled]="!store.canGoBack()"
+                  (click)="store.back()"
+                >
+                  {{ t('action.back') }}
+                </button>
+                <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
+                <button
+                  uiSecondary
+                  type="button"
+                  [attr.aria-label]="t('action.preferences')"
+                  (click)="prefsDialog.open()"
+                >
+                  {{ t('action.preferencesEmoji') }}
+                </button>
+                <button
+                  uiSecondary
+                  type="button"
+                  [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
+                  (click)="toggleFullscreen()"
+                >
+                  {{ t('action.fullscreenEmoji') }}
                 </button>
               </div>
-            </aside>
-          }
+            </header>
+
+            @if (store.pendingResume(); as resume) {
+              <aside
+                class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
+                role="status"
+              >
+                <p class="m-0 text-sm text-accent-soft-foreground">
+                  {{ t('message.savedSpot') }}
+                </p>
+                <div class="ml-auto flex gap-2">
+                  <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
+                  <button uiSecondary type="button" (click)="store.dismissResume()">
+                    {{ t('action.startOver') }}
+                  </button>
+                </div>
+              </aside>
+            }
+          </div>
 
           @if (store.currentScene(); as scene) {
             <app-scene-view
@@ -139,7 +143,7 @@ import { SfxController } from './sfx-controller';
             />
 
             @if (scene.next.length === 0) {
-              <div class="flex flex-wrap items-center gap-3">
+              <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
                 <p class="m-0 italic text-foreground-subtle">{{ t('message.end') }}</p>
                 <button uiPrimary type="button" (click)="store.restart()">{{ t('action.restart') }}</button>
                 <a routerLink="/library" class="text-sm text-accent hover:underline">
@@ -201,10 +205,7 @@ export class ReaderStoryPage {
   protected readonly showLoadingIndicator = signal(false);
 
   protected readonly rootClass = computed(
-    () =>
-      `reader-font-${this.prefs.fontSize()} flex h-full flex-col gap-3${
-        this.layout.chromeHidden() ? '' : ' mx-auto max-w-7xl p-4'
-      }`,
+    () => `reader-font-${this.prefs.fontSize()} flex h-full flex-col`,
   );
 
   protected toggleFullscreen(): void {

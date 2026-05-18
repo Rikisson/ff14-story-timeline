@@ -60,7 +60,7 @@ type CrossfadeSlot = 'A' | 'B';
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
       <article
-        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface"
+        class="relative h-full w-full overflow-hidden bg-surface"
         (click)="onArticleClick($event)"
       >
         <!-- Background layer: blur placeholder underneath, two crossfading slots on top.
