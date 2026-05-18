@@ -37,10 +37,8 @@
     "removeBgm": "Remove BGM"
   },
   "tooltip": {
-    "pickBgmTitle": "Pick background music for this event"
-  },
-  "tooltip": {
     "list": "Events list",
-    "details": "Event details"
+    "details": "Event details",
+    "pickBgmTitle": "Pick background music for this event"
   }
 }
