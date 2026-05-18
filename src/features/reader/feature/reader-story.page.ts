@@ -78,64 +78,9 @@ import { SfxController } from './sfx-controller';
             <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
           </div>
         } @else if (store.story(); as story) {
-          <div
-            class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 pt-4 pb-3 transition-opacity duration-300 ease-out"
-            [class.opacity-0]="chromeIdle()"
-            [class.pointer-events-none]="chromeIdle()"
-            [attr.aria-hidden]="chromeIdle() ? 'true' : null"
-          >
-            <header class="flex flex-wrap items-center gap-3">
-              <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
-              <div class="ml-auto flex items-center gap-2">
-                <button
-                  uiGhost
-                  type="button"
-                  [disabled]="!store.canGoBack()"
-                  (click)="store.back()"
-                >
-                  {{ t('action.back') }}
-                </button>
-                <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
-                <button
-                  uiSecondary
-                  type="button"
-                  [attr.aria-label]="t('action.preferences')"
-                  (click)="prefsDialog.open()"
-                >
-                  {{ t('action.preferencesEmoji') }}
-                </button>
-                <button
-                  uiSecondary
-                  type="button"
-                  [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
-                  (click)="toggleFullscreen()"
-                >
-                  {{ t('action.fullscreenEmoji') }}
-                </button>
-              </div>
-            </header>
-
-            @if (store.pendingResume(); as resume) {
-              <aside
-                class="flex flex-wrap items-center gap-3 rounded-md border border-accent-ring bg-accent-soft px-4 py-3"
-                role="status"
-              >
-                <p class="m-0 text-sm text-accent-soft-foreground">
-                  {{ t('message.savedSpot') }}
-                </p>
-                <div class="ml-auto flex gap-2">
-                  <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
-                  <button uiSecondary type="button" (click)="store.dismissResume()">
-                    {{ t('action.startOver') }}
-                  </button>
-                </div>
-              </aside>
-            }
-          </div>
-
           @if (store.currentScene(); as scene) {
             <app-scene-view
-              class="block w-full min-h-0 flex-1"
+              class="absolute inset-0"
               [text]="scene.text"
               [layout]="scene.layout ?? 'dialog'"
               [speaker]="speakerLabel()"
@@ -148,12 +93,61 @@ import { SfxController } from './sfx-controller';
               [textSpeed]="effectiveTextSpeed()"
               (choose)="store.choose($event)"
             />
+          }
 
-            @if (scene.next.length === 0) {
-              <app-end-of-content
-                [nextRefs]="scene.nextRefs"
-                (restart)="store.restart()"
-              />
+          <div
+            class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
+            [class.opacity-0]="chromeIdle()"
+            [class.pointer-events-none]="chromeIdle()"
+            [attr.aria-hidden]="chromeIdle() ? 'true' : null"
+          >
+            <header class="mx-auto flex w-full max-w-7xl px-4 pt-3">
+              <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
+                <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ story.title }}</h1>
+                <div class="flex items-center gap-2">
+                  @if (store.pendingResume()) {
+                    <p class="sr-only" role="status">{{ t('message.savedSpot') }}</p>
+                    <button uiPrimary type="button" (click)="store.resume()">{{ t('action.resume') }}</button>
+                    <button uiSecondary type="button" (click)="store.dismissResume()">{{ t('action.startOver') }}</button>
+                  }
+                  <button
+                    uiGhost
+                    type="button"
+                    [disabled]="!store.canGoBack()"
+                    (click)="store.back()"
+                  >
+                    {{ t('action.back') }}
+                  </button>
+                  <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
+                  <button
+                    uiSecondary
+                    type="button"
+                    [attr.aria-label]="t('action.preferences')"
+                    (click)="prefsDialog.open()"
+                  >
+                    {{ t('action.preferencesEmoji') }}
+                  </button>
+                  <button
+                    uiSecondary
+                    type="button"
+                    [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
+                    (click)="toggleFullscreen()"
+                  >
+                    {{ t('action.fullscreenEmoji') }}
+                  </button>
+                </div>
+              </div>
+            </header>
+          </div>
+
+          @if (store.currentScene(); as scene) {
+            @if (scene.next.length === 0 && (scene.nextRefs?.length ?? 0) > 0) {
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10">
+                <app-end-of-content
+                  class="pointer-events-auto block"
+                  [nextRefs]="scene.nextRefs"
+                />
+              </div>
             }
           }
 
@@ -222,7 +216,7 @@ export class ReaderStoryPage {
   protected readonly reducedMotion = signal(false);
 
   protected readonly rootClass = computed(
-    () => `reader-font-${this.prefs.fontSize()} flex h-full flex-col`,
+    () => `reader-font-${this.prefs.fontSize()} relative h-full`,
   );
 
   protected toggleFullscreen(): void {
@@ -406,30 +400,36 @@ export class ReaderStoryPage {
       this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
     }
 
-    // Reader chrome idle-fade. Any pointer or key activity re-arms the
-    // 2.5s timer. When it elapses, `chromeIdle` flips true and the
-    // template fades the chrome wrapper out with `pointer-events-none`
-    // so invisible buttons don't catch stray clicks.
+    // Chrome reveal: the floating header card shows on page load, then
+    // hides after `CHROME_IDLE_MS`. After that, it only re-appears while
+    // the pointer sits in the top hover zone (above `HOVER_ZONE_PX`);
+    // moving below the zone re-arms the hide timer.
     if (this.isBrowser) {
       let idleTimer: ReturnType<typeof setTimeout> | null = null;
-      const resetIdle = (): void => {
-        this.chromeIdle.set(false);
+      const HOVER_ZONE_PX = 96;
+      const startHideTimer = (): void => {
         if (idleTimer !== null) clearTimeout(idleTimer);
         idleTimer = setTimeout(
           () => this.chromeIdle.set(true),
           ReaderStoryPage.CHROME_IDLE_MS,
         );
       };
-      resetIdle();
-      const listenerOpts: AddEventListenerOptions = { passive: true };
-      document.addEventListener('pointermove', resetIdle, listenerOpts);
-      document.addEventListener('pointerdown', resetIdle, listenerOpts);
-      document.addEventListener('keydown', resetIdle, listenerOpts);
+      const onMouseMove = (e: MouseEvent): void => {
+        if (e.clientY <= HOVER_ZONE_PX) {
+          this.chromeIdle.set(false);
+          if (idleTimer !== null) {
+            clearTimeout(idleTimer);
+            idleTimer = null;
+          }
+        } else if (!this.chromeIdle() && idleTimer === null) {
+          startHideTimer();
+        }
+      };
+      startHideTimer();
+      document.addEventListener('mousemove', onMouseMove, { passive: true });
       this.destroyRef.onDestroy(() => {
         if (idleTimer !== null) clearTimeout(idleTimer);
-        document.removeEventListener('pointermove', resetIdle, listenerOpts);
-        document.removeEventListener('pointerdown', resetIdle, listenerOpts);
-        document.removeEventListener('keydown', resetIdle, listenerOpts);
+        document.removeEventListener('mousemove', onMouseMove);
       });
     }
 
