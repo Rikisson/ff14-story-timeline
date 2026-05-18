@@ -242,7 +242,7 @@ function defaultFacingFor(position: string): Facing {
               <app-entity-picker
                 [value]="nextRefsValue()"
                 [kinds]="continuationKinds"
-                [maxSelections]="3"
+                [maxSelections]="1"
                 [includeDrafts]="true"
                 [placeholder]="t('empty.searchContinuation')"
                 (valueChange)="onNextRefs(id, $event)"

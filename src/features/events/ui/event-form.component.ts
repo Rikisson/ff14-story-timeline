@@ -21,7 +21,7 @@ import eventUk from '../i18n/uk.json';
 /** Per `docs/backend-rules.md` *Cardinality limits*. */
 const RELATED_REFS_MAX = 50;
 const PLOTLINE_REFS_MAX = 10;
-const NEXT_REFS_MAX = 3;
+const NEXT_REFS_MAX = 1;
 const LONG_DESCRIPTION_THRESHOLD = 600;
 type BackgroundEffectOption = BackgroundEffect | 'none';
 const BG_EFFECTS: readonly BackgroundEffectOption[] = [

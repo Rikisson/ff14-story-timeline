@@ -30,9 +30,8 @@ import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
 import { ReaderStore } from '../data-access/reader.store';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
-import { EndOfContentComponent } from '../ui/end-of-content.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
-import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
+import { SceneContinuation, SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
@@ -44,7 +43,6 @@ import { SfxController } from './sfx-controller';
   imports: [
     RouterLink,
     SceneViewComponent,
-    EndOfContentComponent,
     ReaderPreferencesDialogComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
@@ -84,6 +82,7 @@ import { SfxController } from './sfx-controller';
               [backgroundEffect]="scene.backgroundEffect"
               [staged]="stagedView()"
               [choices]="scene.next"
+              [continuation]="continuation()"
               [inlineRefOptions]="inlineRefOptions()"
               [textSpeed]="effectiveTextSpeed()"
               (choose)="store.choose($event)"
@@ -132,17 +131,6 @@ import { SfxController } from './sfx-controller';
               </div>
             </header>
           </div>
-
-          @if (store.currentScene(); as scene) {
-            @if (scene.next.length === 0 && (scene.nextRefs?.length ?? 0) > 0) {
-              <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10">
-                <app-end-of-content
-                  class="pointer-events-auto block"
-                  [nextRefs]="scene.nextRefs"
-                />
-              </div>
-            }
-          }
 
           <!--
             Audio host. Two hidden crossfade pairs sit at the shell
@@ -346,6 +334,29 @@ export class ReaderStoryPage {
       out.push({ kind: r.kind, id: r.id, label: row.label, slug: row.slug });
     }
     return out;
+  });
+
+  // End-of-content continuation. Surfaces only on end-scenes
+  // (`scene.next.length === 0`) and reads the first entry of
+  // `nextRefs[]` — editors cap selection to one; the array shape is
+  // preserved for future flexibility. Resolves the target's title
+  // through the directory cache; unresolved or missing refs yield
+  // null so the card simply omits the button.
+  private readonly continuationRef = computed(() => {
+    const scene = this.store.currentScene();
+    if (!scene || scene.next.length > 0) return null;
+    return scene.nextRefs?.[0] ?? null;
+  });
+  private readonly resolvedContinuation = computed(() => {
+    const ref = this.continuationRef();
+    return ref ? this.resolver.resolve(ref)() : null;
+  });
+  protected readonly continuation = computed<SceneContinuation | null>(() => {
+    const ref = this.continuationRef();
+    const row = this.resolvedContinuation();
+    if (!ref || !row) return null;
+    const base = ref.kind === 'story' ? '/reader/story' : '/reader/event';
+    return { label: row.label, link: [base, ref.id] as const };
   });
 
   /**

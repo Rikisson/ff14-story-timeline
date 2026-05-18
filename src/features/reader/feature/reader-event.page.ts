@@ -22,9 +22,8 @@ import { EntityRef } from '@shared/models';
 import { ReaderPreferencesService } from '@shared/services';
 import { SecondaryButtonComponent } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
-import { EndOfContentComponent } from '../ui/end-of-content.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
-import { SceneViewComponent } from '../ui/scene-view.component';
+import { SceneContinuation, SceneViewComponent } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
@@ -35,10 +34,9 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
  * Single-frame reader for `TimelineEvent`. Renders the event's
  * description as a dialog-style scene-view, with the cover image as the
  * background and BGM piped through a fresh `BgmController`. There's no
- * scene graph, no choices, no localStorage progress. When the event
- * declares `nextRefs`, an `<app-end-of-content>` overlay surfaces the
- * continuation cards at the bottom; otherwise nothing renders below the
- * scene.
+ * scene graph, no choices, no localStorage progress. The first entry of
+ * `event.nextRefs` (if any) becomes a Continue anchor inside the
+ * floating card.
  *
  * Chrome (title bar + buttons) shows on load, hides after 2.5s, and
  * re-appears only while the pointer hovers the top zone — matching the
@@ -50,7 +48,6 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
   imports: [
     RouterLink,
     SceneViewComponent,
-    EndOfContentComponent,
     ReaderPreferencesDialogComponent,
     SecondaryButtonComponent,
     TranslocoDirective,
@@ -86,6 +83,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
             [backgroundEffect]="ev.backgroundEffect"
             [staged]="[]"
             [choices]="[]"
+            [continuation]="continuation()"
             [inlineRefOptions]="inlineRefOptions()"
             [textSpeed]="effectiveTextSpeed()"
             [cardOverflow]="cardOverflow()"
@@ -122,15 +120,6 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
               </div>
             </header>
           </div>
-
-          @if ((ev.nextRefs?.length ?? 0) > 0) {
-            <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10">
-              <app-end-of-content
-                class="pointer-events-auto block"
-                [nextRefs]="ev.nextRefs"
-              />
-            </div>
-          }
 
           <!-- BGM pair only — events don't carry SFX per the schema. -->
           <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
@@ -234,6 +223,23 @@ export class ReaderEventPage {
   protected readonly cardOverflow = computed(
     () => (this.event()?.description.length ?? 0) > OVERFLOW_DESCRIPTION_THRESHOLD,
   );
+
+  // Continuation reads the first entry of `nextRefs[]` — editors cap
+  // selection to one but the schema preserves the array shape. The
+  // anchor renders inside the floating card via scene-view, taking
+  // the resolved entity's title as its label.
+  private readonly continuationRef = computed(() => this.event()?.nextRefs?.[0] ?? null);
+  private readonly resolvedContinuation = computed(() => {
+    const ref = this.continuationRef();
+    return ref ? this.resolver.resolve(ref)() : null;
+  });
+  protected readonly continuation = computed<SceneContinuation | null>(() => {
+    const ref = this.continuationRef();
+    const row = this.resolvedContinuation();
+    if (!ref || !row) return null;
+    const base = ref.kind === 'story' ? '/reader/story' : '/reader/event';
+    return { label: row.label, link: [base, ref.id] as const };
+  });
 
   constructor() {
     // Stale-response guard — fast id swaps could otherwise overwrite the

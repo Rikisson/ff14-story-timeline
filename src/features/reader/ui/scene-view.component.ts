@@ -1,13 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, viewChild } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { SceneLayout, TextSpeed } from '@features/stories';
 import { BackgroundEffect } from '@shared/models';
-import { TypewriterTextComponent } from '@shared/ui';
+import { SecondaryButtonComponent, TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { Choice, ChoiceListComponent } from './choice-list.component';
+
+export interface SceneContinuation {
+  label: string;
+  link: readonly [string, string];
+}
 
 export interface StagedView {
   id: string;
@@ -47,7 +53,14 @@ type CrossfadeSlot = 'A' | 'B';
 @Component({
   selector: 'app-scene-view',
   host: { class: 'block' },
-  imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective, ChoiceListComponent],
+  imports: [
+    TypewriterTextComponent,
+    TranslocoDirective,
+    ContentLangDirective,
+    ChoiceListComponent,
+    SecondaryButtonComponent,
+    RouterLink,
+  ],
   providers: [
     provideTranslocoScope({
       scope: 'reader',
@@ -165,6 +178,12 @@ type CrossfadeSlot = 'A' | 'B';
             />
             @if (choices().length > 0) {
               <app-choice-list [choices]="choices()" (choose)="choose.emit($event)" />
+            } @else if (continuation(); as cont) {
+              <a
+                uiSecondary
+                [routerLink]="cont.link"
+                class="block w-full text-left"
+              >{{ cont.label }}</a>
             }
           </div>
         } @else if (text(); as caption) {
@@ -193,6 +212,14 @@ export class SceneViewComponent {
   readonly backgroundEffect = input<BackgroundEffect | undefined>(undefined);
   readonly staged = input<StagedView[]>([]);
   readonly choices = input<Choice[]>([]);
+  // Single end-of-content continuation. Rendered as a full-width
+  // anchor below the typewriter in dialog layout, only when there are
+  // no in-story `choices`. Provided by the reader pages from the
+  // resolved `nextRefs[0]` so the affordance lives inside the card —
+  // a "Continue" the reader taps to advance into the next story or
+  // event. Schema still keeps `nextRefs` as an array for future
+  // flexibility; the cap-to-one is enforced in the editors.
+  readonly continuation = input<SceneContinuation | null>(null);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
   // Caps the card height and adds a fade-out mask + vertical scroll.

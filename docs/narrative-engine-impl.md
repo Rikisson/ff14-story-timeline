@@ -74,7 +74,7 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 | Universe, Plotline          | —                       | —                                 |
 
 - **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use the timeline view.
-- **Continuation is the one runtime exception.** Story end-scenes and Events expose `nextRefs: EntityRef<'story' | 'event'>[]` (cap 3) for authored "Continue reading" handoffs the reader navigates between. Authored intent, not date-derived adjacency.
+- **Continuation is the one runtime exception.** Story end-scenes and Events expose `nextRefs: EntityRef<'story' | 'event'>[]` for an authored "Continue reading" handoff. The schema keeps the array shape but the editors cap selection to one — branching is the scene graph's job, not `nextRefs`'. Authored intent, not date-derived adjacency.
 - **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
 - **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
 - **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
@@ -194,11 +194,15 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   authors get a coherent visual identity without per-scene
   backgrounds; committed authors override per scene.
 - **End-of-content continuation.** End-scenes (`scene.next.length ===
-  0`) may carry `nextRefs: EntityRef<'story' | 'event'>[]` (cap 3).
-  The reader renders these as continuation cards next to Restart and
-  Back-to-catalog. End-scene progress is retained in localStorage —
+  0`) may carry `nextRefs: EntityRef<'story' | 'event'>[]`. The
+  editors cap selection to one; the array shape is preserved for
+  future flexibility. The reader renders `nextRefs[0]` (resolved via
+  the directory cache) as a Continue anchor inside the floating card,
+  labelled with the target's title. Restart and Back-to-catalog stay
+  in the chrome. End-scene progress is retained in localStorage —
   only `Restart` clears it — so the reader can chain forward through
-  `nextRefs` and use the browser back button to revisit endings.
+  the continuation and use the browser back button to revisit
+  endings.
 - **BGM is a separate concern from scene SFX.** `Story.bgmAssetId`
   declares the story-wide track. A scene may override with its own
   `bgmAssetId`, or force quiet with `bgmSilence: true`. The optional
@@ -381,9 +385,10 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   applies the same mood filter as on scenes.
 - **No scene graph, no SFX, no localStorage progress.** Events are
   one frame; there's nothing to restart, nothing to resume to. The
-  end-of-content surface always shows below the article — Restart is
-  suppressed because the concept doesn't apply, and `event.nextRefs`
-  (cap 3) renders as continuation cards alongside Back-to-catalog.
+  Continue anchor mirrors the story end-scene's: `event.nextRefs[0]`
+  (editors cap to one) renders inside the floating card next to the
+  description, while Back-to-catalog lives in the chrome. Restart is
+  suppressed because the concept doesn't apply.
 - **Long descriptions scroll inside the card with a fade hint.** When
   `description.length > 600` the floating card carries
   `.reader-card-overflow`: capped at 50vh, vertical scroll, and a

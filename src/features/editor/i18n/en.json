@@ -127,7 +127,7 @@
     "bgmOverrideHint": "Leave empty to inherit the story's BGM.",
     "bgmSilencedHint": "Music will fade out on this scene.",
     "spriteDefault": "(default)",
-    "nextRefsHint": "Link up to three stories or events that continue from this ending.",
+    "nextRefsHint": "Pick the story or event that continues from this ending.",
     "searchContinuation": "Search stories or events…",
     "introSceneText": "Intro: title card",
     "contentSceneLabel": "Opening"
