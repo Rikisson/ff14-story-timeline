@@ -29,7 +29,7 @@ export interface Choice {
             <button
               uiSecondary
               type="button"
-              className="w-full justify-start"
+              className="reader-action w-full justify-start"
               (click)="choose.emit(choice.sceneId)"
             >
               {{ choice.label ?? t('action.continue') }}

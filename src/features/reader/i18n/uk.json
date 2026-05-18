@@ -12,7 +12,7 @@
     "exitFullscreen": "Вийти з повноекранного режиму",
     "fullscreenEmoji": "⛶",
     "close": "Закрити",
-    "continueReading": "Читати далі"
+    "continueReading": "Читати далі: {{ title }}"
   },
   "message": {
     "loading": "Завантаження…",

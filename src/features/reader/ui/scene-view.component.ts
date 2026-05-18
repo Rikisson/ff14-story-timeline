@@ -177,13 +177,16 @@ type CrossfadeSlot = 'A' | 'B';
               [speed]="textSpeed()"
             />
             @if (choices().length > 0) {
-              <app-choice-list [choices]="choices()" (choose)="choose.emit($event)" />
+              <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
             } @else if (continuation(); as cont) {
               <a
                 uiSecondary
                 [routerLink]="cont.link"
-                class="block w-full text-left"
-              >{{ cont.label }}</a>
+                className="reader-action mt-2 w-full"
+              >
+                <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
+                <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
+              </a>
             }
           </div>
         } @else if (text(); as caption) {

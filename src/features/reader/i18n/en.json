@@ -12,7 +12,7 @@
     "exitFullscreen": "Exit fullscreen",
     "fullscreenEmoji": "⛶",
     "close": "Close",
-    "continueReading": "Continue reading"
+    "continueReading": "Continue reading: {{ title }}"
   },
   "message": {
     "loading": "Loading…",

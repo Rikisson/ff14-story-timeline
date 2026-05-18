@@ -234,6 +234,13 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-font-large  { --scene-font-size: 1.15rem; }
 .reader-font-xl     { --scene-font-size: 1.3rem; }
 
+/* In-card action buttons (choices, Continue reading) scale with the
+ * reader's font-size preference rather than the button base's fixed
+ * `text-sm`, so they don't look puny when the reader bumps text up. */
+.reader-action {
+  font-size: var(--scene-font-size, 0.875rem);
+}
+
 /* Per-scene background mood filters. Applied only to the background
  * layer so character sprites stay full-saturation. */
 .reader-bg-effect-darken     { filter: brightness(0.55); }
