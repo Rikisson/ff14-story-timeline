@@ -59,9 +59,19 @@ export class BgmController {
   setTarget(target: BgmTarget, resolvedUrl: string | null): void {
     if (this.current?.url === resolvedUrl && resolvedUrl !== null) {
       if (this.rafId !== null) {
-        // Mid-fadeout to silence on this URL — cancel and bring back to user volume.
+        // A ramp is mid-flight and the same URL is being re-targeted.
+        // Two shapes land here:
+        //   - fadeOut to silence on the current slot (other slot already idle).
+        //   - crossfade where the current slot is fading IN this URL and the
+        //     OTHER slot is fading out an old track. Cancelling the ramp
+        //     skips its onDone, so we must pause the orphan ourselves —
+        //     otherwise both tracks keep playing.
+        const cur = this.current;
         this.cancelRamp();
-        this.elFor(this.current.slot).volume = this.userVolume;
+        const otherEl = this.elFor(cur.slot === 'a' ? 'b' : 'a');
+        otherEl.pause();
+        otherEl.volume = 0;
+        this.elFor(cur.slot).volume = this.userVolume;
         return;
       }
       // Same URL, no ramp in flight. Retry play() if a previous autoplay
