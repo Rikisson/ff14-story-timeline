@@ -46,6 +46,7 @@ type CrossfadeSlot = 'A' | 'B';
  */
 @Component({
   selector: 'app-scene-view',
+  host: { class: 'block' },
   imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective, ChoiceListComponent],
   providers: [
     provideTranslocoScope({
@@ -59,7 +60,7 @@ type CrossfadeSlot = 'A' | 'B';
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
       <article
-        class="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface"
+        class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface"
         (click)="onArticleClick($event)"
       >
         <!-- Background layer: blur placeholder underneath, two crossfading slots on top.

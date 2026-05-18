@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
  */
 @Component({
   selector: 'app-reader-event-page',
+  host: { class: 'block h-full' },
   imports: [RouterLink],
   template: `
     <div class="mx-auto flex max-w-3xl flex-col gap-4 p-6">

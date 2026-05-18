@@ -43,6 +43,7 @@ import { SfxController } from './sfx-controller';
 
 @Component({
   selector: 'app-reader-story-page',
+  host: { class: 'block h-full' },
   imports: [
     RouterLink,
     SceneViewComponent,
@@ -123,6 +124,7 @@ import { SfxController } from './sfx-controller';
 
           @if (store.currentScene(); as scene) {
             <app-scene-view
+              class="block w-full min-h-0 flex-1"
               [text]="scene.text"
               [layout]="scene.layout ?? 'dialog'"
               [speaker]="speakerLabel()"
@@ -200,8 +202,8 @@ export class ReaderStoryPage {
 
   protected readonly rootClass = computed(
     () =>
-      `reader-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4${
-        this.layout.chromeHidden() ? '' : ' p-6'
+      `reader-font-${this.prefs.fontSize()} flex h-full flex-col gap-3${
+        this.layout.chromeHidden() ? '' : ' mx-auto max-w-7xl p-4'
       }`,
   );
 
@@ -246,9 +248,16 @@ export class ReaderStoryPage {
 
   // Background / audio go through the resolver's session cache so a
   // re-enter of the same scene during a session pays zero refetch cost.
-  private readonly backgroundThumb = computed(() =>
-    this.assets.resolve(this.store.currentScene()?.backgroundAssetId)(),
-  );
+  // Fallback chain: scene.backgroundAssetId → story.coverAssetId →
+  // theme bg (the article's own surface color). Lets backgroundless
+  // scenes inherit the story cover so the reader never shows an empty
+  // surface unless the story has neither cover nor scene background.
+  private readonly backgroundThumb = computed(() => {
+    const scene = this.store.currentScene();
+    const story = this.store.story();
+    const id = scene?.backgroundAssetId ?? story?.coverAssetId;
+    return this.assets.resolve(id)();
+  });
   private readonly sfxThumb = computed(() =>
     this.assets.resolve(this.store.currentScene()?.sfxAssetId)(),
   );
