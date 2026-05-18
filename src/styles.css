@@ -234,6 +234,14 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-font-large  { --scene-font-size: 1.15rem; }
 .reader-font-xl     { --scene-font-size: 1.3rem; }
 
+/* Per-scene background mood filters. Applied only to the background
+ * layer so character sprites stay full-saturation. */
+.reader-bg-effect-darken     { filter: brightness(0.55); }
+.reader-bg-effect-desaturate { filter: saturate(0.3) contrast(0.9); }
+.reader-bg-effect-sepia      { filter: sepia(0.8) saturate(0.7); }
+.reader-bg-effect-cool       { filter: hue-rotate(-15deg) saturate(0.85) brightness(0.95); }
+.reader-bg-effect-warm       { filter: hue-rotate(15deg) saturate(1.1) brightness(1.05); }
+
 /* Reader floating text card. Sits inside the 16:9 scene frame, bottom-
  * centered, opaque so the reader's focus is anchored regardless of what
  * the background is doing. Width is a token so the layout can widen

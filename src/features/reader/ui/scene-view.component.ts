@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, viewChild } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { SceneLayout, TextSpeed } from '@features/stories';
+import { BackgroundEffect } from '@shared/models';
 import { TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import readerEn from '../i18n/en.json';
@@ -15,6 +16,7 @@ export interface StagedView {
   order?: number;
   spriteUrl?: string;
   isSpeaker: boolean;
+  facing: 'left' | 'right';
 }
 
 const POSITION_SLOTS = ['left', 'center', 'right'] as const;
@@ -60,8 +62,9 @@ type CrossfadeSlot = 'A' | 'B';
         class="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-surface"
         (click)="onArticleClick($event)"
       >
-        <!-- Background layer: blur placeholder underneath, two crossfading slots on top. -->
-        <div class="absolute inset-0" aria-hidden="true">
+        <!-- Background layer: blur placeholder underneath, two crossfading slots on top.
+             Mood filter applied to the whole layer so it doesn't desaturate sprites. -->
+        <div class="absolute inset-0" [class]="backgroundEffectClass()" aria-hidden="true">
           @if (backgroundBlurDataUrl(); as blur) {
             <img
               [src]="blur"
@@ -103,6 +106,7 @@ type CrossfadeSlot = 'A' | 'B';
                       [src]="url"
                       [alt]="s.name"
                       class="size-32 object-contain drop-shadow-lg"
+                      [class.-scale-x-100]="s.facing === 'left'"
                     />
                   } @else {
                     <div
@@ -124,6 +128,7 @@ type CrossfadeSlot = 'A' | 'B';
                       [src]="url"
                       [alt]="s.name"
                       class="size-32 object-contain drop-shadow-lg"
+                      [class.-scale-x-100]="s.facing === 'left'"
                     />
                   } @else {
                     <div
@@ -182,12 +187,18 @@ export class SceneViewComponent {
   readonly speaker = input<string | undefined>();
   readonly background = input<string | undefined>();
   readonly backgroundBlurDataUrl = input<string | undefined>();
+  readonly backgroundEffect = input<BackgroundEffect | undefined>(undefined);
   readonly staged = input<StagedView[]>([]);
   readonly choices = input<Choice[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
 
   readonly choose = output<string>();
+
+  protected readonly backgroundEffectClass = computed(() => {
+    const eff = this.backgroundEffect();
+    return eff ? `reader-bg-effect-${eff}` : '';
+  });
 
   protected readonly slots = POSITION_SLOTS;
   private readonly typewriter = viewChild<TypewriterTextComponent>('typewriter');

@@ -128,6 +128,7 @@ import { SfxController } from './sfx-controller';
               [speaker]="speakerLabel()"
               [background]="backgroundUrl()"
               [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
+              [backgroundEffect]="scene.backgroundEffect"
               [staged]="stagedView()"
               [choices]="scene.next"
               [inlineRefOptions]="inlineRefOptions()"
@@ -295,6 +296,7 @@ export class ReaderStoryPage {
         order: sc.order,
         spriteUrl: spriteId ? this.assets.resolve(spriteId)()?.url : undefined,
         isSpeaker: speakerId === sc.entity.id,
+        facing: sc.facing ?? defaultFacing(sc.position),
       };
     });
   });
@@ -349,6 +351,13 @@ export class ReaderStoryPage {
       if (target.backgroundAssetId) ids.add(target.backgroundAssetId);
       if (target.sfxAssetId) ids.add(target.sfxAssetId);
       if (target.bgmAssetId) ids.add(target.bgmAssetId);
+      // Staged characters with an explicit `spriteId` are cheap to warm
+      // up — the canonical-character fallback (sprites[0]) requires a
+      // separate canonical doc read so we skip those here and let them
+      // load on demand the moment the scene mounts.
+      for (const c of target.characters) {
+        if (c.spriteId) ids.add(c.spriteId);
+      }
     }
     return [...ids];
   });
@@ -517,6 +526,16 @@ export class ReaderStoryPage {
       });
     }
   }
+}
+
+// ---------------------------------------------------------------------
+// Default sprite-facing derived from the staged slot. Authors override
+// with `StagedCharacter.facing` for cross-stage looks (e.g., a left-slot
+// character glancing offscreen left).
+// ---------------------------------------------------------------------
+
+function defaultFacing(position: string): 'left' | 'right' {
+  return position === 'right' ? 'left' : 'right';
 }
 
 // ---------------------------------------------------------------------
