@@ -1,4 +1,4 @@
-import { EntityRef, InGameDate } from '@shared/models';
+import { BackgroundEffect, EntityRef, InGameDate } from '@shared/models';
 
 export interface TimelineEvent {
   id: string;
@@ -6,9 +6,12 @@ export interface TimelineEvent {
   name: string;
   description: string;
   coverAssetId?: string;
+  bgmAssetId?: string;
+  backgroundEffect?: BackgroundEffect;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
+  nextRefs?: EntityRef<'story' | 'event'>[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -21,7 +24,10 @@ export interface TimelineEventDraft {
   name: string;
   description: string;
   coverAssetId?: string;
+  bgmAssetId?: string;
+  backgroundEffect?: BackgroundEffect;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
+  nextRefs?: EntityRef<'story' | 'event'>[];
 }

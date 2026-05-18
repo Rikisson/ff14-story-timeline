@@ -30,6 +30,7 @@ yarn-error.log
 # Claude Code (local/personal files only)
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+.superpowers
 
 # Miscellaneous
 /.angular/cache
