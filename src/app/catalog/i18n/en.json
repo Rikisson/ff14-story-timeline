@@ -7,9 +7,7 @@
     "mainCharacter": "Main character",
     "place": "Place",
     "plotline": "Plotline",
-    "sortByDate": "Sort by date",
     "undated": "Undated",
-    "unassigned": "Unassigned",
     "allItems": "All timeline items"
   },
   "action": {
@@ -17,10 +15,7 @@
     "play": "Play",
     "playEmoji": "▶ Play",
     "edit": "Edit",
-    "delete": "Delete",
-    "oldestFirst": "Oldest first",
-    "newestFirst": "Newest first",
-    "clearFilters": "Clear filters"
+    "delete": "Delete"
   },
   "message": {
     "subtitle": "Branching scenes you can play through, scoped to this universe.",

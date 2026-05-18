@@ -46,46 +46,44 @@ export const EMPTY_TIMELINE_FILTERS: TimelineFilters = {
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'timeline'">
-      <ng-container *transloco="let c; prefix: 'catalog'">
-        <ng-container *transloco="let g; prefix: 'general'">
-          <div class="flex flex-wrap items-center gap-4">
-            <label class="w-60">
-              <span class="sr-only">{{ g('field.plotlines') }}</span>
-              <app-entity-picker
-                [value]="plotlineRefs()"
-                [kinds]="plotlineKinds"
-                [maxSelections]="plotlineMax"
-                [placeholder]="g('empty.searchPlotlines')"
-                (valueChange)="onPlotlineRefs($event)"
-              />
-            </label>
-
-            <app-toggle-button
-              [label]="c('field.unassigned')"
-              [checked]="value().showUnassigned"
-              (checkedChange)="onUnassigned($event)"
+      <ng-container *transloco="let g; prefix: 'general'">
+        <div class="flex flex-wrap items-center gap-4">
+          <label class="w-60">
+            <span class="sr-only">{{ g('field.plotlines') }}</span>
+            <app-entity-picker
+              [value]="plotlineRefs()"
+              [kinds]="plotlineKinds"
+              [maxSelections]="plotlineMax"
+              [placeholder]="g('empty.searchPlotlines')"
+              (valueChange)="onPlotlineRefs($event)"
             />
+          </label>
 
-            <label class="flex">
-              <span class="sr-only">{{ c('field.sortByDate') }}</span>
-              <select
-                class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
-                [value]="sortDirection()"
-                (change)="onSort($event)"
-                [attr.aria-label]="c('field.sortByDate')"
-              >
-                <option value="asc">{{ c('action.oldestFirst') }}</option>
-                <option value="desc">{{ c('action.newestFirst') }}</option>
-              </select>
-            </label>
+          <app-toggle-button
+            [label]="t('field.unassigned')"
+            [checked]="value().showUnassigned"
+            (checkedChange)="onUnassigned($event)"
+          />
 
-            @if (hasActive()) {
-              <button uiGhost type="button" (click)="reset.emit()">
-                {{ c('action.clearFilters') }}
-              </button>
-            }
-          </div>
-        </ng-container>
+          <label class="flex">
+            <span class="sr-only">{{ t('field.sortByDate') }}</span>
+            <select
+              class="h-10 rounded-md border border-border-strong bg-surface text-foreground px-3 text-sm"
+              [value]="sortDirection()"
+              (change)="onSort($event)"
+              [attr.aria-label]="t('field.sortByDate')"
+            >
+              <option value="asc">{{ t('action.oldestFirst') }}</option>
+              <option value="desc">{{ t('action.newestFirst') }}</option>
+            </select>
+          </label>
+
+          @if (hasActive()) {
+            <button uiGhost type="button" (click)="reset.emit()">
+              {{ t('action.clearFilters') }}
+            </button>
+          }
+        </div>
       </ng-container>
     </ng-container>
   `,

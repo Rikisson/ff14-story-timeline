@@ -1,6 +1,13 @@
 {
   "field": {
-    "title": "Timeline"
+    "title": "Timeline",
+    "sortByDate": "Sort by date",
+    "unassigned": "Unassigned"
+  },
+  "action": {
+    "oldestFirst": "Oldest first",
+    "newestFirst": "Newest first",
+    "clearFilters": "Clear filters"
   },
   "message": {
     "subtitle": "Stories and events placed on the universe's calendar."

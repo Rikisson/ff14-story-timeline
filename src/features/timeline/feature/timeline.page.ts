@@ -88,7 +88,7 @@ export class TimelinePage {
     if (f.showUnassigned) {
       out.push({
         laneKey: UNASSIGNED_LANE_KEY,
-        label: this.transloco.translate('catalog.field.unassigned'),
+        label: this.transloco.translate('timeline.field.unassigned'),
       });
     }
     return out;
