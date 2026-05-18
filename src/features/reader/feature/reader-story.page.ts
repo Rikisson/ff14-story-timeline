@@ -76,7 +76,12 @@ import { SfxController } from './sfx-controller';
             <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
           </div>
         } @else if (store.story(); as story) {
-          <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 pt-4 pb-3">
+          <div
+            class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 pt-4 pb-3 transition-opacity duration-300 ease-out"
+            [class.opacity-0]="chromeIdle()"
+            [class.pointer-events-none]="chromeIdle()"
+            [attr.aria-hidden]="chromeIdle() ? 'true' : null"
+          >
             <header class="flex flex-wrap items-center gap-3">
               <h1 class="m-0 text-2xl font-semibold text-foreground">{{ story.title }}</h1>
               <div class="ml-auto flex items-center gap-2">
@@ -203,6 +208,13 @@ export class ReaderStoryPage {
   // scene without a loading flash. Per the player spec the indicator is
   // a delay-gated affordance, not a guarantee.
   protected readonly showLoadingIndicator = signal(false);
+
+  // Idle-fade chrome: the title bar + resume aside fade after this
+  // many ms of no `pointermove` / `pointerdown` / `keydown`. Any of
+  // those events re-shows it instantly. Kept on the page (not the
+  // shared `LayoutStore`) because the trigger is reader-specific.
+  private static readonly CHROME_IDLE_MS = 2500;
+  protected readonly chromeIdle = signal(false);
 
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} flex h-full flex-col`,
@@ -377,6 +389,33 @@ export class ReaderStoryPage {
     effect(() => {
       this.store.loadStory(this.id());
     });
+
+    // Reader chrome idle-fade. Any pointer or key activity re-arms the
+    // 2.5s timer. When it elapses, `chromeIdle` flips true and the
+    // template fades the chrome wrapper out with `pointer-events-none`
+    // so invisible buttons don't catch stray clicks.
+    if (this.isBrowser) {
+      let idleTimer: ReturnType<typeof setTimeout> | null = null;
+      const resetIdle = (): void => {
+        this.chromeIdle.set(false);
+        if (idleTimer !== null) clearTimeout(idleTimer);
+        idleTimer = setTimeout(
+          () => this.chromeIdle.set(true),
+          ReaderStoryPage.CHROME_IDLE_MS,
+        );
+      };
+      resetIdle();
+      const listenerOpts: AddEventListenerOptions = { passive: true };
+      document.addEventListener('pointermove', resetIdle, listenerOpts);
+      document.addEventListener('pointerdown', resetIdle, listenerOpts);
+      document.addEventListener('keydown', resetIdle, listenerOpts);
+      this.destroyRef.onDestroy(() => {
+        if (idleTimer !== null) clearTimeout(idleTimer);
+        document.removeEventListener('pointermove', resetIdle, listenerOpts);
+        document.removeEventListener('pointerdown', resetIdle, listenerOpts);
+        document.removeEventListener('keydown', resetIdle, listenerOpts);
+      });
+    }
 
     // Defer the loading indicator by 500 ms — fast resolves go straight
     // to the scene with no flicker.
