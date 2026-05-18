@@ -147,6 +147,7 @@ type CrossfadeSlot = 'A' | 'B';
         @if (layout() === 'dialog') {
           <div
             class="reader-card"
+            [class.reader-card-overflow]="cardOverflow()"
             appContentLang
             role="region"
             aria-live="polite"
@@ -194,6 +195,10 @@ export class SceneViewComponent {
   readonly choices = input<Choice[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
+  // Caps the card height and adds a fade-out mask + vertical scroll.
+  // Reader-event uses this for long descriptions; reader-story leaves
+  // it false because scene text is capped by the editor at ~280 chars.
+  readonly cardOverflow = input<boolean>(false);
 
   readonly choose = output<string>();
 

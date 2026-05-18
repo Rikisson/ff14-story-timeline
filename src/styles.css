@@ -272,3 +272,12 @@ html [data-testid='output-socket'] > *.multiple {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+/* Long event descriptions overflow the natural card height. Cap at half
+ * the viewport, allow vertical scroll, and fade the bottom so the
+ * reader can tell there's more below. */
+.reader-card-overflow {
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent);
+          mask-image: linear-gradient(180deg, #000 80%, transparent);
+}

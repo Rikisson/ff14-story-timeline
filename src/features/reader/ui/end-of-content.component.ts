@@ -67,7 +67,9 @@ interface ContinuationCard {
         }
 
         <div class="flex flex-wrap items-center gap-3">
-          <button uiPrimary type="button" (click)="restart.emit()">{{ t('action.restart') }}</button>
+          @if (showRestart()) {
+            <button uiPrimary type="button" (click)="restart.emit()">{{ t('action.restart') }}</button>
+          }
           <a routerLink="/library" class="text-sm text-accent hover:underline">
             {{ t('action.backToCatalog') }}
           </a>
@@ -79,6 +81,9 @@ interface ContinuationCard {
 })
 export class EndOfContentComponent {
   readonly nextRefs = input<EntityRef<'story' | 'event'>[] | undefined>(undefined);
+  // Events have no "start" to restart to; the host opts out by passing
+  // `false` and the button is omitted entirely.
+  readonly showRestart = input<boolean>(true);
   readonly restart = output<void>();
 
   private readonly assets = inject(AssetThumbResolver);
