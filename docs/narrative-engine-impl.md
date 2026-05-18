@@ -21,21 +21,23 @@ category.
 
 | Tier        | Entities                                    | Why their own type                                                |
 |-------------|---------------------------------------------|-------------------------------------------------------------------|
-| Runtime     | Universe, Story, Character, Place           | Product itself, or participates in scene staging                  |
-| Structural  | Event, Plotline                             | Carries semantics prose can't (date, status, arc grouping, color) |
+| Runtime     | Universe, Story, Character, Place, Event    | Product itself, participates in scene staging, or rendered in the reader |
+| Structural  | Plotline                                    | Carries semantics prose can't (status, arc grouping, color)       |
 | Lookup      | Codex — categorized (item, faction, race, religion, magic-system, …) | Pure reference cards: name, description, optional image, untyped `relatedRefs[]` |
 
 Codex categories are author-defined labels, color-coded for
 scan-ability. Pickers scope by category (insert "an item" → filter
 category=item) so the unified store does not feel like a junk drawer.
 
-**Lookup vs Structural is about role, not metadata presence.** Codex
-categories describe the world; readers consult them. Event and Plotline
-organize the timeline — Events anchor moments, Plotlines group those
-moments into arcs. Plotline's color and status serve its structural
-framing role; Plotline does not carry the descriptive weight that
-Lookup-tier entities do, so it stays Structural even though it has no
-`inGameDate` of its own.
+**Lookup vs Structural vs Runtime is about role, not metadata presence.**
+Codex categories describe the world; readers consult them. Plotline
+groups timeline moments into arcs and carries its color and status as
+framing chrome, but it never renders in the reader and never appears
+in scene staging — it stays Structural. Event sits with Story and the
+staging entities in Runtime: it anchors a timeline moment *and* renders
+as a single-frame read with its own background, BGM, and forward
+continuation, so it participates in both the timeline view and the
+reader pipeline.
 
 **Promotion rule.** Promote a Codex category to its own entity only
 when it gains one of:
@@ -54,14 +56,14 @@ rather than a flat form.
 
 References live on two surfaces — typed pickers and inline `${kind:<guid>}[…]` tokens — and fall into four semantic tiers. The picker UX is the same across tiers; the meanings are not.
 
-| Tier        | Where                                                                  | Purpose             | Drives runtime? |
-|-------------|------------------------------------------------------------------------|---------------------|-----------------|
-| Runtime     | `Scene.characters` / `speaker` / `place`                               | Staging / placement | Yes             |
-| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                             | Catalog & filtering | No              |
-| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs`  | World-building      | No              |
-| Decorative  | Inline `${…}[…]` in any rich-text body                                 | Tooltip / hover     | No              |
+| Tier        | Where                                                                  | Purpose                          | Drives runtime? |
+|-------------|------------------------------------------------------------------------|----------------------------------|-----------------|
+| Runtime     | `Scene.characters` / `speaker` / `place`, end-of-content `Scene.nextRefs` and `Event.nextRefs` | Staging, placement, continuation | Yes             |
+| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                             | Catalog & filtering              | No              |
+| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs`  | World-building                   | No              |
+| Decorative  | Inline `${…}[…]` in any rich-text body                                 | Tooltip / hover                  | No              |
 
-Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime is Character + Place only.
+Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime staging is Character + Place only; runtime continuation is Story + Event, limited to the dedicated `nextRefs` slot.
 
 **Picker scope per entity.** Timeline-tier entities (Story, Event) reference lookup-tier entities (Character, Place, Codex) for world-building; lookup-tier entities reference each other; nothing references timeline-tier through pickers — those relationships are encoded by `inGameDate` and (for arc grouping) by the dedicated `plotlineRefs` field.
 
@@ -71,7 +73,8 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 | Character, Place, Codex     | character, place, codex | —                                 |
 | Universe, Plotline          | —                       | —                                 |
 
-- **No timeline-to-timeline picker refs.** Story↔Event and Event↔Event are derivable from `inGameDate`; use the timeline view.
+- **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use the timeline view.
+- **Continuation is the one runtime exception.** Story end-scenes and Events expose `nextRefs: EntityRef<'story' | 'event'>[]` (cap 3) for authored "Continue reading" handoffs the reader navigates between. Authored intent, not date-derived adjacency.
 - **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
 - **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
 - **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
@@ -148,6 +151,14 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 
 ## Resolved scene model
 
+- **Layout switches the rendering shape.** `Scene.layout` ('dialog' |
+  'showcase', default 'dialog') picks one of two presentation modes.
+  Dialog renders the floating reader card with speaker + typewriter
+  text + choices over the visual stage. Showcase suppresses the card
+  and renders `scene.text` (if set) as a centered overlay caption —
+  used for title intros, art beats, and any frame where the visual is
+  the point. Both layouts share the same background and character
+  stage; only the foreground UI differs.
 - **Speaker union.** `EntityRef<'character'>` for major characters
   (chip / hover-card / on-stage highlight), `string` for non-essential
   speakers (narrator, off-screen, inner thought, unnamed NPC),
@@ -158,12 +169,36 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   | right` quick-select buttons; underlying schema accepts any slot ID,
   so future templates (`upper-left`, `background-row`, `far-left`,
   etc.) do not need a schema migration.
+- **Character facing flips the sprite horizontally.**
+  `StagedCharacter.facing` ('left' | 'right') overrides a per-slot
+  default rule: a `left`-slot character faces right, a `right`-slot
+  character faces left, anything else faces right. The default lets
+  authors stage characters without thinking about flips; the override
+  covers exceptions (a left-slot character glancing offscreen). The
+  field persists only when it disagrees with the slot default, so a
+  position change still re-flows naturally.
 - **Scene constraints.** A given character may appear at most once in
   `characters[]`. Multiple characters in the same `position` are
   allowed; render order is `order` ascending, then insertion order.
   A speaker that is an `EntityRef<'character'>` not present in
   `characters[]` triggers a visible editor prompt rather than silently
   mutating the array.
+- **Per-scene background mood filter.** `Scene.backgroundEffect`
+  ('darken' | 'desaturate' | 'sepia' | 'cool' | 'warm', `undefined`
+  for unaffected) applies a CSS filter to the background layer only —
+  character sprites stay full-saturation so faces and silhouettes are
+  never washed out by the scene's mood treatment.
+- **Background asset resolution falls back to the story cover.** A
+  scene without `backgroundAssetId` inherits `Story.coverAssetId`;
+  with neither, the article shows its theme surface color. Lazy
+  authors get a coherent visual identity without per-scene
+  backgrounds; committed authors override per scene.
+- **End-of-content continuation.** End-scenes (`scene.next.length ===
+  0`) may carry `nextRefs: EntityRef<'story' | 'event'>[]` (cap 3).
+  The reader renders these as continuation cards next to Restart and
+  Back-to-catalog. End-scene progress is retained in localStorage —
+  only `Restart` clears it — so the reader can chain forward through
+  `nextRefs` and use the browser back button to revisit endings.
 - **BGM is a separate concern from scene SFX.** `Story.bgmAssetId`
   declares the story-wide track. A scene may override with its own
   `bgmAssetId`, or force quiet with `bgmSilence: true`. The optional
@@ -173,9 +208,10 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   with the BGM and is authored from the `'sfx'` asset kind.
 - **Authored text speed per scene.** Each scene carries an optional
   `textSpeed` ('slow' | 'normal' | 'fast' | 'instant', default 'fast'
-  when unset). The reader may override authoring by disabling text
-  animations in player preferences, in which case every scene renders
-  instantly regardless of the authored value.
+  when unset). The reader collapses to instant when the user disables
+  text animations in preferences *or* when the OS-level
+  `prefers-reduced-motion` hint is set — either signal wins
+  regardless of the authored value.
 
 ## Calendar
 
@@ -311,7 +347,7 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   Metadata (slug, title, description, refs, lifecycle) at
   `universes/{u}/stories/{sid}`; content (`startSceneId`, `scenes`) at
   `universes/{u}/stories/{sid}/_content/main`.
-- **Catalog and timeline list views read metadata only.** Player and
+- **Catalog and timeline list views read metadata only.** Reader and
   editor read both via `StoriesService.getStoryWithContent()`.
 - **Saves write both docs in a single transaction** with the version
   stamp on the metadata doc. Optimistic-concurrency contract uses the
@@ -319,21 +355,91 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 - **The `_content/main` subdoc inherits its parent's draft visibility**
   via a Firestore rule that reads the parent story's `draft` flag —
   drafts stay private to members; published content is public.
+- **A fresh story is seeded with a title intro plus an opening scene.**
+  `StoriesService.createDraftStory()` writes two scenes inside the
+  same transaction as the metadata: a `showcase`-layout intro scene
+  whose text is the placeholder title and whose `next` already points
+  at a second empty dialog scene. `startSceneId` points at the intro.
+  Authors edit, rewire, or delete either scene like any other; the
+  seed is convenience, not enforcement. The intro inherits the story
+  cover through the background fallback chain until the author picks
+  a scene-level background.
 - **Pattern reuse for future entities.** If a new entity ever carries a
   nested heavy payload that list views don't need, split it the same
   way (`{kind}/{id}/_content/main`). Today only Story qualifies — every
   other entity is a flat doc small enough to load whole.
 
+## Event reading
+
+- **Events render as a single frame in the same reader pipeline as
+  stories.** The reader route `/reader/event/:id` loads an event via
+  `EventsService.getById()` and hands it to `<app-scene-view>` in
+  dialog layout: `event.description` becomes the card text,
+  `event.coverAssetId` is the background (cropped via `object-cover`
+  to fill whatever aspect the viewport offers), `event.bgmAssetId`
+  drives a fresh `BgmController` instance, and `event.backgroundEffect`
+  applies the same mood filter as on scenes.
+- **No scene graph, no SFX, no localStorage progress.** Events are
+  one frame; there's nothing to restart, nothing to resume to. The
+  end-of-content surface always shows below the article — Restart is
+  suppressed because the concept doesn't apply, and `event.nextRefs`
+  (cap 3) renders as continuation cards alongside Back-to-catalog.
+- **Long descriptions scroll inside the card with a fade hint.** When
+  `description.length > 600` the floating card carries
+  `.reader-card-overflow`: capped at 50vh, vertical scroll, and a
+  bottom mask that hints at hidden content. The editor surfaces a
+  warning at the same threshold so authors know the reader will be
+  scrolling; the recommended path for longer prose is a one-scene
+  story rather than a long event.
+- **Inline-ref tokens resolve from `event.description`.** The reader
+  parses `${kind:guid}[…]` exactly as it does for scene text, so
+  events can hover-link characters, places, and codex entries the
+  same way scenes do.
+
 ## Scene rendering layers
 
-- **Three independent DOM layers.** Background, characters, and
-  text-scrim are siblings, not nested. CSS filters applied to the
-  background must not affect characters; characters stay at full
+- **The article fills the available main area.** The reader page is
+  a flex column inside `<main>`: header section + scene-view filling
+  `flex-1` + optional end-of-content. Header and end-of-content sit
+  in a centered `max-w-7xl` chrome column; the article escapes that
+  column and spans edge-to-edge so the background dominates the
+  visual field. There is no 16:9 article frame — the background
+  `<img>` uses `object-cover` and crops on whichever dimension
+  exceeds the viewport.
+- **Three independent DOM layers inside the article.** Background,
+  characters, and the floating reader card (or showcase caption) are
+  siblings, not nested. CSS filters applied to the background must
+  not affect characters; characters stay at full
   saturation/sharpness so the visual hierarchy emerges automatically.
-- **Text scrim is the engine's job.** A gradient overlay between the
-  character layer and text guarantees readability across any
-  background. Not the author's responsibility.
-- **Audio lives in the player shell as two hidden crossfade pairs.**
+- **Floating reader card carries the dialog UI.** A solid, opaque
+  card centered at the bottom of the article holds the speaker
+  label, the typewriter body, and the choice list — choices live
+  inside the card, not as a sibling below the article. Card width is
+  a CSS variable (`--reader-card-width`, default 60%) so the layout
+  can be widened later without component changes. In showcase
+  layout the card is suppressed; if the scene has text, it renders
+  as a centered overlay caption with no card chrome and tap-anywhere
+  advances when a single `next` is wired.
+- **Sprites flip via `transform: scaleX(-1)` when facing left.** The
+  facing flag is resolved per character through the slot-default
+  rule plus the optional `StagedCharacter.facing` override.
+- **Background asset resolves through a fallback chain.**
+  `scene.backgroundAssetId → story.coverAssetId → theme surface`.
+  The reader's BG `<img>` slots crossfade between resolved URLs;
+  identical URLs skip the swap so consecutive same-bg scenes don't
+  flicker. A `blurDataUrl` paints immediately as a placeholder
+  underneath the slots.
+- **Per-scene mood filters apply to the background layer only.** The
+  five `Scene.backgroundEffect` values map to CSS `filter` values on
+  the background layer container, leaving characters untouched.
+- **Chrome idle-fades after 2.5s of pointer/key inactivity.** Title
+  bar, back, preferences, and fullscreen controls fade to opacity 0
+  and become non-interactive after no activity for 2.5 seconds. Any
+  `pointermove`, `pointerdown`, or `keydown` instantly re-shows them
+  with a 300ms ease-out. Chrome fade is reader-local state, not the
+  app-wide `LayoutStore.chromeHidden` which still controls
+  fullscreen behavior.
+- **Audio lives in the reader shell as two hidden crossfade pairs.**
   Both pairs sit above `scene-view` so the elements survive scene
   re-renders, and both are driven imperatively by small controllers
   rather than declarative `[src]` bindings. The BGM pair loops: when
@@ -347,25 +453,30 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   identical. SFX fades in (~220 ms) on scene entry and fades out over
   the same window on exit; mid-fade transitions cross over in
   parallel via the second slot. Volume on both pairs is bound to the
-  reader's preferences (`bgmVolume`, `sfxVolume`).
-- **Background swaps use two stacked `<img>` elements with CSS opacity
-  crossfade.** Skip the crossfade when the next asset URL equals the
-  current.
-- **Image rendering uses `blurDataUrl` as an immediate placeholder.**
-  Full image fades in on load.
+  reader's preferences (`bgmVolume`, `sfxVolume`). The reader-event
+  page uses the same BGM controller pattern without the SFX pair.
 - **Audio load is non-blocking.** Scene becomes readable when text and
   background are ready; audio joins late and fades in when available.
 - **Loading indicators show progress, not a spinner, and appear only
   after 500ms of pending load.** First scene shows the loading state
   until its background is ready; subsequent transitions rely on
   preload.
-- **Text reveal honors the scene's `textSpeed`.** Rendered through a
-  typewriter component that wraps each character behind a hidden span
-  and reveals them at the configured cps. Clicking anywhere on the
-  article frame mid-reveal completes the reveal instantly and absorbs
-  the click so the same gesture doesn't also advance the scene.
-  Choices remain interactive throughout the reveal. The reader can
-  disable the animation globally in player preferences.
+- **Preload extends to reachable backgrounds, sprites, and audio.**
+  `schedulePrefetch()` runs inside `requestIdleCallback`, walks the
+  current scene's `next[]` choices, and hands the browser
+  `<link rel="prefetch">` for any explicit `backgroundAssetId`,
+  `sfxAssetId`, `bgmAssetId`, and `StagedCharacter.spriteId` on the
+  target scenes. Skips entirely when `navigator.connection.saveData`
+  is true or `effectiveType` is `slow-2g`/`2g`.
+- **Text reveal honors the effective text speed.** The typewriter
+  wraps each character behind a hidden span and reveals at the
+  configured cps; `aria-live="polite"` on the card region announces
+  the final text to screen readers. Clicking anywhere on the article
+  frame mid-reveal completes the reveal instantly and absorbs the
+  click so the same gesture doesn't also advance the scene. The
+  effective speed collapses to instant when the reader has text
+  animations disabled *or* when `prefers-reduced-motion` is set —
+  either signal wins regardless of the authored value.
 
 ---
 
