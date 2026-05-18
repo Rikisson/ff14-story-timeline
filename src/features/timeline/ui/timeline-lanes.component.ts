@@ -23,7 +23,7 @@ export interface TimelineLaneDescriptor {
  * pagination logic all live in `TimelineLaneComponent` and its store.
  */
 @Component({
-  selector: 'app-catalog-timeline',
+  selector: 'app-timeline-lanes',
   imports: [TimelineLaneComponent],
   template: `
     <div class="flex flex-col gap-6">
@@ -39,7 +39,7 @@ export interface TimelineLaneDescriptor {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogTimelineComponent {
+export class TimelineLanesComponent {
   readonly lanes = input.required<TimelineLaneDescriptor[]>();
   readonly sortDirection = input<SortDirection>('asc');
 }

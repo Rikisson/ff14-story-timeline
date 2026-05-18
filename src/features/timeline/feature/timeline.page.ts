@@ -4,9 +4,9 @@ import { Plotline, PlotlinesService } from '@features/plotlines';
 import { SortDirection, UNASSIGNED_LANE_KEY } from '@shared/data-access';
 import { PageHeaderComponent } from '@shared/ui';
 import {
-  CatalogTimelineComponent,
+  TimelineLanesComponent,
   TimelineLaneDescriptor,
-} from '../ui/catalog-timeline.component';
+} from '../ui/timeline-lanes.component';
 import {
   EMPTY_TIMELINE_FILTERS,
   TimelineFilters,
@@ -18,7 +18,7 @@ import timelineUk from '../i18n/uk.json';
 @Component({
   selector: 'app-timeline-page',
   imports: [
-    CatalogTimelineComponent,
+    TimelineLanesComponent,
     PageHeaderComponent,
     TimelineFiltersComponent,
     TranslocoDirective,
@@ -48,7 +48,7 @@ import timelineUk from '../i18n/uk.json';
           />
         </app-page-header>
 
-        <app-catalog-timeline
+        <app-timeline-lanes
           [lanes]="lanes()"
           [sortDirection]="sortDirection()"
         />

@@ -1,3 +1,4 @@
+export { STORIES_ROUTES } from './stories.routes';
 export { StaleStoryError, StoriesService } from './data-access/stories.service';
 export type {
   BgmTransition,

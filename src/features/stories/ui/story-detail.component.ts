@@ -16,11 +16,11 @@ import {
   UTILITY_SECONDARY,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
-import catalogEn from './i18n/en.json';
-import catalogUk from './i18n/uk.json';
+import storyEn from '../i18n/en.json';
+import storyUk from '../i18n/uk.json';
 
 @Component({
-  selector: 'app-catalog-detail',
+  selector: 'app-story-detail',
   imports: [
     NgOptimizedImage,
     RouterLink,
@@ -32,16 +32,16 @@ import catalogUk from './i18n/uk.json';
   ],
   providers: [
     provideTranslocoScope({
-      scope: 'catalog',
+      scope: 'story',
       loader: {
-        en: () => Promise.resolve(catalogEn),
-        uk: () => Promise.resolve(catalogUk),
+        en: () => Promise.resolve(storyEn),
+        uk: () => Promise.resolve(storyUk),
       },
     }),
   ],
   host: { class: 'block h-full' },
   template: `
-    <ng-container *transloco="let t; prefix: 'catalog'">
+    <ng-container *transloco="let t; prefix: 'story'">
       <article
         class="relative h-full w-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
       >
@@ -133,7 +133,7 @@ import catalogUk from './i18n/uk.json';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogDetailComponent {
+export class StoryDetailComponent {
   readonly story = input.required<Story>();
   readonly canEdit = input<boolean>(false);
 
@@ -148,7 +148,7 @@ export class CatalogDetailComponent {
   protected readonly utilDangerClass = UTILITY_DANGER;
 
   protected readonly storyTitle = computed(
-    () => this.story().title || this.transloco.translate('catalog.field.untitled'),
+    () => this.story().title || this.transloco.translate('story.field.untitled'),
   );
 
   protected readonly background = computed(() =>
@@ -171,7 +171,7 @@ export class CatalogDetailComponent {
   protected confirmDelete(): void {
     if (
       window.confirm(
-        this.transloco.translate('catalog.message.deleteConfirm', { title: this.storyTitle() }),
+        this.transloco.translate('story.message.deleteConfirm', { title: this.storyTitle() }),
       )
     ) {
       this.remove.emit(this.story().id);

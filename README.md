@@ -33,8 +33,8 @@ Cloudflare setup checklist.
 
 ## Project layout
 
-- `src/app/` — root component, routing, Firebase wiring, catalog page (entry route)
-- `src/features/` — feature folders (`auth`, `stories`, `characters`, `places`, `events`, `editor`, `player`), each with `data-access/`, `feature/`, `ui/`, and an `index.ts` barrel
+- `src/app/` — root component, routing, Firebase wiring, landing and 404 pages
+- `src/features/` — feature folders (`auth`, `stories`, `characters`, `places`, `events`, `timeline`, `editor`, `player`), each with `data-access/`, `feature/`, `ui/`, and an `index.ts` barrel
 - `src/shared/ui/` — design-system buttons (`uiPrimary` / `uiSecondary` / `uiGhost` / `uiDanger`)
 - `src/shared/utils/` — small utilities (e.g. `cn` for class merging)
 - `src/mocks/` — seeder service + seed data, gated to a hard-coded author UID

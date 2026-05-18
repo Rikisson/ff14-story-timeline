@@ -18,8 +18,8 @@ import { ContentLangDirective } from '@features/universes';
 import { AssetThumbResolver, TimelineRow } from '@shared/data-access';
 import { TagComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
-import catalogEn from '../../../app/catalog/i18n/en.json';
-import catalogUk from '../../../app/catalog/i18n/uk.json';
+import storyEn from '../../stories/i18n/en.json';
+import storyUk from '../../stories/i18n/uk.json';
 
 // Prefetch the full-resolution cover when the tile is comfortably inside the
 // viewport. Stories navigate to /play which renders the full image as the page
@@ -38,16 +38,16 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
   ],
   providers: [
     provideTranslocoScope({
-      scope: 'catalog',
+      scope: 'story',
       loader: {
-        en: () => Promise.resolve(catalogEn),
-        uk: () => Promise.resolve(catalogUk),
+        en: () => Promise.resolve(storyEn),
+        uk: () => Promise.resolve(storyUk),
       },
     }),
   ],
   host: { class: 'block h-full' },
   template: `
-    <ng-container *transloco="let t; prefix: 'catalog'">
+    <ng-container *transloco="let t; prefix: 'story'">
       <div
         #root
         class="group relative aspect-video w-full overflow-hidden rounded-md border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:-translate-y-0.5 focus-within:shadow-lg"
@@ -126,7 +126,7 @@ export class TimelineTileComponent {
 
   protected readonly title = computed(() => {
     const r = this.row();
-    return r.title || this.transloco.translate('catalog.field.untitled');
+    return r.title || this.transloco.translate('story.field.untitled');
   });
 
   protected readonly coverAssetId = computed(() => this.row().coverAssetId);

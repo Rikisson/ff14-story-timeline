@@ -7,30 +7,30 @@ import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createEntityDirectoryQueryStore } from '@shared/data-access';
 import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
-import { CatalogDetailComponent } from './catalog-detail.component';
-import catalogEn from './i18n/en.json';
-import catalogUk from './i18n/uk.json';
+import { StoryDetailComponent } from '../ui/story-detail.component';
+import storyEn from '../i18n/en.json';
+import storyUk from '../i18n/uk.json';
 
 @Component({
-  selector: 'app-catalog-page',
+  selector: 'app-stories-page',
   host: { class: 'block h-full' },
   imports: [
-    CatalogDetailComponent,
+    StoryDetailComponent,
     EntityListPaneComponent,
     PageHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
     provideTranslocoScope({
-      scope: 'catalog',
+      scope: 'story',
       loader: {
-        en: () => Promise.resolve(catalogEn),
-        uk: () => Promise.resolve(catalogUk),
+        en: () => Promise.resolve(storyEn),
+        uk: () => Promise.resolve(storyUk),
       },
     }),
   ],
   template: `
-    <ng-container *transloco="let t; prefix: 'catalog'">
+    <ng-container *transloco="let t; prefix: 'story'">
       <div class="flex h-full flex-col gap-4">
         <app-page-header
           [title]="t('field.title')"
@@ -62,7 +62,7 @@ import catalogUk from './i18n/uk.json';
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.storyDetails')">
             @if (selected(); as s) {
               <div class="min-h-0 flex-1 overflow-y-auto">
-                <app-catalog-detail
+                <app-story-detail
                   [story]="s"
                   [canEdit]="canCreate()"
                   (remove)="deleteStory($event)"
@@ -80,7 +80,7 @@ import catalogUk from './i18n/uk.json';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogPage {
+export class StoriesPage {
   protected readonly stories = inject(StoriesService);
   private readonly universes = inject(UniverseStore);
   private readonly route = inject(ActivatedRoute);
@@ -119,11 +119,11 @@ export class CatalogPage {
   protected readonly listItems = computed<ListPaneItem[]>(() =>
     this.directory.rows().map((row) => ({
       id: row.id,
-      label: row.label || this.transloco.translate('catalog.field.untitled'),
+      label: row.label || this.transloco.translate('story.field.untitled'),
       secondary: row.secondary,
       coverAssetId: row.coverAssetId,
       badge: row.draft
-        ? { text: this.transloco.translate('catalog.field.draft'), tone: 'amber' }
+        ? { text: this.transloco.translate('story.field.draft'), tone: 'amber' }
         : undefined,
     })),
   );

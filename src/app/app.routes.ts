@@ -1,14 +1,5 @@
-import { Routes, UrlMatchResult, UrlSegment } from '@angular/router';
+import { Routes } from '@angular/router';
 import { editorGuard, universeGuard, UNIVERSE_ROUTES } from '@features/universes';
-
-// Single route config for both `/library` and `/library/:id` so Angular's
-// default RouteReuseStrategy keeps the page mounted across the first
-// list -> detail click (which otherwise destroys it and re-fetches page 1).
-const libraryMatcher = (segments: UrlSegment[]): UrlMatchResult | null => {
-  if (segments.length === 0) return { consumed: [] };
-  if (segments.length === 1) return { consumed: segments, posParams: { id: segments[0] } };
-  return null;
-};
 
 export const routes: Routes = [
   {
@@ -18,12 +9,7 @@ export const routes: Routes = [
   },
   {
     path: 'library',
-    children: [
-      {
-        matcher: libraryMatcher,
-        loadComponent: () => import('./catalog/catalog.page').then((m) => m.CatalogPage),
-      },
-    ],
+    loadChildren: () => import('@features/stories').then((m) => m.STORIES_ROUTES),
   },
   {
     path: 'play',
