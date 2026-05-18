@@ -275,10 +275,6 @@ html [data-testid='output-socket'] > *.multiple {
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
   font-size: var(--scene-font-size, 1rem);
 }
-.reader-card:focus-within {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
 /* Long event descriptions overflow the natural card height. Cap at half
  * the viewport, allow vertical scroll, and fade the bottom so the
  * reader can tell there's more below. */
