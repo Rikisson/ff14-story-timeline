@@ -1,11 +1,11 @@
 import { computed } from '@angular/core';
 import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 import { Scene } from '@features/stories';
-import { PlayerState } from './player.state';
+import { ReaderState } from './reader.state';
 
-export function withPlayerComputed() {
+export function withReaderComputed() {
   return signalStoreFeature(
-    { state: type<PlayerState>() },
+    { state: type<ReaderState>() },
     withComputed((state) => ({
       currentScene: computed<Scene | null>(() => {
         const content = state.content();

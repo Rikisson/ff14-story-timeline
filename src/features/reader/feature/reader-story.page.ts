@@ -24,7 +24,7 @@ import {
   ResolvedDirectoryRow,
 } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
-import { PlayerPreferencesService } from '@shared/services';
+import { ReaderPreferencesService } from '@shared/services';
 import {
   GhostButtonComponent,
   PrimaryButtonComponent,
@@ -32,35 +32,35 @@ import {
 } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
-import { PlayerStore } from '../data-access/player.store';
+import { ReaderStore } from '../data-access/reader.store';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
 import { ChoiceListComponent } from '../ui/choice-list.component';
-import { PlayerPreferencesDialogComponent } from '../ui/player-preferences-dialog.component';
+import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
-import playerEn from '../i18n/en.json';
-import playerUk from '../i18n/uk.json';
+import readerEn from '../i18n/en.json';
+import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
 import { SfxController } from './sfx-controller';
 
 @Component({
-  selector: 'app-player-page',
+  selector: 'app-reader-story-page',
   imports: [
     RouterLink,
     SceneViewComponent,
     ChoiceListComponent,
-    PlayerPreferencesDialogComponent,
+    ReaderPreferencesDialogComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     GhostButtonComponent,
     TranslocoDirective,
   ],
   providers: [
-    PlayerStore,
+    ReaderStore,
     provideTranslocoScope({
       scope: 'player',
       loader: {
-        en: () => Promise.resolve(playerEn),
-        uk: () => Promise.resolve(playerUk),
+        en: () => Promise.resolve(readerEn),
+        uk: () => Promise.resolve(readerUk),
       },
     }),
   ],
@@ -162,20 +162,20 @@ import { SfxController } from './sfx-controller';
         }
       </div>
 
-      <app-player-preferences-dialog #prefsDialog />
+      <app-reader-preferences-dialog #prefsDialog />
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlayerPage {
+export class ReaderStoryPage {
   readonly id = input.required<string>();
-  protected readonly store = inject(PlayerStore);
+  protected readonly store = inject(ReaderStore);
   private readonly characters = inject(CharactersService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  protected readonly prefs = inject(PlayerPreferencesService);
+  protected readonly prefs = inject(ReaderPreferencesService);
   protected readonly layout = inject(LayoutStore);
 
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
@@ -189,8 +189,8 @@ export class PlayerPage {
   // *and* backward). Passed to SfxController.setTarget as the "scene
   // visit key" so re-entering a scene (e.g., back-nav onto the same
   // SFX URL) restarts playback from zero. Counter resets on full page
-  // load, which is fine — uniqueness across the lifetime of one player
-  // session is all the controller needs.
+  // load, which is fine — uniqueness across the lifetime of one
+  // reader session is all the controller needs.
   private readonly sceneEntryKey = signal(0);
 
   // 500 ms deferral so a fast load (cache hit) renders straight to the

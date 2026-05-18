@@ -6,28 +6,28 @@ import {
   viewChild,
 } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { FontSize, PlayerPreferencesService } from '@shared/services';
+import { FontSize, ReaderPreferencesService } from '@shared/services';
 import { GhostButtonComponent, ToggleButtonComponent } from '@shared/ui';
-import playerEn from '../i18n/en.json';
-import playerUk from '../i18n/uk.json';
+import readerEn from '../i18n/en.json';
+import readerUk from '../i18n/uk.json';
 
 const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
 
 /**
- * Player Preferences dialog. Native `<dialog>` for parity with
+ * Reader Preferences dialog. Native `<dialog>` for parity with
  * `app-asset-picker`. Settings update immediately — no Apply button —
- * because the underlying `PlayerPreferencesService` persists each
+ * because the underlying `ReaderPreferencesService` persists each
  * mutation to localStorage.
  */
 @Component({
-  selector: 'app-player-preferences-dialog',
+  selector: 'app-reader-preferences-dialog',
   imports: [TranslocoDirective, GhostButtonComponent, ToggleButtonComponent],
   providers: [
     provideTranslocoScope({
       scope: 'player',
       loader: {
-        en: () => Promise.resolve(playerEn),
-        uk: () => Promise.resolve(playerUk),
+        en: () => Promise.resolve(readerEn),
+        uk: () => Promise.resolve(readerUk),
       },
     }),
   ],
@@ -122,8 +122,8 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlayerPreferencesDialogComponent {
-  protected readonly prefs = inject(PlayerPreferencesService);
+export class ReaderPreferencesDialogComponent {
+  protected readonly prefs = inject(ReaderPreferencesService);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   protected readonly fontSizes = FONT_SIZES;

@@ -5,7 +5,7 @@ export interface SavedProgress {
   history: string[];
 }
 
-export type PlayerState = {
+export type ReaderState = {
   story: Story | null;
   content: StoryContent | null;
   currentSceneId: string | null;
@@ -15,7 +15,7 @@ export type PlayerState = {
   pendingResume: SavedProgress | null;
 };
 
-export const initialPlayerState: PlayerState = {
+export const initialReaderState: ReaderState = {
   story: null,
   content: null,
   currentSceneId: null,

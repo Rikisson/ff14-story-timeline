@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { SecondaryButtonComponent } from '@shared/ui';
-import playerEn from '../i18n/en.json';
-import playerUk from '../i18n/uk.json';
+import readerEn from '../i18n/en.json';
+import readerUk from '../i18n/uk.json';
 
 export interface Choice {
   label?: string;
@@ -16,8 +16,8 @@ export interface Choice {
     provideTranslocoScope({
       scope: 'player',
       loader: {
-        en: () => Promise.resolve(playerEn),
-        uk: () => Promise.resolve(playerUk),
+        en: () => Promise.resolve(readerEn),
+        uk: () => Promise.resolve(readerUk),
       },
     }),
   ],

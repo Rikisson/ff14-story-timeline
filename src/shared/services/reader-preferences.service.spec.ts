@@ -1,16 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PlayerPreferencesService } from './player-preferences.service';
+import { ReaderPreferencesService } from './reader-preferences.service';
 
 const STORAGE_KEY = 'ff14-story-timeline:player-prefs';
 
-function fresh(): PlayerPreferencesService {
+function fresh(): ReaderPreferencesService {
   TestBed.resetTestingModule();
-  TestBed.configureTestingModule({ providers: [PlayerPreferencesService] });
-  return TestBed.inject(PlayerPreferencesService);
+  TestBed.configureTestingModule({ providers: [ReaderPreferencesService] });
+  return TestBed.inject(ReaderPreferencesService);
 }
 
-describe('PlayerPreferencesService', () => {
+describe('ReaderPreferencesService', () => {
   beforeEach(() => {
     localStorage.clear();
   });

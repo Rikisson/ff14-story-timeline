@@ -3,7 +3,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { FirebaseError } from 'firebase/app';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { StoriesService, StoryContent } from '@features/stories';
-import { PlayerState, SavedProgress } from './player.state';
+import { ReaderState, SavedProgress } from './reader.state';
 
 const STORAGE_PREFIX = 'ff14-story-timeline:player:';
 
@@ -54,9 +54,9 @@ function isUsableResume(content: StoryContent, saved: SavedProgress): boolean {
   return saved.history.every((id) => Object.prototype.hasOwnProperty.call(content.scenes, id));
 }
 
-export function withPlayerMethods() {
+export function withReaderMethods() {
   return signalStoreFeature(
-    { state: type<PlayerState>() },
+    { state: type<ReaderState>() },
     withMethods((
       store,
       stories = inject(StoriesService),

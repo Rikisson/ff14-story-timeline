@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StoriesService, Story, StoryContent } from '@features/stories';
-import { PlayerStore } from './player.store';
+import { ReaderStore } from './reader.store';
 
 const sampleStory: Story = {
   id: 's1',
@@ -40,15 +40,15 @@ function setup() {
   const mockTransloco = { translate: (key: string) => key };
   TestBed.configureTestingModule({
     providers: [
-      PlayerStore,
+      ReaderStore,
       { provide: StoriesService, useValue: mockStories },
       { provide: TranslocoService, useValue: mockTransloco },
     ],
   });
-  return { store: TestBed.inject(PlayerStore), mockStories };
+  return { store: TestBed.inject(ReaderStore), mockStories };
 }
 
-describe('PlayerStore', () => {
+describe('ReaderStore', () => {
   let store: ReturnType<typeof setup>['store'];
 
   beforeEach(async () => {

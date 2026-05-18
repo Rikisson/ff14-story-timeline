@@ -4,8 +4,8 @@ import { ContentLangDirective } from '@features/universes';
 import { TextSpeed } from '@features/stories';
 import { TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
-import playerEn from '../i18n/en.json';
-import playerUk from '../i18n/uk.json';
+import readerEn from '../i18n/en.json';
+import readerUk from '../i18n/uk.json';
 
 export interface StagedView {
   id: string;
@@ -30,7 +30,7 @@ type CrossfadeSlot = 'A' | 'B';
  *     scenes don't flicker.
  *   - `blurDataUrl` paints immediately as a placeholder underneath the
  *     slots — the full image fades in on top once it loads.
- *   - The audio host lives in `player.page.ts` above this component so
+ *   - The audio host lives in `reader-story.page.ts` above this component so
  *     ambient tracks survive scene re-renders.
  *   - Scene text reveals via `<app-typewriter-text>` at the authored
  *     speed; clicking anywhere on the article frame skips a mid-reveal
@@ -43,8 +43,8 @@ type CrossfadeSlot = 'A' | 'B';
     provideTranslocoScope({
       scope: 'player',
       loader: {
-        en: () => Promise.resolve(playerEn),
-        uk: () => Promise.resolve(playerUk),
+        en: () => Promise.resolve(readerEn),
+        uk: () => Promise.resolve(readerUk),
       },
     }),
   ],

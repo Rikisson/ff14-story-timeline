@@ -14,7 +14,7 @@ export const routes: Routes = [
   {
     path: 'play',
     canActivate: [universeGuard],
-    loadChildren: () => import('@features/player').then((m) => m.PLAYER_ROUTES),
+    loadChildren: () => import('@features/reader').then((m) => m.READER_ROUTES),
   },
   {
     path: 'timeline',

@@ -21,7 +21,7 @@ const DEFAULTS = {
 } as const;
 
 @Injectable({ providedIn: 'root' })
-export class PlayerPreferencesService {
+export class ReaderPreferencesService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly allowTextAnimations = signal<boolean>(DEFAULTS.allowTextAnimations);
