@@ -1,8 +1,7 @@
 {
   "action": {
     "back": "← Back",
-    "catalog": "Catalog",
-    "backToCatalog": "Back to catalog",
+    "backToTimeline": "Back to timeline",
     "startOver": "Start over",
     "restart": "Restart",
     "continue": "Continue",

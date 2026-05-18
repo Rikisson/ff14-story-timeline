@@ -1,8 +1,7 @@
 {
   "action": {
     "back": "← Назад",
-    "catalog": "Каталог",
-    "backToCatalog": "Назад до каталогу",
+    "backToTimeline": "Назад до хронології",
     "startOver": "Почати спочатку",
     "restart": "Перезапустити",
     "continue": "Далі",

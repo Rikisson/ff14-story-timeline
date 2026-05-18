@@ -71,7 +71,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
         } @else if (error(); as err) {
           <div class="mx-auto w-full max-w-7xl px-4 pt-4">
             <p class="text-danger-foreground">{{ err }}</p>
-            <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
+            <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
           </div>
         } @else if (event(); as ev) {
           <app-scene-view
@@ -99,7 +99,6 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
               <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ ev.name }}</h1>
                 <div class="flex items-center gap-2">
-                  <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
                   <button
                     uiSecondary
                     type="button"

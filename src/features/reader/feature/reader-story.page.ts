@@ -68,7 +68,7 @@ import { SfxController } from './sfx-controller';
         } @else if (store.error(); as err) {
           <div class="mx-auto w-full max-w-7xl px-4 pt-4">
             <p class="text-danger-foreground">{{ err }}</p>
-            <p><a routerLink="/library" class="text-accent hover:underline">{{ t('action.backToCatalog') }}</a></p>
+            <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
           </div>
         } @else if (store.story(); as story) {
           @if (store.currentScene(); as scene) {
@@ -110,7 +110,6 @@ import { SfxController } from './sfx-controller';
                   >
                     {{ t('action.back') }}
                   </button>
-                  <a routerLink="/library" class="text-sm text-foreground-subtle hover:underline">{{ t('action.catalog') }}</a>
                   <button
                     uiSecondary
                     type="button"
