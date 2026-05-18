@@ -19,7 +19,7 @@ import { PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { AssetThumbResolver } from '@shared/data-access';
-import { PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import { PageComponent, PrimaryButtonComponent, SecondaryButtonComponent } from '@shared/ui';
 import { EditorStore } from '../data-access/editor.store';
 import { HasUnsavedChanges } from '../data-access/unsaved-changes.guard';
 import { ConnectionEvent, MoveEvent, ReteCanvasComponent } from '../ui/rete-canvas.component';
@@ -40,6 +40,7 @@ import editorUk from '../i18n/uk.json';
     ReteCanvasComponent,
     SceneEditorPanelComponent,
     StoryMetaPanelComponent,
+    PageComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     TranslocoDirective,
@@ -56,6 +57,7 @@ import editorUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'editor'">
+      <app-page class="h-full">
       @if (store.loading()) {
         <p>{{ t('message.loading') }}</p>
       } @else if (store.error(); as err) {
@@ -134,6 +136,7 @@ import editorUk from '../i18n/uk.json';
           />
         </div>
       }
+      </app-page>
     </ng-container>
   `,
   styles: `
@@ -146,7 +149,6 @@ import editorUk from '../i18n/uk.json';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 1rem;
       flex-shrink: 0;
       flex-wrap: wrap;
     }
@@ -187,7 +189,6 @@ import editorUk from '../i18n/uk.json';
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 0.75rem;
-      margin-bottom: 0.75rem;
       border: 1px solid var(--color-warning-border);
       background: var(--color-warning);
       border-radius: 0.375rem;
