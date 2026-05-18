@@ -4,12 +4,22 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AssetPickerComponent } from '@features/media';
 import { BgmTransition, Scene, TextSpeed } from '@features/stories';
 import { AssetThumbResolver } from '@shared/data-access';
+import { BackgroundEffect } from '@shared/models';
 import { GhostButtonComponent, SecondaryButtonComponent, ToggleButtonComponent } from '@shared/ui';
 import editorEn from '../i18n/en.json';
 import editorUk from '../i18n/uk.json';
 
 const TEXT_SPEEDS: readonly TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 const BGM_TRANSITIONS: readonly BgmTransition[] = ['crossfade', 'cut'];
+type BackgroundEffectOption = BackgroundEffect | 'none';
+const BG_EFFECTS: readonly BackgroundEffectOption[] = [
+  'none',
+  'darken',
+  'desaturate',
+  'sepia',
+  'cool',
+  'warm',
+];
 
 @Component({
   selector: 'app-scene-assets-panel',
@@ -59,6 +69,23 @@ const BGM_TRANSITIONS: readonly BgmTransition[] = ['crossfade', 'cut'];
             [currentSelection]="backgroundSelection()"
             (picked)="onBackgroundPicked($event)"
           />
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+            {{ t('field.backgroundEffect') }}
+          </label>
+          <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.backgroundEffect')">
+            @for (eff of bgEffects; track eff) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="resolvedBackgroundEffect() === eff ? 'true' : 'false'"
+                [class]="segmentClass(resolvedBackgroundEffect() === eff)"
+                (click)="onBackgroundEffectChange(eff)"
+              >{{ t('effect.' + eff) }}</button>
+            }
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -167,6 +194,7 @@ export class SceneAssetsPanelComponent {
   private readonly assets = inject(AssetThumbResolver);
 
   readonly backgroundAssetId = input<string | undefined>();
+  readonly backgroundEffect = input<BackgroundEffect | undefined>();
   readonly sfxAssetId = input<string | undefined>();
   readonly bgmAssetId = input<string | undefined>();
   readonly bgmSilence = input<boolean>(false);
@@ -177,6 +205,7 @@ export class SceneAssetsPanelComponent {
 
   protected readonly textSpeeds = TEXT_SPEEDS;
   protected readonly bgmTransitions = BGM_TRANSITIONS;
+  protected readonly bgEffects = BG_EFFECTS;
 
   protected readonly backgroundUrl = computed(() =>
     this.assets.resolve(this.backgroundAssetId())()?.url,
@@ -202,6 +231,9 @@ export class SceneAssetsPanelComponent {
   protected readonly resolvedTextSpeed = computed<TextSpeed>(() => this.textSpeed() ?? 'fast');
   protected readonly resolvedBgmTransition = computed<BgmTransition>(
     () => this.bgmTransition() ?? 'crossfade',
+  );
+  protected readonly resolvedBackgroundEffect = computed<BackgroundEffectOption>(
+    () => this.backgroundEffect() ?? 'none',
   );
 
   protected onBackgroundPicked(ids: string[]): void {
@@ -238,6 +270,10 @@ export class SceneAssetsPanelComponent {
 
   protected onTextSpeedChange(speed: TextSpeed): void {
     this.update.emit({ textSpeed: speed });
+  }
+
+  protected onBackgroundEffectChange(eff: BackgroundEffectOption): void {
+    this.update.emit({ backgroundEffect: eff === 'none' ? undefined : eff });
   }
 
   protected segmentClass(active: boolean): string {

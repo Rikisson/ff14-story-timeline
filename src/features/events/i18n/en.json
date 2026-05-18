@@ -4,7 +4,21 @@
     "pageSubtitle": "Timeline-anchored happenings — battles, treaties, calamities, personal turning points.",
     "inGameDate": "In-game date",
     "formAdd": "Add event",
-    "formEdit": "Edit event"
+    "formEdit": "Edit event",
+    "backgroundEffect": "Background effect",
+    "bgm": "Background music",
+    "nextRefs": "Continue reading"
+  },
+  "effect": {
+    "none": "None",
+    "darken": "Darken",
+    "desaturate": "Desaturate",
+    "sepia": "Sepia",
+    "cool": "Cool",
+    "warm": "Warm"
+  },
+  "message": {
+    "descriptionLong": "Long descriptions scroll inside the reader card. Consider splitting into a one-scene story for richer pacing."
   },
   "action": {
     "create": "+ Add event"
@@ -14,7 +28,16 @@
     "selectDetail": "Select an event to view details.",
     "namePlaceholder": "e.g. Calamity of the Seventh Umbral Era",
     "slugPlaceholder": "e.g. seventh-umbral-calamity",
-    "descriptionPlaceholder": "What happens in this event…"
+    "descriptionPlaceholder": "What happens in this event…",
+    "nextRefsHint": "Link up to three stories or events that continue from this one.",
+    "searchContinuation": "Search stories or events…",
+    "bgmHint": "Plays while the reader is on this event. Crossfades on exit.",
+    "pickBgm": "Pick BGM",
+    "replaceBgm": "Replace BGM",
+    "removeBgm": "Remove BGM"
+  },
+  "tooltip": {
+    "pickBgmTitle": "Pick background music for this event"
   },
   "tooltip": {
     "list": "Events list",

@@ -138,12 +138,14 @@ export class StoriesService {
   async createDraftStory(authorUid: string): Promise<string> {
     const universeId = this.requireUniverseId();
     const id = crypto.randomUUID();
-    const startSceneId = crypto.randomUUID();
+    const introSceneId = crypto.randomUUID();
+    const contentSceneId = crypto.randomUUID();
     const slug = await this.allocateUntitledSlug(universeId);
     const now = Date.now();
+    const title = this.transloco.translate('general.message.untitledStory');
     const metaData: StoredStory = {
       slug,
-      title: this.transloco.translate('general.message.untitledStory'),
+      title,
       inGameDate: {},
       authorUid,
       draft: true,
@@ -151,10 +153,28 @@ export class StoriesService {
       version: 1,
       updatedAt: now,
     };
+    // Auto-seed a title showcase scene wired to the author's first
+    // content scene. The intro inherits whatever cover the author
+    // picks later through the asset-resolution fallback; until then
+    // the centered title acts as the visual.
     const contentData: StoredStoryContent = {
-      startSceneId,
+      startSceneId: introSceneId,
       scenes: {
-        [startSceneId]: { text: '', characters: [], position: { x: 0, y: 0 }, next: [] },
+        [introSceneId]: {
+          text: title,
+          characters: [],
+          position: { x: 0, y: 0 },
+          layout: 'showcase',
+          next: [{ sceneId: contentSceneId }],
+          label: this.transloco.translate('editor.empty.introSceneText'),
+        },
+        [contentSceneId]: {
+          text: '',
+          characters: [],
+          position: { x: 360, y: 0 },
+          next: [],
+          label: this.transloco.translate('editor.empty.contentSceneLabel'),
+        },
       },
     };
 

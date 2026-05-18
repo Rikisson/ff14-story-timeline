@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { DateValidationError } from '@features/calendar';
-import { CoverSlotComponent } from '@features/media';
+import { AssetPickerComponent, CoverSlotComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
-import { EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
+import { AssetThumbResolver } from '@shared/data-access';
+import { BackgroundEffect, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   EntityPickerComponent,
   GhostButtonComponent,
   InGameDateInputComponent,
   PrimaryButtonComponent,
   RichTextInputComponent,
+  SecondaryButtonComponent,
 } from '@shared/ui';
 import { TimelineEventDraft } from '../data-access/event.types';
 import eventEn from '../i18n/en.json';
@@ -19,13 +21,26 @@ import eventUk from '../i18n/uk.json';
 /** Per `docs/backend-rules.md` *Cardinality limits*. */
 const RELATED_REFS_MAX = 50;
 const PLOTLINE_REFS_MAX = 10;
+const NEXT_REFS_MAX = 3;
+const LONG_DESCRIPTION_THRESHOLD = 600;
+type BackgroundEffectOption = BackgroundEffect | 'none';
+const BG_EFFECTS: readonly BackgroundEffectOption[] = [
+  'none',
+  'darken',
+  'desaturate',
+  'sepia',
+  'cool',
+  'warm',
+];
 
 @Component({
   selector: 'app-event-form',
   imports: [
     ReactiveFormsModule,
+    AssetPickerComponent,
     CoverSlotComponent,
     PrimaryButtonComponent,
+    SecondaryButtonComponent,
     GhostButtonComponent,
     EntityPickerComponent,
     InGameDateInputComponent,
@@ -90,7 +105,14 @@ const PLOTLINE_REFS_MAX = 10;
           />
 
           <div class="flex flex-col gap-1 text-sm">
-            <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+              <span
+                class="text-xs tabular-nums"
+                [class.text-foreground-faint]="!descriptionOverLong()"
+                [class.text-warning-foreground]="descriptionOverLong()"
+              >{{ descriptionLength() }} / {{ longDescriptionThreshold }}</span>
+            </div>
             <app-rich-text-input
               appContentLang
               [value]="description()"
@@ -98,6 +120,58 @@ const PLOTLINE_REFS_MAX = 10;
               [placeholder]="t('empty.descriptionPlaceholder')"
               (valueChange)="onDescription($event)"
             />
+            @if (descriptionOverLong()) {
+              <p class="m-0 text-xs text-warning-foreground" role="status">{{ t('message.descriptionLong') }}</p>
+            }
+          </div>
+
+          <div class="flex flex-col gap-2 text-sm">
+            <span class="font-medium text-foreground-muted">{{ t('field.backgroundEffect') }}</span>
+            <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.backgroundEffect')">
+              @for (eff of bgEffects; track eff) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="resolvedBackgroundEffect() === eff ? 'true' : 'false'"
+                  [class]="segmentClass(resolvedBackgroundEffect() === eff)"
+                  (click)="onBackgroundEffectChange(eff)"
+                >{{ t('effect.' + eff) }}</button>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 text-sm">
+            <span class="font-medium text-foreground-muted">{{ t('field.bgm') }}</span>
+            @if (bgmUrl(); as url) {
+              <audio class="w-full" controls preload="none" [src]="url"></audio>
+              <div class="flex gap-2">
+                <button uiSecondary type="button" (click)="bgmPicker.open()">{{ t('empty.replaceBgm') }}</button>
+                <button uiGhost type="button" (click)="onBgmPicked([])">{{ t('empty.removeBgm') }}</button>
+              </div>
+            } @else {
+              <button uiSecondary type="button" (click)="bgmPicker.open()">{{ t('empty.pickBgm') }}</button>
+            }
+            <p class="m-0 text-xs text-foreground-faint">{{ t('empty.bgmHint') }}</p>
+            <app-asset-picker
+              #bgmPicker
+              kind="ambient"
+              [title]="t('tooltip.pickBgmTitle')"
+              [currentSelection]="bgmSelection()"
+              (picked)="onBgmPicked($event)"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ t('field.nextRefs') }}</span>
+            <app-entity-picker
+              [value]="nextRefsValue()"
+              [kinds]="nextKinds"
+              [maxSelections]="nextRefsMax"
+              [includeDrafts]="true"
+              [placeholder]="t('empty.searchContinuation')"
+              (valueChange)="onNextRefs($event)"
+            />
+            <span class="text-xs text-foreground-faint">{{ t('empty.nextRefsHint') }}</span>
           </div>
 
           <div class="flex flex-col gap-1 text-sm">
@@ -154,11 +228,35 @@ export class EventFormComponent {
   protected readonly relatedMax = RELATED_REFS_MAX;
   protected readonly plotlineKinds = ['plotline'] as const;
   protected readonly plotlineMax = PLOTLINE_REFS_MAX;
+  protected readonly nextKinds = ['story', 'event'] as const;
+  protected readonly nextRefsMax = NEXT_REFS_MAX;
+  protected readonly bgEffects = BG_EFFECTS;
+  protected readonly longDescriptionThreshold = LONG_DESCRIPTION_THRESHOLD;
+
+  private readonly assets = inject(AssetThumbResolver);
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
+  protected readonly nextRefs = signal<EntityRef<'story' | 'event'>[]>([]);
   protected readonly description = signal<string>('');
   protected readonly cover = signal<string | undefined>(undefined);
+  protected readonly bgmAssetId = signal<string | undefined>(undefined);
+  protected readonly backgroundEffect = signal<BackgroundEffect | undefined>(undefined);
+
+  protected readonly nextRefsValue = computed<EntityRef[]>(() => this.nextRefs().slice());
+  protected readonly resolvedBackgroundEffect = computed<BackgroundEffectOption>(
+    () => this.backgroundEffect() ?? 'none',
+  );
+  protected readonly bgmSelection = computed<string[]>(() => {
+    const id = this.bgmAssetId();
+    return id ? [id] : [];
+  });
+  protected readonly bgmUrl = computed(() => this.assets.resolve(this.bgmAssetId())()?.url);
+
+  protected readonly descriptionLength = computed(() => this.description().length);
+  protected readonly descriptionOverLong = computed(
+    () => this.descriptionLength() > LONG_DESCRIPTION_THRESHOLD,
+  );
 
   protected readonly plotlineValue = computed<EntityRef[]>(() => this.plotlineRefs().slice());
 
@@ -179,10 +277,36 @@ export class EventFormComponent {
       });
       this.related.set(init?.relatedRefs ?? []);
       this.plotlineRefs.set(init?.plotlineRefs ?? []);
+      this.nextRefs.set(init?.nextRefs ?? []);
       this.description.set(init?.description ?? '');
       this.cover.set(init?.coverAssetId);
+      this.bgmAssetId.set(init?.bgmAssetId);
+      this.backgroundEffect.set(init?.backgroundEffect);
       this.inGameDate.set(init?.inGameDate ?? {});
     });
+  }
+
+  protected onBackgroundEffectChange(eff: BackgroundEffectOption): void {
+    this.backgroundEffect.set(eff === 'none' ? undefined : eff);
+  }
+
+  protected onBgmPicked(ids: string[]): void {
+    this.bgmAssetId.set(ids[0]);
+  }
+
+  protected onNextRefs(refs: EntityRef[]): void {
+    this.nextRefs.set(
+      refs.filter((r) => r.kind === 'story' || r.kind === 'event') as EntityRef<'story' | 'event'>[],
+    );
+  }
+
+  protected segmentClass(active: boolean): string {
+    const base =
+      'inline-flex items-center justify-center rounded-md border h-9 px-3 text-sm transition-colors ' +
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
+    return active
+      ? `${base} border-accent-ring bg-accent-soft text-accent-soft-foreground focus-visible:ring-accent-ring`
+      : `${base} border-border-strong bg-surface text-foreground hover:bg-surface-muted focus-visible:ring-foreground-faint`;
   }
 
   protected onDate(value: InGameDate): void {
@@ -202,14 +326,18 @@ export class EventFormComponent {
     const v = this.form.getRawValue();
     const related = this.related();
     const plotlineRefs = this.plotlineRefs();
+    const nextRefs = this.nextRefs();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
       inGameDate: this.inGameDate(),
       description: this.description().trim(),
       coverAssetId: this.cover(),
+      bgmAssetId: this.bgmAssetId(),
+      backgroundEffect: this.backgroundEffect(),
       relatedRefs: related.length > 0 ? related : undefined,
       plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
+      nextRefs: nextRefs.length > 0 ? nextRefs : undefined,
     });
   }
 }

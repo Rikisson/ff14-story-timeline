@@ -33,7 +33,27 @@
     "scenePrefix": "Scene:",
     "sceneIdPrefix": "id:",
     "draftBadge": "Draft",
-    "publishedBadge": "Published"
+    "publishedBadge": "Published",
+    "sceneLayout": "Layout",
+    "facing": "Facing",
+    "nextRefs": "Continue reading",
+    "backgroundEffect": "Background effect"
+  },
+  "layout": {
+    "dialog": "Dialog",
+    "showcase": "Showcase"
+  },
+  "facing": {
+    "left": "Left",
+    "right": "Right"
+  },
+  "effect": {
+    "none": "None",
+    "darken": "Darken",
+    "desaturate": "Desaturate",
+    "sepia": "Sepia",
+    "cool": "Cool",
+    "warm": "Warm"
   },
   "section": {
     "soundtrack": "Soundtrack",
@@ -106,10 +126,15 @@
     "bgmHint": "Loops across every scene unless a scene overrides it.",
     "bgmOverrideHint": "Leave empty to inherit the story's BGM.",
     "bgmSilencedHint": "Music will fade out on this scene.",
-    "spriteDefault": "(default)"
+    "spriteDefault": "(default)",
+    "nextRefsHint": "Link up to three stories or events that continue from this ending.",
+    "searchContinuation": "Search stories or events…",
+    "introSceneText": "Intro: title card",
+    "contentSceneLabel": "Opening"
   },
   "tooltip": {
     "spriteForCharacter": "Sprite for {{ name }}",
+    "facingForCharacter": "Facing direction for {{ name }}",
     "removeFromStage": "Remove {{ name }} from stage",
     "reorderChoice": "Reorder choice {{ index }} of {{ total }}",
     "pickCoverTitle": "Pick a cover image",

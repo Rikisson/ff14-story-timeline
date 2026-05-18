@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { Scene, StagedCharacter } from '@features/stories';
+import { Scene, SceneLayout, StagedCharacter } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
 import {
@@ -32,6 +32,14 @@ export interface ChoiceReorder {
 }
 
 type SpeakerMode = 'none' | 'character' | 'custom';
+
+const SCENE_LAYOUTS: readonly SceneLayout[] = ['dialog', 'showcase'];
+const FACINGS = ['left', 'right'] as const;
+type Facing = (typeof FACINGS)[number];
+
+function defaultFacingFor(position: string): Facing {
+  return position === 'right' ? 'left' : 'right';
+}
 
 @Component({
   selector: 'app-scene-editor-panel',
@@ -79,6 +87,24 @@ type SpeakerMode = 'none' | 'character' | 'custom';
             <span class="hint">
               {{ t('empty.labelHint') }}
             </span>
+          </div>
+
+          <div class="field">
+            <label>{{ t('field.sceneLayout') }}</label>
+            <div role="radiogroup" class="modes" [attr.aria-label]="t('field.sceneLayout')">
+              @for (l of sceneLayouts; track l) {
+                <label class="mode">
+                  <input
+                    type="radio"
+                    name="sceneLayout"
+                    [value]="l"
+                    [checked]="(s.layout ?? 'dialog') === l"
+                    (change)="onLayoutChange(id, l)"
+                  />
+                  {{ t('layout.' + l) }}
+                </label>
+              }
+            </div>
           </div>
 
           <fieldset class="group">
@@ -153,6 +179,15 @@ type SpeakerMode = 'none' | 'character' | 'custom';
                         <option [value]="p">{{ p }}</option>
                       }
                     </select>
+                    <select
+                      [value]="sc.facing ?? facingDefault(sc.position)"
+                      [attr.aria-label]="t('tooltip.facingForCharacter', { name: characterName(sc.entity.id) })"
+                      (change)="onFacingChange($event, id, sc.entity.id)"
+                    >
+                      @for (f of facings; track f) {
+                        <option [value]="f">{{ t('facing.' + f) }}</option>
+                      }
+                    </select>
                     @if (spriteOptions(sc.entity.id).length > 1) {
                       <select
                         [value]="sc.spriteId ?? ''"
@@ -201,6 +236,18 @@ type SpeakerMode = 'none' | 'character' | 'custom';
           <h4>{{ t('message.choicesCount', { count: s.next.length }) }}</h4>
           @if (s.next.length === 0) {
             <p class="hint">{{ t('empty.noChoicesHint') }}</p>
+            <fieldset class="group">
+              <legend>{{ t('field.nextRefs') }}</legend>
+              <p class="hint">{{ t('empty.nextRefsHint') }}</p>
+              <app-entity-picker
+                [value]="nextRefsValue()"
+                [kinds]="continuationKinds"
+                [maxSelections]="3"
+                [includeDrafts]="true"
+                [placeholder]="t('empty.searchContinuation')"
+                (valueChange)="onNextRefs(id, $event)"
+              />
+            </fieldset>
           } @else {
             @if (s.next.length > 1) {
               <p class="hint">{{ t('empty.reorderHint') }}</p>
@@ -243,6 +290,7 @@ type SpeakerMode = 'none' | 'character' | 'custom';
 
           <app-scene-assets-panel
             [backgroundAssetId]="s.backgroundAssetId"
+            [backgroundEffect]="s.backgroundEffect"
             [sfxAssetId]="s.sfxAssetId"
             [bgmAssetId]="s.bgmAssetId"
             [bgmSilence]="s.bgmSilence ?? false"
@@ -511,7 +559,18 @@ export class SceneEditorPanelComponent {
   protected readonly positionOptions = ['left', 'center', 'right'];
   protected readonly characterKinds = ['character'] as const;
   protected readonly placeKinds = ['place'] as const;
+  protected readonly continuationKinds = ['story', 'event'] as const;
+  protected readonly sceneLayouts = SCENE_LAYOUTS;
+  protected readonly facings = FACINGS;
   protected readonly emptyRefArray: readonly EntityRef[] = [];
+
+  protected facingDefault(position: string): Facing {
+    return defaultFacingFor(position);
+  }
+
+  protected readonly nextRefsValue = computed<EntityRef[]>(
+    () => this.scene()?.nextRefs ?? [],
+  );
 
   protected readonly speakerMode = computed<SpeakerMode>(() => {
     const sp = this.scene()?.speaker;
@@ -628,6 +687,39 @@ export class SceneEditorPanelComponent {
       c.entity.id === characterId ? { ...c, spriteId } : c,
     );
     this.update.emit({ id, patch: { characters: next } });
+  }
+
+  protected onFacingChange(event: Event, id: string, characterId: string): void {
+    const facing = (event.target as HTMLSelectElement).value as Facing;
+    const current = this.scene()?.characters ?? [];
+    const next = current.map((c) => {
+      if (c.entity.id !== characterId) return c;
+      // Only persist when the author picks something different from the
+      // slot default — keeps scene docs lean and lets the slot-default
+      // rule re-flow naturally if the position changes later.
+      const def = defaultFacingFor(c.position);
+      const out: StagedCharacter = { ...c };
+      if (facing === def) delete out.facing;
+      else out.facing = facing;
+      return out;
+    });
+    this.update.emit({ id, patch: { characters: next } });
+  }
+
+  protected onLayoutChange(id: string, layout: SceneLayout): void {
+    // Dialog is the default; store `undefined` for the default to keep
+    // docs lean.
+    this.update.emit({ id, patch: { layout: layout === 'dialog' ? undefined : layout } });
+  }
+
+  protected onNextRefs(id: string, refs: EntityRef[]): void {
+    const filtered = refs.filter(
+      (r) => r.kind === 'story' || r.kind === 'event',
+    ) as EntityRef<'story' | 'event'>[];
+    this.update.emit({
+      id,
+      patch: { nextRefs: filtered.length > 0 ? filtered : undefined },
+    });
   }
 
   protected emitChoiceLabel(event: Event, fromSceneId: string, toSceneId: string): void {

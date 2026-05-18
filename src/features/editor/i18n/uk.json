@@ -33,7 +33,27 @@
     "scenePrefix": "Сцена:",
     "sceneIdPrefix": "id:",
     "draftBadge": "Чернетка",
-    "publishedBadge": "Опубліковано"
+    "publishedBadge": "Опубліковано",
+    "sceneLayout": "Розкладка",
+    "facing": "Дивиться",
+    "nextRefs": "Читати далі",
+    "backgroundEffect": "Ефект фону"
+  },
+  "layout": {
+    "dialog": "Діалог",
+    "showcase": "Презентація"
+  },
+  "facing": {
+    "left": "Ліворуч",
+    "right": "Праворуч"
+  },
+  "effect": {
+    "none": "Немає",
+    "darken": "Затемнення",
+    "desaturate": "Збляклість",
+    "sepia": "Сепія",
+    "cool": "Холодний",
+    "warm": "Теплий"
   },
   "section": {
     "soundtrack": "Саундтрек",
@@ -106,10 +126,15 @@
     "bgmHint": "Грає на повторі для кожної сцени, доки сцена не вкаже свою.",
     "bgmOverrideHint": "Залиште порожнім, щоб успадкувати BGM історії.",
     "bgmSilencedHint": "Музика стихне на цій сцені.",
-    "spriteDefault": "(типовий)"
+    "spriteDefault": "(типовий)",
+    "nextRefsHint": "Звʼяжіть до трьох історій або подій, що продовжують це закінчення.",
+    "searchContinuation": "Шукати історії або події…",
+    "introSceneText": "Вступ: титульна картка",
+    "contentSceneLabel": "Початок"
   },
   "tooltip": {
     "spriteForCharacter": "Спрайт для {{ name }}",
+    "facingForCharacter": "Напрямок погляду {{ name }}",
     "removeFromStage": "Прибрати {{ name }} зі сцени",
     "reorderChoice": "Перемістити вибір {{ index }} з {{ total }}",
     "pickCoverTitle": "Обрати обкладинку",
