@@ -14,7 +14,12 @@ import {
   createEntityDirectoryQueryStore,
   createEntityListController,
 } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 import { EventFormComponent } from '../ui/event-form.component';
 import eventEn from '../i18n/en.json';
 import eventUk from '../i18n/uk.json';
@@ -26,6 +31,7 @@ import eventUk from '../i18n/uk.json';
     EntityListPaneComponent,
     EventCardComponent,
     EventFormComponent,
+    PageComponent,
     PageHeaderComponent,
     TranslocoDirective,
   ],
@@ -40,7 +46,7 @@ import eventUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'event'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
@@ -91,7 +97,7 @@ import eventUk from '../i18n/uk.json';
             }
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

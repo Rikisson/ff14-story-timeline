@@ -16,6 +16,7 @@ import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
 import { CodexCategoriesService } from '@features/codex';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
+import { LayoutStore } from '@shared/data-access';
 import { GhostButtonComponent, LocaleToggleComponent, ThemeToggleComponent } from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
@@ -43,7 +44,9 @@ export class App {
   private readonly universes = inject(UniverseStore);
   private readonly codexCategories = inject(CodexCategoriesService);
   private readonly calendar = inject(CalendarService);
+  private readonly layout = inject(LayoutStore);
 
+  protected readonly chromeHidden = this.layout.chromeHidden;
   protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
   protected readonly seeding = signal(false);
   protected readonly hasActiveUniverse = computed(() => !!this.universes.activeUniverse());

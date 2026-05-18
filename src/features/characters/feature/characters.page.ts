@@ -9,7 +9,12 @@ import {
   createEntityDirectoryQueryStore,
   createEntityListController,
 } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 import { CharacterCardComponent } from '../ui/character-card.component';
 import { CharacterFormComponent } from '../ui/character-form.component';
 import { SpriteLibraryComponent } from '../ui/sprite-library.component';
@@ -23,6 +28,7 @@ import characterUk from '../i18n/uk.json';
     CharacterCardComponent,
     CharacterFormComponent,
     EntityListPaneComponent,
+    PageComponent,
     PageHeaderComponent,
     SpriteLibraryComponent,
     TranslocoDirective,
@@ -38,7 +44,7 @@ import characterUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'character'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
@@ -95,7 +101,7 @@ import characterUk from '../i18n/uk.json';
             }
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

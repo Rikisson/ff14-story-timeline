@@ -8,7 +8,12 @@ import {
   createEntityDirectoryQueryStore,
   createEntityListController,
 } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
 import { CodexEntry, CodexEntryDraft } from '../data-access/codex-entry.types';
@@ -26,6 +31,7 @@ import codexUk from '../i18n/uk.json';
     EntityListPaneComponent,
     CodexEntryCardComponent,
     CodexEntryFormComponent,
+    PageComponent,
     PageHeaderComponent,
     TranslocoDirective,
   ],
@@ -40,7 +46,7 @@ import codexUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'codex'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
@@ -101,7 +107,7 @@ import codexUk from '../i18n/uk.json';
             }
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

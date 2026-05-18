@@ -8,7 +8,12 @@ import {
   createEntityDirectoryQueryStore,
   createEntityListController,
 } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
 import { Plotline, PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
 import { PlotlineCardComponent } from '../ui/plotline-card.component';
@@ -27,6 +32,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   host: { class: 'block h-full' },
   imports: [
     EntityListPaneComponent,
+    PageComponent,
     PageHeaderComponent,
     PlotlineCardComponent,
     PlotlineFormComponent,
@@ -43,7 +49,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'plotline'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.pageTitle')"
           [subtitle]="t('field.pageSubtitle')"
@@ -94,7 +100,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
             }
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

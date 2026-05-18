@@ -6,7 +6,12 @@ import { AuthStore } from '@features/auth';
 import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createEntityDirectoryQueryStore } from '@shared/data-access';
-import { EntityListPaneComponent, ListPaneItem, PageHeaderComponent } from '@shared/ui';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 import { StoryDetailComponent } from '../ui/story-detail.component';
 import storyEn from '../i18n/en.json';
 import storyUk from '../i18n/uk.json';
@@ -17,6 +22,7 @@ import storyUk from '../i18n/uk.json';
   imports: [
     StoryDetailComponent,
     EntityListPaneComponent,
+    PageComponent,
     PageHeaderComponent,
     TranslocoDirective,
   ],
@@ -31,7 +37,7 @@ import storyUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'story'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.title')"
           [subtitle]="t('message.subtitle')"
@@ -75,7 +81,7 @@ import storyUk from '../i18n/uk.json';
             }
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

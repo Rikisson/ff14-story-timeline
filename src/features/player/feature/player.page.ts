@@ -20,6 +20,7 @@ import { Character, CharactersService } from '@features/characters';
 import {
   AssetThumbResolver,
   EntityResolverCache,
+  LayoutStore,
   ResolvedDirectoryRow,
 } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
@@ -94,6 +95,14 @@ import { SfxController } from './sfx-controller';
               >
                 {{ t('action.preferencesEmoji') }}
               </button>
+              <button
+                uiSecondary
+                type="button"
+                [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
+                (click)="toggleFullscreen()"
+              >
+                {{ t('action.fullscreenEmoji') }}
+              </button>
             </div>
           </header>
 
@@ -167,6 +176,7 @@ export class PlayerPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly prefs = inject(PlayerPreferencesService);
+  protected readonly layout = inject(LayoutStore);
 
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
@@ -189,8 +199,19 @@ export class PlayerPage {
   protected readonly showLoadingIndicator = signal(false);
 
   protected readonly rootClass = computed(
-    () => `player-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4`,
+    () =>
+      `player-font-${this.prefs.fontSize()} mx-auto flex max-w-3xl flex-col gap-4${
+        this.layout.chromeHidden() ? '' : ' p-6'
+      }`,
   );
+
+  protected toggleFullscreen(): void {
+    if (this.layout.browserFullscreen()) {
+      void this.layout.exitFullscreen();
+    } else {
+      void this.layout.enterFullscreen();
+    }
+  }
 
   protected readonly effectiveTextSpeed = computed(() =>
     resolveEffectiveTextSpeed(this.store.currentScene(), {
@@ -362,6 +383,9 @@ export class PlayerPage {
       if (pendingIndicator !== null) clearTimeout(pendingIndicator);
       this.bgmController?.dispose();
       this.sfxController?.dispose();
+      // Leaving the player while in fullscreen would otherwise strand
+      // the browser in its native-fullscreen state with no UI to exit.
+      void this.layout.exitFullscreen();
     });
 
     // Scene-entry counter — increments every time `currentSceneId`

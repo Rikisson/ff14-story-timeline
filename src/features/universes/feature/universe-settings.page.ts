@@ -7,6 +7,7 @@ import { CodexCategoriesSettingsPanelComponent } from '@features/codex';
 import {
   EntityListPaneComponent,
   ListPaneItem,
+  PageComponent,
   PageHeaderComponent,
 } from '@shared/ui';
 import { UniverseStore } from '../data-access/universe.store';
@@ -42,6 +43,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   host: { class: 'block h-full' },
   imports: [
     EntityListPaneComponent,
+    PageComponent,
     PageHeaderComponent,
     UniverseGeneralSettingsComponent,
     UniverseMembersComponent,
@@ -60,7 +62,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'universe'">
-      <div class="flex h-full flex-col gap-4">
+      <app-page class="h-full">
         <app-page-header
           [title]="t('field.settingsTitle')"
           [subtitle]="universe()?.name ?? ''"
@@ -95,7 +97,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
             </div>
           </section>
         </div>
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

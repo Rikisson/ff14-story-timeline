@@ -1,3 +1,4 @@
+export { LayoutStore } from './layout.store';
 export { UniverseEntityService } from './universe-entity.service';
 export {
   createEntityListController,

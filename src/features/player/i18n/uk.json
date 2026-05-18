@@ -9,6 +9,9 @@
     "continue": "Далі",
     "preferences": "Налаштування плеєра",
     "preferencesEmoji": "⚙",
+    "enterFullscreen": "Повноекранний режим",
+    "exitFullscreen": "Вийти з повноекранного режиму",
+    "fullscreenEmoji": "⛶",
     "close": "Закрити"
   },
   "message": {

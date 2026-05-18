@@ -9,6 +9,9 @@
     "continue": "Continue",
     "preferences": "Player preferences",
     "preferencesEmoji": "⚙",
+    "enterFullscreen": "Enter fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "fullscreenEmoji": "⛶",
     "close": "Close"
   },
   "message": {

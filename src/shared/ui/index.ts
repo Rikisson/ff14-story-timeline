@@ -8,6 +8,7 @@ export * from './in-game-date-input';
 export * from './lazy-thumb';
 export * from './locale-toggle';
 export * from './markdown-text';
+export * from './page';
 export * from './page-header';
 export * from './rich-text-input';
 export * from './tag';

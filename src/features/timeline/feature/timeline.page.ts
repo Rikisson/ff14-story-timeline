@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Plotline, PlotlinesService } from '@features/plotlines';
 import { SortDirection, UNASSIGNED_LANE_KEY } from '@shared/data-access';
-import { PageHeaderComponent } from '@shared/ui';
+import { PageComponent, PageHeaderComponent } from '@shared/ui';
 import {
   TimelineLanesComponent,
   TimelineLaneDescriptor,
@@ -19,6 +19,7 @@ import timelineUk from '../i18n/uk.json';
   selector: 'app-timeline-page',
   imports: [
     TimelineLanesComponent,
+    PageComponent,
     PageHeaderComponent,
     TimelineFiltersComponent,
     TranslocoDirective,
@@ -34,7 +35,7 @@ import timelineUk from '../i18n/uk.json';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'timeline'">
-      <div class="flex flex-col gap-4">
+      <app-page>
         <app-page-header
           [title]="t('field.title')"
           [subtitle]="t('message.subtitle')"
@@ -52,7 +53,7 @@ import timelineUk from '../i18n/uk.json';
           [lanes]="lanes()"
           [sortDirection]="sortDirection()"
         />
-      </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

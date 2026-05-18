@@ -3,13 +3,15 @@ import { Router } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
+import { PageComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-landing-page',
-  imports: [TranslocoDirective],
+  imports: [PageComponent, TranslocoDirective],
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
-      <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
+      <app-page>
+        <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
         @if (loading()) {
           <span
             class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
@@ -36,7 +38,8 @@ import { UniverseStore } from '@features/universes';
             }
           </p>
         }
-      </div>
+        </div>
+      </app-page>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
