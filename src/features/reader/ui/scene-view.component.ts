@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, input, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal, viewChild } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
-import { TextSpeed } from '@features/stories';
+import { SceneLayout, TextSpeed } from '@features/stories';
 import { TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
+import { Choice, ChoiceListComponent } from './choice-list.component';
 
 export interface StagedView {
   id: string;
@@ -23,22 +24,27 @@ type CrossfadeSlot = 'A' | 'B';
 
 /**
  * Per `docs/narrative-engine-impl.md` *Scene rendering layers*:
- *   - Three independent DOM layers (background / characters / text scrim)
- *     are siblings and overlap absolutely inside the article frame.
+ *   - Independent DOM layers (background / characters / floating card OR
+ *     showcase caption) are siblings and overlap absolutely inside the
+ *     16:9 article frame.
  *   - Background swaps use two stacked `<img>` slots with CSS opacity
  *     crossfade; identical URLs skip the swap so consecutive same-bg
- *     scenes don't flicker.
- *   - `blurDataUrl` paints immediately as a placeholder underneath the
- *     slots — the full image fades in on top once it loads.
- *   - The audio host lives in `reader-story.page.ts` above this component so
- *     ambient tracks survive scene re-renders.
+ *     scenes don't flicker. A `blurDataUrl` paints immediately as a
+ *     placeholder underneath the slots.
+ *   - In `dialog` layout the floating `.reader-card` carries speaker,
+ *     typewriter text, and choices. In `showcase` layout the card is
+ *     absent and `text` (if any) renders as a centered caption — used by
+ *     the auto-seeded title intro and any art-beat scenes.
+ *   - The audio host lives in `reader-story.page.ts` above this component
+ *     so ambient tracks survive scene re-renders.
  *   - Scene text reveals via `<app-typewriter-text>` at the authored
- *     speed; clicking anywhere on the article frame skips a mid-reveal
- *     to the fully revealed state (standard VN gesture).
+ *     speed; clicking anywhere on the article skips a mid-reveal. In
+ *     `showcase` layout with a single `next`, the article click advances
+ *     the scene instead.
  */
 @Component({
   selector: 'app-scene-view',
-  imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective],
+  imports: [TypewriterTextComponent, TranslocoDirective, ContentLangDirective, ChoiceListComponent],
   providers: [
     provideTranslocoScope({
       scope: 'reader',
@@ -81,7 +87,9 @@ type CrossfadeSlot = 'A' | 'B';
           }
         </div>
 
-        <!-- Character layer: positioned slots, full-saturation sprites untouched by background filters. -->
+        <!-- Character layer: positioned slots over the background. The
+             floating card sits above this layer in the dialog layout, so
+             sprites visually root behind the card the way a VN expects. -->
         <div class="absolute inset-x-0 bottom-24 grid grid-cols-3 items-end gap-2 px-4">
           @for (slot of slots; track slot) {
             <div class="flex flex-wrap items-end justify-center gap-2">
@@ -130,23 +138,39 @@ type CrossfadeSlot = 'A' | 'B';
           }
         </div>
 
-        <!-- Text scrim layer: gradient + speaker + text. -->
-        <div
-          appContentLang
-          class="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-scrim/85 via-scrim/55 to-transparent px-5 pb-4 pt-16"
-          style="font-size: var(--scene-font-size, 1rem);"
-        >
-          @if (speaker(); as s) {
-            <p class="m-0 text-sm font-semibold text-scrim-foreground/90">{{ s }}</p>
-          }
-          <app-typewriter-text
-            #typewriter
-            class="leading-relaxed text-scrim-foreground"
-            [text]="text()"
-            [options]="inlineRefOptions()"
-            [speed]="textSpeed()"
-          />
-        </div>
+        @if (layout() === 'dialog') {
+          <div
+            class="reader-card"
+            appContentLang
+            role="region"
+            [attr.aria-label]="t('aria.narration')"
+          >
+            @if (speaker(); as s) {
+              <p class="m-0 text-sm font-semibold text-accent">{{ s }}</p>
+            }
+            <app-typewriter-text
+              #typewriter
+              class="block leading-relaxed text-foreground"
+              [text]="text()"
+              [options]="inlineRefOptions()"
+              [speed]="textSpeed()"
+            />
+            @if (choices().length > 0) {
+              <app-choice-list [choices]="choices()" (choose)="choose.emit($event)" />
+            }
+          </div>
+        } @else if (text(); as caption) {
+          <!-- Showcase caption — pointer-events-none so taps fall through
+               to the article and trigger advance via onArticleClick. -->
+          <div
+            class="pointer-events-none absolute inset-0 flex items-center justify-center px-8"
+            appContentLang
+          >
+            <p class="m-0 text-center text-3xl font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)] sm:text-4xl md:text-5xl">
+              {{ caption }}
+            </p>
+          </div>
+        }
       </article>
     </ng-container>
   `,
@@ -154,12 +178,16 @@ type CrossfadeSlot = 'A' | 'B';
 })
 export class SceneViewComponent {
   readonly text = input.required<string>();
+  readonly layout = input<SceneLayout>('dialog');
   readonly speaker = input<string | undefined>();
   readonly background = input<string | undefined>();
   readonly backgroundBlurDataUrl = input<string | undefined>();
   readonly staged = input<StagedView[]>([]);
+  readonly choices = input<Choice[]>([]);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
+
+  readonly choose = output<string>();
 
   protected readonly slots = POSITION_SLOTS;
   private readonly typewriter = viewChild<TypewriterTextComponent>('typewriter');
@@ -203,12 +231,20 @@ export class SceneViewComponent {
   }
 
   /**
-   * Click-anywhere-to-skip the typewriter reveal. If the reveal had work
-   * left to finish we stop the event so the same click doesn't also
-   * advance the scene; otherwise the click passes through (which today
-   * is a no-op — the article frame has no other click handlers).
+   * Click-anywhere dispatch.
+   *  - Dialog: skip the typewriter if it's mid-reveal. Stops the event
+   *    only when there was a reveal to complete so the same click can't
+   *    also trigger anything else.
+   *  - Showcase with a single `next`: advance the scene. Multi-choice
+   *    showcase scenes are out of scope per the design and silently
+   *    ignore the click.
    */
   protected onArticleClick(event: MouseEvent): void {
+    if (this.layout() === 'showcase') {
+      const next = this.choices();
+      if (next.length === 1) this.choose.emit(next[0].sceneId);
+      return;
+    }
     const tw = this.typewriter();
     if (!tw) return;
     const completed = tw.complete();

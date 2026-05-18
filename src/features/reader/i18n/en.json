@@ -23,6 +23,9 @@
   "empty": {
     "noSprite": "no sprite"
   },
+  "aria": {
+    "narration": "Scene narration"
+  },
   "tooltip": {
     "position": "Position: {{ slot }}"
   },

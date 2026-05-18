@@ -34,7 +34,6 @@ import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
 import { ReaderStore } from '../data-access/reader.store';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
-import { ChoiceListComponent } from '../ui/choice-list.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
@@ -47,7 +46,6 @@ import { SfxController } from './sfx-controller';
   imports: [
     RouterLink,
     SceneViewComponent,
-    ChoiceListComponent,
     ReaderPreferencesDialogComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
@@ -126,12 +124,15 @@ import { SfxController } from './sfx-controller';
           @if (store.currentScene(); as scene) {
             <app-scene-view
               [text]="scene.text"
+              [layout]="scene.layout ?? 'dialog'"
               [speaker]="speakerLabel()"
               [background]="backgroundUrl()"
               [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
               [staged]="stagedView()"
+              [choices]="scene.next"
               [inlineRefOptions]="inlineRefOptions()"
               [textSpeed]="effectiveTextSpeed()"
+              (choose)="store.choose($event)"
             />
 
             @if (scene.next.length === 0) {
@@ -142,8 +143,6 @@ import { SfxController } from './sfx-controller';
                   {{ t('action.backToCatalog') }}
                 </a>
               </div>
-            } @else {
-              <app-choice-list [choices]="scene.next" (choose)="store.choose($event)" />
             }
           }
 

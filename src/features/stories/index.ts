@@ -3,6 +3,7 @@ export { StaleStoryError, StoriesService } from './data-access/stories.service';
 export type {
   BgmTransition,
   Scene,
+  SceneLayout,
   StagedCharacter,
   StoredStory,
   StoredStoryContent,

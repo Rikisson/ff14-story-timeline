@@ -233,3 +233,34 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-font-medium { --scene-font-size: 1rem; }
 .reader-font-large  { --scene-font-size: 1.15rem; }
 .reader-font-xl     { --scene-font-size: 1.3rem; }
+
+/* Reader floating text card. Sits inside the 16:9 scene frame, bottom-
+ * centered, opaque so the reader's focus is anchored regardless of what
+ * the background is doing. Width is a token so the layout can widen
+ * later without component changes. */
+:root {
+  --reader-card-width: 60%;
+}
+.reader-card {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--reader-card-width);
+  max-width: calc(100% - 2rem);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
+  font-size: var(--scene-font-size, 1rem);
+}
+.reader-card:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
