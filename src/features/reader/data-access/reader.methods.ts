@@ -124,9 +124,11 @@ export function withReaderMethods() {
           patchState(store, (state) => {
             if (!state.story || !state.content) return state;
             const history = [...state.history, sceneId];
-            const isEnd = state.content.scenes[sceneId]?.next.length === 0;
-            if (isEnd) clearProgress(state.story.id);
-            else saveProgress(state.story.id, { sceneId, history });
+            // Progress is retained even on end-scenes so a reader can
+            // chain forward via `nextRefs`, hit the browser back button,
+            // and land back on the ending they came from rather than the
+            // start. Only `restart()` and `dismissResume()` clear.
+            saveProgress(state.story.id, { sceneId, history });
             return { currentSceneId: sceneId, history };
           });
         },

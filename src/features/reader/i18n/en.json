@@ -12,7 +12,8 @@
     "enterFullscreen": "Enter fullscreen",
     "exitFullscreen": "Exit fullscreen",
     "fullscreenEmoji": "⛶",
-    "close": "Close"
+    "close": "Close",
+    "continueReading": "Continue reading"
   },
   "message": {
     "loading": "Loading…",

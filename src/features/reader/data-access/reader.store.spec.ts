@@ -92,11 +92,21 @@ describe('ReaderStore', () => {
     expect(store.pendingResume()).toBeNull();
   });
 
-  it('saves progress to localStorage on choose and clears it on end-scene', () => {
+  it('saves progress to localStorage on choose and retains it at end-scene', () => {
     store.choose('b');
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
 
+    // Reaching an end-scene no longer auto-clears: the reader can hit
+    // browser-back from a continuation and land where they were.
     store.choose('c'); // c has no next → end scene
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
+  });
+
+  it('restart clears saved progress', () => {
+    store.choose('b');
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
+
+    store.restart();
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 

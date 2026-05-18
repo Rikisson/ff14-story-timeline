@@ -149,6 +149,7 @@ type CrossfadeSlot = 'A' | 'B';
             class="reader-card"
             appContentLang
             role="region"
+            aria-live="polite"
             [attr.aria-label]="t('aria.narration')"
           >
             @if (speaker(); as s) {

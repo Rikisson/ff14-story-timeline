@@ -34,6 +34,7 @@ import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
 import { ReaderStore } from '../data-access/reader.store';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
+import { EndOfContentComponent } from '../ui/end-of-content.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
@@ -47,6 +48,7 @@ import { SfxController } from './sfx-controller';
   imports: [
     RouterLink,
     SceneViewComponent,
+    EndOfContentComponent,
     ReaderPreferencesDialogComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
@@ -148,13 +150,10 @@ import { SfxController } from './sfx-controller';
             />
 
             @if (scene.next.length === 0) {
-              <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
-                <p class="m-0 italic text-foreground-subtle">{{ t('message.end') }}</p>
-                <button uiPrimary type="button" (click)="store.restart()">{{ t('action.restart') }}</button>
-                <a routerLink="/library" class="text-sm text-accent hover:underline">
-                  {{ t('action.backToCatalog') }}
-                </a>
-              </div>
+              <app-end-of-content
+                [nextRefs]="scene.nextRefs"
+                (restart)="store.restart()"
+              />
             }
           }
 
@@ -216,6 +215,12 @@ export class ReaderStoryPage {
   private static readonly CHROME_IDLE_MS = 2500;
   protected readonly chromeIdle = signal(false);
 
+  // OS-level reduced-motion preference. When set, the typewriter goes
+  // instant regardless of the reader's own `allowTextAnimations`
+  // setting. Lives separately from the user preference so toggling
+  // animations on doesn't also defy the OS-level accessibility hint.
+  protected readonly reducedMotion = signal(false);
+
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} flex h-full flex-col`,
   );
@@ -230,7 +235,7 @@ export class ReaderStoryPage {
 
   protected readonly effectiveTextSpeed = computed(() =>
     resolveEffectiveTextSpeed(this.store.currentScene(), {
-      allowTextAnimations: this.prefs.allowTextAnimations(),
+      allowTextAnimations: this.prefs.allowTextAnimations() && !this.reducedMotion(),
     }),
   );
 
@@ -389,6 +394,17 @@ export class ReaderStoryPage {
     effect(() => {
       this.store.loadStory(this.id());
     });
+
+    // OS-level reduced-motion: read once and react to live changes so
+    // a user enabling reduced motion mid-session collapses the
+    // typewriter to instant on the next scene without a reload.
+    if (this.isBrowser) {
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.reducedMotion.set(mq.matches);
+      const onChange = (e: MediaQueryListEvent): void => this.reducedMotion.set(e.matches);
+      mq.addEventListener('change', onChange);
+      this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
+    }
 
     // Reader chrome idle-fade. Any pointer or key activity re-arms the
     // 2.5s timer. When it elapses, `chromeIdle` flips true and the

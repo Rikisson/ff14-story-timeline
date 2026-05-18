@@ -12,7 +12,8 @@
     "enterFullscreen": "Повноекранний режим",
     "exitFullscreen": "Вийти з повноекранного режиму",
     "fullscreenEmoji": "⛶",
-    "close": "Закрити"
+    "close": "Закрити",
+    "continueReading": "Читати далі"
   },
   "message": {
     "loading": "Завантаження…",
