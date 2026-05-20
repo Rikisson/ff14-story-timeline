@@ -430,6 +430,19 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   visual hierarchy emerges automatically. Grouping the foreground also
   lets a crossfade transition fade characters and card in together over
   the background's own crossfade.
+- **Character sprites stand on the article floor in a fixed three-slot
+  stage.** The character layer is a non-interactive box spanning the
+  article; each staged sprite is absolutely positioned, anchored to the
+  floor, and sized off stage height alone (`h-[88%]`, width following
+  the art's aspect ratio) so window width never scales a sprite. Sprites
+  snap to three slot centers — 1/6, 1/2, and 5/6 of the stage width:
+  one sprite takes the center, two take the outer pair with an empty
+  middle, three fill all, so spacing never depends on the count. A
+  `ResizeObserver` watches the stage; when it is too narrow to hold
+  every sprite at full height the lowest-priority non-speakers drop out
+  rather than shrink — capacity is `floor(stageWidth / (stageHeight ×
+  0.5))`, capped at three, and the speaker is always kept. Non-speakers
+  render desaturated and dimmed.
 - **Floating reader card carries the dialog UI.** A solid, opaque
   card centered at the bottom of the article holds the speaker
   label, the typewriter body, and the choice list — choices live

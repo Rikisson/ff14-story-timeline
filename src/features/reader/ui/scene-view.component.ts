@@ -39,12 +39,8 @@ export interface StagedView {
 
 const POSITION_RANK: Record<string, number> = { left: 0, center: 1, right: 2 };
 
-// Horizontal room one staged sprite needs, as a multiple of stage
-// height. Raise to drop sprites sooner on a narrow stage.
 const MIN_STAGE_WIDTH_PER_SPRITE = 0.5;
 
-// Fixed three-slot stage: one sprite centers, two take the outer pair
-// (empty middle), three fill all — spacing never depends on the count.
 const SLOT_CENTERS = [100 / 6, 50, 500 / 6];
 const SLOT_LAYOUT: Record<number, readonly number[]> = {
   1: [1],
@@ -54,26 +50,6 @@ const SLOT_LAYOUT: Record<number, readonly number[]> = {
 
 type CrossfadeSlot = 'A' | 'B';
 
-/**
- * Per `docs/narrative-engine-impl.md` *Scene rendering layers*:
- *   - Independent DOM layers (background / characters / floating card OR
- *     showcase caption) are siblings and overlap absolutely inside the
- *     16:9 article frame.
- *   - Background swaps use two stacked `<img>` slots with CSS opacity
- *     crossfade; identical URLs skip the swap so consecutive same-bg
- *     scenes don't flicker. A `blurDataUrl` paints immediately as a
- *     placeholder underneath the slots.
- *   - In `dialog` layout the floating `.reader-card` carries speaker,
- *     typewriter text, and choices. In `showcase` layout the card is
- *     absent and `text` (if any) renders as a centered caption — used by
- *     the auto-seeded title intro and any art-beat scenes.
- *   - The audio host lives in `reader-story.page.ts` above this component
- *     so ambient tracks survive scene re-renders.
- *   - Scene text reveals via `<app-typewriter-text>` at the authored
- *     speed; clicking anywhere on the article skips a mid-reveal. In
- *     `showcase` layout with a single `next`, the article click advances
- *     the scene instead.
- */
 @Component({
   selector: 'app-scene-view',
   host: { class: 'block' },
@@ -95,14 +71,10 @@ type CrossfadeSlot = 'A' | 'B';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
-      <!-- Transparent: the reader page paints a static bg-canvas root
-           underneath, which shows through for an imageless scene. -->
       <article
         class="relative h-full w-full overflow-hidden"
         (click)="onArticleClick($event)"
       >
-        <!-- Background layer: blur placeholder underneath, two crossfading slots on top.
-             Mood filter applied to the whole layer so it doesn't desaturate sprites. -->
         <div class="absolute inset-0" [class]="backgroundEffectClass()" aria-hidden="true">
           @if (backgroundBlurDataUrl(); as blur) {
             <img
@@ -129,18 +101,7 @@ type CrossfadeSlot = 'A' | 'B';
           }
         </div>
 
-        <!-- Foreground (characters + card / caption). Wrapped so a
-             crossfade scene transition can fade it in over the
-             independently-crossfading background. -->
         <div #foreground class="scene-foreground">
-        <!-- Character layer: staged sprites stand on the article floor,
-             each snapped to a fixed slot of a three-slot stage so the
-             gap between them never depends on how many are shown. Sizing
-             is height-only (h-[88%]); window width never scales a sprite.
-             When the stage is too narrow for all of them the
-             lowest-priority non-speakers drop out rather than shrink. The
-             floating card overlaps their lower body the way a VN expects;
-             the layer is non-interactive so taps fall through. -->
         @if (!spritesHidden()) {
           <div class="pointer-events-none absolute inset-0">
             @for (s of placedStaged(); track s.id) {
@@ -168,14 +129,8 @@ type CrossfadeSlot = 'A' | 'B';
           </div>
         }
 
-        <!-- Layout picks the presentation shape; each case is
-             self-contained so a new SceneLayout is an additive @case. -->
         @switch (layout()) {
           @case ('dialog') {
-            <!-- The card stays mounted while collapsed (display:none via
-                 the reader-card-hidden class) rather than removed, so the
-                 typewriter keeps its reveal state — bringing the box back
-                 must not restart the text from the first character. -->
             <div
               class="reader-card backdrop-blur-sm"
               [class.reader-card-page]="cardVariant() === 'page'"
@@ -208,9 +163,6 @@ type CrossfadeSlot = 'A' | 'B';
             </div>
           }
           @case ('showcase') {
-            <!-- Showcase caption — pointer-events-none so taps fall
-                 through to the article and trigger advance via
-                 onArticleClick. -->
             @if (text(); as caption) {
               <div
                 class="pointer-events-none absolute inset-0 flex items-center justify-center px-8"
@@ -238,26 +190,12 @@ export class SceneViewComponent {
   readonly backgroundEffect = input<BackgroundEffect | undefined>(undefined);
   readonly staged = input<StagedView[]>([]);
   readonly choices = input<Choice[]>([]);
-  // Single end-of-content continuation. Rendered as a full-width
-  // anchor below the typewriter in dialog layout, only when there are
-  // no in-story `choices`. Provided by the reader pages from the
-  // resolved `nextRefs[0]` so the affordance lives inside the card —
-  // a "Continue" the reader taps to advance into the next story or
-  // event. Schema still keeps `nextRefs` as an array for future
-  // flexibility; the cap-to-one is enforced in the editors.
   readonly continuation = input<SceneContinuation | null>(null);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
-  // Card presentation: 'floating' is the story reader's bottom-anchored
-  // dialog card; 'page' is the event reader's centered reading panel.
   readonly cardVariant = input<'floating' | 'page'>('floating');
-  // Reader header toggles. `cardHidden` collapses the floating text card
-  // (it returns only via the header toggle); `spritesHidden` drops the
-  // whole character layer.
   readonly cardHidden = input<boolean>(false);
   readonly spritesHidden = input<boolean>(false);
-  // Horizontal placement of the speaker name above the card, driven by
-  // the speaker's staged slot.
   readonly speakerPosition = input<'left' | 'center' | 'right'>('center');
 
   readonly choose = output<string>();
@@ -316,11 +254,6 @@ export class SceneViewComponent {
     });
   });
 
-  /**
-   * Fade the foreground (characters + card) in over `durationMs`. Called
-   * by the reader page when entering a `crossfade` scene — the background
-   * runs its own two-slot crossfade underneath.
-   */
   playEnterTransition(durationMs: number): void {
     this.foreground()?.nativeElement.animate(
       [{ opacity: 0 }, { opacity: 1 }],
@@ -328,10 +261,6 @@ export class SceneViewComponent {
     );
   }
 
-  // Two-slot crossfade state. `frontSlot` flips on each background
-  // change; whichever slot becomes the front is opaque, the other
-  // transitions to transparent (and stays mounted briefly so the
-  // outgoing image is visible during the fade).
   protected readonly slotA = signal<string | undefined>(undefined);
   protected readonly slotB = signal<string | undefined>(undefined);
   protected readonly frontSlot = signal<CrossfadeSlot>('A');
@@ -367,24 +296,12 @@ export class SceneViewComponent {
     });
   }
 
-  /**
-   * Click-anywhere dispatch.
-   *  - Dialog: skip the typewriter if it's mid-reveal. Stops the event
-   *    only when there was a reveal to complete so the same click can't
-   *    also trigger anything else. While the card is hidden the click
-   *    is ignored — the card returns only via the header text-box toggle.
-   *  - Showcase with a single `next`: advance the scene. Multi-choice
-   *    showcase scenes are out of scope per the design and silently
-   *    ignore the click.
-   */
   protected onArticleClick(event: MouseEvent): void {
     if (this.layout() === 'showcase') {
       const next = this.choices();
       if (next.length === 1) this.choose.emit(next[0].sceneId);
       return;
     }
-    // Card hidden: the scene shows only the art. A scene click does
-    // nothing — the card returns solely via the header text-box toggle.
     if (this.cardHidden()) return;
     const tw = this.typewriter();
     if (!tw) return;
