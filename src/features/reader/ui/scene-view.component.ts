@@ -43,6 +43,15 @@ const POSITION_RANK: Record<string, number> = { left: 0, center: 1, right: 2 };
 // height. Raise to drop sprites sooner on a narrow stage.
 const MIN_STAGE_WIDTH_PER_SPRITE = 0.5;
 
+// Fixed three-slot stage: one sprite centers, two take the outer pair
+// (empty middle), three fill all — spacing never depends on the count.
+const SLOT_CENTERS = [100 / 6, 50, 500 / 6];
+const SLOT_LAYOUT: Record<number, readonly number[]> = {
+  1: [1],
+  2: [0, 2],
+  3: [0, 1, 2],
+};
+
 type CrossfadeSlot = 'A' | 'B';
 
 /**
@@ -124,31 +133,33 @@ type CrossfadeSlot = 'A' | 'B';
              crossfade scene transition can fade it in over the
              independently-crossfading background. -->
         <div #foreground class="scene-foreground">
-        <!-- Character layer: a centered row of staged sprites standing
-             on the article floor. Each sprite is sized off stage height
-             alone, so window width never scales it; when the stage is
-             too narrow to hold them all, the lowest-priority non-speakers
-             drop out rather than shrink. The
-             floating card (higher z-index) overlaps their lower body the
-             way a VN expects. The layer is non-interactive so taps fall
-             through to the article. -->
+        <!-- Character layer: staged sprites stand on the article floor,
+             each snapped to a fixed slot of a three-slot stage so the
+             gap between them never depends on how many are shown. Sizing
+             is height-only (h-[88%]); window width never scales a sprite.
+             When the stage is too narrow for all of them the
+             lowest-priority non-speakers drop out rather than shrink. The
+             floating card overlaps their lower body the way a VN expects;
+             the layer is non-interactive so taps fall through. -->
         @if (!spritesHidden()) {
-          <div class="pointer-events-none absolute inset-0 flex items-end justify-center gap-[4%] px-[4%]">
-            @for (s of visibleStaged(); track s.id) {
+          <div class="pointer-events-none absolute inset-0">
+            @for (s of placedStaged(); track s.id) {
               @if (s.spriteUrl; as url) {
                 <img
                   [src]="url"
                   [alt]="s.name"
-                  class="h-[88%] w-auto flex-none object-contain drop-shadow-lg transition"
+                  class="absolute bottom-0 h-[88%] w-auto object-contain drop-shadow-lg transition"
                   [class.grayscale]="!s.isSpeaker"
                   [class.brightness-90]="!s.isSpeaker"
-                  [class.-scale-x-100]="s.facing === 'left'"
+                  [style.left.%]="s.leftPercent"
+                  [style.transform]="s.transform"
                 />
               } @else {
                 <div
-                  class="flex aspect-[9/16] h-[55%] flex-none items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition"
+                  class="absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition"
                   [class.grayscale]="!s.isSpeaker"
                   [class.brightness-90]="!s.isSpeaker"
+                  [style.left.%]="s.leftPercent"
                 >
                   {{ t('empty.noSprite') }}
                 </div>
@@ -268,26 +279,41 @@ export class SceneViewComponent {
   private readonly stageHeight = signal(0);
   private resizeObserver?: ResizeObserver;
 
-  protected readonly visibleStaged = computed<StagedView[]>(() => {
+  private readonly visibleStaged = computed<StagedView[]>(() => {
     const ordered = [...this.staged()].sort(
       (a, b) =>
         (POSITION_RANK[a.position] ?? 1) - (POSITION_RANK[b.position] ?? 1) ||
         (a.order ?? 0) - (b.order ?? 0),
     );
-    if (ordered.length <= 1) return ordered;
     const width = this.stageWidth();
     const height = this.stageHeight();
-    if (width <= 0 || height <= 0) return ordered;
-    const capacity = Math.max(
-      1,
-      Math.floor(width / (height * MIN_STAGE_WIDTH_PER_SPRITE)),
-    );
-    if (capacity >= ordered.length) return ordered;
+    const fitsByWidth =
+      width > 0 && height > 0
+        ? Math.floor(width / (height * MIN_STAGE_WIDTH_PER_SPRITE))
+        : SLOT_CENTERS.length;
+    const capacity = Math.min(SLOT_CENTERS.length, Math.max(1, fitsByWidth));
+    if (ordered.length <= capacity) return ordered;
     const byPriority = [...ordered].sort(
       (a, b) => Number(b.isSpeaker) - Number(a.isSpeaker),
     );
     const kept = new Set(byPriority.slice(0, capacity).map((s) => s.id));
     return ordered.filter((s) => kept.has(s.id));
+  });
+
+  protected readonly placedStaged = computed(() => {
+    const visible = this.visibleStaged();
+    const layout = SLOT_LAYOUT[visible.length] ?? [];
+    return visible.map((s, i) => {
+      const slot = layout[i] ?? 1;
+      return {
+        ...s,
+        leftPercent: SLOT_CENTERS[slot] ?? 50,
+        transform:
+          s.facing === 'left'
+            ? 'translateX(-50%) scaleX(-1)'
+            : 'translateX(-50%)',
+      };
+    });
   });
 
   /**
