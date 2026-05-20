@@ -178,51 +178,61 @@ type CrossfadeSlot = 'A' | 'B';
         </div>
         }
 
-        @if (layout() === 'dialog' && !cardHidden()) {
-          <div
-            class="reader-card"
-            [class.reader-card-overflow]="cardOverflow()"
-            appContentLang
-            role="region"
-            aria-live="polite"
-            [attr.aria-label]="t('aria.narration')"
-          >
-            @if (speaker(); as s) {
-              <div [class]="speakerPositionClass()">
-                <span>{{ s }}</span>
+        <!-- Layout picks the presentation shape; each case is
+             self-contained so a new SceneLayout is an additive @case. -->
+        @switch (layout()) {
+          @case ('dialog') {
+            @if (!cardHidden()) {
+              <div
+                class="reader-card"
+                [class.reader-card-overflow]="cardOverflow()"
+                appContentLang
+                role="region"
+                aria-live="polite"
+                [attr.aria-label]="t('aria.narration')"
+              >
+                @if (speaker(); as s) {
+                  <div [class]="speakerPositionClass()">
+                    <span>{{ s }}</span>
+                  </div>
+                }
+                <app-typewriter-text
+                  #typewriter
+                  class="block leading-relaxed text-foreground"
+                  [text]="text()"
+                  [options]="inlineRefOptions()"
+                  [speed]="textSpeed()"
+                />
+                @if (choices().length > 0) {
+                  <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
+                } @else if (continuation(); as cont) {
+                  <a
+                    uiSecondary
+                    [routerLink]="cont.link"
+                    className="reader-action mt-2 w-full"
+                  >
+                    <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
+                    <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
+                  </a>
+                }
               </div>
             }
-            <app-typewriter-text
-              #typewriter
-              class="block leading-relaxed text-foreground"
-              [text]="text()"
-              [options]="inlineRefOptions()"
-              [speed]="textSpeed()"
-            />
-            @if (choices().length > 0) {
-              <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
-            } @else if (continuation(); as cont) {
-              <a
-                uiSecondary
-                [routerLink]="cont.link"
-                className="reader-action mt-2 w-full"
+          }
+          @case ('showcase') {
+            <!-- Showcase caption — pointer-events-none so taps fall
+                 through to the article and trigger advance via
+                 onArticleClick. -->
+            @if (text(); as caption) {
+              <div
+                class="pointer-events-none absolute inset-0 flex items-center justify-center px-8"
+                appContentLang
               >
-                <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
-                <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
-              </a>
+                <p class="m-0 text-center text-3xl font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)] sm:text-4xl md:text-5xl">
+                  {{ caption }}
+                </p>
+              </div>
             }
-          </div>
-        } @else if (text(); as caption) {
-          <!-- Showcase caption — pointer-events-none so taps fall through
-               to the article and trigger advance via onArticleClick. -->
-          <div
-            class="pointer-events-none absolute inset-0 flex items-center justify-center px-8"
-            appContentLang
-          >
-            <p class="m-0 text-center text-3xl font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)] sm:text-4xl md:text-5xl">
-              {{ caption }}
-            </p>
-          </div>
+          }
         }
         </div>
       </article>
