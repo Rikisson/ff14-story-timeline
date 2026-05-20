@@ -73,8 +73,9 @@ const FALLBACK_HOVER_PX = 82;
  * Idle-fade state for the reader's floating header. The header shows on
  * mount, then hides after 2.5s of no pointer/key activity; it re-appears
  * while the pointer sits in the top hover zone (the header card plus its
- * own top padding mirrored below) and instantly on any tap or key press
- * — the only way to reach it on touch/keyboard devices. Returns the
+ * own top padding mirrored below), on a tap inside that same zone, or on
+ * any key press — the tap-in-zone and key paths are how touch and
+ * keyboard devices reach it, where `mousemove` never fires. Returns the
  * `idle` signal: `true` means faded out. Server-side it stays visible.
  * Call from an injection context.
  */
@@ -110,21 +111,24 @@ export function createChromeIdle(
       startHideTimer();
     }
   };
-  // A tap or key press re-shows the chrome, then the idle timer hides
-  // it again — the only way to reach the header on a touch or keyboard
-  // device, where `mousemove` never fires.
   const onReveal = (): void => {
     idle.set(false);
     startHideTimer();
   };
+  // Gate the tap reveal to the header's hover zone so an advance tap on
+  // the scene or a choice never pins the header open; a key press has no
+  // position to gate on and stays the unconditional keyboard reveal.
+  const onPointerDown = (e: MouseEvent): void => {
+    if (e.clientY <= hoverZone()) onReveal();
+  };
   startHideTimer();
   document.addEventListener('mousemove', onMouseMove, { passive: true });
-  document.addEventListener('pointerdown', onReveal, { passive: true });
+  document.addEventListener('pointerdown', onPointerDown, { passive: true });
   document.addEventListener('keydown', onReveal, { passive: true });
   inject(DestroyRef).onDestroy(() => {
     if (idleTimer !== null) clearTimeout(idleTimer);
     document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('pointerdown', onReveal);
+    document.removeEventListener('pointerdown', onPointerDown);
     document.removeEventListener('keydown', onReveal);
   });
   return idle.asReadonly();

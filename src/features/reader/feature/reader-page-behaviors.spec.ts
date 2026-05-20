@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { createReaderFade } from './reader-page-behaviors';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createChromeIdle, createReaderFade } from './reader-page-behaviors';
 
 describe('createReaderFade', () => {
   beforeEach(() => {
@@ -68,5 +68,37 @@ describe('createReaderFade', () => {
     // The content is faded back in — not left stuck hidden.
     expect(fade.opacity()).toBe(1);
     expect(fade.ready()).toBe(true);
+  });
+});
+
+describe('createChromeIdle', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reveals the chrome on a pointerdown inside the top hover zone', () => {
+    const idle = TestBed.runInInjectionContext(() => createChromeIdle(signal(undefined)));
+
+    vi.advanceTimersByTime(3000);
+    expect(idle()).toBe(true);
+
+    document.dispatchEvent(new MouseEvent('pointerdown', { clientY: 10 }));
+    expect(idle()).toBe(false);
+  });
+
+  it('ignores a pointerdown below the hover zone so an advance tap never pins the chrome open', () => {
+    const idle = TestBed.runInInjectionContext(() => createChromeIdle(signal(undefined)));
+
+    vi.advanceTimersByTime(3000);
+    expect(idle()).toBe(true);
+
+    document.dispatchEvent(new MouseEvent('pointerdown', { clientY: 600 }));
+    expect(idle()).toBe(true);
   });
 });
