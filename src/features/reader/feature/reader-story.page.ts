@@ -72,142 +72,146 @@ import { SfxController } from './sfx-controller';
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
       <div [class]="rootClass()" [style.--reader-card-opacity]="prefs.textBoxOpacity()">
-        @if (store.loading()) {
-          @if (showLoadingIndicator()) {
-            <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
-          }
-        } @else if (store.error(); as err) {
-          <div class="mx-auto w-full max-w-7xl px-4 pt-4">
-            <p class="text-danger-foreground">{{ err }}</p>
-            <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
-          </div>
-        } @else if (store.story(); as story) {
-          @if (store.currentScene(); as scene) {
-            <app-scene-view
-              class="absolute inset-0"
-              [text]="scene.text"
-              [layout]="scene.layout ?? 'dialog'"
-              [speaker]="speakerLabel()"
-              [speakerPosition]="speakerPosition()"
-              [background]="backgroundUrl()"
-              [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
-              [backgroundEffect]="scene.backgroundEffect"
-              [staged]="stagedView()"
-              [choices]="scene.next"
-              [continuation]="continuation()"
-              [inlineRefOptions]="inlineRefOptions()"
-              [textSpeed]="effectiveTextSpeed()"
-              [cardHidden]="cardHidden()"
-              [spritesHidden]="spritesHidden()"
-              [revealEnabled]="fade.ready()"
-              (choose)="advance($event)"
-            />
-          }
-
-          <!-- Scene fade-through-black transition overlay. Runs through
-               the theme surface color; opacity is driven by the
-               advance/goBack orchestrator and the duration is the
-               scene's half-transition time. -->
-          <div
-            class="absolute inset-0 z-20 bg-surface transition-opacity ease-in-out"
-            [class.opacity-0]="!fadingToBlack()"
-            [class.opacity-100]="fadingToBlack()"
-            [class.pointer-events-none]="!fadingToBlack()"
-            [style.transition-duration.ms]="blackoutMs()"
-            aria-hidden="true"
-          ></div>
-
-          <div
-            class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
-            [class.opacity-0]="chromeIdle()"
-            [class.pointer-events-none]="chromeIdle()"
-            [attr.aria-hidden]="chromeIdle() ? 'true' : null"
-          >
-            <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
-              <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
-                <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ story.title }}</h1>
-                <div class="flex items-center gap-2">
-                  @if (store.resumedFromSave()) {
-                    <button uiSecondary type="button" (click)="store.restart()">{{ t('action.startOver') }}</button>
-                  }
-                  <button
-                    uiGhost
-                    type="button"
-                    [disabled]="!store.canGoBack()"
-                    (click)="goBack()"
-                  >
-                    {{ t('action.back') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-pressed]="cardHidden()"
-                    [class.reader-toggle-active]="cardHidden() && !isShowcaseScene()"
-                    [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
-                    [disabled]="isShowcaseScene()"
-                    (click)="cardHidden.set(!cardHidden())"
-                  >
-                    {{ t('action.textBoxEmoji') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-pressed]="spritesHidden()"
-                    [class.reader-toggle-active]="spritesHidden()"
-                    [attr.aria-label]="spritesHidden() ? t('action.showSprites') : t('action.hideSprites')"
-                    (click)="spritesHidden.set(!spritesHidden())"
-                  >
-                    {{ t('action.spritesEmoji') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-label]="t('action.preferences')"
-                    (click)="prefsDialog.open()"
-                  >
-                    {{ t('action.preferencesEmoji') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-pressed]="layout.browserFullscreen()"
-                    [class.reader-toggle-active]="layout.browserFullscreen()"
-                    [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
-                    (click)="toggleFullscreen()"
-                  >
-                    {{ t('action.fullscreenEmoji') }}
-                  </button>
-                </div>
-              </div>
-            </header>
-          </div>
-
-          <!--
-            Audio host. Two hidden crossfade pairs sit at the shell
-            level so they survive scene re-renders (per
-            docs/narrative-engine-impl.md *Scene rendering layers*).
-            BgmController loops the BGM pair; SfxController drives the
-            one-shot SFX pair with autoplay + fade-in/out on every
-            scene entry.
-          -->
-          <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
-          <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
-          <audio #sfxA class="sr-only" preload="auto" aria-hidden="true"></audio>
-          <audio #sfxB class="sr-only" preload="auto" aria-hidden="true"></audio>
-        }
-
-        <!-- Page-level fade overlay (theme surface). Fades out on entry,
-             back in on exit via the leave guard. Sits above the header
-             (z-10) and the scene-transition overlay (z-20); swallows
-             input while visible so a tap can't reach the scene
-             mid-transition. -->
+        <!-- Page-level fade. The reader content fades as one over the
+             root's static bg-canvas; nothing canvas-colored is ever
+             composited, so an imageless scene fades seam-free. Input is
+             held off by the transparent blocker below, not by this
+             wrapper — the header card opts back into pointer events. -->
         <div
-          class="absolute inset-0 z-30 bg-surface transition-opacity ease-in-out"
-          [class.pointer-events-none]="!fade.blocksInput()"
+          class="absolute inset-0 transition-opacity ease-in-out"
           [style.opacity]="fade.opacity()"
           [style.transition-duration.ms]="fade.durationMs()"
-          aria-hidden="true"
-        ></div>
+        >
+          @if (store.loading()) {
+            @if (showLoadingIndicator()) {
+              <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
+            }
+          } @else if (store.error(); as err) {
+            <div class="mx-auto w-full max-w-7xl px-4 pt-4">
+              <p class="text-danger-foreground">{{ err }}</p>
+              <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
+            </div>
+          } @else if (store.story(); as story) {
+            <!-- Scene fade-through-black transition. The scene + chrome
+                 fade out to the canvas base, the scene swaps under
+                 cover, then they fade back in — driven by the
+                 advance/goBack orchestrator over the scene's
+                 half-transition duration. -->
+            <div
+              class="absolute inset-0 transition-opacity ease-in-out"
+              [style.opacity]="sceneOpacity()"
+              [style.transition-duration.ms]="sceneFadeMs()"
+            >
+              @if (store.currentScene(); as scene) {
+                <app-scene-view
+                  class="absolute inset-0"
+                  [text]="scene.text"
+                  [layout]="scene.layout ?? 'dialog'"
+                  [speaker]="speakerLabel()"
+                  [speakerPosition]="speakerPosition()"
+                  [background]="backgroundUrl()"
+                  [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
+                  [backgroundEffect]="scene.backgroundEffect"
+                  [staged]="stagedView()"
+                  [choices]="scene.next"
+                  [continuation]="continuation()"
+                  [inlineRefOptions]="inlineRefOptions()"
+                  [textSpeed]="effectiveTextSpeed()"
+                  [cardHidden]="cardHidden()"
+                  [spritesHidden]="spritesHidden()"
+                  [revealEnabled]="fade.ready()"
+                  (choose)="advance($event)"
+                />
+              }
+
+              <div
+                class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
+                [class.opacity-0]="chromeIdle()"
+                [class.pointer-events-none]="chromeIdle()"
+                [attr.aria-hidden]="chromeIdle() ? 'true' : null"
+              >
+                <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
+                  <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
+                    <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ story.title }}</h1>
+                    <div class="flex items-center gap-2">
+                      @if (store.resumedFromSave()) {
+                        <button uiSecondary type="button" (click)="store.restart()">{{ t('action.startOver') }}</button>
+                      }
+                      <button
+                        uiGhost
+                        type="button"
+                        [disabled]="!store.canGoBack()"
+                        (click)="goBack()"
+                      >
+                        {{ t('action.back') }}
+                      </button>
+                      <button
+                        uiSecondary
+                        type="button"
+                        [attr.aria-pressed]="cardHidden()"
+                        [class.reader-toggle-active]="cardHidden() && !isShowcaseScene()"
+                        [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
+                        [disabled]="isShowcaseScene()"
+                        (click)="cardHidden.set(!cardHidden())"
+                      >
+                        {{ t('action.textBoxEmoji') }}
+                      </button>
+                      <button
+                        uiSecondary
+                        type="button"
+                        [attr.aria-pressed]="spritesHidden()"
+                        [class.reader-toggle-active]="spritesHidden()"
+                        [attr.aria-label]="spritesHidden() ? t('action.showSprites') : t('action.hideSprites')"
+                        (click)="spritesHidden.set(!spritesHidden())"
+                      >
+                        {{ t('action.spritesEmoji') }}
+                      </button>
+                      <button
+                        uiSecondary
+                        type="button"
+                        [attr.aria-label]="t('action.preferences')"
+                        (click)="prefsDialog.open()"
+                      >
+                        {{ t('action.preferencesEmoji') }}
+                      </button>
+                      <button
+                        uiSecondary
+                        type="button"
+                        [attr.aria-pressed]="layout.browserFullscreen()"
+                        [class.reader-toggle-active]="layout.browserFullscreen()"
+                        [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
+                        (click)="toggleFullscreen()"
+                      >
+                        {{ t('action.fullscreenEmoji') }}
+                      </button>
+                    </div>
+                  </div>
+                </header>
+              </div>
+            </div>
+
+            <!--
+              Audio host. Two hidden crossfade pairs sit at the shell
+              level so they survive scene re-renders (per
+              docs/narrative-engine-impl.md *Scene rendering layers*).
+              BgmController loops the BGM pair; SfxController drives the
+              one-shot SFX pair with autoplay + fade-in/out on every
+              scene entry.
+            -->
+            <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+            <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+            <audio #sfxA class="sr-only" preload="auto" aria-hidden="true"></audio>
+            <audio #sfxB class="sr-only" preload="auto" aria-hidden="true"></audio>
+          }
+        </div>
+
+        <!-- Transparent input blocker — swallows taps while a page fade
+             or a scene transition is animating. Transparent, so it adds
+             no color; it just sits above the chrome card, which the
+             faded wrapper can't reach. -->
+        @if (inputBlocked()) {
+          <div class="absolute inset-0 z-40" aria-hidden="true"></div>
+        }
       </div>
 
       <app-reader-preferences-dialog #prefsDialog />
@@ -259,8 +263,10 @@ export class ReaderStoryPage implements ReaderLeavable {
   // `id`); the leave guard's `beginExit()` fades it back out.
   protected readonly fade = createReaderFade(this.reducedMotion, this.id);
 
+  // `bg-canvas` is the static page background the fade wrappers animate
+  // over — see `createReaderFade`.
   protected readonly rootClass = computed(
-    () => `reader-font-${this.prefs.fontSize()} relative h-full`,
+    () => `reader-font-${this.prefs.fontSize()} relative h-full bg-canvas`,
   );
 
   // Reader header view toggles, persisted across scene changes. The card
@@ -269,13 +275,20 @@ export class ReaderStoryPage implements ReaderLeavable {
   protected readonly cardHidden = signal(false);
   protected readonly spritesHidden = signal(false);
 
-  // Scene-transition state. `fadingToBlack` drives the black overlay;
-  // `blackoutMs` is its per-transition fade duration; `transitioning`
-  // guards against overlapping navigations.
-  protected readonly fadingToBlack = signal(false);
-  protected readonly blackoutMs = signal(250);
+  // Scene fade-through-black state. `sceneOpacity` is the opacity of the
+  // scene + chrome wrapper (1 visible, 0 faded to the canvas base);
+  // `sceneFadeMs` is its per-transition duration; `transitioning` guards
+  // against overlapping navigations.
+  protected readonly sceneOpacity = signal(1);
+  protected readonly sceneFadeMs = signal(0);
   private readonly transitioning = signal(false);
   private readonly pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
+  // True while a page fade or a scene transition is animating — the
+  // transparent blocker uses it to swallow input.
+  protected readonly inputBlocked = computed(
+    () => this.fade.blocksInput() || this.sceneOpacity() !== 1,
+  );
 
   protected readonly isShowcaseScene = computed(
     () => (this.store.currentScene()?.layout ?? 'dialog') === 'showcase',
@@ -327,15 +340,15 @@ export class ReaderStoryPage implements ReaderLeavable {
       this.sceneView()?.playEnterTransition(duration);
       return;
     }
-    // fade-through-black: black in over the first half, swap under cover
-    // of full black, then black back out.
+    // fade-through-black: fade the scene + chrome out to the canvas base
+    // over the first half, swap under cover, then fade them back in.
     const half = Math.round(duration / 2);
     this.transitioning.set(true);
-    this.blackoutMs.set(half);
-    this.fadingToBlack.set(true);
+    this.sceneFadeMs.set(half);
+    this.sceneOpacity.set(0);
     this.scheduleTimer(() => {
       swap();
-      this.fadingToBlack.set(false);
+      this.sceneOpacity.set(1);
       this.scheduleTimer(() => this.transitioning.set(false), half);
     }, half);
   }
@@ -398,9 +411,9 @@ export class ReaderStoryPage implements ReaderLeavable {
   // Background / audio go through the resolver's session cache so a
   // re-enter of the same scene during a session pays zero refetch cost.
   // Fallback chain: scene.backgroundAssetId → story.coverAssetId →
-  // theme bg (the article's own surface color). Lets backgroundless
+  // theme bg (the article's own canvas color). Lets backgroundless
   // scenes inherit the story cover so the reader never shows an empty
-  // surface unless the story has neither cover nor scene background.
+  // background unless the story has neither cover nor scene background.
   private readonly backgroundThumb = computed(() => {
     const scene = this.store.currentScene();
     const story = this.store.story();

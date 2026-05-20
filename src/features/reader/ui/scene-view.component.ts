@@ -82,8 +82,10 @@ type CrossfadeSlot = 'A' | 'B';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
+      <!-- Transparent: the reader page paints a static bg-canvas root
+           underneath, which shows through for an imageless scene. -->
       <article
-        class="relative h-full w-full overflow-hidden bg-surface"
+        class="relative h-full w-full overflow-hidden"
         (click)="onArticleClick($event)"
       >
         <!-- Background layer: blur placeholder underneath, two crossfading slots on top.

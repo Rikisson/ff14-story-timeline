@@ -73,91 +73,96 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
       <div [class]="rootClass()" [style.--reader-card-opacity]="prefs.textBoxOpacity()">
-        @if (loading()) {
-          @if (showLoadingIndicator()) {
-            <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
-          }
-        } @else if (error(); as err) {
-          <div class="mx-auto w-full max-w-7xl px-4 pt-4">
-            <p class="text-danger-foreground">{{ err }}</p>
-            <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
-          </div>
-        } @else if (event(); as ev) {
-          <app-scene-view
-            class="absolute inset-0"
-            layout="dialog"
-            [text]="ev.description"
-            [background]="backgroundUrl()"
-            [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
-            [backgroundEffect]="ev.backgroundEffect"
-            [staged]="[]"
-            [choices]="[]"
-            [continuation]="continuation()"
-            [inlineRefOptions]="inlineRefOptions()"
-            [textSpeed]="effectiveTextSpeed()"
-            [cardOverflow]="cardOverflow()"
-            [cardHidden]="cardHidden()"
-            [revealEnabled]="fade.ready()"
-          />
-
-          <div
-            class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
-            [class.opacity-0]="chromeIdle()"
-            [class.pointer-events-none]="chromeIdle()"
-            [attr.aria-hidden]="chromeIdle() ? 'true' : null"
-          >
-            <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
-              <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
-                <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ ev.name }}</h1>
-                <div class="flex items-center gap-2">
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-pressed]="cardHidden()"
-                    [class.reader-toggle-active]="cardHidden()"
-                    [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
-                    (click)="cardHidden.set(!cardHidden())"
-                  >
-                    {{ t('action.textBoxEmoji') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-label]="t('action.preferences')"
-                    (click)="prefsDialog.open()"
-                  >
-                    {{ t('action.preferencesEmoji') }}
-                  </button>
-                  <button
-                    uiSecondary
-                    type="button"
-                    [attr.aria-pressed]="layout.browserFullscreen()"
-                    [class.reader-toggle-active]="layout.browserFullscreen()"
-                    [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
-                    (click)="toggleFullscreen()"
-                  >
-                    {{ t('action.fullscreenEmoji') }}
-                  </button>
-                </div>
-              </div>
-            </header>
-          </div>
-
-          <!-- BGM pair only — events don't carry SFX per the schema. -->
-          <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
-          <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
-        }
-
-        <!-- Page-level fade overlay (theme surface). Fades out on entry,
-             back in on exit via the leave guard. Sits above the header
-             (z-10); swallows input while visible. -->
+        <!-- Page-level fade. The reader content fades as one over the
+             root's static bg-canvas; nothing canvas-colored is ever
+             composited, so an imageless event fades seam-free. Input is
+             held off by the transparent blocker below. -->
         <div
-          class="absolute inset-0 z-30 bg-surface transition-opacity ease-in-out"
-          [class.pointer-events-none]="!fade.blocksInput()"
+          class="absolute inset-0 transition-opacity ease-in-out"
           [style.opacity]="fade.opacity()"
           [style.transition-duration.ms]="fade.durationMs()"
-          aria-hidden="true"
-        ></div>
+        >
+          @if (loading()) {
+            @if (showLoadingIndicator()) {
+              <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
+            }
+          } @else if (error(); as err) {
+            <div class="mx-auto w-full max-w-7xl px-4 pt-4">
+              <p class="text-danger-foreground">{{ err }}</p>
+              <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
+            </div>
+          } @else if (event(); as ev) {
+            <app-scene-view
+              class="absolute inset-0"
+              layout="dialog"
+              [text]="ev.description"
+              [background]="backgroundUrl()"
+              [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
+              [backgroundEffect]="ev.backgroundEffect"
+              [staged]="[]"
+              [choices]="[]"
+              [continuation]="continuation()"
+              [inlineRefOptions]="inlineRefOptions()"
+              [textSpeed]="effectiveTextSpeed()"
+              [cardOverflow]="cardOverflow()"
+              [cardHidden]="cardHidden()"
+              [revealEnabled]="fade.ready()"
+            />
+
+            <div
+              class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
+              [class.opacity-0]="chromeIdle()"
+              [class.pointer-events-none]="chromeIdle()"
+              [attr.aria-hidden]="chromeIdle() ? 'true' : null"
+            >
+              <header #headerEl class="mx-auto flex w-full max-w-7xl px-4 pt-3">
+                <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
+                  <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ ev.name }}</h1>
+                  <div class="flex items-center gap-2">
+                    <button
+                      uiSecondary
+                      type="button"
+                      [attr.aria-pressed]="cardHidden()"
+                      [class.reader-toggle-active]="cardHidden()"
+                      [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
+                      (click)="cardHidden.set(!cardHidden())"
+                    >
+                      {{ t('action.textBoxEmoji') }}
+                    </button>
+                    <button
+                      uiSecondary
+                      type="button"
+                      [attr.aria-label]="t('action.preferences')"
+                      (click)="prefsDialog.open()"
+                    >
+                      {{ t('action.preferencesEmoji') }}
+                    </button>
+                    <button
+                      uiSecondary
+                      type="button"
+                      [attr.aria-pressed]="layout.browserFullscreen()"
+                      [class.reader-toggle-active]="layout.browserFullscreen()"
+                      [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
+                      (click)="toggleFullscreen()"
+                    >
+                      {{ t('action.fullscreenEmoji') }}
+                    </button>
+                  </div>
+                </div>
+              </header>
+            </div>
+
+            <!-- BGM pair only — events don't carry SFX per the schema. -->
+            <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+            <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
+          }
+        </div>
+
+        <!-- Transparent input blocker — swallows taps while the page
+             fade is animating. Transparent, so it adds no color. -->
+        @if (inputBlocked()) {
+          <div class="absolute inset-0 z-40" aria-hidden="true"></div>
+        }
       </div>
 
       <app-reader-preferences-dialog #prefsDialog />
@@ -198,8 +203,14 @@ export class ReaderEventPage implements ReaderLeavable {
   // `id`); the leave guard's `beginExit()` fades it back out.
   protected readonly fade = createReaderFade(this.reducedMotion, this.id);
 
+  // True while the page fade is animating — the transparent blocker
+  // uses it to swallow input.
+  protected readonly inputBlocked = this.fade.blocksInput;
+
+  // `bg-canvas` is the static page background the fade wrapper animates
+  // over — see `createReaderFade`.
   protected readonly rootClass = computed(
-    () => `reader-font-${this.prefs.fontSize()} relative h-full`,
+    () => `reader-font-${this.prefs.fontSize()} relative h-full bg-canvas`,
   );
 
   // Hide-text toggle. Persists across reloads of the single event frame;
@@ -242,7 +253,7 @@ export class ReaderEventPage implements ReaderLeavable {
 
   // Background resolves directly from the event's cover. No story-level
   // fallback because events stand alone — when no cover is set the
-  // article shows its surface color the same way a coverless story does.
+  // article shows its canvas color the same way a coverless story does.
   private readonly backgroundThumb = computed(() =>
     this.assets.resolve(this.event()?.coverAssetId)(),
   );

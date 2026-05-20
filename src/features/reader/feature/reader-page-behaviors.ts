@@ -139,26 +139,31 @@ export const EXIT_FADE_MS = 700;
 export const REDUCED_MOTION_EXIT_MS = 300;
 
 /**
- * Page-level fade transition for a reader page, run through the theme
- * surface color by a `bg-surface` overlay the page binds to these
- * signals.
+ * Page-level fade transition for a reader page. The page binds these
+ * signals to a wrapper around its content; the content fades as one
+ * over the page's static `bg-canvas` root. Fading the content — rather
+ * than compositing a canvas-colored layer on top of it — keeps an
+ * imageless scene seam-free: nothing canvas-colored is ever inside an
+ * opacity-animated compositing layer, so there is no faint mismatch
+ * against the static background.
  *
- *  - `opacity` / `durationMs` drive the overlay's CSS opacity fade.
- *  - `blocksInput` is true whenever the overlay should swallow pointer
+ *  - `opacity` / `durationMs` drive the content wrapper's CSS opacity
+ *    fade — `opacity` is 1 fully visible, 0 fully faded to the canvas.
+ *  - `blocksInput` is true whenever the wrapper should drop pointer
  *    events — during a fade-in and the whole exit fade — so a tap can't
  *    reach a choice or skip the typewriter mid-transition.
  *  - `ready` flips true when a fade-in completes; the page feeds it to
  *    `scene-view` as the typewriter reveal gate.
- *  - `fadeOut()` fades the overlay back up to full surface and resolves
- *    when done; the leave guard awaits it before navigating away.
+ *  - `fadeOut()` fades the content out and resolves when done; the
+ *    leave guard awaits it before navigating away.
  *
  * `entryKey` is the page's route-param signal. Angular reuses a routed
  * component when only its params change, so a story→story or
  * event→event continuation keeps the same page instance — the
- * constructor-time fade-in would run only once and leave the guard's
- * surface overlay stuck up. Each later `entryKey` change re-runs the
- * fade-in. A story↔event continuation crosses route configs and gets a
- * fresh component (and fade) the ordinary way.
+ * constructor-time fade-in would run only once and leave the content
+ * stuck faded out. Each later `entryKey` change re-runs the fade-in. A
+ * story↔event continuation crosses route configs and gets a fresh
+ * component (and fade) the ordinary way.
  *
  * Honors reduced motion and SSR by skipping the animation outright.
  * Call from an injection context.
@@ -178,10 +183,10 @@ export function createReaderFade(
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   const animate = isBrowser && !reducedMotion();
 
-  const opacity = signal(animate ? 1 : 0);
+  const opacity = signal(animate ? 0 : 1);
   const durationMs = signal(animate ? ENTER_FADE_MS : 0);
   const ready = signal(!animate);
-  const blocksInput = computed(() => !ready() || opacity() !== 0);
+  const blocksInput = computed(() => !ready() || opacity() !== 1);
 
   const timers = new Set<ReturnType<typeof setTimeout>>();
   let rafId: number | null = null;
@@ -197,9 +202,10 @@ export function createReaderFade(
     return id;
   };
 
-  // Lift the overlay from full surface to clear, opening `ready` once it
-  // lands. Drives the first fade-in and every re-entry; cancels a
-  // pending fade-in timer so a rapid re-entry can't open `ready` early.
+  // Fade the content from the canvas base in to fully visible, opening
+  // `ready` once it lands. Drives the first fade-in and every re-entry;
+  // cancels a pending fade-in timer so a rapid re-entry can't open
+  // `ready` early.
   const fadeIn = (): void => {
     if (readyTimer !== null) {
       clearTimeout(readyTimer);
@@ -208,12 +214,12 @@ export function createReaderFade(
     }
     if (!animate) {
       durationMs.set(0);
-      opacity.set(0);
+      opacity.set(1);
       ready.set(true);
       return;
     }
     durationMs.set(ENTER_FADE_MS);
-    opacity.set(0);
+    opacity.set(1);
     ready.set(false);
     readyTimer = schedule(() => {
       readyTimer = null;
@@ -221,8 +227,8 @@ export function createReaderFade(
     }, ENTER_FADE_MS);
   };
 
-  // First fade-in: the overlay just rendered at opacity 1, so hold one
-  // painted frame before animating it out.
+  // First fade-in: the wrapper just rendered at opacity 0, so hold one
+  // painted frame before animating it in.
   if (animate) {
     afterNextRender(() => {
       rafId = requestAnimationFrame(() => {
@@ -234,8 +240,8 @@ export function createReaderFade(
 
   // Re-entry: Angular kept this component for a same-route continuation.
   // The first effect run is the initial mount (faded in above); each
-  // later run is a new story/event — fade the guard's surface overlay
-  // back out and clear the exit latch for the next leave.
+  // later run is a new story/event — fade the content back in and clear
+  // the exit latch for the next leave.
   let firstEntry = true;
   effect(() => {
     entryKey();
@@ -256,12 +262,12 @@ export function createReaderFade(
     if (exit) return exit;
     if (!isBrowser || reducedMotion()) {
       durationMs.set(0);
-      opacity.set(1);
+      opacity.set(0);
       exit = Promise.resolve();
       return exit;
     }
     durationMs.set(EXIT_FADE_MS);
-    opacity.set(1);
+    opacity.set(0);
     exit = new Promise<void>((resolve) => schedule(resolve, EXIT_FADE_MS));
     return exit;
   };

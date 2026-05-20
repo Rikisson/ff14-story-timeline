@@ -9,29 +9,29 @@ describe('createReaderFade', () => {
     TestBed.configureTestingModule({});
   });
 
-  it('starts fully covering and input-blocking before the fade-in runs', () => {
+  it('starts hidden and input-blocking before the fade-in runs', () => {
     const fade = TestBed.runInInjectionContext(() =>
       createReaderFade(signal(false), signal('story-a')),
     );
 
-    // Overlay sits at full surface; the reveal gate is closed and the
-    // overlay swallows input until the entry fade-in completes.
-    expect(fade.opacity()).toBe(1);
+    // Content starts faded out over the canvas base; the reveal gate is
+    // closed and the wrapper swallows input until the fade-in completes.
+    expect(fade.opacity()).toBe(0);
     expect(fade.ready()).toBe(false);
     expect(fade.blocksInput()).toBe(true);
   });
 
-  it('skips the fade-in under reduced motion: overlay starts clear and ready', () => {
+  it('skips the fade-in under reduced motion: content starts visible and ready', () => {
     const fade = TestBed.runInInjectionContext(() =>
       createReaderFade(signal(true), signal('story-a')),
     );
 
-    expect(fade.opacity()).toBe(0);
+    expect(fade.opacity()).toBe(1);
     expect(fade.ready()).toBe(true);
     expect(fade.blocksInput()).toBe(false);
   });
 
-  it('fadeOut() raises the overlay back to full surface, and is idempotent', async () => {
+  it('fadeOut() fades the content out, and is idempotent', async () => {
     const fade = TestBed.runInInjectionContext(() =>
       createReaderFade(signal(true), signal('story-a')),
     );
@@ -42,14 +42,14 @@ describe('createReaderFade', () => {
     expect(fade.fadeOut()).toBe(first);
 
     await first;
-    expect(fade.opacity()).toBe(1);
+    expect(fade.opacity()).toBe(0);
     expect(fade.blocksInput()).toBe(true);
   });
 
   it('re-runs the fade-in when the entry key changes (component reuse)', async () => {
     // A story→story / event→event continuation reuses the routed
     // component, so the constructor-time fade-in never re-runs — without
-    // re-entry handling the guard's surface overlay stays a blank wall.
+    // re-entry handling the content stays stuck faded out.
     const key = signal('story-a');
     const fade = TestBed.runInInjectionContext(() =>
       createReaderFade(signal(true), key),
@@ -57,16 +57,16 @@ describe('createReaderFade', () => {
     // First effect run records the initial entry.
     TestBed.tick();
 
-    // The leave guard lifts the overlay to full surface...
+    // The leave guard fades the content out...
     await fade.fadeOut();
-    expect(fade.opacity()).toBe(1);
+    expect(fade.opacity()).toBe(0);
 
     // ...then Angular reuses this component for the next story/event.
     key.set('story-b');
     TestBed.tick();
 
-    // The overlay is lifted again — not left covering the new content.
-    expect(fade.opacity()).toBe(0);
+    // The content is faded back in — not left stuck hidden.
+    expect(fade.opacity()).toBe(1);
     expect(fade.ready()).toBe(true);
   });
 });
