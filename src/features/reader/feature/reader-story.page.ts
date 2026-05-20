@@ -36,10 +36,14 @@ import { SceneContinuation, SceneViewComponent, StagedView } from '../ui/scene-v
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
+import { ReaderLeavable } from './reader-leave.guard';
 import {
   createChromeIdle,
   createDeferredFlag,
+  createReaderFade,
   createReducedMotion,
+  EXIT_FADE_MS,
+  REDUCED_MOTION_EXIT_MS,
   registerAutoplayUnblock,
 } from './reader-page-behaviors';
 import { SfxController } from './sfx-controller';
@@ -95,15 +99,17 @@ import { SfxController } from './sfx-controller';
               [textSpeed]="effectiveTextSpeed()"
               [cardHidden]="cardHidden()"
               [spritesHidden]="spritesHidden()"
+              [revealEnabled]="fade.ready()"
               (choose)="advance($event)"
             />
           }
 
-          <!-- Fade-through-black transition overlay. Opacity is driven by
-               the advance/goBack orchestrator; the duration is the
+          <!-- Scene fade-through-black transition overlay. Runs through
+               the theme surface color; opacity is driven by the
+               advance/goBack orchestrator and the duration is the
                scene's half-transition time. -->
           <div
-            class="absolute inset-0 z-20 bg-scrim transition-opacity ease-in-out"
+            class="absolute inset-0 z-20 bg-surface transition-opacity ease-in-out"
             [class.opacity-0]="!fadingToBlack()"
             [class.opacity-100]="fadingToBlack()"
             [class.pointer-events-none]="!fadingToBlack()"
@@ -189,6 +195,19 @@ import { SfxController } from './sfx-controller';
           <audio #sfxA class="sr-only" preload="auto" aria-hidden="true"></audio>
           <audio #sfxB class="sr-only" preload="auto" aria-hidden="true"></audio>
         }
+
+        <!-- Page-level fade overlay (theme surface). Fades out on entry,
+             back in on exit via the leave guard. Sits above the header
+             (z-10) and the scene-transition overlay (z-20); swallows
+             input while visible so a tap can't reach the scene
+             mid-transition. -->
+        <div
+          class="absolute inset-0 z-30 bg-surface transition-opacity ease-in-out"
+          [class.pointer-events-none]="!fade.blocksInput()"
+          [style.opacity]="fade.opacity()"
+          [style.transition-duration.ms]="fade.durationMs()"
+          aria-hidden="true"
+        ></div>
       </div>
 
       <app-reader-preferences-dialog #prefsDialog />
@@ -196,7 +215,7 @@ import { SfxController } from './sfx-controller';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReaderStoryPage {
+export class ReaderStoryPage implements ReaderLeavable {
   readonly id = input.required<string>();
   protected readonly store = inject(ReaderStore);
   private readonly characters = inject(CharactersService);
@@ -235,6 +254,10 @@ export class ReaderStoryPage {
   // instant regardless of `allowTextAnimations`. See `createReducedMotion`.
   protected readonly reducedMotion = createReducedMotion();
 
+  // Page-level fade transition — fades the reader in on entry; the leave
+  // guard's `beginExit()` fades it back out before any navigation away.
+  protected readonly fade = createReaderFade(this.reducedMotion);
+
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
   );
@@ -252,6 +275,10 @@ export class ReaderStoryPage {
   protected readonly blackoutMs = signal(250);
   private readonly transitioning = signal(false);
   private readonly pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
+  // Latches once the leave guard has started the exit fade, so a second
+  // guard call (e.g. a queued navigation) doesn't restart it.
+  private exiting = false;
 
   protected readonly isShowcaseScene = computed(
     () => (this.store.currentScene()?.layout ?? 'dialog') === 'showcase',
@@ -322,6 +349,23 @@ export class ReaderStoryPage {
       fn();
     }, ms);
     this.pendingTimers.add(id);
+  }
+
+  /**
+   * Leave-guard hook (`ReaderLeavable`). Fades the reader's visuals and
+   * audio out before the route is torn down, so navigating to another
+   * story/event — or back out of the reader — never cuts abruptly.
+   * Always resolves true: the guard only delays, never blocks.
+   */
+  beginExit(): Promise<boolean> {
+    if (this.exiting) return Promise.resolve(true);
+    this.exiting = true;
+    const audioMs = this.reducedMotion() ? REDUCED_MOTION_EXIT_MS : EXIT_FADE_MS;
+    return Promise.all([
+      this.fade.fadeOut(),
+      this.bgmController?.fadeOutAndStop(audioMs) ?? Promise.resolve(),
+      this.sfxController?.fadeOutAndStop(audioMs) ?? Promise.resolve(),
+    ]).then(() => true);
   }
 
   protected readonly effectiveTextSpeed = computed(() =>

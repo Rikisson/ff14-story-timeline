@@ -20,7 +20,11 @@ class StubHoverService {
   scheduleClose(): void {}
 }
 
-function build(text: string, speed: 'slow' | 'normal' | 'fast' | 'instant') {
+function build(
+  text: string,
+  speed: 'slow' | 'normal' | 'fast' | 'instant',
+  enabled = true,
+) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [TypewriterTextComponent],
@@ -32,6 +36,7 @@ function build(text: string, speed: 'slow' | 'normal' | 'fast' | 'instant') {
   const fixture = TestBed.createComponent(TypewriterTextComponent);
   fixture.componentRef.setInput('text', text);
   fixture.componentRef.setInput('speed', speed);
+  fixture.componentRef.setInput('enabled', enabled);
   fixture.detectChanges();
   return fixture;
 }
@@ -82,6 +87,34 @@ describe('TypewriterTextComponent', () => {
     }
     // Calling complete again is a no-op (nothing was hidden).
     expect(fixture.componentInstance.complete()).toBe(false);
+  });
+
+  it('holds every character hidden while disabled, then reveals on enable', async () => {
+    // While the reader page fades in it gates the reveal; the text is
+    // wrapped (so the card keeps its height) but stays hidden.
+    const fixture = build('Hello world', 'instant', false);
+    await flush();
+    const before = fixture.nativeElement.querySelectorAll(
+      '.tw-ch',
+    ) as NodeListOf<HTMLElement>;
+    expect(before.length).toBeGreaterThanOrEqual('Hello world'.length);
+    for (const span of before) {
+      expect(span.style.visibility).toBe('hidden');
+    }
+
+    fixture.componentRef.setInput('enabled', true);
+    fixture.detectChanges();
+    await flush();
+
+    const after = fixture.nativeElement.querySelectorAll(
+      '.tw-ch',
+    ) as NodeListOf<HTMLElement>;
+    // No re-wrap on the enable flip — the span count is unchanged
+    // (a second walk would nest the spans) and all are now revealed.
+    expect(after.length).toBe(before.length);
+    for (const span of after) {
+      expect(span.style.visibility).toBe('visible');
+    }
   });
 
   it('handles empty text without crashing', async () => {

@@ -107,6 +107,34 @@ export class SfxController {
     if (el.paused && !el.ended) this.tryPlay(el);
   }
 
+  /**
+   * Ramp both slots to silence over `durationMs`, then pause them and
+   * resolve. Mirrors `BgmController.fadeOutAndStop` — used by the reader
+   * page's exit transition. A no-op when nothing is playing.
+   */
+  fadeOutAndStop(durationMs: number): Promise<void> {
+    if (this.current === null) return Promise.resolve();
+    const aStart = this.slotA.volume;
+    const bStart = this.slotB.volume;
+    return new Promise<void>((resolve) => {
+      this.runRamp({
+        durationMs,
+        onTick: (t) => {
+          this.slotA.volume = aStart * (1 - t);
+          this.slotB.volume = bStart * (1 - t);
+        },
+        onDone: () => {
+          for (const el of [this.slotA, this.slotB]) {
+            el.pause();
+            el.volume = 0;
+          }
+          this.current = null;
+          resolve();
+        },
+      });
+    });
+  }
+
   private fadeOut(): void {
     const cur = this.current;
     if (!cur) return;

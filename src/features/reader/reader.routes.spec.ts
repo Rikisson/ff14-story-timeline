@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readerLeaveGuard } from './feature/reader-leave.guard';
 import { READER_ROUTES } from './reader.routes';
 
 describe('READER_ROUTES', () => {
@@ -18,5 +19,13 @@ describe('READER_ROUTES', () => {
     // switch to an eager `component:` import is caught.
     expect(children[0].loadComponent).toBeTypeOf('function');
     expect(children[1].loadComponent).toBeTypeOf('function');
+  });
+
+  it('routes both children through the leave guard', () => {
+    // The CanDeactivate guard runs each page's exit fade before
+    // teardown; dropping it would re-introduce the abrupt cut.
+    const children = READER_ROUTES[0].children ?? [];
+    expect(children[0].canDeactivate).toEqual([readerLeaveGuard]);
+    expect(children[1].canDeactivate).toEqual([readerLeaveGuard]);
   });
 });

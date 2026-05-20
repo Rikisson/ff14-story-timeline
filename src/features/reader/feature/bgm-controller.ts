@@ -111,6 +111,37 @@ export class BgmController {
     if (el.paused) this.tryPlay(el);
   }
 
+  /**
+   * Ramp both slots to silence over `durationMs`, then pause them and
+   * resolve. Used by the reader page's exit transition so leaving a
+   * story/event fades the music out instead of cutting it dead on page
+   * teardown. Both slots are ramped so a crossfade caught mid-flight
+   * doesn't leave the outgoing track audible. A no-op (resolves
+   * immediately) when nothing is playing.
+   */
+  fadeOutAndStop(durationMs: number): Promise<void> {
+    if (this.current === null) return Promise.resolve();
+    const aStart = this.slotA.volume;
+    const bStart = this.slotB.volume;
+    return new Promise<void>((resolve) => {
+      this.runRamp({
+        durationMs,
+        onTick: (t) => {
+          this.slotA.volume = aStart * (1 - t);
+          this.slotB.volume = bStart * (1 - t);
+        },
+        onDone: () => {
+          for (const el of [this.slotA, this.slotB]) {
+            el.pause();
+            el.volume = 0;
+          }
+          this.current = null;
+          resolve();
+        },
+      });
+    });
+  }
+
   private fadeOut(transition: BgmTransition): void {
     const cur = this.current;
     if (!cur) return;

@@ -1,5 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
+  afterNextRender,
+  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -126,6 +128,99 @@ export function createChromeIdle(
     document.removeEventListener('keydown', onReveal);
   });
   return idle.asReadonly();
+}
+
+// Reader page fade-in duration on entry.
+const ENTER_FADE_MS = 700;
+// Reader page fade-out duration on exit — visuals and audio share it.
+export const EXIT_FADE_MS = 500;
+// Exit hold under OS reduced motion: visuals cut instantly, but the
+// audio still fades over this shorter window so it never pops.
+export const REDUCED_MOTION_EXIT_MS = 300;
+
+/**
+ * Page-level fade transition for a reader page, run through the theme
+ * surface color by a `bg-surface` overlay the page binds to these
+ * signals.
+ *
+ *  - `opacity` / `durationMs` drive the overlay's CSS opacity fade.
+ *  - `blocksInput` is true whenever the overlay should swallow pointer
+ *    events — during the entry fade-in and the whole exit fade — so a
+ *    tap can't reach a choice or skip the typewriter mid-transition.
+ *  - `ready` flips true when the entry fade-in completes; the page
+ *    feeds it to `scene-view` as the typewriter reveal gate.
+ *  - `fadeOut()` fades the overlay back up to full surface and resolves
+ *    when done; the leave guard awaits it before tearing the page down.
+ *
+ * Honors reduced motion and SSR by skipping the animation outright.
+ * Call from an injection context.
+ */
+export interface ReaderFade {
+  readonly opacity: Signal<number>;
+  readonly durationMs: Signal<number>;
+  readonly ready: Signal<boolean>;
+  readonly blocksInput: Signal<boolean>;
+  fadeOut(): Promise<void>;
+}
+
+export function createReaderFade(reducedMotion: Signal<boolean>): ReaderFade {
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  const animateIn = isBrowser && !reducedMotion();
+
+  const opacity = signal(animateIn ? 1 : 0);
+  const durationMs = signal(animateIn ? ENTER_FADE_MS : 0);
+  const ready = signal(!animateIn);
+  const blocksInput = computed(() => !ready() || opacity() !== 0);
+
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  let rafId: number | null = null;
+  const schedule = (fn: () => void, ms: number): void => {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+  };
+
+  if (animateIn) {
+    afterNextRender(() => {
+      // Hold one painted frame at full surface, then transition out — so
+      // the browser commits opacity 1 before the 1→0 animation starts.
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        opacity.set(0);
+        schedule(() => ready.set(true), ENTER_FADE_MS);
+      });
+    });
+  }
+
+  inject(DestroyRef).onDestroy(() => {
+    for (const id of timers) clearTimeout(id);
+    if (rafId !== null) cancelAnimationFrame(rafId);
+  });
+
+  let exit: Promise<void> | null = null;
+  const fadeOut = (): Promise<void> => {
+    if (exit) return exit;
+    if (!isBrowser || reducedMotion()) {
+      durationMs.set(0);
+      opacity.set(1);
+      exit = Promise.resolve();
+      return exit;
+    }
+    durationMs.set(EXIT_FADE_MS);
+    opacity.set(1);
+    exit = new Promise<void>((resolve) => schedule(resolve, EXIT_FADE_MS));
+    return exit;
+  };
+
+  return {
+    opacity: opacity.asReadonly(),
+    durationMs: durationMs.asReadonly(),
+    ready: ready.asReadonly(),
+    blocksInput,
+    fadeOut,
+  };
 }
 
 /**

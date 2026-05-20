@@ -26,10 +26,14 @@ import { SceneContinuation, SceneViewComponent } from '../ui/scene-view.componen
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
+import { ReaderLeavable } from './reader-leave.guard';
 import {
   createChromeIdle,
   createDeferredFlag,
+  createReaderFade,
   createReducedMotion,
+  EXIT_FADE_MS,
+  REDUCED_MOTION_EXIT_MS,
   registerAutoplayUnblock,
 } from './reader-page-behaviors';
 
@@ -93,6 +97,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
             [textSpeed]="effectiveTextSpeed()"
             [cardOverflow]="cardOverflow()"
             [cardHidden]="cardHidden()"
+            [revealEnabled]="fade.ready()"
           />
 
           <div
@@ -142,6 +147,17 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
           <audio #bgmA class="sr-only" loop preload="auto" aria-hidden="true"></audio>
           <audio #bgmB class="sr-only" loop preload="auto" aria-hidden="true"></audio>
         }
+
+        <!-- Page-level fade overlay (theme surface). Fades out on entry,
+             back in on exit via the leave guard. Sits above the header
+             (z-10); swallows input while visible. -->
+        <div
+          class="absolute inset-0 z-30 bg-surface transition-opacity ease-in-out"
+          [class.pointer-events-none]="!fade.blocksInput()"
+          [style.opacity]="fade.opacity()"
+          [style.transition-duration.ms]="fade.durationMs()"
+          aria-hidden="true"
+        ></div>
       </div>
 
       <app-reader-preferences-dialog #prefsDialog />
@@ -149,7 +165,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReaderEventPage {
+export class ReaderEventPage implements ReaderLeavable {
   readonly id = input.required<string>();
 
   private readonly events = inject(EventsService);
@@ -165,6 +181,10 @@ export class ReaderEventPage {
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
   private bgmController: BgmController | null = null;
 
+  // Latches once the leave guard has started the exit fade, so a second
+  // guard call doesn't restart it.
+  private exiting = false;
+
   protected readonly event = signal<TimelineEvent | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -176,6 +196,10 @@ export class ReaderEventPage {
 
   // OS-level reduced-motion preference — see `createReducedMotion`.
   protected readonly reducedMotion = createReducedMotion();
+
+  // Page-level fade transition — fades the reader in on entry; the leave
+  // guard's `beginExit()` fades it back out before any navigation away.
+  protected readonly fade = createReaderFade(this.reducedMotion);
 
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
@@ -193,6 +217,22 @@ export class ReaderEventPage {
     } else {
       void this.layout.enterFullscreen();
     }
+  }
+
+  /**
+   * Leave-guard hook (`ReaderLeavable`). Fades the reader's visuals and
+   * BGM out before the route is torn down, so leaving the event — for a
+   * continuation or back out of the reader — never cuts abruptly.
+   * Always resolves true: the guard only delays, never blocks.
+   */
+  beginExit(): Promise<boolean> {
+    if (this.exiting) return Promise.resolve(true);
+    this.exiting = true;
+    const audioMs = this.reducedMotion() ? REDUCED_MOTION_EXIT_MS : EXIT_FADE_MS;
+    return Promise.all([
+      this.fade.fadeOut(),
+      this.bgmController?.fadeOutAndStop(audioMs) ?? Promise.resolve(),
+    ]).then(() => true);
   }
 
   // Events carry no per-scene `textSpeed`, so the shared helper resolves
