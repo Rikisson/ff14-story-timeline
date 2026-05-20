@@ -91,12 +91,6 @@ export class TypewriterTextComponent {
   readonly text = input.required<string>();
   readonly options = input<InlineRefOption[]>([]);
   readonly speed = input<TextSpeed>('fast');
-  // Gates the reveal. While false the characters are wrapped but stay
-  // hidden and the rAF loop never starts; flipping it true runs the
-  // reveal from the first character. The reader page holds this false
-  // until its entry fade-in finishes so the animation isn't spent
-  // behind the fade. Default true leaves standalone use unchanged.
-  readonly enabled = input<boolean>(true);
   readonly done = output<void>();
 
   private readonly host = viewChild.required<ElementRef<HTMLDivElement>>('host');
@@ -135,13 +129,11 @@ export class TypewriterTextComponent {
 
   constructor() {
     effect(() => {
-      // Recompute on text / options / speed / enabled changes. `html()`
-      // is consumed by the bound `[innerHTML]` and lands in the DOM
-      // before this effect's body runs (Angular flushes bindings before
-      // effects); a bare `enabled` flip leaves the DOM untouched.
+      // `html()` is consumed by the bound `[innerHTML]` and lands in the
+      // DOM before this effect's body runs (Angular flushes bindings
+      // before effects). Reading speed() keeps it a dependency.
       this.html();
       this.speed();
-      this.enabled();
       queueMicrotask(() => this.restartReveal());
     });
     this.destroyRef.onDestroy(() => this.cancelReveal());
@@ -194,7 +186,7 @@ export class TypewriterTextComponent {
     this.cancelReveal();
     const host = this.host().nativeElement;
     // `[innerHTML]` re-renders fresh markup on text/options changes,
-    // dropping the `.tw-ch` spans; an `enabled` flip leaves them in
+    // dropping the `.tw-ch` spans; a speed-only change leaves them in
     // place. Re-wrap only when they're absent — a second walk over
     // already-wrapped characters would nest the spans.
     if (host.querySelector('.tw-ch') === null) {
@@ -206,10 +198,6 @@ export class TypewriterTextComponent {
       this.done.emit();
       return;
     }
-    // Gated by the reader's page fade-in: characters stay wrapped (so
-    // the card keeps its final height) but hidden until `enabled` flips
-    // true, then the reveal runs from the first character.
-    if (!this.enabled()) return;
     if (this.speed() === 'instant') {
       this.complete();
       return;

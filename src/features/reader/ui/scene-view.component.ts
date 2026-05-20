@@ -208,7 +208,6 @@ type CrossfadeSlot = 'A' | 'B';
                 [text]="text()"
                 [options]="inlineRefOptions()"
                 [speed]="textSpeed()"
-                [enabled]="revealEnabled()"
               />
               @if (choices().length > 0) {
                 <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
@@ -277,10 +276,6 @@ export class SceneViewComponent {
   // Horizontal placement of the speaker name above the card, driven by
   // the speaker's staged slot.
   readonly speakerPosition = input<'left' | 'center' | 'right'>('center');
-  // Gates the typewriter reveal. The reader page holds this false until
-  // its entry fade-in finishes so the text animation isn't spent behind
-  // the fade. Default true keeps standalone use unchanged.
-  readonly revealEnabled = input<boolean>(true);
 
   readonly choose = output<string>();
 

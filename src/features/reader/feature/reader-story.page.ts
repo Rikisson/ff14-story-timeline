@@ -119,7 +119,6 @@ import { SfxController } from './sfx-controller';
                   [textSpeed]="effectiveTextSpeed()"
                   [cardHidden]="cardHidden()"
                   [spritesHidden]="spritesHidden()"
-                  [revealEnabled]="fade.ready()"
                   (choose)="advance($event)"
                 />
               }
