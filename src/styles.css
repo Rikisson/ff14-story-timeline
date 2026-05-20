@@ -299,8 +299,16 @@ html [data-testid='output-socket'] > *.multiple {
   transform: translate(-50%, -50%);
   width: var(--reader-page-width);
   max-height: 78vh;
-  overflow-y: auto;
   padding: 1.25rem 1.5rem;
+}
+/* The card itself doesn't scroll — the text body does. That keeps the
+ * continuation anchor pinned below the text, and keeps the card's
+ * padding from being clipped at the scroll end (a flexbox quirk that
+ * drops a scroll container's own padding-bottom). */
+.reader-card-page app-typewriter-text {
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.75rem;
 }
 /* Foreground layer (characters + card) inside the scene frame. Its own
  * layer so a crossfade transition can fade it in over the background. */
