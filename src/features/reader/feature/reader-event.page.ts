@@ -311,7 +311,6 @@ export class ReaderEventPage {
     this.destroyRef.onDestroy(() => {
       if (pendingIndicator !== null) clearTimeout(pendingIndicator);
       this.bgmController?.dispose();
-      void this.layout.exitFullscreen();
     });
 
     if (this.isBrowser) {

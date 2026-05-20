@@ -603,9 +603,6 @@ export class ReaderStoryPage {
       for (const id of this.pendingTimers) clearTimeout(id);
       this.bgmController?.dispose();
       this.sfxController?.dispose();
-      // Leaving the player while in fullscreen would otherwise strand
-      // the browser in its native-fullscreen state with no UI to exit.
-      void this.layout.exitFullscreen();
     });
 
     // Scene-entry counter — increments every time `currentSceneId`
