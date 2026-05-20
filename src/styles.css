@@ -339,7 +339,6 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-card-page app-typewriter-text {
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 0.75rem;
 }
 /* Foreground layer (characters + card) inside the scene frame. Its own
  * layer so a crossfade transition can fade it in over the background. */
