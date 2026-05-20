@@ -332,3 +332,13 @@ html [data-testid='output-socket'] > *.multiple {
   -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent);
           mask-image: linear-gradient(180deg, #000 80%, transparent);
 }
+/* Reader header toggle (text box / characters) in its engaged state —
+ * the content it controls is currently hidden. Reuses the app-wide
+ * accent-soft "selected" treatment (toggle button, font-size buttons,
+ * Rete selected node). Unlayered so it outranks the uiSecondary
+ * directive's Tailwind background/border utilities. */
+.reader-toggle-active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-soft-foreground);
+  border-color: var(--color-accent-ring);
+}

@@ -90,7 +90,6 @@ import { SfxController } from './sfx-controller';
               [cardHidden]="cardHidden()"
               [spritesHidden]="spritesHidden()"
               (choose)="advance($event)"
-              (cardRevealRequested)="cardHidden.set(false)"
             />
           }
 
@@ -131,6 +130,7 @@ import { SfxController } from './sfx-controller';
                     uiSecondary
                     type="button"
                     [attr.aria-pressed]="cardHidden()"
+                    [class.reader-toggle-active]="cardHidden() && !isShowcaseScene()"
                     [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
                     [disabled]="isShowcaseScene()"
                     (click)="cardHidden.set(!cardHidden())"
@@ -141,6 +141,7 @@ import { SfxController } from './sfx-controller';
                     uiSecondary
                     type="button"
                     [attr.aria-pressed]="spritesHidden()"
+                    [class.reader-toggle-active]="spritesHidden()"
                     [attr.aria-label]="spritesHidden() ? t('action.showSprites') : t('action.hideSprites')"
                     (click)="spritesHidden.set(!spritesHidden())"
                   >
@@ -157,6 +158,8 @@ import { SfxController } from './sfx-controller';
                   <button
                     uiSecondary
                     type="button"
+                    [attr.aria-pressed]="layout.browserFullscreen()"
+                    [class.reader-toggle-active]="layout.browserFullscreen()"
                     [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
                     (click)="toggleFullscreen()"
                   >

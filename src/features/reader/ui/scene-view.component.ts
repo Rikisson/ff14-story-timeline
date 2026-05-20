@@ -267,8 +267,8 @@ export class SceneViewComponent {
   // it false because scene text is capped by the editor at ~280 chars.
   readonly cardOverflow = input<boolean>(false);
   // Reader header toggles. `cardHidden` collapses the floating text card
-  // (a click on the article reveals it again, via `cardRevealRequested`);
-  // `spritesHidden` drops the whole character layer.
+  // (it returns only via the header toggle); `spritesHidden` drops the
+  // whole character layer.
   readonly cardHidden = input<boolean>(false);
   readonly spritesHidden = input<boolean>(false);
   // Horizontal placement of the speaker name above the card, driven by
@@ -276,7 +276,6 @@ export class SceneViewComponent {
   readonly speakerPosition = input<'left' | 'center' | 'right'>('center');
 
   readonly choose = output<string>();
-  readonly cardRevealRequested = output<void>();
 
   protected readonly speakerPositionClass = computed(
     () => `reader-card-speaker reader-card-speaker-${this.speakerPosition()}`,
@@ -345,7 +344,8 @@ export class SceneViewComponent {
    * Click-anywhere dispatch.
    *  - Dialog: skip the typewriter if it's mid-reveal. Stops the event
    *    only when there was a reveal to complete so the same click can't
-   *    also trigger anything else.
+   *    also trigger anything else. While the card is hidden the click
+   *    is ignored — the card returns only via the header text-box toggle.
    *  - Showcase with a single `next`: advance the scene. Multi-choice
    *    showcase scenes are out of scope per the design and silently
    *    ignore the click.
@@ -356,14 +356,9 @@ export class SceneViewComponent {
       if (next.length === 1) this.choose.emit(next[0].sceneId);
       return;
     }
-    // Card hidden: the first click brings it back rather than skipping
-    // the typewriter — choices live in the card, so it must reveal
-    // before the reader can advance.
-    if (this.cardHidden()) {
-      this.cardRevealRequested.emit();
-      event.stopPropagation();
-      return;
-    }
+    // Card hidden: the scene shows only the art. A scene click does
+    // nothing — the card returns solely via the header text-box toggle.
+    if (this.cardHidden()) return;
     const tw = this.typewriter();
     if (!tw) return;
     const completed = tw.complete();

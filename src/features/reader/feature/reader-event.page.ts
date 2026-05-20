@@ -88,7 +88,6 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
             [textSpeed]="effectiveTextSpeed()"
             [cardOverflow]="cardOverflow()"
             [cardHidden]="cardHidden()"
-            (cardRevealRequested)="cardHidden.set(false)"
           />
 
           <div
