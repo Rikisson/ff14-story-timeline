@@ -216,7 +216,7 @@ type CrossfadeSlot = 'A' | 'B';
                 <a
                   uiSecondary
                   [routerLink]="cont.link"
-                  className="reader-action mt-2 w-full"
+                  className="reader-action mt-2 w-full shrink-0"
                 >
                   <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
                   <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
