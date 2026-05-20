@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { SecondaryButtonComponent } from '@shared/ui';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 
@@ -11,7 +10,7 @@ export interface Choice {
 
 @Component({
   selector: 'app-choice-list',
-  imports: [SecondaryButtonComponent, TranslocoDirective],
+  imports: [TranslocoDirective],
   providers: [
     provideTranslocoScope({
       scope: 'reader',
@@ -23,13 +22,12 @@ export interface Choice {
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
-      <ul class="flex flex-col items-stretch gap-2">
+      <ul class="flex flex-col gap-[0.35em]">
         @for (choice of choices(); track $index) {
-          <li>
+          <li class="shrink-0">
             <button
-              uiSecondary
               type="button"
-              className="reader-action w-full justify-start"
+              class="reader-action"
               (click)="choose.emit(choice.sceneId)"
             >
               {{ choice.label ?? t('action.continue') }}

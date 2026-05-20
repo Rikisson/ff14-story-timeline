@@ -101,7 +101,7 @@ primary or secondary depending on what else is on the page.
   competition. Add scene next to Save in the editor header, Add era /
   Add category next to Save in settings, Replace asset next to Remove,
   Sign in in the app header, Start over in the auto-resume reader
-  aside, player choice buttons that should read as equal-weight options.
+  aside.
 - `uiGhost` (transparent) — tertiary, low-emphasis controls. Cancel in
   form footers, Reset, Edit on a card (paired with Delete), Remove for
   asset clearing (paired with Replace), View more pagination, header

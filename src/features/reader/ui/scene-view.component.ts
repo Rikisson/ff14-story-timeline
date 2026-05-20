@@ -14,7 +14,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { SceneLayout, TextSpeed } from '@features/stories';
 import { BackgroundEffect } from '@shared/models';
-import { SecondaryButtonComponent, TypewriterTextComponent } from '@shared/ui';
+import { TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
@@ -68,7 +68,6 @@ type CrossfadeSlot = 'A' | 'B';
     TranslocoDirective,
     ContentLangDirective,
     ChoiceListComponent,
-    SecondaryButtonComponent,
     RouterLink,
   ],
   providers: [
@@ -211,15 +210,10 @@ type CrossfadeSlot = 'A' | 'B';
                 [speed]="textSpeed()"
               />
               @if (choices().length > 0) {
-                <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
+                <app-choice-list class="block shrink-0" [choices]="choices()" (choose)="choose.emit($event)" />
               } @else if (continuation(); as cont) {
-                <a
-                  uiSecondary
-                  [routerLink]="cont.link"
-                  className="reader-action mt-2 w-full shrink-0"
-                >
-                  <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
-                  <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
+                <a class="reader-action shrink-0" [routerLink]="cont.link">
+                  {{ t('action.continueReading', { title: cont.label }) }}
                 </a>
               }
             </div>
