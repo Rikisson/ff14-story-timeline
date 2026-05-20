@@ -128,9 +128,12 @@ export class EventsPage {
       name: e.name,
       description: e.description,
       coverAssetId: e.coverAssetId,
+      bgmAssetId: e.bgmAssetId,
+      backgroundEffect: e.backgroundEffect,
       inGameDate: e.inGameDate,
       relatedRefs: e.relatedRefs,
       plotlineRefs: e.plotlineRefs,
+      nextRefs: e.nextRefs,
     }),
     removeLabel: (e) => e.name,
   });
