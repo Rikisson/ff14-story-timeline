@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Scene, SceneLayout, StagedCharacter } from '@features/stories';
@@ -171,31 +171,26 @@ function defaultFacingFor(position: string): Facing {
                 @for (sc of s.characters; track sc.entity.id) {
                   <li class="staged-row">
                     <span class="staged-name">{{ characterName(sc.entity.id) }}</span>
-                    <select
-                      [value]="sc.position"
-                      (change)="onPositionChange($event, id, sc.entity.id)"
-                    >
+                    <select (change)="onPositionChange($event, id, sc.entity.id)">
                       @for (p of positionOptions; track p) {
-                        <option [value]="p">{{ p }}</option>
+                        <option [value]="p" [selected]="p === sc.position">{{ p }}</option>
                       }
                     </select>
                     <select
-                      [value]="sc.facing ?? facingDefault(sc.position)"
                       [attr.aria-label]="t('tooltip.facingForCharacter', { name: characterName(sc.entity.id) })"
                       (change)="onFacingChange($event, id, sc.entity.id)"
                     >
                       @for (f of facings; track f) {
-                        <option [value]="f">{{ t('facing.' + f) }}</option>
+                        <option [value]="f" [selected]="f === (sc.facing ?? facingDefault(sc.position))">{{ t('facing.' + f) }}</option>
                       }
                     </select>
                     @if (spriteOptions(sc.entity.id).length > 1) {
                       <select
-                        [value]="sc.spriteId ?? ''"
                         [attr.aria-label]="t('tooltip.spriteForCharacter', { name: characterName(sc.entity.id) })"
                         (change)="onSpriteChange($event, id, sc.entity.id)"
                       >
                         @for (po of spriteOptions(sc.entity.id); track po.id) {
-                          <option [value]="po.id">{{ po.label }}</option>
+                          <option [value]="po.id" [selected]="po.id === (sc.spriteId ?? '')">{{ po.label }}</option>
                         }
                       </select>
                     }
@@ -572,7 +567,12 @@ export class SceneEditorPanelComponent {
     () => this.scene()?.nextRefs ?? [],
   );
 
-  protected readonly speakerMode = computed<SpeakerMode>(() => {
+  // Speaker mode is UI state seeded from the scene's `speaker` value but
+  // independently settable: the author must be able to enter "character"
+  // mode and see the picker *before* a character is chosen. A plain
+  // computed would snap back to 'none' the instant the radio is clicked,
+  // since an unpicked character speaker has no representable value.
+  protected readonly speakerMode = linkedSignal<SpeakerMode>(() => {
     const sp = this.scene()?.speaker;
     if (sp === undefined) return 'none';
     if (typeof sp === 'string') return 'custom';
@@ -619,11 +619,14 @@ export class SceneEditorPanelComponent {
   }
 
   protected onSpeakerMode(id: string, mode: SpeakerMode): void {
-    let speaker: Scene['speaker'];
-    if (mode === 'none') speaker = undefined;
-    else if (mode === 'custom') speaker = '';
-    else speaker = undefined;
-    this.update.emit({ id, patch: { speaker } });
+    this.speakerMode.set(mode);
+    // 'character' waits for an actual pick (onSpeakerCharacter); emitting
+    // `undefined` now would bounce the mode straight back to 'none'.
+    if (mode === 'none') {
+      this.update.emit({ id, patch: { speaker: undefined } });
+    } else if (mode === 'custom') {
+      this.update.emit({ id, patch: { speaker: '' } });
+    }
   }
 
   protected onSpeakerCharacter(id: string, refs: EntityRef[]): void {

@@ -104,27 +104,31 @@ type CrossfadeSlot = 'A' | 'B';
           }
         </div>
 
-        <!-- Character layer: positioned slots over the background. The
-             floating card sits above this layer in the dialog layout, so
-             sprites visually root behind the card the way a VN expects. -->
-        <div class="absolute inset-x-0 bottom-24 grid grid-cols-3 items-end gap-2 px-4">
+        <!-- Character layer: full-height slots over the background.
+             Sprites root at the article floor and stand tall; the
+             floating card (higher z-index) overlaps their lower body the
+             way a VN expects, per docs/narrative-engine-impl.md *Scene
+             rendering layers*. The layer is non-interactive so taps fall
+             through to the article. -->
+        <div class="pointer-events-none absolute inset-0 grid grid-cols-3 gap-2 px-4">
           @for (slot of slots; track slot) {
-            <div class="flex flex-wrap items-end justify-center gap-2">
+            <div class="flex h-full items-end justify-center gap-2">
               @for (s of stagedFor(slot); track s.id) {
                 <figure
-                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                  [class.opacity-40]="!s.isSpeaker"
+                  class="m-0 flex h-full max-w-full items-end justify-center transition"
+                  [class.grayscale]="!s.isSpeaker"
+                  [class.brightness-90]="!s.isSpeaker"
                 >
                   @if (s.spriteUrl; as url) {
                     <img
                       [src]="url"
                       [alt]="s.name"
-                      class="size-32 object-contain drop-shadow-lg"
+                      class="max-h-[88%] w-auto max-w-full object-contain drop-shadow-lg"
                       [class.-scale-x-100]="s.facing === 'left'"
                     />
                   } @else {
                     <div
-                      class="flex size-32 items-center justify-center rounded-md border border-dashed border-scrim-foreground/40 bg-scrim/30 text-xs text-scrim-foreground/80"
+                      class="flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
                     >
                       {{ t('empty.noSprite') }}
                     </div>
@@ -133,20 +137,21 @@ type CrossfadeSlot = 'A' | 'B';
               }
               @for (s of stagedOther(slot); track s.id) {
                 <figure
-                  class="m-0 flex flex-col items-center gap-1 transition-opacity"
-                  [class.opacity-40]="!s.isSpeaker"
+                  class="m-0 flex h-full max-w-full items-end justify-center transition"
+                  [class.grayscale]="!s.isSpeaker"
+                  [class.brightness-90]="!s.isSpeaker"
                   [title]="t('tooltip.position', { slot: s.position })"
                 >
                   @if (s.spriteUrl; as url) {
                     <img
                       [src]="url"
                       [alt]="s.name"
-                      class="size-32 object-contain drop-shadow-lg"
+                      class="max-h-[88%] w-auto max-w-full object-contain drop-shadow-lg"
                       [class.-scale-x-100]="s.facing === 'left'"
                     />
                   } @else {
                     <div
-                      class="flex size-32 items-center justify-center rounded-md border border-dashed border-scrim-foreground/40 bg-scrim/30 text-xs text-scrim-foreground/80"
+                      class="flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
                     >
                       {{ t('empty.noSprite') }}
                     </div>
