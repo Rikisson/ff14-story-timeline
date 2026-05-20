@@ -20,8 +20,6 @@ export interface CropBounds {
 
 export interface ClampOptions {
   aspect: CropAspect;
-  minWidth?: number;
-  minHeight?: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -48,9 +46,8 @@ export function aspectRatioOf(aspect: CropAspect): number | null {
 }
 
 /**
- * Fit `rect` inside `[0,0,bounds.w,bounds.h]`, enforce the minimum size, and —
- * when the aspect is locked — snap the dimensions to that ratio by deriving
- * height from width.
+ * Fit `rect` inside `[0,0,bounds.w,bounds.h]` and — when the aspect is locked —
+ * snap the dimensions to that ratio by deriving height from width.
  */
 export function clampCropRect(
   rect: CropRect,
@@ -58,11 +55,9 @@ export function clampCropRect(
   opts: ClampOptions,
 ): CropRect {
   const ratio = aspectRatioOf(opts.aspect);
-  const minW = clamp(opts.minWidth ?? 1, 1, bounds.w);
-  const minH = clamp(opts.minHeight ?? 1, 1, bounds.h);
 
-  let w = clamp(rect.w, minW, bounds.w);
-  let h = clamp(rect.h, minH, bounds.h);
+  let w = clamp(rect.w, 1, bounds.w);
+  let h = clamp(rect.h, 1, bounds.h);
 
   if (ratio !== null) {
     h = w / ratio;
@@ -73,15 +68,6 @@ export function clampCropRect(
     if (w > bounds.w) {
       w = bounds.w;
       h = w / ratio;
-    }
-    // Honor the minimum width only when the ratio still fits in bounds.
-    if (w < minW) {
-      const fitW = minW;
-      const fitH = fitW / ratio;
-      if (fitW <= bounds.w && fitH <= bounds.h) {
-        w = fitW;
-        h = fitH;
-      }
     }
   }
 

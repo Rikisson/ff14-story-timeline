@@ -395,6 +395,14 @@ export class EditorPage implements HasUnsavedChanges {
     if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault();
       this.store.addScene();
+      return;
+    }
+
+    if (event.key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const id = this.store.selectedSceneId();
+      if (!id) return;
+      event.preventDefault();
+      this.store.duplicateScene(id);
     }
   }
 

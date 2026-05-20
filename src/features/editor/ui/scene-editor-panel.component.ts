@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { PlacesService } from '@features/places';
 import { Scene, SceneLayout, StagedCharacter } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
@@ -541,7 +540,6 @@ export class SceneEditorPanelComponent {
   readonly duplicate = output<string>();
 
   private readonly transloco = inject(TranslocoService);
-  private readonly places = inject(PlacesService);
   private readonly activeLang = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
   });
@@ -647,18 +645,11 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { speaker: value } });
   }
 
-  protected async onPlace(id: string, refs: EntityRef[]): Promise<void> {
+  protected onPlace(id: string, refs: EntityRef[]): void {
     const ref = refs[0];
     const place: EntityRef<'place'> | undefined =
       ref && ref.kind === 'place' ? { kind: 'place', id: ref.id } : undefined;
-    const patch: Partial<Scene> = { place };
-    // Picking a place pre-fills the scene background from the place's
-    // cover image — but never overrides a background already set.
-    if (place && !this.scene()?.backgroundAssetId) {
-      const doc = await this.places.getById(place.id);
-      if (doc?.coverAssetId) patch.backgroundAssetId = doc.coverAssetId;
-    }
-    this.update.emit({ id, patch });
+    this.update.emit({ id, patch: { place } });
   }
 
   protected addSpeakerToStage(id: string): void {

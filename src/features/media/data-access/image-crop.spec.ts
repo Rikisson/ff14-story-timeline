@@ -37,14 +37,6 @@ describe('clampCropRect', () => {
     expect(out.y + out.h).toBeLessThanOrEqual(BOUNDS.h);
   });
 
-  it('enforces the minimum width', () => {
-    const out = clampCropRect({ x: 0, y: 0, w: 100, h: 100 }, BOUNDS, {
-      aspect: 'free',
-      minWidth: 1280,
-    });
-    expect(out.w).toBe(1280);
-  });
-
   it('snaps a locked 16:9 rect by deriving height from width', () => {
     const out = clampCropRect({ x: 0, y: 0, w: 1600, h: 1600 }, BOUNDS, {
       aspect: '16:9',

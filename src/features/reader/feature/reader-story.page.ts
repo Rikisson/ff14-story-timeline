@@ -98,7 +98,7 @@ import { SfxController } from './sfx-controller';
                the advance/goBack orchestrator; the duration is the
                scene's half-transition time. -->
           <div
-            class="absolute inset-0 z-20 bg-black transition-opacity ease-in-out"
+            class="absolute inset-0 z-20 bg-scrim transition-opacity ease-in-out"
             [class.opacity-0]="!fadingToBlack()"
             [class.opacity-100]="fadingToBlack()"
             [class.pointer-events-none]="!fadingToBlack()"
@@ -556,11 +556,23 @@ export class ReaderStoryPage {
           startHideTimer();
         }
       };
+      // A tap or key press re-shows the chrome, then the idle timer
+      // hides it again — the only way to reach the header on a touch or
+      // keyboard device, where `mousemove` never fires and the
+      // hide/show toggles would otherwise be stranded once it idles.
+      const onReveal = (): void => {
+        this.chromeIdle.set(false);
+        startHideTimer();
+      };
       startHideTimer();
       document.addEventListener('mousemove', onMouseMove, { passive: true });
+      document.addEventListener('pointerdown', onReveal, { passive: true });
+      document.addEventListener('keydown', onReveal, { passive: true });
       this.destroyRef.onDestroy(() => {
         if (idleTimer !== null) clearTimeout(idleTimer);
         document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('pointerdown', onReveal);
+        document.removeEventListener('keydown', onReveal);
       });
     }
 

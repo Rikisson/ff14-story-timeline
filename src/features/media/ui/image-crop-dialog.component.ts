@@ -28,7 +28,6 @@ import mediaUk from '../i18n/uk.json';
 
 export interface CropOpenOptions {
   aspect: CropAspect;
-  minSourceWidth?: number;
 }
 
 interface DragState {
@@ -235,7 +234,6 @@ export class ImageCropDialogComponent {
   protected readonly announcement = signal('');
 
   private file: File | null = null;
-  private minSourceWidth: number | undefined;
   private pendingCorner: CropCorner | null = null;
   private drag: DragState | null = null;
   private settled = false;
@@ -266,7 +264,6 @@ export class ImageCropDialogComponent {
 
   open(file: File, opts: CropOpenOptions): void {
     this.file = file;
-    this.minSourceWidth = opts.minSourceWidth;
     this.aspect.set(opts.aspect);
     this.sourceSize.set(null);
     this.cropRect.set(null);
@@ -282,7 +279,7 @@ export class ImageCropDialogComponent {
   }
 
   private clampOpts(): ClampOptions {
-    return { aspect: this.aspect(), minWidth: this.minSourceWidth };
+    return { aspect: this.aspect() };
   }
 
   protected onImageLoad(event: Event): void {

@@ -77,11 +77,6 @@ const MAX_DIMENSIONS: Record<'cover' | 'sprite' | 'background', { w: number; h: 
 // plus a thumb for covers). Sprites take the lossless `processSprite` path.
 const TRANSCODED_IMAGE_KINDS: readonly AssetKind[] = ['cover', 'background'];
 
-const MIN_WIDTH: Record<'cover' | 'background', number> = {
-  cover: 1280,
-  background: 1280,
-};
-
 const WEBP_QUALITY = 0.75;
 const THUMB_WIDTH = 640;
 const THUMB_QUALITY = 0.7;
@@ -302,21 +297,15 @@ export async function processSprite(file: File): Promise<File> {
   }
 }
 
-// Decode → validate minimum width → downscale to per-kind max (preserving aspect ratio)
-// → re-encode as WebP. Covers also get a 640w thumb encoded from the same decoded
-// bitmap so timeline/list cards never have to download the full-res image.
+// Decode → downscale to per-kind max (preserving aspect ratio) → re-encode as
+// WebP. Covers also get a 640w thumb encoded from the same decoded bitmap so
+// timeline/list cards never have to download the full-res image.
 async function processImage(
   kind: 'cover' | 'background',
   file: File,
 ): Promise<{ full: File; thumb?: File }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   try {
-    const minW = MIN_WIDTH[kind];
-    if (bitmap.width < minW) {
-      throw new Error(
-        `Image is too small (${bitmap.width}×${bitmap.height}). Minimum width for ${kind} is ${minW}px.`,
-      );
-    }
     const full = await encodeBitmapToWebP(
       bitmap,
       file.name,

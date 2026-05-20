@@ -239,14 +239,10 @@ export class AssetPickerComponent {
   protected readonly isAudio = computed(() => AUDIO_ASSET_KINDS.includes(this.kind()));
 
   // Crop framing per image kind: covers and backgrounds default to landscape
-  // 16:9 with a 1280px width floor (the `processImage` minimum); sprites
-  // default to portrait 9:16 with no floor. The author can still switch the
-  // ratio — or skip cropping — inside the dialog.
+  // 16:9, sprites to portrait 9:16. The author can still switch the ratio —
+  // or skip cropping — inside the dialog.
   private readonly defaultAspect = computed<CropAspect>(() =>
     this.kind() === 'sprite' ? '9:16' : '16:9',
-  );
-  private readonly cropMinWidth = computed<number | undefined>(() =>
-    this.kind() === 'sprite' ? undefined : 1280,
   );
 
   // Every image kind accepts the same photo formats — covers and backgrounds
@@ -346,10 +342,7 @@ export class AssetPickerComponent {
       return;
     }
     this.uploadError.set(null);
-    this.cropDialog().open(file, {
-      aspect: this.defaultAspect(),
-      minSourceWidth: this.cropMinWidth(),
-    });
+    this.cropDialog().open(file, { aspect: this.defaultAspect() });
   }
 
   protected onCropConfirmed(file: File): void {
