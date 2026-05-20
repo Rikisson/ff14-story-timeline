@@ -50,6 +50,7 @@ import storyUk from '../i18n/uk.json';
             [ngSrc]="u"
             alt=""
             fill
+            priority
             class="absolute inset-0 object-cover"
           />
           <div

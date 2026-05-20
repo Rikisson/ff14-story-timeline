@@ -287,10 +287,14 @@ export class ReaderStoryPage {
       const directoryRow = resolved.get(`character:${sc.entity.id}`);
       const canonical = sprites.get(sc.entity.id);
       const characterSprites = canonical?.sprites ?? [];
-      const spriteId =
-        sc.spriteId && characterSprites.includes(sc.spriteId)
-          ? sc.spriteId
-          : characterSprites[0];
+      // Honor an authored `spriteId` immediately. Gating it behind the
+      // canonical sprite list flashes the placeholder on every scene
+      // entry while that doc loads; once canonical has loaded, an id no
+      // longer in the character's library falls back to the default.
+      let spriteId = sc.spriteId ?? characterSprites[0];
+      if (sc.spriteId && canonical && !characterSprites.includes(sc.spriteId)) {
+        spriteId = characterSprites[0];
+      }
       return {
         id: sc.entity.id,
         name: directoryRow?.label ?? canonical?.name ?? sc.entity.id,
@@ -491,10 +495,9 @@ export class ReaderStoryPage {
       const ids = this.store
         .currentScene()
         ?.characters.map((c) => c.entity.id) ?? [];
-      if (ids.length === 0) {
-        if (this.sceneCharacters().size > 0) this.sceneCharacters.set(new Map());
-        return;
-      }
+      // Canonical docs accumulate for the whole reader session — never
+      // evicted on a character-less scene — so navigating back onto a
+      // staged scene resolves sprites with no refetch flash.
       const missing = ids.filter((id) => !this.sceneCharacters().has(id));
       if (missing.length === 0) return;
       void this.characters.getByIds(missing).then((fetched) => {
