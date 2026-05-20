@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
+  inject,
   input,
   output,
   signal,
@@ -35,8 +37,11 @@ export interface StagedView {
   facing: 'left' | 'right';
 }
 
-const POSITION_SLOTS = ['left', 'center', 'right'] as const;
-type PositionSlot = (typeof POSITION_SLOTS)[number];
+const POSITION_RANK: Record<string, number> = { left: 0, center: 1, right: 2 };
+
+// Horizontal room one staged sprite needs, as a multiple of stage
+// height. Raise to drop sprites sooner on a narrow stage.
+const MIN_STAGE_WIDTH_PER_SPRITE = 0.5;
 
 type CrossfadeSlot = 'A' | 'B';
 
@@ -119,64 +124,37 @@ type CrossfadeSlot = 'A' | 'B';
              crossfade scene transition can fade it in over the
              independently-crossfading background. -->
         <div #foreground class="scene-foreground">
-        <!-- Character layer: full-height slots over the background.
-             Sprites root at the article floor and stand tall; the
+        <!-- Character layer: a centered row of staged sprites standing
+             on the article floor. Each sprite is sized off stage height
+             alone, so window width never scales it; when the stage is
+             too narrow to hold them all, the lowest-priority non-speakers
+             drop out rather than shrink. The
              floating card (higher z-index) overlaps their lower body the
-             way a VN expects, per docs/narrative-engine-impl.md *Scene
-             rendering layers*. The layer is non-interactive so taps fall
+             way a VN expects. The layer is non-interactive so taps fall
              through to the article. -->
         @if (!spritesHidden()) {
-        <div class="pointer-events-none absolute inset-0 grid grid-cols-3 gap-2 px-4">
-          @for (slot of slots; track slot) {
-            <div class="flex h-full items-end justify-center gap-2">
-              @for (s of stagedFor(slot); track s.id) {
-                <figure
-                  class="m-0 flex h-full max-w-full items-end justify-center transition"
+          <div class="pointer-events-none absolute inset-0 flex items-end justify-center gap-[4%] px-[4%]">
+            @for (s of visibleStaged(); track s.id) {
+              @if (s.spriteUrl; as url) {
+                <img
+                  [src]="url"
+                  [alt]="s.name"
+                  class="h-[88%] w-auto flex-none object-contain drop-shadow-lg transition"
+                  [class.grayscale]="!s.isSpeaker"
+                  [class.brightness-90]="!s.isSpeaker"
+                  [class.-scale-x-100]="s.facing === 'left'"
+                />
+              } @else {
+                <div
+                  class="flex aspect-[9/16] h-[55%] flex-none items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition"
                   [class.grayscale]="!s.isSpeaker"
                   [class.brightness-90]="!s.isSpeaker"
                 >
-                  @if (s.spriteUrl; as url) {
-                    <img
-                      [src]="url"
-                      [alt]="s.name"
-                      class="max-h-[88%] w-auto max-w-full object-contain drop-shadow-lg"
-                      [class.-scale-x-100]="s.facing === 'left'"
-                    />
-                  } @else {
-                    <div
-                      class="flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
-                    >
-                      {{ t('empty.noSprite') }}
-                    </div>
-                  }
-                </figure>
+                  {{ t('empty.noSprite') }}
+                </div>
               }
-              @for (s of stagedOther(slot); track s.id) {
-                <figure
-                  class="m-0 flex h-full max-w-full items-end justify-center transition"
-                  [class.grayscale]="!s.isSpeaker"
-                  [class.brightness-90]="!s.isSpeaker"
-                  [title]="t('tooltip.position', { slot: s.position })"
-                >
-                  @if (s.spriteUrl; as url) {
-                    <img
-                      [src]="url"
-                      [alt]="s.name"
-                      class="max-h-[88%] w-auto max-w-full object-contain drop-shadow-lg"
-                      [class.-scale-x-100]="s.facing === 'left'"
-                    />
-                  } @else {
-                    <div
-                      class="flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
-                    >
-                      {{ t('empty.noSprite') }}
-                    </div>
-                  }
-                </figure>
-              }
-            </div>
-          }
-        </div>
+            }
+          </div>
         }
 
         <!-- Layout picks the presentation shape; each case is
@@ -282,9 +260,35 @@ export class SceneViewComponent {
     return eff ? `reader-bg-effect-${eff}` : '';
   });
 
-  protected readonly slots = POSITION_SLOTS;
   private readonly typewriter = viewChild<TypewriterTextComponent>('typewriter');
   private readonly foreground = viewChild<ElementRef<HTMLElement>>('foreground');
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly stageWidth = signal(0);
+  private readonly stageHeight = signal(0);
+  private resizeObserver?: ResizeObserver;
+
+  protected readonly visibleStaged = computed<StagedView[]>(() => {
+    const ordered = [...this.staged()].sort(
+      (a, b) =>
+        (POSITION_RANK[a.position] ?? 1) - (POSITION_RANK[b.position] ?? 1) ||
+        (a.order ?? 0) - (b.order ?? 0),
+    );
+    if (ordered.length <= 1) return ordered;
+    const width = this.stageWidth();
+    const height = this.stageHeight();
+    if (width <= 0 || height <= 0) return ordered;
+    const capacity = Math.max(
+      1,
+      Math.floor(width / (height * MIN_STAGE_WIDTH_PER_SPRITE)),
+    );
+    if (capacity >= ordered.length) return ordered;
+    const byPriority = [...ordered].sort(
+      (a, b) => Number(b.isSpeaker) - Number(a.isSpeaker),
+    );
+    const kept = new Set(byPriority.slice(0, capacity).map((s) => s.id));
+    return ordered.filter((s) => kept.has(s.id));
+  });
 
   /**
    * Fade the foreground (characters + card) in over `durationMs`. Called
@@ -320,20 +324,21 @@ export class SceneViewComponent {
         this.frontSlot.set('A');
       }
     });
-  }
 
-  protected stagedFor(slot: PositionSlot): StagedView[] {
-    return this.staged()
-      .filter((s) => s.position === slot)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }
-
-  protected stagedOther(slot: PositionSlot): StagedView[] {
-    if (slot !== 'center') return [];
-    const known = new Set<string>(POSITION_SLOTS);
-    return this.staged()
-      .filter((s) => !known.has(s.position))
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    effect(() => {
+      const host = this.foreground()?.nativeElement;
+      if (!host || this.resizeObserver || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const measure = () => {
+        this.stageWidth.set(host.clientWidth);
+        this.stageHeight.set(host.clientHeight);
+      };
+      measure();
+      this.resizeObserver = new ResizeObserver(measure);
+      this.resizeObserver.observe(host);
+      this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
+    });
   }
 
   /**
