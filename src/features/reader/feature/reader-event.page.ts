@@ -1,4 +1,3 @@
-import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,7 +7,6 @@ import {
   ElementRef,
   inject,
   input,
-  PLATFORM_ID,
   signal,
   untracked,
   viewChild,
@@ -22,11 +20,18 @@ import { EntityRef } from '@shared/models';
 import { ReaderPreferencesService } from '@shared/services';
 import { SecondaryButtonComponent } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
+import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneContinuation, SceneViewComponent } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
+import {
+  createChromeIdle,
+  createDeferredFlag,
+  createReducedMotion,
+  registerAutoplayUnblock,
+} from './reader-page-behaviors';
 
 const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
 
@@ -152,7 +157,6 @@ export class ReaderEventPage {
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly prefs = inject(ReaderPreferencesService);
   protected readonly layout = inject(LayoutStore);
 
@@ -164,13 +168,14 @@ export class ReaderEventPage {
   protected readonly event = signal<TimelineEvent | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly showLoadingIndicator = signal(false);
+  // Delay-gated "Loading…" line — see `createDeferredFlag`.
+  protected readonly showLoadingIndicator = createDeferredFlag(this.loading);
 
-  // Idle-fade chrome — same 2.5s contract as the story reader.
-  private static readonly CHROME_IDLE_MS = 2500;
-  protected readonly chromeIdle = signal(false);
+  // Idle-fade state for the floating header — see `createChromeIdle`.
+  protected readonly chromeIdle = createChromeIdle(this.headerEl);
 
-  protected readonly reducedMotion = signal(false);
+  // OS-level reduced-motion preference — see `createReducedMotion`.
+  protected readonly reducedMotion = createReducedMotion();
 
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
@@ -190,10 +195,14 @@ export class ReaderEventPage {
     }
   }
 
-  protected readonly effectiveTextSpeed = computed(() => {
-    const allow = this.prefs.allowTextAnimations() && !this.reducedMotion();
-    return allow ? 'fast' : 'instant';
-  });
+  // Events carry no per-scene `textSpeed`, so the shared helper resolves
+  // to the global fast/instant default — kept in lockstep with the story
+  // reader by going through `resolveEffectiveTextSpeed`.
+  protected readonly effectiveTextSpeed = computed(() =>
+    resolveEffectiveTextSpeed(null, {
+      allowTextAnimations: this.prefs.allowTextAnimations() && !this.reducedMotion(),
+    }),
+  );
 
   // Background resolves directly from the event's cover. No story-level
   // fallback because events stand alone — when no cover is set the
@@ -283,7 +292,7 @@ export class ReaderEventPage {
           if (seq !== loadSeq) return;
           const message =
             err instanceof FirebaseError && err.code === 'permission-denied'
-              ? this.transloco.translate('reader.message.storyUnavailable')
+              ? this.transloco.translate('reader.message.eventUnavailable')
               : err instanceof Error
                 ? `${err.name}: ${err.message}`
                 : String(err);
@@ -293,89 +302,9 @@ export class ReaderEventPage {
       );
     });
 
-    // 500 ms loading-indicator deferral — same pattern as the story
-    // page so cached events don't flash a "Loading…" line.
-    let pendingIndicator: ReturnType<typeof setTimeout> | null = null;
-    effect(() => {
-      const loading = this.loading();
-      if (pendingIndicator !== null) {
-        clearTimeout(pendingIndicator);
-        pendingIndicator = null;
-      }
-      if (loading) {
-        this.showLoadingIndicator.set(false);
-        pendingIndicator = setTimeout(() => {
-          this.showLoadingIndicator.set(true);
-          pendingIndicator = null;
-        }, 500);
-      } else {
-        this.showLoadingIndicator.set(false);
-      }
-    });
     this.destroyRef.onDestroy(() => {
-      if (pendingIndicator !== null) clearTimeout(pendingIndicator);
       this.bgmController?.dispose();
     });
-
-    if (this.isBrowser) {
-      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      this.reducedMotion.set(mq.matches);
-      const onChange = (e: MediaQueryListEvent): void => this.reducedMotion.set(e.matches);
-      mq.addEventListener('change', onChange);
-      this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
-    }
-
-    // Chrome reveal: floating header shows on load, hides after
-    // `CHROME_IDLE_MS`, and re-appears only while the pointer is in
-    // the top hover zone — header's top padding + card + equal pad
-    // below. Mirrors the story reader.
-    if (this.isBrowser) {
-      let idleTimer: ReturnType<typeof setTimeout> | null = null;
-      const FALLBACK_HOVER_PX = 82;
-      const startHideTimer = (): void => {
-        if (idleTimer !== null) clearTimeout(idleTimer);
-        idleTimer = setTimeout(
-          () => this.chromeIdle.set(true),
-          ReaderEventPage.CHROME_IDLE_MS,
-        );
-      };
-      const hoverZone = (): number => {
-        const el = this.headerEl()?.nativeElement;
-        if (!el) return FALLBACK_HOVER_PX;
-        const rect = el.getBoundingClientRect();
-        const topPad = parseFloat(getComputedStyle(el).paddingTop) || 0;
-        return rect.bottom + topPad;
-      };
-      const onMouseMove = (e: MouseEvent): void => {
-        if (e.clientY <= hoverZone()) {
-          this.chromeIdle.set(false);
-          if (idleTimer !== null) {
-            clearTimeout(idleTimer);
-            idleTimer = null;
-          }
-        } else if (!this.chromeIdle() && idleTimer === null) {
-          startHideTimer();
-        }
-      };
-      // A tap or key press re-shows the chrome, then the idle timer
-      // hides it again — the only way to reach the header on a touch or
-      // keyboard device, where `mousemove` never fires and the
-      // hide/show toggle would otherwise be stranded once it idles.
-      const onReveal = (): void => {
-        this.chromeIdle.set(false);
-        startHideTimer();
-      };
-      startHideTimer();
-      document.addEventListener('mousemove', onMouseMove, { passive: true });
-      document.addEventListener('pointerdown', onReveal, { passive: true });
-      document.addEventListener('keydown', onReveal, { passive: true });
-      this.destroyRef.onDestroy(() => {
-        if (idleTimer !== null) clearTimeout(idleTimer);
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('pointerdown', onReveal);
-        document.removeEventListener('keydown', onReveal);
-      });
-    }
 
     // Instantiate the BGM controller once both audio slots mount. Same
     // pattern as the story reader, minus SFX.
@@ -402,20 +331,9 @@ export class ReaderEventPage {
       this.bgmController?.setUserVolume(v);
     });
 
-    // Autoplay unblock. Stays live for the page's lifetime so any
-    // gesture (not just the first) can recover playback if the
-    // controller was constructed outside a gesture frame and the
-    // browser blocked its initial play(). Mirrors the story page.
-    if (this.isBrowser) {
-      const onGesture = (): void => {
-        this.bgmController?.unblock();
-      };
-      document.addEventListener('pointerdown', onGesture, true);
-      document.addEventListener('keydown', onGesture, true);
-      this.destroyRef.onDestroy(() => {
-        document.removeEventListener('pointerdown', onGesture, true);
-        document.removeEventListener('keydown', onGesture, true);
-      });
-    }
+    // Autoplay unblock — keep every gesture wired to the controller so
+    // playback can recover if it was built outside a gesture frame and
+    // the browser blocked its initial play().
+    registerAutoplayUnblock(() => this.bgmController?.unblock());
   }
 }

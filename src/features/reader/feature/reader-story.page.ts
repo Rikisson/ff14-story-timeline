@@ -36,6 +36,12 @@ import { SceneContinuation, SceneViewComponent, StagedView } from '../ui/scene-v
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 import { BgmController } from './bgm-controller';
+import {
+  createChromeIdle,
+  createDeferredFlag,
+  createReducedMotion,
+  registerAutoplayUnblock,
+} from './reader-page-behaviors';
 import { SfxController } from './sfx-controller';
 
 @Component({
@@ -218,30 +224,24 @@ export class ReaderStoryPage {
   // reader session is all the controller needs.
   private readonly sceneEntryKey = signal(0);
 
-  // 500 ms deferral so a fast load (cache hit) renders straight to the
-  // scene without a loading flash. Per the player spec the indicator is
-  // a delay-gated affordance, not a guarantee.
-  protected readonly showLoadingIndicator = signal(false);
+  // Delay-gated "Loading…" line — a fast cache hit renders straight to
+  // the scene with no flash. See `createDeferredFlag`.
+  protected readonly showLoadingIndicator = createDeferredFlag(this.store.loading);
 
-  // Idle-fade chrome: the title bar + resume aside fade after this
-  // many ms of no `pointermove` / `pointerdown` / `keydown`. Any of
-  // those events re-shows it instantly. Kept on the page (not the
-  // shared `LayoutStore`) because the trigger is reader-specific.
-  private static readonly CHROME_IDLE_MS = 2500;
-  protected readonly chromeIdle = signal(false);
+  // Idle-fade state for the floating header — see `createChromeIdle`.
+  protected readonly chromeIdle = createChromeIdle(this.headerEl);
 
-  // OS-level reduced-motion preference. When set, the typewriter goes
-  // instant regardless of the reader's own `allowTextAnimations`
-  // setting. Lives separately from the user preference so toggling
-  // animations on doesn't also defy the OS-level accessibility hint.
-  protected readonly reducedMotion = signal(false);
+  // OS-level reduced-motion preference — collapses the typewriter to
+  // instant regardless of `allowTextAnimations`. See `createReducedMotion`.
+  protected readonly reducedMotion = createReducedMotion();
 
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
   );
 
-  // Reader header view toggles. Persist across scene changes — the card
-  // is brought back by a click on the article (see scene-view).
+  // Reader header view toggles, persisted across scene changes. The card
+  // returns only via the header text-box toggle — a scene click while it
+  // is hidden does nothing (see scene-view).
   protected readonly cardHidden = signal(false);
   protected readonly spritesHidden = signal(false);
 
@@ -513,93 +513,7 @@ export class ReaderStoryPage {
       this.store.loadStory(this.id());
     });
 
-    // OS-level reduced-motion: read once and react to live changes so
-    // a user enabling reduced motion mid-session collapses the
-    // typewriter to instant on the next scene without a reload.
-    if (this.isBrowser) {
-      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      this.reducedMotion.set(mq.matches);
-      const onChange = (e: MediaQueryListEvent): void => this.reducedMotion.set(e.matches);
-      mq.addEventListener('change', onChange);
-      this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
-    }
-
-    // Chrome reveal: the floating header card shows on page load, then
-    // hides after `CHROME_IDLE_MS`. After that, it only re-appears while
-    // the pointer sits in the top hover zone, which spans the header's
-    // own top padding, the card itself, and an equal pad below — so the
-    // user can keep the pointer anywhere over the card without triggering
-    // the hide timer. Falls back to `FALLBACK_HOVER_PX` until the header
-    // element mounts.
-    if (this.isBrowser) {
-      let idleTimer: ReturnType<typeof setTimeout> | null = null;
-      const FALLBACK_HOVER_PX = 82;
-      const startHideTimer = (): void => {
-        if (idleTimer !== null) clearTimeout(idleTimer);
-        idleTimer = setTimeout(
-          () => this.chromeIdle.set(true),
-          ReaderStoryPage.CHROME_IDLE_MS,
-        );
-      };
-      const hoverZone = (): number => {
-        const el = this.headerEl()?.nativeElement;
-        if (!el) return FALLBACK_HOVER_PX;
-        const rect = el.getBoundingClientRect();
-        const topPad = parseFloat(getComputedStyle(el).paddingTop) || 0;
-        return rect.bottom + topPad;
-      };
-      const onMouseMove = (e: MouseEvent): void => {
-        if (e.clientY <= hoverZone()) {
-          this.chromeIdle.set(false);
-          if (idleTimer !== null) {
-            clearTimeout(idleTimer);
-            idleTimer = null;
-          }
-        } else if (!this.chromeIdle() && idleTimer === null) {
-          startHideTimer();
-        }
-      };
-      // A tap or key press re-shows the chrome, then the idle timer
-      // hides it again — the only way to reach the header on a touch or
-      // keyboard device, where `mousemove` never fires and the
-      // hide/show toggles would otherwise be stranded once it idles.
-      const onReveal = (): void => {
-        this.chromeIdle.set(false);
-        startHideTimer();
-      };
-      startHideTimer();
-      document.addEventListener('mousemove', onMouseMove, { passive: true });
-      document.addEventListener('pointerdown', onReveal, { passive: true });
-      document.addEventListener('keydown', onReveal, { passive: true });
-      this.destroyRef.onDestroy(() => {
-        if (idleTimer !== null) clearTimeout(idleTimer);
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('pointerdown', onReveal);
-        document.removeEventListener('keydown', onReveal);
-      });
-    }
-
-    // Defer the loading indicator by 500 ms — fast resolves go straight
-    // to the scene with no flicker.
-    let pendingIndicator: ReturnType<typeof setTimeout> | null = null;
-    effect(() => {
-      const loading = this.store.loading();
-      if (pendingIndicator !== null) {
-        clearTimeout(pendingIndicator);
-        pendingIndicator = null;
-      }
-      if (loading) {
-        this.showLoadingIndicator.set(false);
-        pendingIndicator = setTimeout(() => {
-          this.showLoadingIndicator.set(true);
-          pendingIndicator = null;
-        }, 500);
-      } else {
-        this.showLoadingIndicator.set(false);
-      }
-    });
     this.destroyRef.onDestroy(() => {
-      if (pendingIndicator !== null) clearTimeout(pendingIndicator);
       for (const id of this.pendingTimers) clearTimeout(id);
       this.bgmController?.dispose();
       this.sfxController?.dispose();
@@ -713,26 +627,13 @@ export class ReaderStoryPage {
       this.sfxController?.setUserVolume(v);
     });
 
-    // Autoplay unblock. Browsers reject `play()` on a fresh tab until
-    // the user has interacted with it. The first gesture may arrive
-    // before the controllers exist (e.g., the user clicks during the
-    // initial story load), in which case the unblock call is a no-op
-    // and the controllers' later setTarget runs outside a gesture
-    // frame. Keep the listener live for the lifetime of the page so
-    // every subsequent gesture gets a chance to retry. `unblock()` is
-    // cheap when there's nothing to do.
-    if (this.isBrowser) {
-      const onGesture = (): void => {
-        this.bgmController?.unblock();
-        this.sfxController?.unblock();
-      };
-      document.addEventListener('pointerdown', onGesture, true);
-      document.addEventListener('keydown', onGesture, true);
-      this.destroyRef.onDestroy(() => {
-        document.removeEventListener('pointerdown', onGesture, true);
-        document.removeEventListener('keydown', onGesture, true);
-      });
-    }
+    // Autoplay unblock — keep every gesture wired to the controllers so
+    // playback can recover if one was built outside a gesture frame and
+    // the browser blocked its initial play().
+    registerAutoplayUnblock(() => {
+      this.bgmController?.unblock();
+      this.sfxController?.unblock();
+    });
   }
 }
 
