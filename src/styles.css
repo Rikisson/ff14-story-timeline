@@ -346,6 +346,30 @@ html [data-testid='output-socket'] > *.multiple {
   position: absolute;
   inset: 0;
 }
+/* Character sprites: slide between slots, fade on enter/leave, and ease
+ * the non-speaker grey-out. Grayscale and the drop-shadow share `filter`,
+ * so both states list the same functions for the transition to animate. */
+.reader-sprite {
+  filter: grayscale(0) brightness(1) drop-shadow(0 4px 6px rgb(0 0 0 / 0.25));
+  transition:
+    left 0.3s ease-in-out,
+    filter 0.3s ease-in-out;
+}
+.reader-sprite.reader-sprite-muted {
+  filter: grayscale(0.6) brightness(0.9) drop-shadow(0 4px 6px rgb(0 0 0 / 0.25));
+}
+.reader-sprite-enter {
+  animation: reader-sprite-in 0.3s ease-out;
+}
+.reader-sprite-leave {
+  animation: reader-sprite-out 0.3s ease-in;
+}
+@keyframes reader-sprite-in {
+  from { opacity: 0; }
+}
+@keyframes reader-sprite-out {
+  to { opacity: 0; }
+}
 /* Speaker name pill, floated just above the card and aligned to the
  * speaker's staged slot (left / center / right). */
 .reader-card-speaker {

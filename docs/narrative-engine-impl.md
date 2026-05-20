@@ -438,12 +438,13 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   snap to count-dependent centers — one sits at 50%, two at 30% and
   70%, three at 25% / 50% / 75% — so two characters always sit wider
   apart than three while the group stays centered. When the staged set
-  changes, a sprite slides between layouts (a `left` transition over
-  300 ms). A `ResizeObserver` watches the stage; when it is too narrow
-  to hold every sprite at full height the lowest-priority non-speakers
-  drop out rather than shrink — capacity is `floor(stageWidth /
-  (stageHeight × 0.5))`, capped at three, and the speaker is always
-  kept. Non-speakers render desaturated and dimmed.
+  changes, persisting sprites slide between layouts while added and
+  removed ones fade in and out (300 ms). A `ResizeObserver` watches the
+  stage; when it is too narrow to hold every sprite at full height the
+  lowest-priority non-speakers drop out rather than shrink — capacity is
+  `floor(stageWidth / (stageHeight × 0.5))`, capped at three, and the
+  speaker is always kept. Non-speakers ease to a partial grey (60%
+  desaturation, slightly dimmed).
 - **Floating reader card carries the dialog UI.** A solid, opaque
   card centered at the bottom of the article holds the speaker
   label, the typewriter body, and the choice list — choices live

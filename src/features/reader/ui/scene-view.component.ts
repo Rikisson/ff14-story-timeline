@@ -109,18 +109,20 @@ type CrossfadeSlot = 'A' | 'B';
                 <img
                   [src]="url"
                   [alt]="s.name"
-                  class="absolute bottom-0 h-[88%] w-auto object-contain drop-shadow-lg transition-[left] duration-300 ease-in-out"
-                  [class.grayscale]="!s.isSpeaker"
-                  [class.brightness-90]="!s.isSpeaker"
+                  class="reader-sprite absolute bottom-0 h-[88%] w-auto object-contain"
+                  [class.reader-sprite-muted]="!s.isSpeaker"
                   [style.left.%]="s.leftPercent"
                   [style.transform]="s.transform"
+                  animate.enter="reader-sprite-enter"
+                  animate.leave="reader-sprite-leave"
                 />
               } @else {
                 <div
-                  class="absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition-[left] duration-300 ease-in-out"
-                  [class.grayscale]="!s.isSpeaker"
-                  [class.brightness-90]="!s.isSpeaker"
+                  class="reader-sprite absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
+                  [class.reader-sprite-muted]="!s.isSpeaker"
                   [style.left.%]="s.leftPercent"
+                  animate.enter="reader-sprite-enter"
+                  animate.leave="reader-sprite-leave"
                 >
                   {{ t('empty.noSprite') }}
                 </div>
