@@ -21,7 +21,7 @@ describe('ReaderPreferencesService', () => {
     expect(svc.fontSize()).toBe('medium');
     expect(svc.bgmVolume()).toBe(0.7);
     expect(svc.sfxVolume()).toBe(1.0);
-    expect(svc.textBoxOpacity()).toBe(1.0);
+    expect(svc.textBoxOpacity()).toBe(0.9);
   });
 
   it('persists and restores all preferences across instances', () => {

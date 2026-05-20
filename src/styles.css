@@ -255,7 +255,7 @@ html [data-testid='output-socket'] > *.multiple {
  * later without component changes. */
 :root {
   --reader-card-width: 60%;
-  --reader-card-opacity: 1;
+  --reader-card-opacity: 0.9;
 }
 .reader-card {
   position: absolute;

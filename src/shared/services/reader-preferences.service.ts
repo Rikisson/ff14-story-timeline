@@ -20,7 +20,7 @@ const DEFAULTS = {
   fontSize: 'medium' as FontSize,
   bgmVolume: 0.7,
   sfxVolume: 1.0,
-  textBoxOpacity: 1.0,
+  textBoxOpacity: 0.9,
 } as const;
 
 @Injectable({ providedIn: 'root' })

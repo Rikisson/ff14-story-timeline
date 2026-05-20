@@ -189,7 +189,7 @@ type CrossfadeSlot = 'A' | 'B';
                  typewriter keeps its reveal state — bringing the box back
                  must not restart the text from the first character. -->
             <div
-              class="reader-card"
+              class="reader-card backdrop-blur-sm"
               [class.reader-card-overflow]="cardOverflow()"
               [class.reader-card-hidden]="cardHidden()"
               appContentLang
