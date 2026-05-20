@@ -28,8 +28,7 @@ import {
 const ASSETS_COLLECTION = '_assets';
 const CACHE_CONTROL = 'public, max-age=31536000';
 
-const SPRITE_INPUT_MIME = 'image/webp';
-const TRANSCODED_INPUT_MIMES: readonly string[] = [
+const IMAGE_INPUT_MIMES: readonly string[] = [
   'image/jpeg',
   'image/png',
   'image/webp',
@@ -69,12 +68,12 @@ const MAX_BYTES: Record<AssetKind, number> = {
 
 const MAX_DIMENSIONS: Record<'cover' | 'sprite' | 'background', { w: number; h: number }> = {
   cover: { w: 2560, h: 1440 },
-  sprite: { w: 1600, h: 2400 },
+  sprite: { w: 1440, h: 2560 },
   background: { w: 2560, h: 1440 },
 };
 
-// Kinds that get transcoded + downscaled in-browser before upload.
-// Sprite stays a pure WebP passthrough so authored transparency is preserved bit-exact.
+// Cover and background go through the lossy transcode (downscale + WebP q0.75,
+// plus a thumb for covers). Sprites take the lossless `processSprite` path.
 const TRANSCODED_IMAGE_KINDS: readonly AssetKind[] = ['cover', 'background'];
 
 const MIN_WIDTH: Record<'cover' | 'background', number> = {
@@ -117,7 +116,7 @@ export class MediaAssetsService {
         file = processed.full;
         thumbFile = processed.thumb;
       } else {
-        await assertImageDimensions(input.kind, file);
+        file = await processSprite(file);
       }
     }
 
@@ -249,12 +248,11 @@ function isTranscodedKind(kind: AssetKind): kind is 'cover' | 'background' {
   return TRANSCODED_IMAGE_KINDS.includes(kind);
 }
 
-function assertMimeAndSize(kind: AssetKind, file: File): void {
+export function assertMimeAndSize(kind: AssetKind, file: File): void {
   if (isImageKind(kind)) {
-    const accepted = isTranscodedKind(kind) ? TRANSCODED_INPUT_MIMES : [SPRITE_INPUT_MIME];
-    if (!accepted.includes(file.type)) {
+    if (!IMAGE_INPUT_MIMES.includes(file.type)) {
       throw new Error(
-        `Unsupported image type for ${kind}: "${file.type || file.name}". Expected ${accepted.join(', ')}.`,
+        `Unsupported image type for ${kind}: "${file.type || file.name}". Expected ${IMAGE_INPUT_MIMES.join(', ')}.`,
       );
     }
   } else if (AUDIO_ASSET_KINDS.includes(kind)) {
@@ -280,18 +278,44 @@ function isAcceptedAudio(file: File): boolean {
   return AUDIO_EXTENSIONS.some((ext) => lowered.endsWith(ext));
 }
 
-async function assertImageDimensions(
-  kind: 'cover' | 'sprite' | 'background',
-  file: File,
-): Promise<void> {
-  const { w, h } = MAX_DIMENSIONS[kind];
-  const bitmap = await createImageBitmap(file);
+// True when an image already fits the sprite box and can be stored as-is.
+export function spriteFitsBounds(width: number, height: number): boolean {
+  const { w, h } = MAX_DIMENSIONS.sprite;
+  return width <= w && height <= h;
+}
+
+// Encode a sprite canvas without quality loss. WebP first — lossless on
+// Chromium, max-quality on Firefox; if the browser returned anything other
+// than WebP (Safari cannot canvas-encode it), fall back to lossless PNG.
+// Both containers preserve the alpha channel.
+async function encodeCanvasLossless(
+  canvas: HTMLCanvasElement,
+  sourceName: string,
+): Promise<File> {
+  const stem = stripExtension(sourceName);
+  const webp = await canvasToBlob(canvas, 'image/webp', 1);
+  if (webp && webp.type === 'image/webp') {
+    return new File([webp], `${stem}.webp`, { type: 'image/webp' });
+  }
+  const png = await canvasToBlob(canvas, 'image/png');
+  if (png) {
+    return new File([png], `${stem}.png`, { type: 'image/png' });
+  }
+  throw new Error('Sprite encoding failed.');
+}
+
+// Sprites accept JPEG/PNG/WebP/AVIF. An in-bounds WebP is uploaded byte-for-byte
+// so authored transparency stays bit-exact; any other format, or an oversize
+// image, is downscaled into the 9:16 sprite box and re-encoded losslessly. The
+// lossy q0.75 cover/background path is never taken for a sprite.
+export async function processSprite(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   try {
-    if (bitmap.width > w || bitmap.height > h) {
-      throw new Error(
-        `Image is too large (${bitmap.width}×${bitmap.height}). Maximum for ${kind} is ${w}×${h}.`,
-      );
+    if (file.type === 'image/webp' && spriteFitsBounds(bitmap.width, bitmap.height)) {
+      return file;
     }
+    const canvas = drawBitmapScaled(bitmap, MAX_DIMENSIONS.sprite);
+    return await encodeCanvasLossless(canvas, file.name);
   } finally {
     bitmap.close();
   }
@@ -333,13 +357,12 @@ async function processImage(
   }
 }
 
-async function encodeBitmapToWebP(
+// Draw a bitmap onto a fresh canvas, downscaled (never upscaled) to fit maxDims
+// while preserving aspect ratio. Shared by the cover/background and sprite encoders.
+function drawBitmapScaled(
   bitmap: ImageBitmap,
-  sourceName: string,
   maxDims: { w: number; h: number },
-  quality: number,
-  suffix: string,
-): Promise<File> {
+): HTMLCanvasElement {
   const scale = Math.min(1, maxDims.w / bitmap.width, maxDims.h / bitmap.height);
   const targetW = Math.max(1, Math.round(bitmap.width * scale));
   const targetH = Math.max(1, Math.round(bitmap.height * scale));
@@ -350,14 +373,29 @@ async function encodeBitmapToWebP(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable.');
   ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+  return canvas;
+}
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/webp', quality),
-  );
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function encodeBitmapToWebP(
+  bitmap: ImageBitmap,
+  sourceName: string,
+  maxDims: { w: number; h: number },
+  quality: number,
+  suffix: string,
+): Promise<File> {
+  const canvas = drawBitmapScaled(bitmap, maxDims);
+  const blob = await canvasToBlob(canvas, 'image/webp', quality);
   if (!blob) throw new Error('WebP encoding failed.');
   return new File([blob], `${stripExtension(sourceName)}${suffix}.webp`, { type: 'image/webp' });
 }
-
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]/g, '_');

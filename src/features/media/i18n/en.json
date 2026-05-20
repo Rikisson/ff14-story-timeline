@@ -26,7 +26,7 @@
     "upload": {
       "cover": "JPEG, PNG, WebP or AVIF. Wide images work best (16:9), at least 1280px wide. Larger images are downscaled and re-encoded as WebP automatically.",
       "background": "JPEG, PNG, WebP or AVIF. Wide images work best (16:9), at least 1280px wide. Larger images are downscaled and re-encoded as WebP automatically.",
-      "sprite": "WebP only — keep transparency intact. Portrait orientation, up to 1600×2400.",
+      "sprite": "JPEG, PNG, WebP or AVIF. Portrait orientation works best, up to 1440×2560 — larger images are downscaled. Transparent areas are preserved.",
       "audio": "Opus, AAC, or MP3 (.webm, .ogg, .opus, .m4a, .aac, .mp3). AAC (.m4a) or Ogg-Opus play in every browser including Safari; WebM-Opus is best on Chromium/Firefox."
     }
   }
