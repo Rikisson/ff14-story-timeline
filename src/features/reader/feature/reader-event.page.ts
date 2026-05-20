@@ -181,10 +181,6 @@ export class ReaderEventPage implements ReaderLeavable {
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
   private bgmController: BgmController | null = null;
 
-  // Latches once the leave guard has started the exit fade, so a second
-  // guard call doesn't restart it.
-  private exiting = false;
-
   protected readonly event = signal<TimelineEvent | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -197,9 +193,10 @@ export class ReaderEventPage implements ReaderLeavable {
   // OS-level reduced-motion preference — see `createReducedMotion`.
   protected readonly reducedMotion = createReducedMotion();
 
-  // Page-level fade transition — fades the reader in on entry; the leave
-  // guard's `beginExit()` fades it back out before any navigation away.
-  protected readonly fade = createReaderFade(this.reducedMotion);
+  // Page-level fade transition — fades the reader in on entry and on an
+  // event→event continuation (which reuses this component, keyed on
+  // `id`); the leave guard's `beginExit()` fades it back out.
+  protected readonly fade = createReaderFade(this.reducedMotion, this.id);
 
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
@@ -223,11 +220,10 @@ export class ReaderEventPage implements ReaderLeavable {
    * Leave-guard hook (`ReaderLeavable`). Fades the reader's visuals and
    * BGM out before the route is torn down, so leaving the event — for a
    * continuation or back out of the reader — never cuts abruptly.
-   * Always resolves true: the guard only delays, never blocks.
+   * Always resolves true: the guard only delays, never blocks. Idempotent
+   * within one navigation — `fade.fadeOut()` caches its in-flight fade.
    */
   beginExit(): Promise<boolean> {
-    if (this.exiting) return Promise.resolve(true);
-    this.exiting = true;
     const audioMs = this.reducedMotion() ? REDUCED_MOTION_EXIT_MS : EXIT_FADE_MS;
     return Promise.all([
       this.fade.fadeOut(),
