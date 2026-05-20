@@ -124,7 +124,7 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
                 <input
                   id="prefs-text-opacity"
                   type="range"
-                  min="40"
+                  min="70"
                   max="100"
                   step="1"
                   class="flex-1"

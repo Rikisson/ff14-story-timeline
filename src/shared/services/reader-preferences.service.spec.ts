@@ -30,13 +30,13 @@ describe('ReaderPreferencesService', () => {
     svc.setFontSize('large');
     svc.setBgmVolume(0.25);
     svc.setSfxVolume(0.5);
-    svc.setTextBoxOpacity(0.6);
+    svc.setTextBoxOpacity(0.85);
     const reborn = fresh();
     expect(reborn.allowTextAnimations()).toBe(false);
     expect(reborn.fontSize()).toBe('large');
     expect(reborn.bgmVolume()).toBe(0.25);
     expect(reborn.sfxVolume()).toBe(0.5);
-    expect(reborn.textBoxOpacity()).toBe(0.6);
+    expect(reborn.textBoxOpacity()).toBe(0.85);
   });
 
   it('clamps volumes to [0, 1]', () => {
@@ -49,10 +49,10 @@ describe('ReaderPreferencesService', () => {
     expect(svc.sfxVolume()).toBe(0);
   });
 
-  it('clamps text-box opacity to [0.4, 1]', () => {
+  it('clamps text-box opacity to [0.7, 1]', () => {
     const svc = fresh();
     svc.setTextBoxOpacity(0);
-    expect(svc.textBoxOpacity()).toBe(0.4);
+    expect(svc.textBoxOpacity()).toBe(0.7);
     svc.setTextBoxOpacity(5);
     expect(svc.textBoxOpacity()).toBe(1);
     svc.setTextBoxOpacity(0.75);

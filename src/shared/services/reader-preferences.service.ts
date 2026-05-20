@@ -128,11 +128,11 @@ function clamp01(v: number): number {
   return v;
 }
 
-// Text-box translucency floors at 0.4 so the card never becomes
-// unreadable — fully hiding it is the separate header toggle's job.
+// Text-box translucency floors at 0.7 so the card stays comfortably
+// readable — fully hiding it is the separate header toggle's job.
 function clampOpacity(v: number): number {
   if (!Number.isFinite(v)) return DEFAULTS.textBoxOpacity;
-  if (v < 0.4) return 0.4;
+  if (v < 0.7) return 0.7;
   if (v > 1) return 1;
   return v;
 }
