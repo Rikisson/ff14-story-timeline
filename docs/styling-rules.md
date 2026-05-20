@@ -149,10 +149,11 @@ selector block. No component code changes.
 The reader carries a small layout vocabulary in `src/styles.css` that
 keeps presentation knobs out of component code:
 
-- `--reader-card-width` — width of the floating text card inside the
-  scene frame (default `60%`). Override at any scope (`:root`, a
-  per-theme block, or `[data-reader-width="wide"]`) to shift between
-  focal and density without touching templates.
+- `--reader-card-width` / `--reader-page-width` — widths of the two
+  reader text panels: the story reader's floating card (default `60%`)
+  and the event reader's centered reading page (default `42rem`).
+  Override either at any scope to retune the layout without touching
+  templates.
 - `.reader-font-{small|medium|large|xl}` — applied to the reader root
   by `ReaderPreferencesService.fontSize`. Each class sets
   `--scene-font-size`, which the typewriter and floating card read.
@@ -160,12 +161,13 @@ keeps presentation knobs out of component code:
   filters applied to the background layer when
   `Scene.backgroundEffect` is set. The filter sits on the layer
   container only; character sprites stay full-saturation.
-- `.reader-card` — the floating text card itself. Opaque
-  `bg-surface`, `border-border`, soft shadow, `font-size:
-  var(--scene-font-size)`, absolute-positioned at `bottom: 6%` of
-  the article. `.reader-card-overflow` caps the card at `50vh` with
-  vertical scroll and a bottom fade mask — used by the reader-event
-  page for long descriptions.
+- `.reader-card` — the reader text panel. Opaque `bg-surface`,
+  `border-border`, soft shadow, `font-size: var(--scene-font-size)`.
+  The story reader uses the default floating card,
+  absolute-positioned at `bottom: 6%` of the article. The event
+  reader adds `.reader-card-page`: vertically centered, narrower
+  (`--reader-page-width`), capped at `78vh` with internal scroll so a
+  long lore entry stays inside the panel.
 
 Idle-fade chrome and the OS-level `prefers-reduced-motion` collapse
 are driven by component-local signals, not CSS variables, so they

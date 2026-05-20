@@ -249,12 +249,14 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-bg-effect-cool       { filter: hue-rotate(-15deg) saturate(0.85) brightness(0.95); }
 .reader-bg-effect-warm       { filter: hue-rotate(15deg) saturate(1.1) brightness(1.05); }
 
-/* Reader floating text card. Sits inside the 16:9 scene frame, bottom-
- * centered, opaque so the reader's focus is anchored regardless of what
- * the background is doing. Width is a token so the layout can widen
- * later without component changes. */
+/* Reader text panels. The story reader's floating card sits inside the
+ * scene frame, bottom-centered; the event reader's page variant is
+ * centered and narrower. Both are opaque so the reader's focus stays
+ * anchored regardless of the background, and both widths are tokens so
+ * the layout can retune without component changes. */
 :root {
   --reader-card-width: 60%;
+  --reader-page-width: 42rem;
   --reader-card-opacity: 0.9;
 }
 .reader-card {
@@ -287,6 +289,18 @@ html [data-testid='output-socket'] > *.multiple {
  * outranks `.reader-card`'s own `display: flex`. */
 .reader-card.reader-card-hidden {
   display: none;
+}
+/* Event reader's reading panel. Vertically centered and narrower than
+ * the story card, sized to its content but capped so a long lore entry
+ * scrolls inside the panel instead of running off the frame. */
+.reader-card.reader-card-page {
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: var(--reader-page-width);
+  max-height: 78vh;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
 }
 /* Foreground layer (characters + card) inside the scene frame. Its own
  * layer so a crossfade transition can fade it in over the background. */
@@ -322,15 +336,6 @@ html [data-testid='output-socket'] > *.multiple {
   line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-/* Long event descriptions overflow the natural card height. Cap at half
- * the viewport, allow vertical scroll, and fade the bottom so the
- * reader can tell there's more below. */
-.reader-card-overflow {
-  max-height: 50vh;
-  overflow-y: auto;
-  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent);
-          mask-image: linear-gradient(180deg, #000 80%, transparent);
 }
 /* Reader header toggle (text box / characters) in its engaged state —
  * the content it controls is currently hidden. Reuses the app-wide

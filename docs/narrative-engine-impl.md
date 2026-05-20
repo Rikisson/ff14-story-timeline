@@ -397,16 +397,16 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 - **No scene graph, no SFX, no localStorage progress.** Events are
   one frame; there's nothing to restart, nothing to resume to. The
   Continue anchor mirrors the story end-scene's: `event.nextRefs[0]`
-  (editors cap to one) renders inside the floating card next to the
+  (editors cap to one) renders inside the card next to the
   description, while Back-to-catalog lives in the chrome. Restart is
   suppressed because the concept doesn't apply.
-- **Long descriptions scroll inside the card with a fade hint.** When
-  `description.length > 600` the floating card carries
-  `.reader-card-overflow`: capped at 50vh, vertical scroll, and a
-  bottom mask that hints at hidden content. The editor surfaces a
-  warning at the same threshold so authors know the reader will be
-  scrolling; the recommended path for longer prose is a one-scene
-  story rather than a long event.
+- **Long descriptions scroll inside the reading page.** The event
+  reader's text sits in `.reader-card-page` — a centered, narrower
+  panel capped at `78vh`; a description longer than that scrolls
+  inside the panel. The editor surfaces a warning once
+  `description.length > 600` so authors know the entry is getting
+  long; the recommended path for longer prose is a one-scene story
+  rather than a long event.
 - **Inline-ref tokens resolve from `event.description`.** The reader
   parses `${kind:guid}[…]` exactly as it does for scene text, so
   events can hover-link characters, places, and codex entries the

@@ -37,8 +37,6 @@ import {
   registerAutoplayUnblock,
 } from './reader-page-behaviors';
 
-const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
-
 /**
  * Single-frame reader for `TimelineEvent`. Renders the event's
  * description as a dialog-style scene-view, with the cover image as the
@@ -104,7 +102,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
               [continuation]="continuation()"
               [inlineRefOptions]="inlineRefOptions()"
               [textSpeed]="effectiveTextSpeed()"
-              [cardOverflow]="cardOverflow()"
+              cardVariant="page"
               [cardHidden]="cardHidden()"
             />
 
@@ -292,10 +290,6 @@ export class ReaderEventPage implements ReaderLeavable {
     }
     return out;
   });
-
-  protected readonly cardOverflow = computed(
-    () => (this.event()?.description.length ?? 0) > OVERFLOW_DESCRIPTION_THRESHOLD,
-  );
 
   // Continuation reads the first entry of `nextRefs[]` — editors cap
   // selection to one but the schema preserves the array shape. The

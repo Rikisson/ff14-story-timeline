@@ -190,8 +190,9 @@ type CrossfadeSlot = 'A' | 'B';
                  must not restart the text from the first character. -->
             <div
               class="reader-card backdrop-blur-sm"
-              [class.reader-card-overflow]="cardOverflow()"
+              [class.reader-card-page]="cardVariant() === 'page'"
               [class.reader-card-hidden]="cardHidden()"
+              [attr.tabindex]="cardVariant() === 'page' ? 0 : null"
               appContentLang
               role="region"
               aria-live="polite"
@@ -264,10 +265,9 @@ export class SceneViewComponent {
   readonly continuation = input<SceneContinuation | null>(null);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
-  // Caps the card height and adds a fade-out mask + vertical scroll.
-  // Reader-event uses this for long descriptions; reader-story leaves
-  // it false because scene text is capped by the editor at ~280 chars.
-  readonly cardOverflow = input<boolean>(false);
+  // Card presentation: 'floating' is the story reader's bottom-anchored
+  // dialog card; 'page' is the event reader's centered reading panel.
+  readonly cardVariant = input<'floating' | 'page'>('floating');
   // Reader header toggles. `cardHidden` collapses the floating text card
   // (it returns only via the header toggle); `spritesHidden` drops the
   // whole character layer.
