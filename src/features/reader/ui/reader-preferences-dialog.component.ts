@@ -1,13 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   viewChild,
 } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FontSize, ReaderPreferencesService } from '@shared/services';
-import { GhostButtonComponent, ToggleButtonComponent } from '@shared/ui';
+import {
+  GhostButtonComponent,
+  SegmentedControlComponent,
+  SegmentOption,
+  ToggleButtonComponent,
+} from '@shared/ui';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
 
@@ -21,7 +28,7 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
  */
 @Component({
   selector: 'app-reader-preferences-dialog',
-  imports: [TranslocoDirective, GhostButtonComponent, ToggleButtonComponent],
+  imports: [TranslocoDirective, GhostButtonComponent, SegmentedControlComponent, ToggleButtonComponent],
   providers: [
     provideTranslocoScope({
       scope: 'reader',
@@ -65,17 +72,12 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
               <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
                 {{ t('prefs.fontSize') }}
               </label>
-              <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('prefs.fontSize')">
-                @for (size of fontSizes; track size) {
-                  <button
-                    type="button"
-                    role="radio"
-                    [attr.aria-checked]="prefs.fontSize() === size ? 'true' : 'false'"
-                    [class]="sizeButtonClass(size)"
-                    (click)="prefs.setFontSize(size)"
-                  >{{ t('size.' + size) }}</button>
-                }
-              </div>
+              <app-segmented-control
+                [options]="fontSizeOptions()"
+                [value]="prefs.fontSize()"
+                [ariaLabel]="t('prefs.fontSize')"
+                (valueChange)="prefs.setFontSize($event)"
+              />
             </section>
 
             <section class="flex flex-col gap-2">
@@ -144,8 +146,18 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
 export class ReaderPreferencesDialogComponent {
   protected readonly prefs = inject(ReaderPreferencesService);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
-  protected readonly fontSizes = FONT_SIZES;
+  protected readonly fontSizeOptions = computed<SegmentOption<FontSize>[]>(() => {
+    this.activeLang();
+    return FONT_SIZES.map((size) => ({
+      value: size,
+      label: this.transloco.translate('reader.size.' + size),
+    }));
+  });
 
   open(): void {
     this.dialog().nativeElement.showModal();
@@ -180,15 +192,6 @@ export class ReaderPreferencesDialogComponent {
   protected onOpacityInput(event: Event): void {
     const v = Number((event.target as HTMLInputElement).value);
     if (Number.isFinite(v)) this.prefs.setTextBoxOpacity(v / 100);
-  }
-
-  protected sizeButtonClass(size: FontSize): string {
-    const base =
-      'inline-flex items-center justify-center rounded-md border h-9 px-3 text-sm transition-colors ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
-    return this.prefs.fontSize() === size
-      ? `${base} border-accent-ring bg-accent-soft text-accent-soft-foreground focus-visible:ring-accent-ring`
-      : `${base} border-border-strong bg-surface text-foreground hover:bg-surface-muted focus-visible:ring-foreground-faint`;
   }
 
   protected onBackdropClick(event: MouseEvent): void {

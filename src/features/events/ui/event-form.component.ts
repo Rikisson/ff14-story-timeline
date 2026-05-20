@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { DateValidationError } from '@features/calendar';
 import { AssetPickerComponent, CoverSlotComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
@@ -13,6 +14,8 @@ import {
   PrimaryButtonComponent,
   RichTextInputComponent,
   SecondaryButtonComponent,
+  SegmentedControlComponent,
+  SegmentOption,
 } from '@shared/ui';
 import { TimelineEventDraft } from '../data-access/event.types';
 import eventEn from '../i18n/en.json';
@@ -45,6 +48,7 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
     EntityPickerComponent,
     InGameDateInputComponent,
     RichTextInputComponent,
+    SegmentedControlComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -127,17 +131,12 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
 
           <div class="flex flex-col gap-2 text-sm">
             <span class="font-medium text-foreground-muted">{{ t('field.backgroundEffect') }}</span>
-            <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.backgroundEffect')">
-              @for (eff of bgEffects; track eff) {
-                <button
-                  type="button"
-                  role="radio"
-                  [attr.aria-checked]="resolvedBackgroundEffect() === eff ? 'true' : 'false'"
-                  [class]="segmentClass(resolvedBackgroundEffect() === eff)"
-                  (click)="onBackgroundEffectChange(eff)"
-                >{{ t('effect.' + eff) }}</button>
-              }
-            </div>
+            <app-segmented-control
+              [options]="backgroundEffectOptions()"
+              [value]="resolvedBackgroundEffect()"
+              [ariaLabel]="t('field.backgroundEffect')"
+              (valueChange)="onBackgroundEffectChange($event)"
+            />
           </div>
 
           <div class="flex flex-col gap-2 text-sm">
@@ -230,10 +229,13 @@ export class EventFormComponent {
   protected readonly plotlineMax = PLOTLINE_REFS_MAX;
   protected readonly nextKinds = ['story', 'event'] as const;
   protected readonly nextRefsMax = NEXT_REFS_MAX;
-  protected readonly bgEffects = BG_EFFECTS;
   protected readonly longDescriptionThreshold = LONG_DESCRIPTION_THRESHOLD;
 
   private readonly assets = inject(AssetThumbResolver);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
@@ -246,6 +248,15 @@ export class EventFormComponent {
   protected readonly nextRefsValue = computed<EntityRef[]>(() => this.nextRefs().slice());
   protected readonly resolvedBackgroundEffect = computed<BackgroundEffectOption>(
     () => this.backgroundEffect() ?? 'none',
+  );
+  protected readonly backgroundEffectOptions = computed<SegmentOption<BackgroundEffectOption>[]>(
+    () => {
+      this.activeLang();
+      return BG_EFFECTS.map((eff) => ({
+        value: eff,
+        label: this.transloco.translate('event.effect.' + eff),
+      }));
+    },
   );
   protected readonly bgmSelection = computed<string[]>(() => {
     const id = this.bgmAssetId();
@@ -298,15 +309,6 @@ export class EventFormComponent {
     this.nextRefs.set(
       refs.filter((r) => r.kind === 'story' || r.kind === 'event') as EntityRef<'story' | 'event'>[],
     );
-  }
-
-  protected segmentClass(active: boolean): string {
-    const base =
-      'inline-flex items-center justify-center rounded-md border h-9 px-3 text-sm transition-colors ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
-    return active
-      ? `${base} border-accent-ring bg-accent-soft text-accent-soft-foreground focus-visible:ring-accent-ring`
-      : `${base} border-border-strong bg-surface text-foreground hover:bg-surface-muted focus-visible:ring-foreground-faint`;
   }
 
   protected onDate(value: InGameDate): void {

@@ -5,10 +5,13 @@ import { Scene, SceneLayout, StagedCharacter } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
 import {
+  CollapsibleSectionComponent,
   DangerButtonComponent,
   EntityPickerComponent,
   GhostButtonComponent,
   RichTextInputComponent,
+  SegmentedControlComponent,
+  SegmentOption,
 } from '@shared/ui';
 import { SceneAssetsPanelComponent } from './scene-assets-panel.component';
 import editorEn from '../i18n/en.json';
@@ -44,11 +47,13 @@ function defaultFacingFor(position: string): Facing {
 @Component({
   selector: 'app-scene-editor-panel',
   imports: [
-    GhostButtonComponent,
+    CollapsibleSectionComponent,
     DangerButtonComponent,
     EntityPickerComponent,
+    GhostButtonComponent,
     RichTextInputComponent,
     SceneAssetsPanelComponent,
+    SegmentedControlComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -76,236 +81,229 @@ function defaultFacingFor(position: string): Facing {
           </header>
           <p class="full-id" [title]="id">{{ t('field.sceneIdPrefix') }} {{ id }}</p>
 
-          <div class="field">
-            <label for="scene-label">{{ t('field.label') }}</label>
-            <input
-              id="scene-label"
-              type="text"
-              [placeholder]="t('empty.sceneShorthandPlaceholder')"
-              [value]="s.label ?? ''"
-              (input)="emitLabel($event, id)"
-            />
-            <span class="hint">
-              {{ t('empty.labelHint') }}
-            </span>
-          </div>
+          <div class="sections">
+            <app-collapsible-section [title]="t('section.content')" [defaultOpen]="true">
+              <div class="field">
+                <label for="scene-label">{{ t('field.label') }}</label>
+                <input
+                  id="scene-label"
+                  type="text"
+                  [placeholder]="t('empty.sceneShorthandPlaceholder')"
+                  [value]="s.label ?? ''"
+                  (input)="emitLabel($event, id)"
+                />
+                <span class="hint">{{ t('empty.labelHint') }}</span>
+              </div>
 
-          <div class="field">
-            <label>{{ t('field.sceneLayout') }}</label>
-            <div role="radiogroup" class="modes" [attr.aria-label]="t('field.sceneLayout')">
-              @for (l of sceneLayouts; track l) {
-                <label class="mode">
-                  <input
-                    type="radio"
-                    name="sceneLayout"
-                    [value]="l"
-                    [checked]="(s.layout ?? 'dialog') === l"
-                    (change)="onLayoutChange(id, l)"
+              <div class="field">
+                <label>{{ t('field.sceneLayout') }}</label>
+                <app-segmented-control
+                  [options]="layoutOptions()"
+                  [value]="s.layout ?? 'dialog'"
+                  [ariaLabel]="t('field.sceneLayout')"
+                  (valueChange)="onLayoutChange(id, $event)"
+                />
+              </div>
+
+              <fieldset class="group">
+                <legend>{{ t('field.speaker') }}</legend>
+                <app-segmented-control
+                  [options]="speakerModes()"
+                  [value]="speakerMode()"
+                  [ariaLabel]="t('field.speakerType')"
+                  (valueChange)="onSpeakerMode(id, $event)"
+                />
+
+                @if (speakerMode() === 'character') {
+                  <app-entity-picker
+                    [value]="speakerRefValue()"
+                    [kinds]="characterKinds"
+                    [multiple]="false"
+                    [includeDrafts]="true"
+                    [placeholder]="t('empty.searchCharacter')"
+                    (valueChange)="onSpeakerCharacter(id, $event)"
                   />
-                  {{ t('layout.' + l) }}
-                </label>
-              }
-            </div>
-          </div>
-
-          <fieldset class="group">
-            <legend>{{ t('field.speaker') }}</legend>
-            <div class="modes" role="radiogroup" [attr.aria-label]="t('field.speakerType')">
-              @for (m of speakerModes(); track m.value) {
-                <label class="mode">
-                  <input
-                    type="radio"
-                    name="speakerMode"
-                    [value]="m.value"
-                    [checked]="speakerMode() === m.value"
-                    (change)="onSpeakerMode(id, m.value)"
-                  />
-                  {{ m.label }}
-                </label>
-              }
-            </div>
-
-            @if (speakerMode() === 'character') {
-              <app-entity-picker
-                [value]="speakerRefValue()"
-                [kinds]="characterKinds"
-                [multiple]="false"
-                [includeDrafts]="true"
-                [placeholder]="t('empty.searchCharacter')"
-                (valueChange)="onSpeakerCharacter(id, $event)"
-              />
-              @if (speakerNotOnStage()) {
-                <div class="warning" role="status">
-                  <span>{{ t('message.speakerNotOnStage') }}</span>
-                  <button uiGhost type="button" (click)="addSpeakerToStage(id)">
-                    {{ t('action.addToStage') }}
-                  </button>
-                </div>
-              }
-            } @else if (speakerMode() === 'custom') {
-              <input
-                type="text"
-                [placeholder]="t('empty.speakerCustomPlaceholder')"
-                [value]="speakerString()"
-                (input)="onSpeakerCustom($event, id)"
-              />
-            }
-          </fieldset>
-
-          <div class="field">
-            <label>{{ t('field.text') }}</label>
-            <app-rich-text-input
-              appContentLang
-              [value]="s.text"
-              [ariaLabel]="t('tooltip.sceneTextAria')"
-              [placeholder]="t('empty.textPlaceholder')"
-              (valueChange)="emitTextValue(id, $event)"
-            />
-          </div>
-
-          <fieldset class="group">
-            <legend>{{ t('message.onStageCount', { count: s.characters.length }) }}</legend>
-            @if (s.characters.length === 0) {
-              <p class="hint">{{ t('empty.noStaged') }}</p>
-            } @else {
-              <ul class="staged">
-                @for (sc of s.characters; track sc.entity.id) {
-                  <li class="staged-row">
-                    <span class="staged-name">{{ characterName(sc.entity.id) }}</span>
-                    <select (change)="onPositionChange($event, id, sc.entity.id)">
-                      @for (p of positionOptions; track p) {
-                        <option [value]="p" [selected]="p === sc.position">{{ p }}</option>
-                      }
-                    </select>
-                    <select
-                      [attr.aria-label]="t('tooltip.facingForCharacter', { name: characterName(sc.entity.id) })"
-                      (change)="onFacingChange($event, id, sc.entity.id)"
-                    >
-                      @for (f of facings; track f) {
-                        <option [value]="f" [selected]="f === (sc.facing ?? facingDefault(sc.position))">{{ t('facing.' + f) }}</option>
-                      }
-                    </select>
-                    @if (spriteOptions(sc.entity.id).length > 1) {
-                      <select
-                        [attr.aria-label]="t('tooltip.spriteForCharacter', { name: characterName(sc.entity.id) })"
-                        (change)="onSpriteChange($event, id, sc.entity.id)"
-                      >
-                        @for (po of spriteOptions(sc.entity.id); track po.id) {
-                          <option [value]="po.id" [selected]="po.id === (sc.spriteId ?? '')">{{ po.label }}</option>
-                        }
-                      </select>
-                    }
-                    <button
-                      type="button"
-                      class="remove"
-                      [attr.aria-label]="t('tooltip.removeFromStage', { name: characterName(sc.entity.id) })"
-                      (click)="removeStaged(id, sc.entity.id)"
-                    >
-                      ×
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
-            <app-entity-picker
-              [value]="emptyRefArray"
-              [kinds]="characterKinds"
-              [multiple]="false"
-              [includeDrafts]="true"
-              [placeholder]="t('empty.searchCharacter')"
-              (valueChange)="onAddStaged(id, $event)"
-            />
-          </fieldset>
-
-          <div class="field">
-            <label>{{ t('field.place') }}</label>
-            <app-entity-picker
-              [value]="placeRefValue()"
-              [kinds]="placeKinds"
-              [multiple]="false"
-              [includeDrafts]="true"
-              [placeholder]="t('empty.searchPlace')"
-              (valueChange)="onPlace(id, $event)"
-            />
-          </div>
-
-          <h4>{{ t('message.choicesCount', { count: s.next.length }) }}</h4>
-          @if (s.next.length === 0) {
-            <p class="hint">{{ t('empty.noChoicesHint') }}</p>
-            <fieldset class="group">
-              <legend>{{ t('field.nextRefs') }}</legend>
-              <p class="hint">{{ t('empty.nextRefsHint') }}</p>
-              <app-entity-picker
-                [value]="nextRefsValue()"
-                [kinds]="continuationKinds"
-                [maxSelections]="1"
-                [includeDrafts]="true"
-                [placeholder]="t('empty.searchContinuation')"
-                (valueChange)="onNextRefs(id, $event)"
-              />
-            </fieldset>
-          } @else {
-            @if (s.next.length > 1) {
-              <p class="hint">{{ t('empty.reorderHint') }}</p>
-            }
-            <ul class="choices">
-              @for (choice of s.next; track choice.sceneId; let i = $index) {
-                <li
-                  class="choice"
-                  [class.dragging]="dragIndex() === i"
-                  [class.drag-over]="dragOverIndex() === i && dragIndex() !== i"
-                  (dragover)="onDragOver($event, i)"
-                  (dragleave)="onDragLeave(i)"
-                  (drop)="onDrop($event, id, i)"
-                >
-                  <button
-                    type="button"
-                    class="handle"
-                    draggable="true"
-                    [attr.aria-label]="t('tooltip.reorderChoice', { index: i + 1, total: s.next.length })"
-                    (dragstart)="onDragStart($event, i)"
-                    (dragend)="onDragEnd()"
-                  >
-                    ⋮⋮
-                  </button>
-                  <span class="arrow" [title]="choice.sceneId">
-                    → <code>{{ destLabel(choice.sceneId) }}</code>
-                  </span>
+                  @if (speakerNotOnStage()) {
+                    <div class="warning" role="status">
+                      <span>{{ t('message.speakerNotOnStage') }}</span>
+                      <button uiGhost type="button" (click)="addSpeakerToStage(id)">
+                        {{ t('action.addToStage') }}
+                      </button>
+                    </div>
+                  }
+                } @else if (speakerMode() === 'custom') {
                   <input
                     type="text"
-                    [placeholder]="t('empty.choiceLabelPlaceholder')"
-                    [value]="choice.label ?? ''"
-                    (input)="emitChoiceLabel($event, id, choice.sceneId)"
+                    [placeholder]="t('empty.speakerCustomPlaceholder')"
+                    [value]="speakerString()"
+                    (input)="onSpeakerCustom($event, id)"
                   />
-                </li>
+                }
+              </fieldset>
+
+              <div class="field">
+                <label>{{ t('field.text') }}</label>
+                <app-rich-text-input
+                  appContentLang
+                  [value]="s.text"
+                  [ariaLabel]="t('tooltip.sceneTextAria')"
+                  [placeholder]="t('empty.textPlaceholder')"
+                  (valueChange)="emitTextValue(id, $event)"
+                />
+              </div>
+            </app-collapsible-section>
+
+            <app-collapsible-section [title]="t('section.staging')">
+              <fieldset class="group">
+                <legend>{{ t('message.onStageCount', { count: s.characters.length }) }}</legend>
+                @if (s.characters.length === 0) {
+                  <p class="hint">{{ t('empty.noStaged') }}</p>
+                } @else {
+                  <ul class="staged">
+                    @for (sc of s.characters; track sc.entity.id) {
+                      <li class="staged-row">
+                        <div class="staged-head">
+                          <span class="staged-name">{{ characterName(sc.entity.id) }}</span>
+                          <button
+                            type="button"
+                            class="remove"
+                            [attr.aria-label]="t('tooltip.removeFromStage', { name: characterName(sc.entity.id) })"
+                            (click)="removeStaged(id, sc.entity.id)"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <label class="staged-control">
+                          <span>{{ t('field.position') }}</span>
+                          <select (change)="onPositionChange($event, id, sc.entity.id)">
+                            @for (p of positionOptions; track p) {
+                              <option [value]="p" [selected]="p === sc.position">{{ p }}</option>
+                            }
+                          </select>
+                        </label>
+                        <label class="staged-control">
+                          <span>{{ t('field.facing') }}</span>
+                          <select (change)="onFacingChange($event, id, sc.entity.id)">
+                            @for (f of facings; track f) {
+                              <option [value]="f" [selected]="f === (sc.facing ?? facingDefault(sc.position))">{{ t('facing.' + f) }}</option>
+                            }
+                          </select>
+                        </label>
+                        @if (spriteOptions(sc.entity.id).length > 1) {
+                          <label class="staged-control">
+                            <span>{{ t('field.sprite') }}</span>
+                            <select (change)="onSpriteChange($event, id, sc.entity.id)">
+                              @for (po of spriteOptions(sc.entity.id); track po.id) {
+                                <option [value]="po.id" [selected]="po.id === (sc.spriteId ?? '')">{{ po.label }}</option>
+                              }
+                            </select>
+                          </label>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+                <app-entity-picker
+                  [value]="emptyRefArray"
+                  [kinds]="characterKinds"
+                  [multiple]="false"
+                  [includeDrafts]="true"
+                  [placeholder]="t('empty.searchCharacter')"
+                  (valueChange)="onAddStaged(id, $event)"
+                />
+              </fieldset>
+
+              <div class="field">
+                <label>{{ t('field.place') }}</label>
+                <app-entity-picker
+                  [value]="placeRefValue()"
+                  [kinds]="placeKinds"
+                  [multiple]="false"
+                  [includeDrafts]="true"
+                  [placeholder]="t('empty.searchPlace')"
+                  (valueChange)="onPlace(id, $event)"
+                />
+              </div>
+            </app-collapsible-section>
+
+            <app-collapsible-section [title]="t('section.choicesFlow')">
+              <h4>{{ t('message.choicesCount', { count: s.next.length }) }}</h4>
+              @if (s.next.length === 0) {
+                <p class="hint">{{ t('empty.noChoicesHint') }}</p>
+                <fieldset class="group">
+                  <legend>{{ t('field.nextRefs') }}</legend>
+                  <p class="hint">{{ t('empty.nextRefsHint') }}</p>
+                  <app-entity-picker
+                    [value]="nextRefsValue()"
+                    [kinds]="continuationKinds"
+                    [maxSelections]="1"
+                    [includeDrafts]="true"
+                    [placeholder]="t('empty.searchContinuation')"
+                    (valueChange)="onNextRefs(id, $event)"
+                  />
+                </fieldset>
+              } @else {
+                @if (s.next.length > 1) {
+                  <p class="hint">{{ t('empty.reorderHint') }}</p>
+                }
+                <ul class="choices">
+                  @for (choice of s.next; track choice.sceneId; let i = $index) {
+                    <li
+                      class="choice"
+                      [class.dragging]="dragIndex() === i"
+                      [class.drag-over]="dragOverIndex() === i && dragIndex() !== i"
+                      (dragover)="onDragOver($event, i)"
+                      (dragleave)="onDragLeave(i)"
+                      (drop)="onDrop($event, id, i)"
+                    >
+                      <button
+                        type="button"
+                        class="handle"
+                        draggable="true"
+                        [attr.aria-label]="t('tooltip.reorderChoice', { index: i + 1, total: s.next.length })"
+                        (dragstart)="onDragStart($event, i)"
+                        (dragend)="onDragEnd()"
+                      >
+                        ⋮⋮
+                      </button>
+                      <span class="arrow" [title]="choice.sceneId">
+                        → <code>{{ destLabel(choice.sceneId) }}</code>
+                      </span>
+                      <input
+                        type="text"
+                        [placeholder]="t('empty.choiceLabelPlaceholder')"
+                        [value]="choice.label ?? ''"
+                        (input)="emitChoiceLabel($event, id, choice.sceneId)"
+                      />
+                    </li>
+                  }
+                </ul>
               }
-            </ul>
-          }
+            </app-collapsible-section>
 
-          <hr />
+            <app-scene-assets-panel
+              [backgroundAssetId]="s.backgroundAssetId"
+              [backgroundEffect]="s.backgroundEffect"
+              [placeBackgrounds]="placeBackgrounds()"
+              [sfxAssetId]="s.sfxAssetId"
+              [bgmAssetId]="s.bgmAssetId"
+              [bgmSilence]="s.bgmSilence ?? false"
+              [bgmTransition]="s.bgmTransition"
+              [textSpeed]="s.textSpeed"
+              [transition]="s.transition"
+              [transitionMs]="s.transitionMs"
+              (update)="update.emit({ id, patch: $event })"
+            />
+          </div>
 
-          <app-scene-assets-panel
-            [backgroundAssetId]="s.backgroundAssetId"
-            [backgroundEffect]="s.backgroundEffect"
-            [placeBackgrounds]="placeBackgrounds()"
-            [sfxAssetId]="s.sfxAssetId"
-            [bgmAssetId]="s.bgmAssetId"
-            [bgmSilence]="s.bgmSilence ?? false"
-            [bgmTransition]="s.bgmTransition"
-            [textSpeed]="s.textSpeed"
-            [transition]="s.transition"
-            [transitionMs]="s.transitionMs"
-            (update)="update.emit({ id, patch: $event })"
-          />
-
-          <hr />
-
-          <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
-            {{ t('action.deleteScene') }}
-          </button>
-          @if (isStartScene()) {
-            <p class="hint">{{ t('empty.cantDeleteStartHint') }}</p>
-          }
+          <div class="footer">
+            <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
+              {{ t('action.deleteScene') }}
+            </button>
+            @if (isStartScene()) {
+              <p class="hint">{{ t('empty.cantDeleteStartHint') }}</p>
+            }
+          </div>
         }
       } @else {
         <p class="empty">{{ t('empty.selectSceneHint') }}</p>
@@ -347,8 +345,13 @@ function defaultFacingFor(position: string): Facing {
       font-size: 0.75rem;
       font-weight: 600;
     }
+    .sections {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
     h4 {
-      margin: 1rem 0 0.5rem;
+      margin: 0 0 0.5rem;
       font-size: 0.875rem;
     }
     .field {
@@ -363,29 +366,19 @@ function defaultFacingFor(position: string): Facing {
       color: var(--color-foreground-subtle);
     }
     .group {
-      border: 1px solid var(--color-border);
-      border-radius: 0.375rem;
-      padding: 0.5rem 0.75rem 0.75rem;
+      border: none;
+      padding: 0;
       margin: 0 0 1rem;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
     .group legend {
-      padding: 0 0.25rem;
+      padding: 0;
       font-size: 0.875rem;
       font-weight: 500;
       color: var(--color-foreground-subtle);
-    }
-    .modes {
-      display: flex;
-      gap: 1rem;
-    }
-    .mode {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.875rem;
     }
     .warning {
       display: flex;
@@ -407,18 +400,45 @@ function defaultFacingFor(position: string): Facing {
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
+      gap: 0.5rem;
     }
     .staged-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      padding: 0.5rem 0.625rem;
+      border: 1px solid var(--color-border);
+      border-radius: 0.375rem;
+      background: var(--color-surface);
+    }
+    .staged-head {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     .staged-name {
       flex: 1;
+      min-width: 0;
       font-size: 0.875rem;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .staged-row select {
+    .staged-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--color-foreground-subtle);
+    }
+    .staged-control > span {
+      width: 4rem;
+      flex-shrink: 0;
+    }
+    .staged-control select {
+      flex: 1;
+      min-width: 0;
       padding: 0.25rem 0.5rem;
       border: 1px solid var(--color-border-strong);
       border-radius: 0.25rem;
@@ -430,6 +450,7 @@ function defaultFacingFor(position: string): Facing {
     .remove {
       width: 1.5rem;
       height: 1.5rem;
+      flex-shrink: 0;
       border: none;
       border-radius: 999px;
       background: var(--color-danger);
@@ -441,17 +462,13 @@ function defaultFacingFor(position: string): Facing {
     .remove:hover {
       background: var(--color-danger-border);
     }
-    input[type='text'],
-    textarea {
+    input[type='text'] {
       padding: 0.5rem;
       border: 1px solid var(--color-border-strong);
       border-radius: 0.25rem;
       font: inherit;
       background: var(--color-surface);
       color: inherit;
-    }
-    textarea {
-      resize: vertical;
     }
     .choices {
       list-style: none;
@@ -517,10 +534,11 @@ function defaultFacingFor(position: string): Facing {
       color: var(--color-foreground-faint);
       font-style: italic;
     }
-    hr {
-      border: none;
-      border-top: 1px solid var(--color-border);
-      margin: 1rem 0;
+    .footer {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -549,7 +567,7 @@ export class SceneEditorPanelComponent {
   protected readonly dragIndex = signal<number | null>(null);
   protected readonly dragOverIndex = signal<number | null>(null);
 
-  protected readonly speakerModes = computed<{ value: SpeakerMode; label: string }[]>(() => {
+  protected readonly speakerModes = computed<SegmentOption<SpeakerMode>[]>(() => {
     this.activeLang();
     return [
       { value: 'none', label: this.transloco.translate('editor.field.speakerModeNone') },
@@ -557,11 +575,17 @@ export class SceneEditorPanelComponent {
       { value: 'custom', label: this.transloco.translate('editor.field.speakerModeCustom') },
     ];
   });
+  protected readonly layoutOptions = computed<SegmentOption<SceneLayout>[]>(() => {
+    this.activeLang();
+    return SCENE_LAYOUTS.map((layout) => ({
+      value: layout,
+      label: this.transloco.translate('editor.layout.' + layout),
+    }));
+  });
   protected readonly positionOptions = ['left', 'center', 'right'];
   protected readonly characterKinds = ['character'] as const;
   protected readonly placeKinds = ['place'] as const;
   protected readonly continuationKinds = ['story', 'event'] as const;
-  protected readonly sceneLayouts = SCENE_LAYOUTS;
   protected readonly facings = FACINGS;
   protected readonly emptyRefArray: readonly EntityRef[] = [];
 
@@ -716,8 +740,6 @@ export class SceneEditorPanelComponent {
   }
 
   protected onLayoutChange(id: string, layout: SceneLayout): void {
-    // Dialog is the default; store `undefined` for the default to keep
-    // docs lean.
     this.update.emit({ id, patch: { layout: layout === 'dialog' ? undefined : layout } });
   }
 

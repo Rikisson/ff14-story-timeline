@@ -13,7 +13,6 @@
     "speakerModeCustom": "Custom",
     "coverImage": "Cover image",
     "storyInfo": "Story info",
-    "background": "Background",
     "sfx": "Scene SFX / voice",
     "assets": "Assets",
     "bgm": "Background music",
@@ -35,7 +34,9 @@
     "draftBadge": "Draft",
     "publishedBadge": "Published",
     "sceneLayout": "Layout",
+    "position": "Position",
     "facing": "Facing",
+    "sprite": "Sprite",
     "nextRefs": "Continue reading",
     "backgroundEffect": "Background effect",
     "sceneTransition": "Scene transition",
@@ -60,7 +61,12 @@
   },
   "section": {
     "soundtrack": "Soundtrack",
-    "sceneBgm": "Scene BGM"
+    "content": "Content",
+    "staging": "Staging",
+    "choicesFlow": "Choices & flow",
+    "background": "Background",
+    "audio": "Audio",
+    "playback": "Playback"
   },
   "action": {
     "addScene": "+ Add scene",
@@ -147,8 +153,6 @@
     "contentSceneLabel": "Opening"
   },
   "tooltip": {
-    "spriteForCharacter": "Sprite for {{ name }}",
-    "facingForCharacter": "Facing direction for {{ name }}",
     "removeFromStage": "Remove {{ name }} from stage",
     "reorderChoice": "Reorder choice {{ index }} of {{ total }}",
     "pickCoverTitle": "Pick a cover image",

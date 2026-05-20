@@ -1,4 +1,5 @@
 export * from './button';
+export * from './collapsible-section';
 export * from './entity-list-pane';
 export * from './entity-picker';
 export * from './form-error';
@@ -11,6 +12,7 @@ export * from './markdown-text';
 export * from './page';
 export * from './page-header';
 export * from './rich-text-input';
+export * from './segmented-control';
 export * from './tag';
 export * from './theme-toggle';
 export * from './toggle-button';

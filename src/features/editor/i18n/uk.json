@@ -13,7 +13,6 @@
     "speakerModeCustom": "Користувацький",
     "coverImage": "Обкладинка",
     "storyInfo": "Інформація про історію",
-    "background": "Фон",
     "sfx": "SFX / голос сцени",
     "assets": "Ресурси",
     "bgm": "Фонова музика",
@@ -35,7 +34,9 @@
     "draftBadge": "Чернетка",
     "publishedBadge": "Опубліковано",
     "sceneLayout": "Розкладка",
+    "position": "Позиція",
     "facing": "Дивиться",
+    "sprite": "Спрайт",
     "nextRefs": "Читати далі",
     "backgroundEffect": "Ефект фону",
     "sceneTransition": "Перехід сцени",
@@ -60,7 +61,12 @@
   },
   "section": {
     "soundtrack": "Саундтрек",
-    "sceneBgm": "BGM сцени"
+    "content": "Вміст",
+    "staging": "Постановка",
+    "choicesFlow": "Вибори та потік",
+    "background": "Фон",
+    "audio": "Аудіо",
+    "playback": "Відтворення"
   },
   "action": {
     "addScene": "+ Додати сцену",
@@ -147,8 +153,6 @@
     "contentSceneLabel": "Початок"
   },
   "tooltip": {
-    "spriteForCharacter": "Спрайт для {{ name }}",
-    "facingForCharacter": "Напрямок погляду {{ name }}",
     "removeFromStage": "Прибрати {{ name }} зі сцени",
     "reorderChoice": "Перемістити вибір {{ index }} з {{ total }}",
     "pickCoverTitle": "Обрати обкладинку",

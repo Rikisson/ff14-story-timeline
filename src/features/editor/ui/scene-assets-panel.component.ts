@@ -1,11 +1,19 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AssetPickerComponent } from '@features/media';
 import { BgmTransition, Scene, SceneTransition, TextSpeed } from '@features/stories';
 import { AssetThumbResolver } from '@shared/data-access';
 import { BackgroundEffect } from '@shared/models';
-import { GhostButtonComponent, SecondaryButtonComponent, ToggleButtonComponent } from '@shared/ui';
+import {
+  CollapsibleSectionComponent,
+  GhostButtonComponent,
+  SecondaryButtonComponent,
+  SegmentedControlComponent,
+  SegmentOption,
+  ToggleButtonComponent,
+} from '@shared/ui';
 import editorEn from '../i18n/en.json';
 import editorUk from '../i18n/uk.json';
 
@@ -37,8 +45,10 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
   selector: 'app-scene-assets-panel',
   imports: [
     AssetPickerComponent,
+    CollapsibleSectionComponent,
     GhostButtonComponent,
     SecondaryButtonComponent,
+    SegmentedControlComponent,
     ToggleButtonComponent,
     NgOptimizedImage,
     TranslocoDirective,
@@ -54,206 +64,185 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'editor'">
-      <section class="flex flex-col gap-4">
+      <section class="flex flex-col gap-3">
         <h4 class="m-0 text-sm font-semibold text-foreground-muted">{{ t('field.assets') }}</h4>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-            {{ t('field.background') }}
-          </label>
-          @if (backgroundUrl(); as bg) {
-            <div class="relative aspect-video w-full overflow-hidden rounded border border-border">
-              <img [ngSrc]="bg" [alt]="t('tooltip.sceneBackgroundAlt')" fill class="object-cover" />
-            </div>
-            <div class="flex gap-2">
-              <button uiSecondary type="button" (click)="bgPicker.open()">{{ t('action.replace') }}</button>
-              <button uiGhost type="button" (click)="clearBackground()">{{ t('action.remove') }}</button>
-            </div>
-          } @else {
-            <button uiSecondary type="button" (click)="bgPicker.open()">
-              {{ t('action.pickBackground') }}
-            </button>
-          }
-          <app-asset-picker
-            #bgPicker
-            kind="background"
-            [title]="t('tooltip.pickBackgroundTitle')"
-            [currentSelection]="backgroundSelection()"
-            (picked)="onBackgroundPicked($event)"
-          />
-          @if (placeBackgrounds().length > 0) {
-            <span class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-              {{ t('field.placeBackgrounds') }}
-            </span>
-            <div class="grid grid-cols-3 gap-2">
-              @for (id of placeBackgrounds(); track id) {
-                @if (placeBackgroundThumbs().get(id); as thumb) {
-                  <button
-                    type="button"
-                    class="relative aspect-video overflow-hidden rounded border"
-                    [class.border-accent-ring]="backgroundAssetId() === id"
-                    [class.ring-2]="backgroundAssetId() === id"
-                    [class.ring-accent-ring]="backgroundAssetId() === id"
-                    [class.border-border]="backgroundAssetId() !== id"
-                    [attr.aria-pressed]="backgroundAssetId() === id"
-                    [attr.aria-label]="t('tooltip.usePlaceBackground', { label: thumb.label ?? '' })"
-                    (click)="onBackgroundPicked([id])"
-                  >
-                    <img [ngSrc]="thumb.url" alt="" fill class="object-cover" />
-                  </button>
-                }
-              }
-            </div>
-          }
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-            {{ t('field.backgroundEffect') }}
-          </label>
-          <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.backgroundEffect')">
-            @for (eff of bgEffects; track eff) {
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="resolvedBackgroundEffect() === eff ? 'true' : 'false'"
-                [class]="segmentClass(resolvedBackgroundEffect() === eff)"
-                (click)="onBackgroundEffectChange(eff)"
-              >{{ t('effect.' + eff) }}</button>
-            }
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-            {{ t('field.sceneTransition') }}
-          </label>
-          <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.sceneTransition')">
-            @for (mode of sceneTransitions; track mode) {
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="resolvedTransition() === mode ? 'true' : 'false'"
-                [class]="segmentClass(resolvedTransition() === mode)"
-                (click)="onTransitionChange(mode)"
-              >{{ t('sceneTransition.' + mode) }}</button>
-            }
-          </div>
-          @if (resolvedTransition() !== 'none') {
-            <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-              {{ t('field.transitionDuration') }}
-            </label>
-            <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.transitionDuration')">
-              @for (d of transitionDurations; track d.ms) {
-                <button
-                  type="button"
-                  role="radio"
-                  [attr.aria-checked]="resolvedTransitionMs() === d.ms ? 'true' : 'false'"
-                  [class]="segmentClass(resolvedTransitionMs() === d.ms)"
-                  (click)="onTransitionMsChange(d.ms)"
-                >{{ t('transitionDuration.' + d.key) }}</button>
-              }
-            </div>
-          }
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ t('field.sfx') }}</label>
-          @if (sfxUrl(); as a) {
-            <audio class="w-full" controls preload="none" [src]="a"></audio>
-            <div class="flex gap-2">
-              <button uiSecondary type="button" (click)="sfxPicker.open()">{{ t('action.replace') }}</button>
-              <button uiGhost type="button" (click)="clearSfx()">{{ t('action.remove') }}</button>
-            </div>
-          } @else {
-            <button uiSecondary type="button" (click)="sfxPicker.open()">
-              {{ t('action.pickSfx') }}
-            </button>
-          }
-          <p class="m-0 text-xs text-foreground-faint">{{ t('empty.sfxHint') }}</p>
-          <app-asset-picker
-            #sfxPicker
-            kind="sfx"
-            [title]="t('tooltip.pickSfxTitle')"
-            [currentSelection]="sfxSelection()"
-            (picked)="onSfxPicked($event)"
-          />
-        </div>
-
-        <details class="rounded border border-border bg-surface-muted/40 px-3 py-2 [&>summary]:cursor-pointer">
-          <summary class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-            {{ t('section.sceneBgm') }}
-          </summary>
-          <div class="mt-3 flex flex-col gap-3">
+        <app-collapsible-section [title]="t('section.background')">
+          <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-                {{ t('field.sceneBgm') }}
-              </label>
-              @if (bgmSilence()) {
-                <p class="m-0 text-xs italic text-foreground-faint">{{ t('empty.bgmSilencedHint') }}</p>
-              } @else if (bgmOverrideUrl(); as url) {
-                <audio class="w-full" controls preload="none" [src]="url"></audio>
+              @if (backgroundUrl(); as bg) {
+                <div class="relative aspect-video w-full overflow-hidden rounded border border-border">
+                  <img [ngSrc]="bg" [alt]="t('tooltip.sceneBackgroundAlt')" fill class="object-cover" />
+                </div>
                 <div class="flex gap-2">
-                  <button uiSecondary type="button" (click)="bgmPicker.open()">{{ t('action.replaceBgm') }}</button>
-                  <button uiGhost type="button" (click)="clearBgmOverride()">{{ t('action.removeBgm') }}</button>
+                  <button uiSecondary type="button" (click)="bgPicker.open()">{{ t('action.replace') }}</button>
+                  <button uiGhost type="button" (click)="clearBackground()">{{ t('action.remove') }}</button>
                 </div>
               } @else {
-                <button uiSecondary type="button" [disabled]="bgmSilence()" (click)="bgmPicker.open()">
-                  {{ t('action.pickBgm') }}
+                <button uiSecondary type="button" (click)="bgPicker.open()">
+                  {{ t('action.pickBackground') }}
                 </button>
-                <p class="m-0 text-xs text-foreground-faint">{{ t('empty.bgmOverrideHint') }}</p>
               }
               <app-asset-picker
-                #bgmPicker
-                kind="ambient"
-                [title]="t('tooltip.pickBgmTitle')"
-                [currentSelection]="bgmSelection()"
-                (picked)="onBgmPicked($event)"
+                #bgPicker
+                kind="background"
+                [title]="t('tooltip.pickBackgroundTitle')"
+                [currentSelection]="backgroundSelection()"
+                (picked)="onBackgroundPicked($event)"
+              />
+              @if (placeBackgrounds().length > 0) {
+                <span class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                  {{ t('field.placeBackgrounds') }}
+                </span>
+                <div class="grid grid-cols-3 gap-2">
+                  @for (id of placeBackgrounds(); track id) {
+                    @if (placeBackgroundThumbs().get(id); as thumb) {
+                      <button
+                        type="button"
+                        class="relative aspect-video overflow-hidden rounded border"
+                        [class.border-accent-ring]="backgroundAssetId() === id"
+                        [class.ring-2]="backgroundAssetId() === id"
+                        [class.ring-accent-ring]="backgroundAssetId() === id"
+                        [class.border-border]="backgroundAssetId() !== id"
+                        [attr.aria-pressed]="backgroundAssetId() === id"
+                        [attr.aria-label]="t('tooltip.usePlaceBackground', { label: thumb.label ?? '' })"
+                        (click)="onBackgroundPicked([id])"
+                      >
+                        <img [ngSrc]="thumb.url" alt="" fill class="object-cover" />
+                      </button>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                {{ t('field.backgroundEffect') }}
+              </label>
+              <app-segmented-control
+                [options]="backgroundEffectOptions()"
+                [value]="resolvedBackgroundEffect()"
+                [ariaLabel]="t('field.backgroundEffect')"
+                (valueChange)="onBackgroundEffectChange($event)"
+              />
+            </div>
+          </div>
+        </app-collapsible-section>
+
+        <app-collapsible-section [title]="t('section.audio')">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">{{ t('field.sfx') }}</label>
+              @if (sfxUrl(); as a) {
+                <audio class="w-full" controls preload="none" [src]="a"></audio>
+                <div class="flex gap-2">
+                  <button uiSecondary type="button" (click)="sfxPicker.open()">{{ t('action.replace') }}</button>
+                  <button uiGhost type="button" (click)="clearSfx()">{{ t('action.remove') }}</button>
+                </div>
+              } @else {
+                <button uiSecondary type="button" (click)="sfxPicker.open()">
+                  {{ t('action.pickSfx') }}
+                </button>
+              }
+              <p class="m-0 text-xs text-foreground-faint">{{ t('empty.sfxHint') }}</p>
+              <app-asset-picker
+                #sfxPicker
+                kind="sfx"
+                [title]="t('tooltip.pickSfxTitle')"
+                [currentSelection]="sfxSelection()"
+                (picked)="onSfxPicked($event)"
               />
             </div>
 
-            <app-toggle-button
-              [label]="t('field.bgmSilence')"
-              [checked]="bgmSilence()"
-              (checkedChange)="onBgmSilenceChange($event)"
-            />
-
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-                {{ t('field.bgmTransition') }}
-              </label>
-              <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.bgmTransition')">
-                @for (mode of bgmTransitions; track mode) {
-                  <button
-                    type="button"
-                    role="radio"
-                    [attr.aria-checked]="resolvedBgmTransition() === mode ? 'true' : 'false'"
-                    [class]="segmentClass(resolvedBgmTransition() === mode)"
-                    (click)="onBgmTransitionChange(mode)"
-                  >{{ t('transition.' + mode) }}</button>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col gap-2">
+                <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                  {{ t('field.sceneBgm') }}
+                </label>
+                @if (bgmSilence()) {
+                  <p class="m-0 text-xs italic text-foreground-faint">{{ t('empty.bgmSilencedHint') }}</p>
+                } @else if (bgmOverrideUrl(); as url) {
+                  <audio class="w-full" controls preload="none" [src]="url"></audio>
+                  <div class="flex gap-2">
+                    <button uiSecondary type="button" (click)="bgmPicker.open()">{{ t('action.replaceBgm') }}</button>
+                    <button uiGhost type="button" (click)="clearBgmOverride()">{{ t('action.removeBgm') }}</button>
+                  </div>
+                } @else {
+                  <button uiSecondary type="button" [disabled]="bgmSilence()" (click)="bgmPicker.open()">
+                    {{ t('action.pickBgm') }}
+                  </button>
+                  <p class="m-0 text-xs text-foreground-faint">{{ t('empty.bgmOverrideHint') }}</p>
                 }
+                <app-asset-picker
+                  #bgmPicker
+                  kind="ambient"
+                  [title]="t('tooltip.pickBgmTitle')"
+                  [currentSelection]="bgmSelection()"
+                  (picked)="onBgmPicked($event)"
+                />
+              </div>
+
+              <app-toggle-button
+                [label]="t('field.bgmSilence')"
+                [checked]="bgmSilence()"
+                (checkedChange)="onBgmSilenceChange($event)"
+              />
+
+              <div class="flex flex-col gap-2">
+                <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                  {{ t('field.bgmTransition') }}
+                </label>
+                <app-segmented-control
+                  [options]="bgmTransitionOptions()"
+                  [value]="resolvedBgmTransition()"
+                  [ariaLabel]="t('field.bgmTransition')"
+                  (valueChange)="onBgmTransitionChange($event)"
+                />
               </div>
             </div>
           </div>
-        </details>
+        </app-collapsible-section>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
-            {{ t('field.textSpeed') }}
-          </label>
-          <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.textSpeed')">
-            @for (speed of textSpeeds; track speed) {
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="resolvedTextSpeed() === speed ? 'true' : 'false'"
-                [class]="segmentClass(resolvedTextSpeed() === speed)"
-                (click)="onTextSpeedChange(speed)"
-              >{{ t('speed.' + speed) }}</button>
-            }
+        <app-collapsible-section [title]="t('section.playback')">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                {{ t('field.sceneTransition') }}
+              </label>
+              <app-segmented-control
+                [options]="sceneTransitionOptions()"
+                [value]="resolvedTransition()"
+                [ariaLabel]="t('field.sceneTransition')"
+                (valueChange)="onTransitionChange($event)"
+              />
+              @if (resolvedTransition() !== 'none') {
+                <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                  {{ t('field.transitionDuration') }}
+                </label>
+                <app-segmented-control
+                  [options]="transitionDurationOptions()"
+                  [value]="resolvedTransitionMs()"
+                  [ariaLabel]="t('field.transitionDuration')"
+                  (valueChange)="onTransitionMsChange($event)"
+                />
+              }
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                {{ t('field.textSpeed') }}
+              </label>
+              <app-segmented-control
+                [options]="textSpeedOptions()"
+                [value]="resolvedTextSpeed()"
+                [ariaLabel]="t('field.textSpeed')"
+                (valueChange)="onTextSpeedChange($event)"
+              />
+              <p class="m-0 text-xs text-foreground-faint">{{ t('field.textSpeedHelp') }}</p>
+            </div>
           </div>
-          <p class="m-0 text-xs text-foreground-faint">{{ t('field.textSpeedHelp') }}</p>
-        </div>
+        </app-collapsible-section>
       </section>
     </ng-container>
   `,
@@ -261,6 +250,10 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
 })
 export class SceneAssetsPanelComponent {
   private readonly assets = inject(AssetThumbResolver);
+  private readonly transloco = inject(TranslocoService);
+  private readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   readonly backgroundAssetId = input<string | undefined>();
   readonly backgroundEffect = input<BackgroundEffect | undefined>();
@@ -275,17 +268,9 @@ export class SceneAssetsPanelComponent {
 
   readonly update = output<Partial<Scene>>();
 
-  protected readonly textSpeeds = TEXT_SPEEDS;
-  protected readonly bgmTransitions = BGM_TRANSITIONS;
-  protected readonly bgEffects = BG_EFFECTS;
-  protected readonly sceneTransitions = SCENE_TRANSITIONS;
-  protected readonly transitionDurations = TRANSITION_DURATIONS;
-
   protected readonly backgroundUrl = computed(() =>
     this.assets.resolve(this.backgroundAssetId())()?.url,
   );
-  // Thumbnails for the selected scene's place backgrounds — a one-click
-  // quick-pick beneath the background asset picker.
   protected readonly placeBackgroundThumbs = this.assets.resolveMany(this.placeBackgrounds);
   protected readonly sfxUrl = computed(() => this.assets.resolve(this.sfxAssetId())()?.url);
   protected readonly bgmOverrideUrl = computed(() =>
@@ -318,6 +303,46 @@ export class SceneAssetsPanelComponent {
   protected readonly resolvedTransitionMs = computed<number>(
     () => this.transitionMs() ?? DEFAULT_TRANSITION_MS,
   );
+
+  protected readonly backgroundEffectOptions = computed<SegmentOption<BackgroundEffectOption>[]>(
+    () => {
+      this.activeLang();
+      return BG_EFFECTS.map((effect) => ({
+        value: effect,
+        label: this.transloco.translate('editor.effect.' + effect),
+      }));
+    },
+  );
+  protected readonly sceneTransitionOptions = computed<SegmentOption<SceneTransitionOption>[]>(
+    () => {
+      this.activeLang();
+      return SCENE_TRANSITIONS.map((mode) => ({
+        value: mode,
+        label: this.transloco.translate('editor.sceneTransition.' + mode),
+      }));
+    },
+  );
+  protected readonly transitionDurationOptions = computed<SegmentOption<number>[]>(() => {
+    this.activeLang();
+    return TRANSITION_DURATIONS.map((duration) => ({
+      value: duration.ms,
+      label: this.transloco.translate('editor.transitionDuration.' + duration.key),
+    }));
+  });
+  protected readonly bgmTransitionOptions = computed<SegmentOption<BgmTransition>[]>(() => {
+    this.activeLang();
+    return BGM_TRANSITIONS.map((mode) => ({
+      value: mode,
+      label: this.transloco.translate('editor.transition.' + mode),
+    }));
+  });
+  protected readonly textSpeedOptions = computed<SegmentOption<TextSpeed>[]>(() => {
+    this.activeLang();
+    return TEXT_SPEEDS.map((speed) => ({
+      value: speed,
+      label: this.transloco.translate('editor.speed.' + speed),
+    }));
+  });
 
   protected onBackgroundPicked(ids: string[]): void {
     this.update.emit({ backgroundAssetId: ids[0] });
@@ -355,13 +380,11 @@ export class SceneAssetsPanelComponent {
     this.update.emit({ textSpeed: speed });
   }
 
-  protected onBackgroundEffectChange(eff: BackgroundEffectOption): void {
-    this.update.emit({ backgroundEffect: eff === 'none' ? undefined : eff });
+  protected onBackgroundEffectChange(effect: BackgroundEffectOption): void {
+    this.update.emit({ backgroundEffect: effect === 'none' ? undefined : effect });
   }
 
   protected onTransitionChange(mode: SceneTransitionOption): void {
-    // 'none' is the default — store undefined for both fields to keep
-    // scene docs lean.
     if (mode === 'none') {
       this.update.emit({ transition: undefined, transitionMs: undefined });
     } else {
@@ -371,14 +394,5 @@ export class SceneAssetsPanelComponent {
 
   protected onTransitionMsChange(ms: number): void {
     this.update.emit({ transitionMs: ms === DEFAULT_TRANSITION_MS ? undefined : ms });
-  }
-
-  protected segmentClass(active: boolean): string {
-    const base =
-      'inline-flex items-center justify-center rounded-md border h-9 px-3 text-sm transition-colors ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
-    return active
-      ? `${base} border-accent-ring bg-accent-soft text-accent-soft-foreground focus-visible:ring-accent-ring`
-      : `${base} border-border-strong bg-surface text-foreground hover:bg-surface-muted focus-visible:ring-foreground-faint`;
   }
 }
