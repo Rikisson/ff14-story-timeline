@@ -37,7 +37,9 @@
     "sceneLayout": "Layout",
     "facing": "Facing",
     "nextRefs": "Continue reading",
-    "backgroundEffect": "Background effect"
+    "backgroundEffect": "Background effect",
+    "sceneTransition": "Scene transition",
+    "transitionDuration": "Transition duration"
   },
   "layout": {
     "dialog": "Dialog",
@@ -65,6 +67,7 @@
     "setAsStart": "Set as start",
     "addToStage": "Add to stage",
     "deleteScene": "Delete scene",
+    "duplicateScene": "Duplicate scene",
     "replace": "Replace",
     "remove": "Remove",
     "pickCover": "Pick cover",
@@ -78,6 +81,16 @@
   "transition": {
     "crossfade": "Crossfade",
     "cut": "Cut"
+  },
+  "sceneTransition": {
+    "none": "None",
+    "crossfade": "Crossfade",
+    "fade-through-black": "Fade through black"
+  },
+  "transitionDuration": {
+    "fast": "Fast",
+    "normal": "Normal",
+    "slow": "Slow"
   },
   "speed": {
     "slow": "Slow",

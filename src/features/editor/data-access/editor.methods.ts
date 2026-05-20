@@ -158,6 +158,26 @@ export function withEditorMethods() {
           return id;
         },
 
+        duplicateScene(id: string): string | null {
+          const source = store.scenes()[id];
+          if (!source) return null;
+          const newId = crypto.randomUUID();
+          // structuredClone gives the copy its own `next` / `nextRefs` /
+          // `characters` arrays — a true independent scene, not a shared
+          // reference. `startSceneId` is deliberately left untouched.
+          const copy: Scene = {
+            ...structuredClone(source),
+            position: { x: source.position.x + 48, y: source.position.y + 48 },
+            label: source.label?.trim() ? `${source.label.trim()} (copy)` : undefined,
+          };
+          patchState(store, (state) => ({
+            scenes: { ...state.scenes, [newId]: copy },
+            selectedSceneId: newId,
+            dirty: true,
+          }));
+          return newId;
+        },
+
         removeScene(id: string) {
           patchState(store, (state) => {
             if (!state.scenes[id]) return state;

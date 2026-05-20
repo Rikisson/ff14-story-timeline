@@ -17,6 +17,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
+import { Scene } from '@features/stories';
 import {
   AssetThumbResolver,
   EntityResolverCache,
@@ -60,7 +61,7 @@ import { SfxController } from './sfx-controller';
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
-      <div [class]="rootClass()">
+      <div [class]="rootClass()" [style.--reader-card-opacity]="prefs.textBoxOpacity()">
         @if (store.loading()) {
           @if (showLoadingIndicator()) {
             <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
@@ -77,6 +78,7 @@ import { SfxController } from './sfx-controller';
               [text]="scene.text"
               [layout]="scene.layout ?? 'dialog'"
               [speaker]="speakerLabel()"
+              [speakerPosition]="speakerPosition()"
               [background]="backgroundUrl()"
               [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
               [backgroundEffect]="scene.backgroundEffect"
@@ -85,9 +87,24 @@ import { SfxController } from './sfx-controller';
               [continuation]="continuation()"
               [inlineRefOptions]="inlineRefOptions()"
               [textSpeed]="effectiveTextSpeed()"
-              (choose)="store.choose($event)"
+              [cardHidden]="cardHidden()"
+              [spritesHidden]="spritesHidden()"
+              (choose)="advance($event)"
+              (cardRevealRequested)="cardHidden.set(false)"
             />
           }
+
+          <!-- Fade-through-black transition overlay. Opacity is driven by
+               the advance/goBack orchestrator; the duration is the
+               scene's half-transition time. -->
+          <div
+            class="absolute inset-0 z-20 bg-black transition-opacity ease-in-out"
+            [class.opacity-0]="!fadingToBlack()"
+            [class.opacity-100]="fadingToBlack()"
+            [class.pointer-events-none]="!fadingToBlack()"
+            [style.transition-duration.ms]="blackoutMs()"
+            aria-hidden="true"
+          ></div>
 
           <div
             class="pointer-events-none absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ease-out"
@@ -106,9 +123,28 @@ import { SfxController } from './sfx-controller';
                     uiGhost
                     type="button"
                     [disabled]="!store.canGoBack()"
-                    (click)="store.back()"
+                    (click)="goBack()"
                   >
                     {{ t('action.back') }}
+                  </button>
+                  <button
+                    uiSecondary
+                    type="button"
+                    [attr.aria-pressed]="cardHidden()"
+                    [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
+                    [disabled]="isShowcaseScene()"
+                    (click)="cardHidden.set(!cardHidden())"
+                  >
+                    {{ t('action.textBoxEmoji') }}
+                  </button>
+                  <button
+                    uiSecondary
+                    type="button"
+                    [attr.aria-pressed]="spritesHidden()"
+                    [attr.aria-label]="spritesHidden() ? t('action.showSprites') : t('action.hideSprites')"
+                    (click)="spritesHidden.set(!spritesHidden())"
+                  >
+                    {{ t('action.spritesEmoji') }}
                   </button>
                   <button
                     uiSecondary
@@ -163,6 +199,7 @@ export class ReaderStoryPage {
   protected readonly layout = inject(LayoutStore);
 
   private readonly headerEl = viewChild<ElementRef<HTMLElement>>('headerEl');
+  private readonly sceneView = viewChild(SceneViewComponent);
   private readonly bgmA = viewChild<ElementRef<HTMLAudioElement>>('bgmA');
   private readonly bgmB = viewChild<ElementRef<HTMLAudioElement>>('bgmB');
   private readonly sfxA = viewChild<ElementRef<HTMLAudioElement>>('sfxA');
@@ -200,12 +237,88 @@ export class ReaderStoryPage {
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
   );
 
+  // Reader header view toggles. Persist across scene changes — the card
+  // is brought back by a click on the article (see scene-view).
+  protected readonly cardHidden = signal(false);
+  protected readonly spritesHidden = signal(false);
+
+  // Scene-transition state. `fadingToBlack` drives the black overlay;
+  // `blackoutMs` is its per-transition fade duration; `transitioning`
+  // guards against overlapping navigations.
+  protected readonly fadingToBlack = signal(false);
+  protected readonly blackoutMs = signal(250);
+  private readonly transitioning = signal(false);
+  private readonly pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
+  protected readonly isShowcaseScene = computed(
+    () => (this.store.currentScene()?.layout ?? 'dialog') === 'showcase',
+  );
+
+  // Speaker-name placement above the card follows the speaker's staged
+  // slot; a narrator (string speaker) or an off-stage speaker centers.
+  protected readonly speakerPosition = computed<'left' | 'center' | 'right'>(() => {
+    const scene = this.store.currentScene();
+    const sp = scene?.speaker;
+    if (!scene || !sp || typeof sp === 'string') return 'center';
+    const staged = scene.characters.find((c) => c.entity.id === sp.id);
+    const pos = staged?.position;
+    return pos === 'left' || pos === 'right' ? pos : 'center';
+  });
+
   protected toggleFullscreen(): void {
     if (this.layout.browserFullscreen()) {
       void this.layout.exitFullscreen();
     } else {
       void this.layout.enterFullscreen();
     }
+  }
+
+  protected advance(targetId: string): void {
+    const target = this.store.content()?.scenes[targetId];
+    this.runTransition(target, () => this.store.choose(targetId));
+  }
+
+  protected goBack(): void {
+    if (!this.store.canGoBack()) return;
+    const history = this.store.history();
+    const target = this.store.content()?.scenes[history[history.length - 2]];
+    this.runTransition(target, () => this.store.back());
+  }
+
+  // Routes a navigation through the destination scene's transition.
+  private runTransition(target: Scene | undefined, swap: () => void): void {
+    if (this.transitioning()) return;
+    const transition = target?.transition;
+    // Instant cut when there's no transition or the OS asks for reduced motion.
+    if (!transition || this.reducedMotion()) {
+      swap();
+      return;
+    }
+    const duration = clampTransitionMs(target?.transitionMs);
+    if (transition === 'crossfade') {
+      swap();
+      this.sceneView()?.playEnterTransition(duration);
+      return;
+    }
+    // fade-through-black: black in over the first half, swap under cover
+    // of full black, then black back out.
+    const half = Math.round(duration / 2);
+    this.transitioning.set(true);
+    this.blackoutMs.set(half);
+    this.fadingToBlack.set(true);
+    this.scheduleTimer(() => {
+      swap();
+      this.fadingToBlack.set(false);
+      this.scheduleTimer(() => this.transitioning.set(false), half);
+    }, half);
+  }
+
+  private scheduleTimer(fn: () => void, ms: number): void {
+    const id = setTimeout(() => {
+      this.pendingTimers.delete(id);
+      fn();
+    }, ms);
+    this.pendingTimers.add(id);
   }
 
   protected readonly effectiveTextSpeed = computed(() =>
@@ -472,6 +585,7 @@ export class ReaderStoryPage {
     });
     this.destroyRef.onDestroy(() => {
       if (pendingIndicator !== null) clearTimeout(pendingIndicator);
+      for (const id of this.pendingTimers) clearTimeout(id);
       this.bgmController?.dispose();
       this.sfxController?.dispose();
       // Leaving the player while in fullscreen would otherwise strand
@@ -618,6 +732,13 @@ export class ReaderStoryPage {
 
 function defaultFacing(position: string): 'left' | 'right' {
   return position === 'right' ? 'left' : 'right';
+}
+
+// Scene-transition duration, defaulting to 500 ms and bounded to a sane
+// range so a malformed `transitionMs` can't stall the reader.
+function clampTransitionMs(ms: number | undefined): number {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return 500;
+  return Math.min(Math.max(ms, 100), 3000);
 }
 
 // ---------------------------------------------------------------------

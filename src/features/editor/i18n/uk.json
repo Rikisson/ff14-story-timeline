@@ -37,7 +37,9 @@
     "sceneLayout": "Розкладка",
     "facing": "Дивиться",
     "nextRefs": "Читати далі",
-    "backgroundEffect": "Ефект фону"
+    "backgroundEffect": "Ефект фону",
+    "sceneTransition": "Перехід сцени",
+    "transitionDuration": "Тривалість переходу"
   },
   "layout": {
     "dialog": "Діалог",
@@ -65,6 +67,7 @@
     "setAsStart": "Зробити стартовою",
     "addToStage": "Додати на сцену",
     "deleteScene": "Видалити сцену",
+    "duplicateScene": "Дублювати сцену",
     "replace": "Замінити",
     "remove": "Прибрати",
     "pickCover": "Обрати обкладинку",
@@ -78,6 +81,16 @@
   "transition": {
     "crossfade": "Плавно",
     "cut": "Різко"
+  },
+  "sceneTransition": {
+    "none": "Немає",
+    "crossfade": "Плавний перехід",
+    "fade-through-black": "Згасання крізь чорний"
+  },
+  "transitionDuration": {
+    "fast": "Швидко",
+    "normal": "Звичайно",
+    "slow": "Повільно"
   },
   "speed": {
     "slow": "Повільно",

@@ -21,7 +21,9 @@ import {
   SecondaryButtonComponent,
 } from '@shared/ui';
 import { AssetDoc, AssetKind, AUDIO_ASSET_KINDS } from '../data-access/asset.types';
+import { CropAspect } from '../data-access/image-crop';
 import { MediaAssetsService } from '../data-access/media-assets.service';
+import { ImageCropDialogComponent } from './image-crop-dialog.component';
 import mediaEn from '../i18n/en.json';
 import mediaUk from '../i18n/uk.json';
 
@@ -34,6 +36,7 @@ import mediaUk from '../i18n/uk.json';
     PrimaryButtonComponent,
     SecondaryButtonComponent,
     TranslocoDirective,
+    ImageCropDialogComponent,
   ],
   providers: [
     provideTranslocoScope({
@@ -194,6 +197,8 @@ import mediaUk from '../i18n/uk.json';
             </footer>
           </div>
         </dialog>
+
+        <app-image-crop-dialog #cropDialog (confirmed)="onCropConfirmed($event)" />
       </ng-container>
     </ng-container>
   `,
@@ -214,6 +219,7 @@ export class AssetPickerComponent {
     initialValue: this.transloco.getActiveLang(),
   });
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly cropDialog = viewChild.required<ImageCropDialogComponent>('cropDialog');
 
   protected readonly selection = signal<string[]>([]);
   protected readonly tagFilter = signal<string>('');
@@ -231,6 +237,17 @@ export class AssetPickerComponent {
   });
 
   protected readonly isAudio = computed(() => AUDIO_ASSET_KINDS.includes(this.kind()));
+
+  // Crop framing per image kind: covers and backgrounds default to landscape
+  // 16:9 with a 1280px width floor (the `processImage` minimum); sprites
+  // default to portrait 9:16 with no floor. The author can still switch the
+  // ratio — or skip cropping — inside the dialog.
+  private readonly defaultAspect = computed<CropAspect>(() =>
+    this.kind() === 'sprite' ? '9:16' : '16:9',
+  );
+  private readonly cropMinWidth = computed<number | undefined>(() =>
+    this.kind() === 'sprite' ? undefined : 1280,
+  );
 
   // Every image kind accepts the same photo formats — covers and backgrounds
   // transcode to WebP, sprites normalize losslessly. Audio extensions are
@@ -316,11 +333,30 @@ export class AssetPickerComponent {
     this.tagFilter.set((event.target as HTMLInputElement).value);
   }
 
-  protected async onPick(event: Event): Promise<void> {
+  protected onPick(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    // Audio uploads pass through as authored. Image uploads route through the
+    // crop dialog first; it emits a cropped file — or the original, via "Use
+    // full image" — back to `onCropConfirmed`.
+    if (this.isAudio()) {
+      void this.uploadFile(file);
+      return;
+    }
+    this.uploadError.set(null);
+    this.cropDialog().open(file, {
+      aspect: this.defaultAspect(),
+      minSourceWidth: this.cropMinWidth(),
+    });
+  }
+
+  protected onCropConfirmed(file: File): void {
+    void this.uploadFile(file);
+  }
+
+  private async uploadFile(file: File): Promise<void> {
     const uid = this.auth.user()?.uid;
     if (!uid) {
       this.uploadError.set(this.transloco.translate('media.message.signInToUpload'));

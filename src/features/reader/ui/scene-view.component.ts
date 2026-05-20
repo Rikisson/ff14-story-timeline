@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
@@ -104,12 +114,17 @@ type CrossfadeSlot = 'A' | 'B';
           }
         </div>
 
+        <!-- Foreground (characters + card / caption). Wrapped so a
+             crossfade scene transition can fade it in over the
+             independently-crossfading background. -->
+        <div #foreground class="scene-foreground">
         <!-- Character layer: full-height slots over the background.
              Sprites root at the article floor and stand tall; the
              floating card (higher z-index) overlaps their lower body the
              way a VN expects, per docs/narrative-engine-impl.md *Scene
              rendering layers*. The layer is non-interactive so taps fall
              through to the article. -->
+        @if (!spritesHidden()) {
         <div class="pointer-events-none absolute inset-0 grid grid-cols-3 gap-2 px-4">
           @for (slot of slots; track slot) {
             <div class="flex h-full items-end justify-center gap-2">
@@ -161,8 +176,9 @@ type CrossfadeSlot = 'A' | 'B';
             </div>
           }
         </div>
+        }
 
-        @if (layout() === 'dialog') {
+        @if (layout() === 'dialog' && !cardHidden()) {
           <div
             class="reader-card"
             [class.reader-card-overflow]="cardOverflow()"
@@ -172,7 +188,9 @@ type CrossfadeSlot = 'A' | 'B';
             [attr.aria-label]="t('aria.narration')"
           >
             @if (speaker(); as s) {
-              <p class="m-0 text-sm font-semibold text-accent">{{ s }}</p>
+              <div [class]="speakerPositionClass()">
+                <span>{{ s }}</span>
+              </div>
             }
             <app-typewriter-text
               #typewriter
@@ -206,6 +224,7 @@ type CrossfadeSlot = 'A' | 'B';
             </p>
           </div>
         }
+        </div>
       </article>
     </ng-container>
   `,
@@ -234,8 +253,21 @@ export class SceneViewComponent {
   // Reader-event uses this for long descriptions; reader-story leaves
   // it false because scene text is capped by the editor at ~280 chars.
   readonly cardOverflow = input<boolean>(false);
+  // Reader header toggles. `cardHidden` collapses the floating text card
+  // (a click on the article reveals it again, via `cardRevealRequested`);
+  // `spritesHidden` drops the whole character layer.
+  readonly cardHidden = input<boolean>(false);
+  readonly spritesHidden = input<boolean>(false);
+  // Horizontal placement of the speaker name above the card, driven by
+  // the speaker's staged slot.
+  readonly speakerPosition = input<'left' | 'center' | 'right'>('center');
 
   readonly choose = output<string>();
+  readonly cardRevealRequested = output<void>();
+
+  protected readonly speakerPositionClass = computed(
+    () => `reader-card-speaker reader-card-speaker-${this.speakerPosition()}`,
+  );
 
   protected readonly backgroundEffectClass = computed(() => {
     const eff = this.backgroundEffect();
@@ -244,6 +276,19 @@ export class SceneViewComponent {
 
   protected readonly slots = POSITION_SLOTS;
   private readonly typewriter = viewChild<TypewriterTextComponent>('typewriter');
+  private readonly foreground = viewChild<ElementRef<HTMLElement>>('foreground');
+
+  /**
+   * Fade the foreground (characters + card) in over `durationMs`. Called
+   * by the reader page when entering a `crossfade` scene — the background
+   * runs its own two-slot crossfade underneath.
+   */
+  playEnterTransition(durationMs: number): void {
+    this.foreground()?.nativeElement.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: durationMs, easing: 'ease-out' },
+    );
+  }
 
   // Two-slot crossfade state. `frontSlot` flips on each background
   // change; whichever slot becomes the front is opaque, the other
@@ -296,6 +341,14 @@ export class SceneViewComponent {
     if (this.layout() === 'showcase') {
       const next = this.choices();
       if (next.length === 1) this.choose.emit(next[0].sceneId);
+      return;
+    }
+    // Card hidden: the first click brings it back rather than skipping
+    // the typewriter — choices live in the card, so it must reveal
+    // before the reader can advance.
+    if (this.cardHidden()) {
+      this.cardRevealRequested.emit();
+      event.stopPropagation();
       return;
     }
     const tw = this.typewriter();

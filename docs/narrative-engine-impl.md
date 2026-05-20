@@ -216,6 +216,17 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   text animations in preferences *or* when the OS-level
   `prefers-reduced-motion` hint is set — either signal wins
   regardless of the authored value.
+- **Per-scene entry transition.** `Scene.transition` ('crossfade' |
+  'fade-through-black', `undefined` for an instant cut) plays as the
+  reader enters the scene, with `Scene.transitionMs` setting the total
+  duration (default 500 ms). Crossfade swaps the scene immediately and
+  fades the foreground — characters and card — in over the
+  independently-crossfading background; fade-through-black dips a black
+  overlay to full, swaps the scene under cover, then lifts it. The
+  transition is keyed off the *destination* scene, so it applies to
+  both forward choices and Back navigation, and collapses to an instant
+  cut under `prefers-reduced-motion`. Distinct from `bgmTransition`,
+  which governs only the audio crossfade.
 
 ## Calendar
 
@@ -411,11 +422,14 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   visual field. There is no 16:9 article frame — the background
   `<img>` uses `object-cover` and crops on whichever dimension
   exceeds the viewport.
-- **Three independent DOM layers inside the article.** Background,
-  characters, and the floating reader card (or showcase caption) are
-  siblings, not nested. CSS filters applied to the background must
-  not affect characters; characters stay at full
-  saturation/sharpness so the visual hierarchy emerges automatically.
+- **Background and foreground are separate layers inside the article.**
+  The background sits in its own layer; the characters and the floating
+  reader card (or showcase caption) share a foreground layer stacked
+  above it. CSS filters applied to the background never reach the
+  foreground, so characters stay at full saturation/sharpness and the
+  visual hierarchy emerges automatically. Grouping the foreground also
+  lets a crossfade transition fade characters and card in together over
+  the background's own crossfade.
 - **Floating reader card carries the dialog UI.** A solid, opaque
   card centered at the bottom of the article holds the speaker
   label, the typewriter body, and the choice list — choices live
@@ -437,6 +451,13 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 - **Per-scene mood filters apply to the background layer only.** The
   five `Scene.backgroundEffect` values map to CSS `filter` values on
   the background layer container, leaving characters untouched.
+- **Scene transitions are orchestrated by the reader page.** On a
+  `crossfade` scene the page swaps immediately and calls scene-view to
+  fade its foreground layer in; on `fade-through-black` the page drives
+  a black overlay above the article — black in, swap, black out.
+  Navigation is serialized for the transition's duration so a second
+  choice can't overlap an in-flight transition. A true double-buffered
+  A↔B crossfade is intentionally out of scope.
 - **Chrome idle-fades after 2.5s of pointer/key inactivity.** Title
   bar, back, preferences, and fullscreen controls fade to opacity 0
   and become non-interactive after no activity for 2.5 seconds. Any

@@ -115,6 +115,25 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
                 <span class="w-10 text-right text-sm tabular-nums text-foreground-muted">{{ sfxPercent() }}</span>
               </div>
             </section>
+
+            <section class="flex flex-col gap-2">
+              <label for="prefs-text-opacity" class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+                {{ t('prefs.textBoxOpacity') }}
+              </label>
+              <div class="flex items-center gap-3">
+                <input
+                  id="prefs-text-opacity"
+                  type="range"
+                  min="40"
+                  max="100"
+                  step="1"
+                  class="flex-1"
+                  [value]="opacityPercent()"
+                  (input)="onOpacityInput($event)"
+                />
+                <span class="w-10 text-right text-sm tabular-nums text-foreground-muted">{{ opacityPercent() }}</span>
+              </div>
+            </section>
           </div>
         </div>
       </dialog>
@@ -152,6 +171,15 @@ export class ReaderPreferencesDialogComponent {
   protected onSfxInput(event: Event): void {
     const v = Number((event.target as HTMLInputElement).value);
     if (Number.isFinite(v)) this.prefs.setSfxVolume(v / 100);
+  }
+
+  protected opacityPercent(): number {
+    return Math.round(this.prefs.textBoxOpacity() * 100);
+  }
+
+  protected onOpacityInput(event: Event): void {
+    const v = Number((event.target as HTMLInputElement).value);
+    if (Number.isFinite(v)) this.prefs.setTextBoxOpacity(v / 100);
   }
 
   protected sizeButtonClass(size: FontSize): string {

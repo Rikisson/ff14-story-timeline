@@ -11,7 +11,13 @@
     "exitFullscreen": "Вийти з повноекранного режиму",
     "fullscreenEmoji": "⛶",
     "close": "Закрити",
-    "continueReading": "Читати далі: {{ title }}"
+    "continueReading": "Читати далі: {{ title }}",
+    "hideText": "Сховати текстове поле",
+    "showText": "Показати текстове поле",
+    "hideSprites": "Сховати персонажів",
+    "showSprites": "Показати персонажів",
+    "textBoxEmoji": "💬",
+    "spritesEmoji": "🧍"
   },
   "message": {
     "loading": "Завантаження…",
@@ -33,7 +39,8 @@
     "allowTextAnimationsHelp": "Вимкніть, щоб текст з’являвся миттєво.",
     "fontSize": "Розмір шрифту",
     "bgmVolume": "Гучність музики",
-    "sfxVolume": "Гучність звуків"
+    "sfxVolume": "Гучність звуків",
+    "textBoxOpacity": "Прозорість текстового поля"
   },
   "size": {
     "small": "Малий",

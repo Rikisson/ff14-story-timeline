@@ -24,6 +24,7 @@ import {
   IMAGE_ASSET_KINDS,
   StoredAsset,
 } from './asset.types';
+import { canvasToBlob, encodeCanvasLossless } from './image-crop';
 
 const ASSETS_COLLECTION = '_assets';
 const CACHE_CONTROL = 'public, max-age=31536000';
@@ -284,26 +285,6 @@ export function spriteFitsBounds(width: number, height: number): boolean {
   return width <= w && height <= h;
 }
 
-// Encode a sprite canvas without quality loss. WebP first — lossless on
-// Chromium, max-quality on Firefox; if the browser returned anything other
-// than WebP (Safari cannot canvas-encode it), fall back to lossless PNG.
-// Both containers preserve the alpha channel.
-async function encodeCanvasLossless(
-  canvas: HTMLCanvasElement,
-  sourceName: string,
-): Promise<File> {
-  const stem = stripExtension(sourceName);
-  const webp = await canvasToBlob(canvas, 'image/webp', 1);
-  if (webp && webp.type === 'image/webp') {
-    return new File([webp], `${stem}.webp`, { type: 'image/webp' });
-  }
-  const png = await canvasToBlob(canvas, 'image/png');
-  if (png) {
-    return new File([png], `${stem}.png`, { type: 'image/png' });
-  }
-  throw new Error('Sprite encoding failed.');
-}
-
 // Sprites accept JPEG/PNG/WebP/AVIF. An in-bounds WebP is uploaded byte-for-byte
 // so authored transparency stays bit-exact; any other format, or an oversize
 // image, is downscaled into the 9:16 sprite box and re-encoded losslessly. The
@@ -374,14 +355,6 @@ function drawBitmapScaled(
   if (!ctx) throw new Error('Canvas 2D context unavailable.');
   ctx.drawImage(bitmap, 0, 0, targetW, targetH);
   return canvas;
-}
-
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type: string,
-  quality?: number,
-): Promise<Blob | null> {
-  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
 
 async function encodeBitmapToWebP(

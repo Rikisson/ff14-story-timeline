@@ -11,7 +11,13 @@
     "exitFullscreen": "Exit fullscreen",
     "fullscreenEmoji": "⛶",
     "close": "Close",
-    "continueReading": "Continue reading: {{ title }}"
+    "continueReading": "Continue reading: {{ title }}",
+    "hideText": "Hide text box",
+    "showText": "Show text box",
+    "hideSprites": "Hide characters",
+    "showSprites": "Show characters",
+    "textBoxEmoji": "💬",
+    "spritesEmoji": "🧍"
   },
   "message": {
     "loading": "Loading…",
@@ -33,7 +39,8 @@
     "allowTextAnimationsHelp": "When off, scene text appears instantly.",
     "fontSize": "Font size",
     "bgmVolume": "Music volume",
-    "sfxVolume": "Sound effects volume"
+    "sfxVolume": "Sound effects volume",
+    "textBoxOpacity": "Text box opacity"
   },
   "size": {
     "small": "Small",

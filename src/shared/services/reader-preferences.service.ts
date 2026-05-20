@@ -12,6 +12,7 @@ interface StoredPrefs {
   fontSize?: unknown;
   bgmVolume?: unknown;
   sfxVolume?: unknown;
+  textBoxOpacity?: unknown;
 }
 
 const DEFAULTS = {
@@ -19,6 +20,7 @@ const DEFAULTS = {
   fontSize: 'medium' as FontSize,
   bgmVolume: 0.7,
   sfxVolume: 1.0,
+  textBoxOpacity: 1.0,
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +31,7 @@ export class ReaderPreferencesService {
   readonly fontSize = signal<FontSize>(DEFAULTS.fontSize);
   readonly bgmVolume = signal<number>(DEFAULTS.bgmVolume);
   readonly sfxVolume = signal<number>(DEFAULTS.sfxVolume);
+  readonly textBoxOpacity = signal<number>(DEFAULTS.textBoxOpacity);
 
   constructor() {
     this.hydrateFromStorage();
@@ -52,6 +55,11 @@ export class ReaderPreferencesService {
 
   setSfxVolume(v: number): void {
     this.sfxVolume.set(clamp01(v));
+    this.persist();
+  }
+
+  setTextBoxOpacity(v: number): void {
+    this.textBoxOpacity.set(clampOpacity(v));
     this.persist();
   }
 
@@ -91,6 +99,9 @@ export class ReaderPreferencesService {
     if (typeof parsed.sfxVolume === 'number' && Number.isFinite(parsed.sfxVolume)) {
       this.sfxVolume.set(clamp01(parsed.sfxVolume));
     }
+    if (typeof parsed.textBoxOpacity === 'number' && Number.isFinite(parsed.textBoxOpacity)) {
+      this.textBoxOpacity.set(clampOpacity(parsed.textBoxOpacity));
+    }
   }
 
   private persist(): void {
@@ -100,6 +111,7 @@ export class ReaderPreferencesService {
       fontSize: this.fontSize(),
       bgmVolume: this.bgmVolume(),
       sfxVolume: this.sfxVolume(),
+      textBoxOpacity: this.textBoxOpacity(),
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -112,6 +124,15 @@ export class ReaderPreferencesService {
 function clamp01(v: number): number {
   if (!Number.isFinite(v)) return 0;
   if (v < 0) return 0;
+  if (v > 1) return 1;
+  return v;
+}
+
+// Text-box translucency floors at 0.4 so the card never becomes
+// unreadable — fully hiding it is the separate header toggle's job.
+function clampOpacity(v: number): number {
+  if (!Number.isFinite(v)) return DEFAULTS.textBoxOpacity;
+  if (v < 0.4) return 0.4;
   if (v > 1) return 1;
   return v;
 }

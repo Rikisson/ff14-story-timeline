@@ -114,4 +114,30 @@ describe('EditorStore', () => {
     store.selectScene(a);
     expect(store.selectedSceneId()).toBe(a);
   });
+
+  it('duplicateScene clones with a fresh id, offset position, and (copy) label', () => {
+    const a = store.addScene({ x: 10, y: 20 });
+    const b = store.addScene();
+    store.addConnection(a, b);
+    store.updateScene(a, { label: 'Intro', text: 'Hello' });
+
+    const copyId = store.duplicateScene(a);
+
+    expect(copyId).not.toBeNull();
+    expect(copyId).not.toBe(a);
+    const copy = store.scenes()[copyId!];
+    expect(copy.text).toBe('Hello');
+    expect(copy.label).toBe('Intro (copy)');
+    expect(copy.position).toEqual({ x: 58, y: 68 });
+    // next is an independent array, not a shared reference
+    expect(copy.next).toEqual([{ sceneId: b }]);
+    expect(copy.next).not.toBe(store.scenes()[a].next);
+    expect(store.selectedSceneId()).toBe(copyId);
+    // the start scene is left untouched
+    expect(store.startSceneId()).toBe(a);
+  });
+
+  it('duplicateScene returns null for an unknown id', () => {
+    expect(store.duplicateScene('nope')).toBeNull();
+  });
 });

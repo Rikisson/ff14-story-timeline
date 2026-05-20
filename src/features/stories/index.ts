@@ -4,6 +4,7 @@ export type {
   BgmTransition,
   Scene,
   SceneLayout,
+  SceneTransition,
   StagedCharacter,
   StoredStory,
   StoredStoryContent,

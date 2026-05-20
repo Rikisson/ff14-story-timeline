@@ -63,7 +63,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'reader'">
-      <div [class]="rootClass()">
+      <div [class]="rootClass()" [style.--reader-card-opacity]="prefs.textBoxOpacity()">
         @if (loading()) {
           @if (showLoadingIndicator()) {
             <p class="mx-auto w-full max-w-7xl px-4 pt-4 text-foreground-subtle">{{ t('message.loading') }}</p>
@@ -87,6 +87,8 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
             [inlineRefOptions]="inlineRefOptions()"
             [textSpeed]="effectiveTextSpeed()"
             [cardOverflow]="cardOverflow()"
+            [cardHidden]="cardHidden()"
+            (cardRevealRequested)="cardHidden.set(false)"
           />
 
           <div
@@ -99,6 +101,15 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
               <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-sm">
                 <h1 class="m-0 min-w-0 flex-1 truncate text-xl font-semibold text-foreground">{{ ev.name }}</h1>
                 <div class="flex items-center gap-2">
+                  <button
+                    uiSecondary
+                    type="button"
+                    [attr.aria-pressed]="cardHidden()"
+                    [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
+                    (click)="cardHidden.set(!cardHidden())"
+                  >
+                    {{ t('action.textBoxEmoji') }}
+                  </button>
                   <button
                     uiSecondary
                     type="button"
@@ -162,6 +173,11 @@ export class ReaderEventPage {
   protected readonly rootClass = computed(
     () => `reader-font-${this.prefs.fontSize()} relative h-full`,
   );
+
+  // Hide-text toggle. Persists across reloads of the single event frame;
+  // a click on the article brings the card back (see scene-view). Events
+  // carry no staged characters, so there is no hide-sprites counterpart.
+  protected readonly cardHidden = signal(false);
 
   protected toggleFullscreen(): void {
     if (this.layout.browserFullscreen()) {

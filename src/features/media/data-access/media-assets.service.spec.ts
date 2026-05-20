@@ -114,7 +114,7 @@ describe('processSprite', () => {
     stubCanvas((cb) => cb(null));
     await expect(
       processSprite(fakeFile('image/png', 4096, 'hero.png')),
-    ).rejects.toThrow(/Sprite encoding failed/);
+    ).rejects.toThrow(/Image encoding failed/);
   });
 
   it('re-encodes an oversize WebP instead of passing it through', async () => {

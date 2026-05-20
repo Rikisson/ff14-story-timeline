@@ -11,6 +11,10 @@ export interface StagedCharacter {
 export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export type BgmTransition = 'crossfade' | 'cut';
 export type SceneLayout = 'dialog' | 'showcase';
+// Visual transition played when the reader enters this scene. Undefined
+// means an instant cut. Distinct from `BgmTransition`, which only governs
+// the audio crossfade.
+export type SceneTransition = 'crossfade' | 'fade-through-black';
 
 export interface Scene {
   text: string;
@@ -26,6 +30,10 @@ export interface Scene {
   bgmTransition?: BgmTransition;
   textSpeed?: TextSpeed;
   layout?: SceneLayout;
+  // Reader transition on entering this scene; `transitionMs` is the total
+  // duration. Both undefined = instant cut.
+  transition?: SceneTransition;
+  transitionMs?: number;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
   nextRefs?: EntityRef<'story' | 'event'>[];

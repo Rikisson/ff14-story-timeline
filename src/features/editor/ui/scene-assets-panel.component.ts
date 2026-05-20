@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AssetPickerComponent } from '@features/media';
-import { BgmTransition, Scene, TextSpeed } from '@features/stories';
+import { BgmTransition, Scene, SceneTransition, TextSpeed } from '@features/stories';
 import { AssetThumbResolver } from '@shared/data-access';
 import { BackgroundEffect } from '@shared/models';
 import { GhostButtonComponent, SecondaryButtonComponent, ToggleButtonComponent } from '@shared/ui';
@@ -11,6 +11,18 @@ import editorUk from '../i18n/uk.json';
 
 const TEXT_SPEEDS: readonly TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 const BGM_TRANSITIONS: readonly BgmTransition[] = ['crossfade', 'cut'];
+type SceneTransitionOption = SceneTransition | 'none';
+const SCENE_TRANSITIONS: readonly SceneTransitionOption[] = [
+  'none',
+  'crossfade',
+  'fade-through-black',
+];
+const TRANSITION_DURATIONS = [
+  { key: 'fast', ms: 250 },
+  { key: 'normal', ms: 500 },
+  { key: 'slow', ms: 1000 },
+] as const;
+const DEFAULT_TRANSITION_MS = 500;
 type BackgroundEffectOption = BackgroundEffect | 'none';
 const BG_EFFECTS: readonly BackgroundEffectOption[] = [
   'none',
@@ -86,6 +98,39 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
               >{{ t('effect.' + eff) }}</button>
             }
           </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+            {{ t('field.sceneTransition') }}
+          </label>
+          <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.sceneTransition')">
+            @for (mode of sceneTransitions; track mode) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="resolvedTransition() === mode ? 'true' : 'false'"
+                [class]="segmentClass(resolvedTransition() === mode)"
+                (click)="onTransitionChange(mode)"
+              >{{ t('sceneTransition.' + mode) }}</button>
+            }
+          </div>
+          @if (resolvedTransition() !== 'none') {
+            <label class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+              {{ t('field.transitionDuration') }}
+            </label>
+            <div role="radiogroup" class="flex flex-wrap gap-2" [attr.aria-label]="t('field.transitionDuration')">
+              @for (d of transitionDurations; track d.ms) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="resolvedTransitionMs() === d.ms ? 'true' : 'false'"
+                  [class]="segmentClass(resolvedTransitionMs() === d.ms)"
+                  (click)="onTransitionMsChange(d.ms)"
+                >{{ t('transitionDuration.' + d.key) }}</button>
+              }
+            </div>
+          }
         </div>
 
         <div class="flex flex-col gap-2">
@@ -200,12 +245,16 @@ export class SceneAssetsPanelComponent {
   readonly bgmSilence = input<boolean>(false);
   readonly bgmTransition = input<BgmTransition | undefined>();
   readonly textSpeed = input<TextSpeed | undefined>();
+  readonly transition = input<SceneTransition | undefined>();
+  readonly transitionMs = input<number | undefined>();
 
   readonly update = output<Partial<Scene>>();
 
   protected readonly textSpeeds = TEXT_SPEEDS;
   protected readonly bgmTransitions = BGM_TRANSITIONS;
   protected readonly bgEffects = BG_EFFECTS;
+  protected readonly sceneTransitions = SCENE_TRANSITIONS;
+  protected readonly transitionDurations = TRANSITION_DURATIONS;
 
   protected readonly backgroundUrl = computed(() =>
     this.assets.resolve(this.backgroundAssetId())()?.url,
@@ -234,6 +283,12 @@ export class SceneAssetsPanelComponent {
   );
   protected readonly resolvedBackgroundEffect = computed<BackgroundEffectOption>(
     () => this.backgroundEffect() ?? 'none',
+  );
+  protected readonly resolvedTransition = computed<SceneTransitionOption>(
+    () => this.transition() ?? 'none',
+  );
+  protected readonly resolvedTransitionMs = computed<number>(
+    () => this.transitionMs() ?? DEFAULT_TRANSITION_MS,
   );
 
   protected onBackgroundPicked(ids: string[]): void {
@@ -274,6 +329,20 @@ export class SceneAssetsPanelComponent {
 
   protected onBackgroundEffectChange(eff: BackgroundEffectOption): void {
     this.update.emit({ backgroundEffect: eff === 'none' ? undefined : eff });
+  }
+
+  protected onTransitionChange(mode: SceneTransitionOption): void {
+    // 'none' is the default — store undefined for both fields to keep
+    // scene docs lean.
+    if (mode === 'none') {
+      this.update.emit({ transition: undefined, transitionMs: undefined });
+    } else {
+      this.update.emit({ transition: mode });
+    }
+  }
+
+  protected onTransitionMsChange(ms: number): void {
+    this.update.emit({ transitionMs: ms === DEFAULT_TRANSITION_MS ? undefined : ms });
   }
 
   protected segmentClass(active: boolean): string {

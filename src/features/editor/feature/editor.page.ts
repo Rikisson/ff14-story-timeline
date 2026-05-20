@@ -119,6 +119,7 @@ import editorUk from '../i18n/uk.json';
             (selectScene)="store.selectScene($event)"
             (connect)="onConnect($event)"
             (disconnect)="onDisconnect($event)"
+            (duplicate)="store.duplicateScene($event)"
           />
 
           <app-scene-editor-panel
@@ -133,6 +134,7 @@ import editorUk from '../i18n/uk.json';
             (reorderChoices)="onReorderChoices($event)"
             (remove)="store.removeScene($event)"
             (setAsStart)="store.setStartScene($event)"
+            (duplicate)="store.duplicateScene($event)"
           />
         </div>
       }

@@ -21,19 +21,22 @@ describe('ReaderPreferencesService', () => {
     expect(svc.fontSize()).toBe('medium');
     expect(svc.bgmVolume()).toBe(0.7);
     expect(svc.sfxVolume()).toBe(1.0);
+    expect(svc.textBoxOpacity()).toBe(1.0);
   });
 
-  it('persists and restores all four preferences across instances', () => {
+  it('persists and restores all preferences across instances', () => {
     const svc = fresh();
     svc.setAllowTextAnimations(false);
     svc.setFontSize('large');
     svc.setBgmVolume(0.25);
     svc.setSfxVolume(0.5);
+    svc.setTextBoxOpacity(0.6);
     const reborn = fresh();
     expect(reborn.allowTextAnimations()).toBe(false);
     expect(reborn.fontSize()).toBe('large');
     expect(reborn.bgmVolume()).toBe(0.25);
     expect(reborn.sfxVolume()).toBe(0.5);
+    expect(reborn.textBoxOpacity()).toBe(0.6);
   });
 
   it('clamps volumes to [0, 1]', () => {
@@ -44,6 +47,16 @@ describe('ReaderPreferencesService', () => {
     expect(svc.bgmVolume()).toBe(1);
     svc.setSfxVolume(Number.NaN);
     expect(svc.sfxVolume()).toBe(0);
+  });
+
+  it('clamps text-box opacity to [0.4, 1]', () => {
+    const svc = fresh();
+    svc.setTextBoxOpacity(0);
+    expect(svc.textBoxOpacity()).toBe(0.4);
+    svc.setTextBoxOpacity(5);
+    expect(svc.textBoxOpacity()).toBe(1);
+    svc.setTextBoxOpacity(0.75);
+    expect(svc.textBoxOpacity()).toBe(0.75);
   });
 
   it('rejects unknown font sizes', () => {

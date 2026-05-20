@@ -19,6 +19,7 @@ export interface CreateEditorOptions {
   onSelect: (sceneId: string | null) => void;
   onConnect: (fromSceneId: string, toSceneId: string) => void;
   onDisconnect: (fromSceneId: string, toSceneId: string) => void;
+  onContextMenu: (sceneId: string, clientX: number, clientY: number) => void;
 }
 
 export interface EditorHandle {
@@ -62,7 +63,8 @@ function findConnection(
 }
 
 export async function createEditor(options: CreateEditorOptions): Promise<EditorHandle> {
-  const { container, injector, scenes, onMove, onSelect, onConnect, onDisconnect } = options;
+  const { container, injector, scenes, onMove, onSelect, onConnect, onDisconnect, onContextMenu } =
+    options;
 
   const socket = new ClassicPreset.Socket('scene');
   const editor = new NodeEditor<Schemes>();
@@ -109,6 +111,16 @@ export async function createEditor(options: CreateEditorOptions): Promise<Editor
   let lastEmptyDownAt = 0;
   const DOUBLE_CLICK_MS = 350;
   area.addPipe((context) => {
+    if (context.type === 'contextmenu') {
+      const { event, context: target } = context.data;
+      event.preventDefault();
+      // `target` is 'root', a node, or a connection — a node is the one
+      // the editor still knows by id.
+      if (target !== 'root' && editor.getNode(target.id)) {
+        onContextMenu(target.id, event.clientX, event.clientY);
+      }
+      return context;
+    }
     if (context.type === 'nodetranslated') {
       onMove(context.data.id, context.data.position);
     }
