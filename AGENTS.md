@@ -28,10 +28,18 @@ When updating these docs, rewrite affected sections naturally as if writing them
 - Avoid circular dependencies and respect module boundaries
 - Briefly explain assumptions, tradeoffs, and notable risks when making changes
 
+## Comments
+
+- Do not add comments or JSDoc/method-doc blocks. They fall out of date, restate what the code already says, and accumulate into noise that obscures the code.
+- Let the code explain itself instead: clear names, small single-purpose functions, and expressive types.
+- Strive to remove comments and doc blocks from any code you create or modify — leave each file cleaner than you found it.
+- The only exception is a short note capturing genuinely non-obvious rationale the code cannot convey itself: why an unintuitive workaround exists, or a constraint that isn't visible locally. Keep these rare, and keep them about *why*, never *what*.
+- Functional directives such as `// eslint-disable-*` and `@ts-expect-error` are linter and compiler instructions, not documentation — keep them, together with any justification they require.
+
 ## Commits & Documentation
 
 - Never commit on your own. Apply the changes, summarize what was done, and wait for the user to review and explicitly confirm before running `git commit`. The only exception is when the user has granted permission to commit immediately for that specific task.
-- Do not create or modify documentation — including files under `docs/` — unless the user has agreed to it. When documentation seems warranted, propose it first and wait for approval.
+- Do not create new documentation files — `docs/` entries, `README`s, design notes, or anything similar — unless the user explicitly asks for one. If you believe a new doc carries real value, propose it and wait for approval before creating it. Modifying existing documentation also requires the user's agreement.
 
 ## TypeScript Best Practices
 
