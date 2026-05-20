@@ -83,7 +83,7 @@ describe('SceneViewComponent', () => {
     // typewriter also emits `<p>` (markdown), so match on `text-center`.
     const CAPTION = 'article p.text-center';
 
-    it('renders the floating card for a visible dialog scene', async () => {
+    it('renders the floating card, visible, for a dialog scene', async () => {
       const fx = await mount({
         text: SENTINEL,
         layout: 'dialog',
@@ -91,21 +91,51 @@ describe('SceneViewComponent', () => {
         textSpeed: 'instant',
       });
       const host = fx.nativeElement as HTMLElement;
-      expect(host.querySelector('.reader-card')).not.toBeNull();
+      const card = host.querySelector('.reader-card');
+      expect(card).not.toBeNull();
+      expect(card?.classList.contains('reader-card-hidden')).toBe(false);
       // No showcase caption in dialog layout.
       expect(host.querySelector(CAPTION)).toBeNull();
     });
 
-    it('collapses the card without falling through to a showcase caption', async () => {
-      const fx = await mount({ text: SENTINEL, layout: 'dialog', cardHidden: true });
+    it('collapses the card via the hidden class, with no showcase caption', async () => {
+      const fx = await mount({
+        text: SENTINEL,
+        layout: 'dialog',
+        cardHidden: true,
+        textSpeed: 'instant',
+      });
       const host = fx.nativeElement as HTMLElement;
-      // Card is gone...
-      expect(host.querySelector('.reader-card')).toBeNull();
+      // The card stays mounted (so the typewriter survives) but is
+      // collapsed via `reader-card-hidden`...
+      const card = host.querySelector('.reader-card');
+      expect(card).not.toBeNull();
+      expect(card?.classList.contains('reader-card-hidden')).toBe(true);
       // ...and the text must NOT reappear as a centered caption over the
-      // background (the bug: hiding the text box made the scene render
+      // background (the original bug: hiding the box rendered the scene
       // showcase-style).
       expect(host.querySelector(CAPTION)).toBeNull();
-      expect(host.textContent ?? '').not.toContain(SENTINEL);
+    });
+
+    it('keeps the same card element across a hide/show toggle', async () => {
+      // The card is CSS-hidden, not removed — so revealing it does not
+      // recreate the typewriter and restart the text from character one.
+      const fx = await mount({
+        text: SENTINEL,
+        layout: 'dialog',
+        cardHidden: false,
+        textSpeed: 'instant',
+      });
+      const host = fx.nativeElement as HTMLElement;
+      const cardBefore = host.querySelector('.reader-card');
+      expect(cardBefore).not.toBeNull();
+
+      fx.componentRef.setInput('cardHidden', true);
+      fx.detectChanges();
+      fx.componentRef.setInput('cardHidden', false);
+      fx.detectChanges();
+
+      expect(host.querySelector('.reader-card')).toBe(cardBefore);
     });
 
     it('renders the centered caption for a showcase-layout scene', async () => {

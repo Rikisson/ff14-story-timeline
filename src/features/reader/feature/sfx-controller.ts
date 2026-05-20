@@ -68,11 +68,12 @@ export class SfxController {
       this.rafId === null
     ) {
       // Same URL, same scene visit, no ramp pending — playing or
-      // already played out, nothing to do. If the slot is paused (e.g.,
-      // the first play() was rejected by autoplay policy and never
-      // recovered), retry on this gesture-adjacent call.
+      // already played out, nothing to do. If the slot is still paused
+      // at the start because autoplay rejected the first play(), retry
+      // on this gesture-adjacent call — but never a clip that already
+      // reached its end, or it would replay from zero.
       const el = this.elFor(this.current.slot);
-      if (el.paused) this.tryPlay(el);
+      if (el.paused && !el.ended) this.tryPlay(el);
       return;
     }
     this.fadeIn(resolvedUrl, key);
@@ -92,11 +93,18 @@ export class SfxController {
     this.current = null;
   }
 
-  /** Retry a blocked autoplay attempt on the active slot. */
+  /**
+   * Retry an autoplay-blocked clip on the active slot. A clip that has
+   * played through to its natural end is `paused` too, but `ended`
+   * tells the two apart — calling `play()` on an ended element seeks it
+   * back to the start and replays the sound, so finished clips are left
+   * untouched. (The page keeps a lifetime `pointerdown` listener that
+   * calls this on every click.)
+   */
   unblock(): void {
     if (!this.current) return;
     const el = this.elFor(this.current.slot);
-    if (el.paused) this.tryPlay(el);
+    if (el.paused && !el.ended) this.tryPlay(el);
   }
 
   private fadeOut(): void {

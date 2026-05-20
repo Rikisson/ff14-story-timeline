@@ -182,41 +182,44 @@ type CrossfadeSlot = 'A' | 'B';
              self-contained so a new SceneLayout is an additive @case. -->
         @switch (layout()) {
           @case ('dialog') {
-            @if (!cardHidden()) {
-              <div
-                class="reader-card"
-                [class.reader-card-overflow]="cardOverflow()"
-                appContentLang
-                role="region"
-                aria-live="polite"
-                [attr.aria-label]="t('aria.narration')"
-              >
-                @if (speaker(); as s) {
-                  <div [class]="speakerPositionClass()">
-                    <span>{{ s }}</span>
-                  </div>
-                }
-                <app-typewriter-text
-                  #typewriter
-                  class="block leading-relaxed text-foreground"
-                  [text]="text()"
-                  [options]="inlineRefOptions()"
-                  [speed]="textSpeed()"
-                />
-                @if (choices().length > 0) {
-                  <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
-                } @else if (continuation(); as cont) {
-                  <a
-                    uiSecondary
-                    [routerLink]="cont.link"
-                    className="reader-action mt-2 w-full"
-                  >
-                    <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
-                    <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
-                  </a>
-                }
-              </div>
-            }
+            <!-- The card stays mounted while collapsed (display:none via
+                 the reader-card-hidden class) rather than removed, so the
+                 typewriter keeps its reveal state — bringing the box back
+                 must not restart the text from the first character. -->
+            <div
+              class="reader-card"
+              [class.reader-card-overflow]="cardOverflow()"
+              [class.reader-card-hidden]="cardHidden()"
+              appContentLang
+              role="region"
+              aria-live="polite"
+              [attr.aria-label]="t('aria.narration')"
+            >
+              @if (speaker(); as s) {
+                <div [class]="speakerPositionClass()">
+                  <span>{{ s }}</span>
+                </div>
+              }
+              <app-typewriter-text
+                #typewriter
+                class="block leading-relaxed text-foreground"
+                [text]="text()"
+                [options]="inlineRefOptions()"
+                [speed]="textSpeed()"
+              />
+              @if (choices().length > 0) {
+                <app-choice-list class="mt-2 block" [choices]="choices()" (choose)="choose.emit($event)" />
+              } @else if (continuation(); as cont) {
+                <a
+                  uiSecondary
+                  [routerLink]="cont.link"
+                  className="reader-action mt-2 w-full"
+                >
+                  <span class="min-w-0 flex-1 truncate text-left">{{ t('action.continueReading', { title: cont.label }) }}</span>
+                  <span icon-trailing aria-hidden="true" class="leading-none -translate-y-px">&gt;</span>
+                </a>
+              }
+            </div>
           }
           @case ('showcase') {
             <!-- Showcase caption — pointer-events-none so taps fall

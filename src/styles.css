@@ -282,6 +282,12 @@ html [data-testid='output-socket'] > *.multiple {
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
   font-size: var(--scene-font-size, 1rem);
 }
+/* Collapsed by the reader's hide-text toggle. The card stays in the DOM
+ * so the typewriter keeps its reveal state; the compound selector
+ * outranks `.reader-card`'s own `display: flex`. */
+.reader-card.reader-card-hidden {
+  display: none;
+}
 /* Foreground layer (characters + card) inside the scene frame. Its own
  * layer so a crossfade transition can fade it in over the background. */
 .scene-foreground {
