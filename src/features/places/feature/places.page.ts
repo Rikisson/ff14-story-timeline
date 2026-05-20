@@ -126,6 +126,7 @@ export class PlacesPage {
 
   protected readonly ctrl = createEntityListController<Place, PlaceDraft>({
     service: this.service,
+    kind: 'place',
     lookupById: (id) => this.service.getById(id),
     toDraft: (p) => ({
       slug: p.slug,
