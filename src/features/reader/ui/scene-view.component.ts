@@ -41,11 +41,11 @@ const POSITION_RANK: Record<string, number> = { left: 0, center: 1, right: 2 };
 
 const MIN_STAGE_WIDTH_PER_SPRITE = 0.5;
 
-const SLOT_CENTERS = [100 / 6, 50, 500 / 6];
-const SLOT_LAYOUT: Record<number, readonly number[]> = {
-  1: [1],
-  2: [0, 2],
-  3: [0, 1, 2],
+const MAX_SLOTS = 3;
+const SLOT_CENTERS_BY_COUNT: Record<number, readonly number[]> = {
+  1: [50],
+  2: [30, 70],
+  3: [25, 50, 75],
 };
 
 type CrossfadeSlot = 'A' | 'B';
@@ -109,7 +109,7 @@ type CrossfadeSlot = 'A' | 'B';
                 <img
                   [src]="url"
                   [alt]="s.name"
-                  class="absolute bottom-0 h-[88%] w-auto object-contain drop-shadow-lg transition"
+                  class="absolute bottom-0 h-[88%] w-auto object-contain drop-shadow-lg transition-[left] duration-300 ease-in-out"
                   [class.grayscale]="!s.isSpeaker"
                   [class.brightness-90]="!s.isSpeaker"
                   [style.left.%]="s.leftPercent"
@@ -117,7 +117,7 @@ type CrossfadeSlot = 'A' | 'B';
                 />
               } @else {
                 <div
-                  class="absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition"
+                  class="absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80 transition-[left] duration-300 ease-in-out"
                   [class.grayscale]="!s.isSpeaker"
                   [class.brightness-90]="!s.isSpeaker"
                   [style.left.%]="s.leftPercent"
@@ -228,8 +228,8 @@ export class SceneViewComponent {
     const fitsByWidth =
       width > 0 && height > 0
         ? Math.floor(width / (height * MIN_STAGE_WIDTH_PER_SPRITE))
-        : SLOT_CENTERS.length;
-    const capacity = Math.min(SLOT_CENTERS.length, Math.max(1, fitsByWidth));
+        : MAX_SLOTS;
+    const capacity = Math.min(MAX_SLOTS, Math.max(1, fitsByWidth));
     if (ordered.length <= capacity) return ordered;
     const byPriority = [...ordered].sort(
       (a, b) => Number(b.isSpeaker) - Number(a.isSpeaker),
@@ -240,18 +240,15 @@ export class SceneViewComponent {
 
   protected readonly placedStaged = computed(() => {
     const visible = this.visibleStaged();
-    const layout = SLOT_LAYOUT[visible.length] ?? [];
-    return visible.map((s, i) => {
-      const slot = layout[i] ?? 1;
-      return {
-        ...s,
-        leftPercent: SLOT_CENTERS[slot] ?? 50,
-        transform:
-          s.facing === 'left'
-            ? 'translateX(-50%) scaleX(-1)'
-            : 'translateX(-50%)',
-      };
-    });
+    const centers = SLOT_CENTERS_BY_COUNT[visible.length] ?? [];
+    return visible.map((s, i) => ({
+      ...s,
+      leftPercent: centers[i] ?? 50,
+      transform:
+        s.facing === 'left'
+          ? 'translateX(-50%) scaleX(-1)'
+          : 'translateX(-50%)',
+    }));
   });
 
   playEnterTransition(durationMs: number): void {
