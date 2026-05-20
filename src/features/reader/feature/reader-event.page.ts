@@ -104,6 +104,7 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
                     uiSecondary
                     type="button"
                     [attr.aria-pressed]="cardHidden()"
+                    [class.reader-toggle-active]="cardHidden()"
                     [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
                     (click)="cardHidden.set(!cardHidden())"
                   >
@@ -120,6 +121,8 @@ const OVERFLOW_DESCRIPTION_THRESHOLD = 600;
                   <button
                     uiSecondary
                     type="button"
+                    [attr.aria-pressed]="layout.browserFullscreen()"
+                    [class.reader-toggle-active]="layout.browserFullscreen()"
                     [attr.aria-label]="layout.browserFullscreen() ? t('action.exitFullscreen') : t('action.enterFullscreen')"
                     (click)="toggleFullscreen()"
                   >
@@ -174,8 +177,9 @@ export class ReaderEventPage {
   );
 
   // Hide-text toggle. Persists across reloads of the single event frame;
-  // a click on the article brings the card back (see scene-view). Events
-  // carry no staged characters, so there is no hide-sprites counterpart.
+  // the card returns only via this header toggle — a scene click while
+  // it is hidden does nothing. Events carry no staged characters, so
+  // there is no hide-sprites counterpart.
   protected readonly cardHidden = signal(false);
 
   protected toggleFullscreen(): void {
