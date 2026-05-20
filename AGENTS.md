@@ -28,6 +28,11 @@ When updating these docs, rewrite affected sections naturally as if writing them
 - Avoid circular dependencies and respect module boundaries
 - Briefly explain assumptions, tradeoffs, and notable risks when making changes
 
+## Commits & Documentation
+
+- Never commit on your own. Apply the changes, summarize what was done, and wait for the user to review and explicitly confirm before running `git commit`. The only exception is when the user has granted permission to commit immediately for that specific task.
+- Do not create or modify documentation — including files under `docs/` — unless the user has agreed to it. When documentation seems warranted, propose it first and wait for approval.
+
 ## TypeScript Best Practices
 
 - Use strict type checking
