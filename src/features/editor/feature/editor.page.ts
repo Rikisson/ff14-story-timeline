@@ -15,7 +15,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService, validateInGameDate } from '@features/calendar';
 import { Character, CharactersService } from '@features/characters';
 import { EventsService } from '@features/events';
-import { PlacesService } from '@features/places';
+import { Place, PlacesService } from '@features/places';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { AssetThumbResolver } from '@shared/data-access';
@@ -128,6 +128,7 @@ import editorUk from '../i18n/uk.json';
             [isStartScene]="isSelectedStart()"
             [characterSprites]="characterSprites()"
             [characterNames]="characterNames()"
+            [placeBackgrounds]="placeBackgrounds()"
             [sceneLabels]="sceneLabels()"
             (update)="onUpdate($event)"
             (updateChoiceLabel)="onChoiceLabel($event)"
@@ -245,11 +246,9 @@ export class EditorPage implements HasUnsavedChanges {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly characters = inject(CharactersService);
-  // Editor pickers consume directory rows directly (no canonical preload).
-  // PlacesService / EventsService / StoriesService are still injected as
-  // write-helpers used elsewhere on this page; their `entities` signals
-  // are not read here.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // PlacesService is read for the selected scene's place backgrounds.
+  // EventsService / StoriesService stay injected as write-helpers used
+  // elsewhere on this page; their `entities` signals are not read here.
   private readonly places = inject(PlacesService);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly events = inject(EventsService);
@@ -327,6 +326,18 @@ export class EditorPage implements HasUnsavedChanges {
     return map;
   });
 
+  // Canonical Place doc for the selected scene's place. The directory
+  // projection carries only the label, so `backgrounds[]` — surfaced as
+  // quick-picks in the background section — needs a canonical read,
+  // refetched whenever the scene's place changes.
+  private readonly scenePlaceId = computed<string | null>(
+    () => this.store.selectedScene()?.place?.id ?? null,
+  );
+  private readonly scenePlace = signal<Place | null>(null);
+  protected readonly placeBackgrounds = computed<string[]>(
+    () => this.scenePlace()?.backgrounds ?? [],
+  );
+
   constructor() {
     this.store.bindLoad(this.id);
 
@@ -348,6 +359,20 @@ export class EditorPage implements HasUnsavedChanges {
           for (const [id, char] of fetched) next.set(id, char);
           return next;
         });
+      });
+    });
+
+    // Hydrate the canonical Place doc for the selected scene's place so the
+    // background quick-pick can read `backgrounds[]`.
+    effect(() => {
+      const id = this.scenePlaceId();
+      if (!id) {
+        if (this.scenePlace() !== null) this.scenePlace.set(null);
+        return;
+      }
+      if (this.scenePlace()?.id === id) return;
+      void this.places.getById(id).then((place) => {
+        if (this.scenePlaceId() === id) this.scenePlace.set(place);
       });
     });
 

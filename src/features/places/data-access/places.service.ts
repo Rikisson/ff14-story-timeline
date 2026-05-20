@@ -12,4 +12,8 @@ export class PlacesService extends UniverseEntityService<Place, PlaceDraft> {
   protected toDirectoryInputs(entity: Place): DirectoryRowInputs {
     return buildPlaceDirectoryInputs(entity);
   }
+
+  async updateBackgrounds(id: string, backgrounds: string[]): Promise<void> {
+    await this.patchFields(id, { backgrounds });
+  }
 }

@@ -81,6 +81,30 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
             [currentSelection]="backgroundSelection()"
             (picked)="onBackgroundPicked($event)"
           />
+          @if (placeBackgrounds().length > 0) {
+            <span class="text-xs font-medium uppercase tracking-wide text-foreground-faint">
+              {{ t('field.placeBackgrounds') }}
+            </span>
+            <div class="grid grid-cols-3 gap-2">
+              @for (id of placeBackgrounds(); track id) {
+                @if (placeBackgroundThumbs().get(id); as thumb) {
+                  <button
+                    type="button"
+                    class="relative aspect-video overflow-hidden rounded border"
+                    [class.border-accent-ring]="backgroundAssetId() === id"
+                    [class.ring-2]="backgroundAssetId() === id"
+                    [class.ring-accent-ring]="backgroundAssetId() === id"
+                    [class.border-border]="backgroundAssetId() !== id"
+                    [attr.aria-pressed]="backgroundAssetId() === id"
+                    [attr.aria-label]="t('tooltip.usePlaceBackground', { label: thumb.label ?? '' })"
+                    (click)="onBackgroundPicked([id])"
+                  >
+                    <img [ngSrc]="thumb.url" alt="" fill class="object-cover" />
+                  </button>
+                }
+              }
+            </div>
+          }
         </div>
 
         <div class="flex flex-col gap-2">
@@ -240,6 +264,7 @@ export class SceneAssetsPanelComponent {
 
   readonly backgroundAssetId = input<string | undefined>();
   readonly backgroundEffect = input<BackgroundEffect | undefined>();
+  readonly placeBackgrounds = input<string[]>([]);
   readonly sfxAssetId = input<string | undefined>();
   readonly bgmAssetId = input<string | undefined>();
   readonly bgmSilence = input<boolean>(false);
@@ -259,6 +284,9 @@ export class SceneAssetsPanelComponent {
   protected readonly backgroundUrl = computed(() =>
     this.assets.resolve(this.backgroundAssetId())()?.url,
   );
+  // Thumbnails for the selected scene's place backgrounds — a one-click
+  // quick-pick beneath the background asset picker.
+  protected readonly placeBackgroundThumbs = this.assets.resolveMany(this.placeBackgrounds);
   protected readonly sfxUrl = computed(() => this.assets.resolve(this.sfxAssetId())()?.url);
   protected readonly bgmOverrideUrl = computed(() =>
     this.assets.resolve(this.bgmAssetId())()?.url,

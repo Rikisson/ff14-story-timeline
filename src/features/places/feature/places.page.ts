@@ -15,6 +15,7 @@ import {
   PageComponent,
   PageHeaderComponent,
 } from '@shared/ui';
+import { BackgroundLibraryComponent } from '../ui/background-library.component';
 import { PlaceCardComponent } from '../ui/place-card.component';
 import { PlaceFormComponent } from '../ui/place-form.component';
 import placeEn from '../i18n/en.json';
@@ -24,6 +25,7 @@ import placeUk from '../i18n/uk.json';
   selector: 'app-places-page',
   host: { class: 'block h-full' },
   imports: [
+    BackgroundLibraryComponent,
     EntityListPaneComponent,
     PageComponent,
     PageHeaderComponent,
@@ -68,7 +70,7 @@ import placeUk from '../i18n/uk.json';
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
-              <div class="min-h-0 flex-1 overflow-y-auto">
+              <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
                 <app-place-form
                   [initial]="ctrl.editingDraft()"
                   [busy]="ctrl.busy()"
@@ -76,6 +78,12 @@ import placeUk from '../i18n/uk.json';
                   (submitted)="ctrl.submit($event)"
                   (cancelled)="ctrl.cancel()"
                 />
+                @if (ctrl.editing(); as p) {
+                  <app-place-background-library
+                    [placeId]="p.id"
+                    [backgrounds]="p.backgrounds ?? []"
+                  />
+                }
               </div>
             } @else if (ctrl.selected(); as p) {
               <div class="min-h-0 flex-1 overflow-y-auto">

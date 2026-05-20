@@ -3,20 +3,27 @@
     "pageTitle": "Places",
     "pageSubtitle": "Locations where stories unfold and events occur.",
     "formAdd": "Add place",
-    "formEdit": "Edit place"
+    "formEdit": "Edit place",
+    "backgroundsHeader": "Backgrounds"
   },
   "action": {
-    "create": "+ Add place"
+    "create": "+ Add place",
+    "addBackgroundFromLibrary": "+ Add from library"
   },
   "empty": {
     "list": "No places yet.",
     "selectDetail": "Select a place to view details.",
     "namePlaceholder": "e.g. Limsa Lominsa",
     "slugPlaceholder": "e.g. limsa-lominsa",
-    "descriptionPlaceholder": "History, geography, notable inhabitants…"
+    "descriptionPlaceholder": "History, geography, notable inhabitants…",
+    "backgroundsList": "No backgrounds yet."
+  },
+  "message": {
+    "removeBackgroundConfirm": "Remove this background from the place?"
   },
   "tooltip": {
     "list": "Places list",
-    "details": "Place details"
+    "details": "Place details",
+    "backgroundPickerTitle": "Pick backgrounds for this place"
   }
 }

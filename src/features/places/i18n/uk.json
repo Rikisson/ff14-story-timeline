@@ -3,20 +3,27 @@
     "pageTitle": "Місця",
     "pageSubtitle": "Локації, де розгортаються історії та відбуваються події.",
     "formAdd": "Додати місце",
-    "formEdit": "Редагувати місце"
+    "formEdit": "Редагувати місце",
+    "backgroundsHeader": "Фони"
   },
   "action": {
-    "create": "+ Додати місце"
+    "create": "+ Додати місце",
+    "addBackgroundFromLibrary": "+ Додати з бібліотеки"
   },
   "empty": {
     "list": "Поки немає місць.",
     "selectDetail": "Оберіть місце, щоб переглянути деталі.",
     "namePlaceholder": "напр. Лімса Ломінса",
     "slugPlaceholder": "напр. limsa-lominsa",
-    "descriptionPlaceholder": "Історія, географія, видатні мешканці…"
+    "descriptionPlaceholder": "Історія, географія, видатні мешканці…",
+    "backgroundsList": "Поки немає фонів."
+  },
+  "message": {
+    "removeBackgroundConfirm": "Видалити цей фон із місця?"
   },
   "tooltip": {
     "list": "Список місць",
-    "details": "Деталі місця"
+    "details": "Деталі місця",
+    "backgroundPickerTitle": "Оберіть фони для цього місця"
   }
 }

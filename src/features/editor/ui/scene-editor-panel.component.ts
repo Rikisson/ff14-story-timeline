@@ -287,6 +287,7 @@ function defaultFacingFor(position: string): Facing {
           <app-scene-assets-panel
             [backgroundAssetId]="s.backgroundAssetId"
             [backgroundEffect]="s.backgroundEffect"
+            [placeBackgrounds]="placeBackgrounds()"
             [sfxAssetId]="s.sfxAssetId"
             [bgmAssetId]="s.bgmAssetId"
             [bgmSilence]="s.bgmSilence ?? false"
@@ -530,6 +531,7 @@ export class SceneEditorPanelComponent {
   readonly isStartScene = input.required<boolean>();
   readonly characterSprites = input<Record<string, { id: string; label: string }[]>>({});
   readonly characterNames = input<Record<string, string>>({});
+  readonly placeBackgrounds = input<string[]>([]);
   readonly sceneLabels = input<Record<string, string>>({});
 
   readonly update = output<SceneUpdate>();

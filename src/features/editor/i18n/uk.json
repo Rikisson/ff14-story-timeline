@@ -39,7 +39,8 @@
     "nextRefs": "Читати далі",
     "backgroundEffect": "Ефект фону",
     "sceneTransition": "Перехід сцени",
-    "transitionDuration": "Тривалість переходу"
+    "transitionDuration": "Тривалість переходу",
+    "placeBackgrounds": "З цього місця"
   },
   "layout": {
     "dialog": "Діалог",
@@ -157,6 +158,7 @@
     "storyCoverAlt": "Обкладинка історії",
     "sceneBackgroundAlt": "Фон сцени",
     "descriptionAria": "Опис",
-    "sceneTextAria": "Текст сцени"
+    "sceneTextAria": "Текст сцени",
+    "usePlaceBackground": "Використати {{ label }} як фон сцени"
   }
 }

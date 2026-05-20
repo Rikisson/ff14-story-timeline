@@ -39,7 +39,8 @@
     "nextRefs": "Continue reading",
     "backgroundEffect": "Background effect",
     "sceneTransition": "Scene transition",
-    "transitionDuration": "Transition duration"
+    "transitionDuration": "Transition duration",
+    "placeBackgrounds": "From this place"
   },
   "layout": {
     "dialog": "Dialog",
@@ -157,6 +158,7 @@
     "storyCoverAlt": "Story cover",
     "sceneBackgroundAlt": "Scene background",
     "descriptionAria": "Description",
-    "sceneTextAria": "Scene text"
+    "sceneTextAria": "Scene text",
+    "usePlaceBackground": "Use {{ label }} as the scene background"
   }
 }
