@@ -10,6 +10,7 @@ import {
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -38,6 +39,8 @@ export interface StagedView {
   facing: 'left' | 'right';
 }
 
+type PlacedSprite = StagedView & { leftPercent: number; transform: string };
+
 const POSITION_RANK: Record<string, number> = { left: 0, center: 1, right: 2 };
 
 const MIN_STAGE_WIDTH_PER_SPRITE = 0.5;
@@ -55,6 +58,10 @@ const SPRITE_ANIM_CLASSES = [
   'reader-sprite-pop-in',
   'reader-sprite-pop-out',
 ];
+
+// How long a sprite swap waits when the same scene change also moves
+// sprites, so the slide settles before the swap pop runs.
+const SWAP_HOLD_MS = 300;
 
 type CrossfadeSlot = 'A' | 'B';
 
@@ -113,7 +120,7 @@ type CrossfadeSlot = 'A' | 'B';
         @if (!spritesHidden()) {
           <div class="pointer-events-none absolute inset-0">
             <!-- keyed on id + sprite URL so a sprite swap animates as leave + enter -->
-            @for (s of placedStaged(); track s.id + '|' + s.spriteUrl) {
+            @for (s of displayStaged(); track s.id + '|' + s.spriteUrl) {
               @if (s.spriteUrl; as url) {
                 <img
                   [src]="url"
@@ -251,7 +258,7 @@ export class SceneViewComponent {
     return ordered.filter((s) => kept.has(s.id));
   });
 
-  protected readonly placedStaged = computed(() => {
+  private readonly placedStaged = computed<PlacedSprite[]>(() => {
     const visible = this.visibleStaged();
     const centers = SLOT_CENTERS_BY_COUNT[visible.length] ?? [];
     return visible.map((s, i) => ({
@@ -263,6 +270,11 @@ export class SceneViewComponent {
           : 'translateX(-50%)',
     }));
   });
+
+  // What the template renders: tracks `placedStaged`, but holds a
+  // sprite-URL swap back until a concurrent slide/fade settles.
+  protected readonly displayStaged = signal<PlacedSprite[]>([]);
+  private holdTimer?: ReturnType<typeof setTimeout>;
 
   private readonly pendingTimers = new Set<ReturnType<typeof setTimeout>>();
 
@@ -307,7 +319,13 @@ export class SceneViewComponent {
       this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
     });
 
+    effect(() => {
+      const target = this.placedStaged();
+      untracked(() => this.reconcileDisplay(target));
+    });
+
     this.destroyRef.onDestroy(() => {
+      clearTimeout(this.holdTimer);
       for (const timer of this.pendingTimers) clearTimeout(timer);
     });
   }
@@ -333,7 +351,7 @@ export class SceneViewComponent {
   }
 
   protected onSpriteLeave(event: AnimationCallbackEvent, id: string): void {
-    const swap = this.placedStaged().some((p) => p.id === id);
+    const swap = this.displayStaged().some((p) => p.id === id);
     this.playSpriteAnim(event, swap ? 'reader-sprite-pop-out' : 'reader-sprite-fade-out');
   }
 
@@ -363,5 +381,46 @@ export class SceneViewComponent {
     el.addEventListener('animationend', finish, { once: true });
     timer = setTimeout(finish, 400);
     this.pendingTimers.add(timer);
+  }
+
+  private reconcileDisplay(target: PlacedSprite[]): void {
+    clearTimeout(this.holdTimer);
+    const shown = this.displayStaged();
+    const deferSwap =
+      this.spritesChanged(shown, target) && this.layoutChanged(shown, target);
+    if (!deferSwap) {
+      this.displayStaged.set(target);
+      return;
+    }
+    this.displayStaged.set(this.withHeldSprites(target, shown));
+    this.holdTimer = setTimeout(
+      () => this.displayStaged.set(this.placedStaged()),
+      SWAP_HOLD_MS,
+    );
+  }
+
+  private layoutChanged(shown: PlacedSprite[], target: PlacedSprite[]): boolean {
+    if (shown.length !== target.length) return true;
+    const byId = new Map(shown.map((s) => [s.id, s] as const));
+    return target.some((s) => byId.get(s.id)?.leftPercent !== s.leftPercent);
+  }
+
+  private spritesChanged(shown: PlacedSprite[], target: PlacedSprite[]): boolean {
+    const byId = new Map(shown.map((s) => [s.id, s] as const));
+    return target.some((s) => {
+      const prev = byId.get(s.id);
+      return prev !== undefined && prev.spriteUrl !== s.spriteUrl;
+    });
+  }
+
+  private withHeldSprites(
+    target: PlacedSprite[],
+    shown: PlacedSprite[],
+  ): PlacedSprite[] {
+    const byId = new Map(shown.map((s) => [s.id, s] as const));
+    return target.map((s) => {
+      const prev = byId.get(s.id);
+      return prev ? { ...s, spriteUrl: prev.spriteUrl } : s;
+    });
   }
 }

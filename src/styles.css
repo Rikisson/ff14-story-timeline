@@ -389,10 +389,10 @@ html [data-testid='output-socket'] > *.multiple {
   to { opacity: 0; }
 }
 @keyframes reader-sprite-pop-in {
-  from { opacity: 0; scale: 0.96; }
+  from { scale: 0.96; }
 }
 @keyframes reader-sprite-pop-out {
-  to { opacity: 0; scale: 0.96; }
+  to { scale: 0.96; }
 }
 @media (prefers-reduced-motion: reduce) {
   .reader-sprite,

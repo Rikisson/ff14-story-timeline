@@ -445,7 +445,9 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   pop — the old pose shrinks away as the new one grows in (a slight
   scale, 200 ms). The two cases are told apart at animation time: a
   leaving sprite whose character is still staged is a swap, otherwise a
-  stage exit. A `ResizeObserver` watches the
+  stage exit. When one scene change both repositions a sprite and swaps
+  it, the swap is held until the slide settles (~300 ms) so a sprite
+  never pops mid-move. A `ResizeObserver` watches the
   stage; when it is too narrow to hold every sprite at full height the
   lowest-priority non-speakers drop out rather than shrink — capacity is
   `floor(stageWidth / (stageHeight × 0.5))`, capped at three, and the
