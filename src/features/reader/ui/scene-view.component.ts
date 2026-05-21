@@ -52,6 +52,10 @@ const SLOT_CENTERS_BY_COUNT: Record<number, readonly number[]> = {
   3: [25, 50, 75],
 };
 
+// Speaker labels sit at the speaker's sprite slot, spread out from the
+// centre by this factor so the left/right labels clear the middle more.
+const LABEL_SPREAD = 1.5;
+
 const SPRITE_ANIM_CLASSES = [
   'reader-sprite-fade-in',
   'reader-sprite-fade-out',
@@ -160,9 +164,14 @@ type CrossfadeSlot = 'A' | 'B';
               aria-live="polite"
               [attr.aria-label]="t('aria.narration')"
             >
-              @if (speaker(); as s) {
-                <div [class]="speakerPositionClass()">
-                  <span>{{ s }}</span>
+              @for (label of speakerLabels(); track 'speaker') {
+                <div
+                  class="reader-card-speaker"
+                  [style.left.%]="label.leftPercent"
+                  animate.enter="reader-sprite-fade-in"
+                  animate.leave="reader-sprite-fade-out"
+                >
+                  <span>{{ label.text }}</span>
                 </div>
               }
               <app-typewriter-text
@@ -215,13 +224,15 @@ export class SceneViewComponent {
   readonly cardVariant = input<'floating' | 'page'>('floating');
   readonly cardHidden = input<boolean>(false);
   readonly spritesHidden = input<boolean>(false);
-  readonly speakerPosition = input<'left' | 'center' | 'right'>('center');
 
   readonly choose = output<string>();
 
-  protected readonly speakerPositionClass = computed(
-    () => `reader-card-speaker reader-card-speaker-${this.speakerPosition()}`,
-  );
+  protected readonly speakerLabels = computed(() => {
+    const text = this.speaker();
+    if (!text) return [];
+    const slot = this.displayStaged().find((s) => s.isSpeaker)?.leftPercent ?? 50;
+    return [{ text, leftPercent: 50 + (slot - 50) * LABEL_SPREAD }];
+  });
 
   protected readonly backgroundEffectClass = computed(() => {
     const eff = this.backgroundEffect();

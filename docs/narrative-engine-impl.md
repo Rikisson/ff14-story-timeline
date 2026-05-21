@@ -457,9 +457,15 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 - **Floating reader card carries the dialog UI.** A solid, opaque
   card centered at the bottom of the article holds the speaker
   label, the typewriter body, and the choice list — choices live
-  inside the card, not as a sibling below the article. Card width is
-  a CSS variable (`--reader-card-width`, default 60%) so the layout
-  can be widened later without component changes. In showcase
+  inside the card, not as a sibling below the article. The speaker
+  label floats just above the card; its horizontal position mirrors
+  the speaking character's sprite slot, mapped into the card's width.
+  It slides to the new position when the speaker changes or that
+  sprite moves, and fades only when it appears or disappears (a scene
+  gaining or losing a speaker). A custom or off-stage speaker centers;
+  a scene with no speaker shows no label. Card width is a CSS variable
+  (`--reader-card-width`, default 60%) so the layout can be widened
+  later without component changes. In showcase
   layout the card is suppressed; if the scene has text, it renders
   as a centered overlay caption with no card chrome and tap-anywhere
   advances when a single `next` is wired.

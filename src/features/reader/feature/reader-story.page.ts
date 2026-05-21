@@ -108,7 +108,6 @@ import { SfxController } from './sfx-controller';
                   [text]="scene.text"
                   [layout]="scene.layout ?? 'dialog'"
                   [speaker]="speakerLabel()"
-                  [speakerPosition]="speakerPosition()"
                   [background]="backgroundUrl()"
                   [backgroundBlurDataUrl]="backgroundBlurDataUrl()"
                   [backgroundEffect]="scene.backgroundEffect"
@@ -292,17 +291,6 @@ export class ReaderStoryPage implements ReaderLeavable {
   protected readonly isShowcaseScene = computed(
     () => (this.store.currentScene()?.layout ?? 'dialog') === 'showcase',
   );
-
-  // Speaker-name placement above the card follows the speaker's staged
-  // slot; a narrator (string speaker) or an off-stage speaker centers.
-  protected readonly speakerPosition = computed<'left' | 'center' | 'right'>(() => {
-    const scene = this.store.currentScene();
-    const sp = scene?.speaker;
-    if (!scene || !sp || typeof sp === 'string') return 'center';
-    const staged = scene.characters.find((c) => c.entity.id === sp.id);
-    const pos = staged?.position;
-    return pos === 'left' || pos === 'right' ? pos : 'center';
-  });
 
   protected toggleFullscreen(): void {
     if (this.layout.browserFullscreen()) {

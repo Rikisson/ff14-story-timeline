@@ -394,25 +394,22 @@ html [data-testid='output-socket'] > *.multiple {
   .reader-sprite,
   .reader-sprite-fade-in,
   .reader-sprite-fade-out,
-  .reader-sprite-pop-in {
+  .reader-sprite-pop-in,
+  .reader-card-speaker {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
   }
 }
-/* Speaker name pill, floated just above the card and aligned to the
- * speaker's staged slot (left / center / right). */
+/* Speaker pill, floated just above the card. Its horizontal position
+ * mirrors the speaker's sprite slot, mapped into the card's width;
+ * `translate` centers the pill on the inline-set `left` point. */
 .reader-card-speaker {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  transform: translateY(calc(-100% - 0.375rem));
-  display: flex;
+  bottom: calc(100% + 0.375rem);
+  translate: -50%;
+  transition: left 0.3s ease-in-out;
   pointer-events: none;
 }
-.reader-card-speaker-left { justify-content: flex-start; }
-.reader-card-speaker-center { justify-content: center; }
-.reader-card-speaker-right { justify-content: flex-end; }
 .reader-card-speaker > span {
   display: inline-flex;
   max-width: 100%;
