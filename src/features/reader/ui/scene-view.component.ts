@@ -49,6 +49,13 @@ const SLOT_CENTERS_BY_COUNT: Record<number, readonly number[]> = {
   3: [25, 50, 75],
 };
 
+const SPRITE_ANIM_CLASSES = [
+  'reader-sprite-fade-in',
+  'reader-sprite-fade-out',
+  'reader-sprite-pop-in',
+  'reader-sprite-pop-out',
+];
+
 type CrossfadeSlot = 'A' | 'B';
 
 @Component({
@@ -111,7 +118,7 @@ type CrossfadeSlot = 'A' | 'B';
                 <img
                   [src]="url"
                   [alt]="s.name"
-                  class="reader-sprite absolute bottom-0 h-[88%] w-auto object-contain"
+                  class="reader-sprite reader-sprite-hidden absolute bottom-0 h-[88%] w-auto object-contain"
                   [class.reader-sprite-muted]="!s.isSpeaker"
                   [attr.data-sprite-id]="s.id"
                   [style.left.%]="s.leftPercent"
@@ -121,7 +128,7 @@ type CrossfadeSlot = 'A' | 'B';
                 />
               } @else {
                 <div
-                  class="reader-sprite absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
+                  class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
                   [class.reader-sprite-muted]="!s.isSpeaker"
                   [attr.data-sprite-id]="s.id"
                   [style.left.%]="s.leftPercent"
@@ -320,6 +327,7 @@ export class SceneViewComponent {
 
   protected onSpriteEnter(event: AnimationCallbackEvent, id: string): void {
     const el = event.target as HTMLElement;
+    el.classList.remove('reader-sprite-hidden');
     const swap = this.stagedElementCount(el, id) > 1;
     this.playSpriteAnim(event, swap ? 'reader-sprite-pop-in' : 'reader-sprite-fade-in');
   }
@@ -341,6 +349,7 @@ export class SceneViewComponent {
 
   private playSpriteAnim(event: AnimationCallbackEvent, animationClass: string): void {
     const el = event.target as HTMLElement;
+    el.classList.remove(...SPRITE_ANIM_CLASSES);
     el.classList.add(animationClass);
     let settled = false;
     let timer: ReturnType<typeof setTimeout>;
