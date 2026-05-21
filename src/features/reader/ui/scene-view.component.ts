@@ -1,4 +1,5 @@
 import {
+  AnimationCallbackEvent,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -112,18 +113,20 @@ type CrossfadeSlot = 'A' | 'B';
                   [alt]="s.name"
                   class="reader-sprite absolute bottom-0 h-[88%] w-auto object-contain"
                   [class.reader-sprite-muted]="!s.isSpeaker"
+                  [attr.data-sprite-id]="s.id"
                   [style.left.%]="s.leftPercent"
                   [style.transform]="s.transform"
-                  animate.enter="reader-sprite-enter"
-                  animate.leave="reader-sprite-leave"
+                  (animate.enter)="onSpriteEnter($event, s.id)"
+                  (animate.leave)="onSpriteLeave($event, s.id)"
                 />
               } @else {
                 <div
                   class="reader-sprite absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
                   [class.reader-sprite-muted]="!s.isSpeaker"
+                  [attr.data-sprite-id]="s.id"
                   [style.left.%]="s.leftPercent"
-                  animate.enter="reader-sprite-enter"
-                  animate.leave="reader-sprite-leave"
+                  (animate.enter)="onSpriteEnter($event, s.id)"
+                  (animate.leave)="onSpriteLeave($event, s.id)"
                 >
                   {{ t('empty.noSprite') }}
                 </div>
@@ -254,6 +257,8 @@ export class SceneViewComponent {
     }));
   });
 
+  private readonly pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
   playEnterTransition(durationMs: number): void {
     this.foreground()?.nativeElement.animate(
       [{ opacity: 0 }, { opacity: 1 }],
@@ -294,6 +299,10 @@ export class SceneViewComponent {
       this.resizeObserver.observe(host);
       this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
     });
+
+    this.destroyRef.onDestroy(() => {
+      for (const timer of this.pendingTimers) clearTimeout(timer);
+    });
   }
 
   protected onArticleClick(event: MouseEvent): void {
@@ -307,5 +316,43 @@ export class SceneViewComponent {
     if (!tw) return;
     const completed = tw.complete();
     if (completed) event.stopPropagation();
+  }
+
+  protected onSpriteEnter(event: AnimationCallbackEvent, id: string): void {
+    const el = event.target as HTMLElement;
+    const swap = this.stagedElementCount(el, id) > 1;
+    this.playSpriteAnim(event, swap ? 'reader-sprite-pop-in' : 'reader-sprite-fade-in');
+  }
+
+  protected onSpriteLeave(event: AnimationCallbackEvent, id: string): void {
+    const swap = this.placedStaged().some((p) => p.id === id);
+    this.playSpriteAnim(event, swap ? 'reader-sprite-pop-out' : 'reader-sprite-fade-out');
+  }
+
+  private stagedElementCount(el: HTMLElement, id: string): number {
+    const siblings = el.parentElement?.children;
+    if (!siblings) return 1;
+    let count = 0;
+    for (const child of Array.from(siblings)) {
+      if ((child as HTMLElement).dataset['spriteId'] === id) count++;
+    }
+    return count;
+  }
+
+  private playSpriteAnim(event: AnimationCallbackEvent, animationClass: string): void {
+    const el = event.target as HTMLElement;
+    el.classList.add(animationClass);
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      this.pendingTimers.delete(timer);
+      event.animationComplete();
+    };
+    el.addEventListener('animationend', finish, { once: true });
+    timer = setTimeout(finish, 400);
+    this.pendingTimers.add(timer);
   }
 }

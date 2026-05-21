@@ -438,11 +438,14 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   snap to count-dependent centers — one sits at 50%, two at 30% and
   70%, three at 25% / 50% / 75% — so two characters always sit wider
   apart than three while the group stays centered. When the staged set
-  changes, persisting sprites slide between layouts while added and
-  removed ones pop — a fade with a slight scale (300 ms). The render
-  keys each sprite on character id *and* sprite URL, so swapping one
-  character's sprite plays as that same pop: the old pose shrinks away
-  as the new one grows in. A `ResizeObserver` watches the
+  changes, persisting sprites slide between layouts; a character joining
+  or leaving the stage fades in or out (300 ms). The render keys each
+  sprite on character id *and* sprite URL, so swapping one character's
+  sprite (a neutral pose for an excited one) instead plays as a quick
+  pop — the old pose shrinks away as the new one grows in (a slight
+  scale, 200 ms). The two cases are told apart at animation time: a
+  leaving sprite whose character is still staged is a swap, otherwise a
+  stage exit. A `ResizeObserver` watches the
   stage; when it is too narrow to hold every sprite at full height the
   lowest-priority non-speakers drop out rather than shrink — capacity is
   `floor(stageWidth / (stageHeight × 0.5))`, capped at three, and the
