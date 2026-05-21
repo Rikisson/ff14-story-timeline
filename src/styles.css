@@ -351,6 +351,9 @@ html [data-testid='output-socket'] > *.multiple {
  * states list the same functions for the transition to animate. */
 .reader-sprite {
   filter: grayscale(0) brightness(1) drop-shadow(0 4px 6px rgb(0 0 0 / 0.25));
+  /* Centering lives in `translate` (not `transform`) so the swap pop's
+   * `scale` doesn't also scale the centering offset and drift sideways. */
+  translate: -50%;
   transform-origin: bottom;
   transition:
     left 0.3s ease-in-out,

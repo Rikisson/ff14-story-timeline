@@ -135,7 +135,7 @@ type CrossfadeSlot = 'A' | 'B';
                 />
               } @else {
                 <div
-                  class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] -translate-x-1/2 items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
+                  class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
                   [class.reader-sprite-muted]="!s.isSpeaker"
                   [attr.data-sprite-id]="s.id"
                   [style.left.%]="s.leftPercent"
@@ -264,10 +264,7 @@ export class SceneViewComponent {
     return visible.map((s, i) => ({
       ...s,
       leftPercent: centers[i] ?? 50,
-      transform:
-        s.facing === 'left'
-          ? 'translateX(-50%) scaleX(-1)'
-          : 'translateX(-50%)',
+      transform: s.facing === 'left' ? 'scaleX(-1)' : '',
     }));
   });
 
