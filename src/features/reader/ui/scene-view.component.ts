@@ -104,7 +104,8 @@ type CrossfadeSlot = 'A' | 'B';
         <div #foreground class="scene-foreground">
         @if (!spritesHidden()) {
           <div class="pointer-events-none absolute inset-0">
-            @for (s of placedStaged(); track s.id) {
+            <!-- keyed on id + sprite URL so a sprite swap animates as leave + enter -->
+            @for (s of placedStaged(); track s.id + '|' + s.spriteUrl) {
               @if (s.spriteUrl; as url) {
                 <img
                   [src]="url"

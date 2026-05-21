@@ -346,11 +346,14 @@ html [data-testid='output-socket'] > *.multiple {
   position: absolute;
   inset: 0;
 }
-/* Character sprites: slide between slots, fade on enter/leave, and ease
- * the non-speaker grey-out. Grayscale and the drop-shadow share `filter`,
- * so both states list the same functions for the transition to animate. */
+/* Character sprites: slide between slots, pop (fade + slight scale) on
+ * enter/leave, and ease the non-speaker grey-out. Grayscale and the
+ * drop-shadow share `filter`, so both states list the same functions
+ * for the transition to animate. The pop animates the `scale` property,
+ * not `transform`, so it composes with the sprite's translate/flip. */
 .reader-sprite {
   filter: grayscale(0) brightness(1) drop-shadow(0 4px 6px rgb(0 0 0 / 0.25));
+  transform-origin: bottom;
   transition:
     left 0.3s ease-in-out,
     filter 0.3s ease-in-out;
@@ -365,10 +368,10 @@ html [data-testid='output-socket'] > *.multiple {
   animation: reader-sprite-out 0.3s ease-in;
 }
 @keyframes reader-sprite-in {
-  from { opacity: 0; }
+  from { opacity: 0; scale: 0.94; }
 }
 @keyframes reader-sprite-out {
-  to { opacity: 0; }
+  to { opacity: 0; scale: 0.94; }
 }
 /* Speaker name pill, floated just above the card and aligned to the
  * speaker's staged slot (left / center / right). */
