@@ -120,37 +120,38 @@ type CrossfadeSlot = 'A' | 'B';
         </div>
 
         <div #foreground class="scene-foreground">
-        @if (!spritesHidden()) {
-          <div class="pointer-events-none absolute inset-0">
-            <!-- keyed on id + sprite URL so a sprite swap animates as leave + enter -->
-            @for (s of displayStaged(); track s.id + '|' + s.spriteUrl) {
-              @if (s.spriteUrl; as url) {
-                <img
-                  [src]="url"
-                  [alt]="s.name"
-                  class="reader-sprite reader-sprite-hidden absolute bottom-0 h-[88%] w-auto object-contain"
-                  [class.reader-sprite-muted]="!s.isSpeaker"
-                  [attr.data-sprite-id]="s.id"
-                  [style.left.%]="s.leftPercent"
-                  [style.transform]="s.transform"
-                  (animate.enter)="onSpriteEnter($event, s.id)"
-                  (animate.leave)="onSpriteLeave($event, s.id)"
-                />
-              } @else {
-                <div
-                  class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
-                  [class.reader-sprite-muted]="!s.isSpeaker"
-                  [attr.data-sprite-id]="s.id"
-                  [style.left.%]="s.leftPercent"
-                  (animate.enter)="onSpriteEnter($event, s.id)"
-                  (animate.leave)="onSpriteLeave($event, s.id)"
-                >
-                  {{ t('empty.noSprite') }}
-                </div>
-              }
+        <div
+          class="reader-stage pointer-events-none absolute inset-0"
+          [class.reader-stage-hidden]="spritesHidden()"
+        >
+          <!-- keyed on id + sprite URL so a sprite swap animates as leave + enter -->
+          @for (s of displayStaged(); track s.id + '|' + s.spriteUrl) {
+            @if (s.spriteUrl; as url) {
+              <img
+                [src]="url"
+                [alt]="s.name"
+                class="reader-sprite reader-sprite-hidden absolute bottom-0 h-[88%] w-auto object-contain"
+                [class.reader-sprite-muted]="!s.isSpeaker"
+                [attr.data-sprite-id]="s.id"
+                [style.left.%]="s.leftPercent"
+                [style.transform]="s.transform"
+                (animate.enter)="onSpriteEnter($event, s.id)"
+                (animate.leave)="onSpriteLeave($event, s.id)"
+              />
+            } @else {
+              <div
+                class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
+                [class.reader-sprite-muted]="!s.isSpeaker"
+                [attr.data-sprite-id]="s.id"
+                [style.left.%]="s.leftPercent"
+                (animate.enter)="onSpriteEnter($event, s.id)"
+                (animate.leave)="onSpriteLeave($event, s.id)"
+              >
+                {{ t('empty.noSprite') }}
+              </div>
             }
-          </div>
-        }
+          }
+        </div>
 
         @switch (layout()) {
           @case ('dialog') {

@@ -314,12 +314,18 @@ html [data-testid='output-socket'] > *.multiple {
   color: var(--color-foreground);
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
   font-size: var(--scene-font-size, 1rem);
+  transition:
+    opacity 0.2s ease-in-out,
+    visibility 0.2s;
 }
-/* Collapsed by the reader's hide-text toggle. The card stays in the DOM
- * so the typewriter keeps its reveal state; the compound selector
- * outranks `.reader-card`'s own `display: flex`. */
+/* Collapsed by the reader's hide-text toggle — fades out and goes
+ * non-interactive while staying in the DOM, so the typewriter keeps its
+ * reveal state. `visibility` flips at the end of the fade so the card's
+ * controls also leave the tab order while hidden. */
 .reader-card.reader-card-hidden {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 /* Event reader's reading panel. Vertically centered and narrower than
  * the story card, sized to its content but capped so a long lore entry
@@ -345,6 +351,14 @@ html [data-testid='output-socket'] > *.multiple {
 .scene-foreground {
   position: absolute;
   inset: 0;
+}
+/* Character layer, toggled by the reader's hide-characters control — a
+ * plain opacity fade; the layer is non-interactive either way. */
+.reader-stage {
+  transition: opacity 0.2s ease-in-out;
+}
+.reader-stage-hidden {
+  opacity: 0;
 }
 /* Character sprites: slide between slots and ease the non-speaker
  * grey-out. Grayscale and the drop-shadow share `filter`, so both
@@ -395,7 +409,9 @@ html [data-testid='output-socket'] > *.multiple {
   .reader-sprite-fade-in,
   .reader-sprite-fade-out,
   .reader-sprite-pop-in,
-  .reader-card-speaker {
+  .reader-card-speaker,
+  .reader-card,
+  .reader-stage {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
   }
