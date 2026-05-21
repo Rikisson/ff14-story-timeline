@@ -56,7 +56,6 @@ const SPRITE_ANIM_CLASSES = [
   'reader-sprite-fade-in',
   'reader-sprite-fade-out',
   'reader-sprite-pop-in',
-  'reader-sprite-pop-out',
 ];
 
 // How long a sprite swap waits when the same scene change also moves
@@ -349,7 +348,21 @@ export class SceneViewComponent {
 
   protected onSpriteLeave(event: AnimationCallbackEvent, id: string): void {
     const swap = this.displayStaged().some((p) => p.id === id);
-    this.playSpriteAnim(event, swap ? 'reader-sprite-pop-out' : 'reader-sprite-fade-out');
+    if (!swap) {
+      this.playSpriteAnim(event, 'reader-sprite-fade-out');
+      return;
+    }
+    // A swapped-out sprite is dropped at once — the incoming pop-in
+    // covers it. Removal is deferred a tick so the element outlives the
+    // incoming sprite's swap detection (a same-id count in the DOM).
+    (event.target as HTMLElement).classList.add('reader-sprite-hidden');
+    let timer: ReturnType<typeof setTimeout>;
+    const release = () => {
+      this.pendingTimers.delete(timer);
+      event.animationComplete();
+    };
+    timer = setTimeout(release, 0);
+    this.pendingTimers.add(timer);
   }
 
   private stagedElementCount(el: HTMLElement, id: string): number {

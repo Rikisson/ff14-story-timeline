@@ -442,8 +442,9 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   or leaving the stage fades in or out (300 ms). The render keys each
   sprite on character id *and* sprite URL, so swapping one character's
   sprite (a neutral pose for an excited one) instead plays as a quick
-  pop — the old pose shrinks away as the new one grows in (a slight
-  scale, 200 ms). The two cases are told apart at animation time: a
+  pop — the old pose is dropped at once while the new one grows in (a
+  slight scale-in, 200 ms). The two cases are told apart at animation
+  time: a
   leaving sprite whose character is still staged is a swap, otherwise a
   stage exit. When one scene change both repositions a sprite and swaps
   it, the swap is held until the slide settles (~300 ms) so a sprite
