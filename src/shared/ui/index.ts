@@ -1,3 +1,4 @@
+export * from './book-icon';
 export * from './brand';
 export * from './button';
 export * from './collapsible-section';

@@ -11,8 +11,7 @@
   },
   "action": {
     "newStory": "+ New story",
-    "play": "Play",
-    "playEmoji": "▶ Play",
+    "readNow": "Read now",
     "edit": "Edit",
     "delete": "Delete"
   },
@@ -33,7 +32,7 @@
   "tooltip": {
     "storiesList": "Stories list",
     "storyDetails": "Story details",
-    "playStory": "Play {{ title }}",
+    "readStory": "Read {{ title }}",
     "deleteStory": "Delete {{ title }}"
   }
 }

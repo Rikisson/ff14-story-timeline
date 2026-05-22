@@ -6,6 +6,7 @@ import { Story } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { isInGameDateEmpty } from '@shared/models';
 import {
+  BookIconComponent,
   DangerButtonComponent,
   DetailCardComponent,
   EntityRefComponent,
@@ -27,6 +28,7 @@ import storyUk from '../i18n/uk.json';
     EntityRefComponent,
     TagComponent,
     PrimaryButtonComponent,
+    BookIconComponent,
     GhostButtonComponent,
     DangerButtonComponent,
     TranslocoDirective,
@@ -94,9 +96,10 @@ import storyUk from '../i18n/uk.json';
           uiPrimary
           class="mt-1 self-start"
           [routerLink]="['/reader/story', story().id]"
-          [attr.aria-label]="t('tooltip.playStory', { title: storyTitle() })"
+          [attr.aria-label]="t('tooltip.readStory', { title: storyTitle() })"
         >
-          {{ t('action.playEmoji') }}
+          <app-book-icon icon-leading class="size-4" />
+          {{ t('action.readNow') }}
         </a>
       </app-detail-card>
     </ng-container>

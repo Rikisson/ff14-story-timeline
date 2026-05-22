@@ -11,8 +11,7 @@
   },
   "action": {
     "newStory": "+ Нова історія",
-    "play": "Грати",
-    "playEmoji": "▶ Грати",
+    "readNow": "Читати зараз",
     "edit": "Редагувати",
     "delete": "Видалити"
   },
@@ -33,7 +32,7 @@
   "tooltip": {
     "storiesList": "Список історій",
     "storyDetails": "Деталі історії",
-    "playStory": "Грати: {{ title }}",
+    "readStory": "Читати: {{ title }}",
     "deleteStory": "Видалити: {{ title }}"
   }
 }

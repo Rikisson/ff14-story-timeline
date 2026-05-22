@@ -106,7 +106,7 @@ const PREFETCH_VISIBLE_THRESHOLD = 0.5;
           <a
             [routerLink]="link"
             class="absolute inset-0 z-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ring"
-            [attr.aria-label]="t('tooltip.playStory', { title: title() })"
+            [attr.aria-label]="t('tooltip.readStory', { title: title() })"
           ></a>
         }
       </div>

@@ -21,7 +21,8 @@
     "descriptionLong": "Long descriptions scroll inside the reader card. Consider splitting into a one-scene story for richer pacing."
   },
   "action": {
-    "create": "+ Add event"
+    "create": "+ Add event",
+    "readNow": "Read now"
   },
   "empty": {
     "list": "No events yet.",
@@ -39,6 +40,7 @@
   "tooltip": {
     "list": "Events list",
     "details": "Event details",
+    "readEvent": "Read {{ name }}",
     "pickBgmTitle": "Pick background music for this event"
   }
 }
