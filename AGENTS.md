@@ -4,6 +4,7 @@ You are an expert in TypeScript, Angular, NgRx, and scalable web application dev
 
 Before executing any request, check the `docs` folder for applicable rules. Every doc is split into **Rules** (standing constraints) and **Implementation** (open backlog; items removed when shipped, never demoted to a history log):
 - `docs/narrative-engine-impl.md` — entity tiers, references, scope locks, inline-ref tokens, scene model, scene rendering. Consult before touching entity types, picker UX, scene composition, or `${kind:<guid>}` references.
+- `docs/import-export-rules.md` — the universe import/export feature: the `.universe` archive format and how it mirrors the persisted entity model. Consult before changing any entity type, entity kind, the scene model, an enum, asset fields, inline-ref tokens, or Firestore paths — the archive format is a hand-maintained parallel of the model and must move in lockstep, or round-trips silently lose data.
 - `docs/backend-rules.md` — Firestore/R2/Auth posture, realtime listener policy, pagination, search, cost canaries. Consult before touching the data layer, asset storage, or anything that affects the bill.
 - `docs/media-rules.md` — asset schema, upload flow, loading. Consult before touching uploads, asset pickers, or asset loading.
 - `docs/styling-rules.md` — design tokens, theme switching, button hierarchy, editor/Rete styling exceptions. Consult before adding color utilities, building new components, or theming changes.
