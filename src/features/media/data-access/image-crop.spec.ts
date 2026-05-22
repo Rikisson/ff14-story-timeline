@@ -3,6 +3,7 @@ import {
   aspectRatioOf,
   clampCropRect,
   initialCropRect,
+  mirrorCropRect,
   moveCropRect,
   resizeCropRect,
 } from './image-crop';
@@ -105,5 +106,22 @@ describe('initialCropRect', () => {
     expect(out.w / out.h).toBeCloseTo(9 / 16, 1);
     expect(out.h).toBe(BOUNDS.h);
     expect(out.x).toBe(Math.round((BOUNDS.w - out.w) / 2));
+  });
+});
+
+describe('mirrorCropRect', () => {
+  it('mirrors the rect x across the bounds width', () => {
+    const out = mirrorCropRect({ x: 100, y: 50, w: 200, h: 300 }, BOUNDS);
+    expect(out).toEqual({ x: 1620, y: 50, w: 200, h: 300 });
+  });
+
+  it('is its own inverse', () => {
+    const rect = { x: 240, y: 80, w: 360, h: 600 };
+    expect(mirrorCropRect(mirrorCropRect(rect, BOUNDS), BOUNDS)).toEqual(rect);
+  });
+
+  it('keeps a full-width rect in place', () => {
+    const rect = { x: 0, y: 0, w: BOUNDS.w, h: BOUNDS.h };
+    expect(mirrorCropRect(rect, BOUNDS)).toEqual(rect);
   });
 });

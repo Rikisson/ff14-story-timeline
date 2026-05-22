@@ -147,6 +147,10 @@ export function initialCropRect(bounds: CropBounds, opts: ClampOptions): CropRec
   );
 }
 
+export function mirrorCropRect(rect: CropRect, bounds: CropBounds): CropRect {
+  return { x: bounds.w - rect.x - rect.w, y: rect.y, w: rect.w, h: rect.h };
+}
+
 export function canvasToBlob(
   canvas: HTMLCanvasElement,
   type: string,
@@ -194,6 +198,23 @@ export async function cropFileToFile(file: File, rect: CropRect): Promise<File> 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D context unavailable.');
     ctx.drawImage(bitmap, x, y, w, h, 0, 0, w, h);
+    return await encodeCanvasLossless(canvas, file.name);
+  } finally {
+    bitmap.close();
+  }
+}
+
+export async function flipImageFile(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context unavailable.');
+    ctx.translate(bitmap.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(bitmap, 0, 0);
     return await encodeCanvasLossless(canvas, file.name);
   } finally {
     bitmap.close();
