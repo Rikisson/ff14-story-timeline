@@ -1,121 +1,114 @@
 # Universe Migration Kit
 
-This kit lets you turn existing notes, a draft, or a finished story into a file the
-app can import. It contains three files:
+Turn notes, a draft, or a finished story into a file this app can import. The kit is
+three files:
 
-- **`universe.schema.json`** — the JSON Schema that defines the format.
+- **`universe.schema.json`** — the JSON Schema for the import format.
 - **`example-universe.json`** — a small, complete, valid example.
 - **`README.md`** — this file.
 
 ## How to use it
 
-1. Open a chat with any capable AI assistant.
-2. Paste in `universe.schema.json`, `example-universe.json`, and the rules below.
+1. Open a chat with a capable AI assistant.
+2. Paste in `universe.schema.json`, `example-universe.json`, and this README.
 3. Paste in your own material — notes, an outline, prose, a whole draft.
-4. Ask it to produce a single `universe.json` that conforms to the schema.
-5. In the app, open **Universe Settings → Import & Export**, choose the file, and
-   review the dry-run report before importing.
+4. Ask for a single `universe.json` that conforms to the schema.
+5. In the app: **Universe Settings → Import & Export**, choose the file, review the
+   dry-run report, import.
 
-The AI will not get everything right. That is expected — fix what the dry-run report
-flags, adjust your prompt, and try again. The app validates strictly so you can
-iterate quickly.
+Expect a few rounds. The app validates strictly and reports problems in plain
+language — fix what it flags, adjust the prompt, try again.
 
-## Transfer a story, or write one?
+## First: transfer, or write?
 
-Decide this before anything else, because it changes the whole job:
+Decide this before anything else.
 
-- **The material is already a finished story** — written prose, with its own
-  narration and dialogue. **Transfer it faithfully.** Keep the author's exact
-  wording, tense, and voice. Your only task is to *segment* the existing text into
-  scenes. Do not rewrite it, do not summarise it, and do not shift it into a
-  reporting register ("she has travelled to...", "the hero would often..."). If
-  the source reads "Lyra drew her sword," the scene text reads "Lyra drew her
-  sword."
-- **The material is only notes, an outline, or pointers** — not actual prose.
-  **Write the story.** Compose proper narrative scenes from the user's intent.
+- **The source is already a finished story** — real prose, with its own narration
+  and dialogue. **Transfer it.** Keep the author's exact wording, tense, and voice;
+  your only job is to *segment* it into scenes. Never summarise it or shift it into
+  a reporting register ("she had travelled...", "the hero would often..."). "Lyra
+  drew her sword" stays "Lyra drew her sword."
+- **The source is only notes, an outline, or pointers.** **Write the story** —
+  compose proper scenes from the user's intent.
 
-When it is not obvious which case you are in, ask the user.
+If it is not obvious which case you are in, ask.
 
-## The rules
+## The format
 
-**Slugs are the identity.** Every entity has a `slug`: lowercase letters, digits,
-and hyphens, derived from its name (`Lyra Dawnwhisper` → `lyra-dawnwhisper`). A slug
-must be unique within its kind. Reuse it verbatim everywhere that entity is
-referenced — consistency of slugs is what stitches the world together.
+**Slugs are identity.** Every entity has a `slug` — lowercase letters, digits, and
+hyphens, derived from its name (`Lyra Dawnwhisper` → `lyra-dawnwhisper`), unique
+within its kind. Every reference to that entity uses the exact same slug. Consistent
+slugs are what hold the world together.
 
-**Never invent ids or timestamps.** Do not include `id`, `authorUid`, `createdAt`,
-`updatedAt`, `version`, or similar. The app assigns those. If they appear they are
-ignored.
+**Never invent system fields.** Omit `id`, `authorUid`, `createdAt`, `version`, and
+the like — the app assigns them. If present, they are ignored.
 
-**Two ways to reference another entity:**
+**Reference entities two ways.** Structured fields — `relatedRefs`, a scene's
+`speaker` or `place` — take an object: `{ "kind": "character", "ref": "lyra-dawnwhisper" }`.
+Inside prose, link inline with `${prefix:slug}[Display Text]`, where the display text
+is what the reader sees. The prefixes:
 
-- *Structured* — fields like `relatedRefs`, `plotlineRefs`, a scene's `speaker` or
-  `place`: `{ "kind": "character", "ref": "lyra-dawnwhisper" }`.
-- *Inline* — inside prose (`description`, scene `text`): `${prefix:slug}[Display Text]`.
-  The display text is what the reader sees; the link resolves by slug.
+| prefix | kind       |
+|--------|------------|
+| `ch`   | character  |
+| `pl`   | place      |
+| `ev`   | event      |
+| `st`   | story      |
+| `pt`   | plotline   |
+| `cx`   | codexEntry |
 
-  | prefix | kind        |
-  |--------|-------------|
-  | `ch`   | character   |
-  | `pl`   | place       |
-  | `ev`   | event       |
-  | `st`   | story       |
-  | `pt`   | plotline    |
-  | `cx`   | codexEntry  |
+Inline references are optional polish; plain prose is fine.
 
-  Example: `Knows ${ch:lyra-dawnwhisper}[Lyra] well.` Inline references are optional
-  polish — plain prose is fine.
+**The kinds** are `characters`, `places`, `plotlines` (narrative arcs), `events`
+(dated world moments, no scenes), `codexEntries` (encyclopedia entries), and
+`stories` (interactive scenes). Pull all of them from the source — the people,
+places, factions, and dated events a story mentions each deserve their own entity,
+not just the story itself.
 
-**The kinds:**
+## Scenes
 
-- `characters` — people. Name + description.
-- `places` — locations. Name + description.
-- `plotlines` — narrative arcs that group stories and events.
-- `events` — dated world moments. A flat description, no scenes.
-- `codexEntries` — encyclopedia entries; optionally filed under a category.
-- `stories` — interactive scenes the reader plays through.
+A story plays one scene at a time; the reader advances scene by scene. Scene sizing
+is the thing AI assistants most often get wrong, in both directions.
 
-### Stories and scenes
+**A scene is one beat** — one moment: a description, an action, or a character's turn
+of speech. The reader takes in a whole scene at once, so each should land as a single
+completed thought.
 
-A story is played one scene at a time — the reader advances scene by scene — so
-scenes are **small**. AI assistants get this wrong by default; follow every rule
-below.
+- **Don't crowd.** Never pack a long passage or several beats into one scene. Split
+  it where the beat turns — a new action, a new image, a change of place, a change
+  of speaker.
+- **Don't fragment.** Don't make every sentence its own scene, and never split one
+  sentence or one character's utterance across scenes. Sentences that carry a single
+  continuous thought belong together — a completed thought reads better in one scene
+  than across clicks.
+- **A short scene is fine when it earns it.** A one-sentence — even one-word — scene
+  works when the moment is a deliberate beat: a punchy line, a sharp turn. It is a
+  judgment call about narrative weight, not a sentence count. Most beats run a few
+  sentences; reach for a tiny scene only when the moment genuinely stands alone.
 
-- **One beat per scene.** A scene is a single moment: one line of dialogue, or one
-  short descriptive paragraph. Never pour a wall of text into a scene. If a passage
-  runs long, split it across several scenes at natural beats — a new action, a new
-  image, a shift of focus. Do not split mid-thought, and do not split single
-  sentences just to split; only where there is a genuine beat.
-- **A line of dialogue is its own scene.** When a character speaks, that line — with
-  perhaps a short beat of action around it — is one scene. Do not stack several
-  characters' lines into one scene; give each its own.
-- **The first scene is a title card.** Make scene one a `showcase` scene whose
-  `text` is just the story's title, with no staged characters. Its `next` leads into
-  the real opening scene. This gives the reader a moment before the story begins.
-- **`showcase` is for that title card only.** Every other scene omits `layout`, so
-  it defaults to `dialog`. Do not scatter showcase scenes through the story.
-- **`speaker` is for dialogue only.** Set `speaker` to a character reference only
-  when the scene's text is that character speaking aloud. For narration and
-  description, omit `speaker` entirely. Never use a `"Narrator"` label or any other
-  stand-in name.
-- A story holds a map of scenes keyed by short strings you choose (`title`,
-  `the-gate`). `startScene` names the opening scene. Each scene's `next` is a list of
-  branches: one entry is a plain continuation, several entries make a choice, an
-  empty list is an ending. Keep stories **linear** (one `next` per scene) unless
-  branching choices are genuinely intended. Do **not** set scene `position` — the
-  app lays scenes out automatically.
+**Dialogue.** A character's whole turn of speech is one scene, with that character as
+`speaker`; start a new scene when the speaker changes. Set `speaker` only for spoken
+lines — omit it for narration and description, and never invent a `"Narrator"` label.
 
-### Calendar and categories
+**The first scene is a title card** — a `showcase` scene whose `text` is just the
+story's title, with no staged characters; its `next` leads into the real opening
+scene. `showcase` is for this title card only; every other scene omits `layout`.
 
-If your world has its own chronology, define a `calendar` (eras, months). Dated
-entities reference an era by its slug and a month by its 1-based index. Codex
-categories are added to the universe if new.
+**Wiring.** Scenes are a map keyed by short strings you choose (`title`, `the-gate`).
+`startScene` names the opening scene. Each scene's `next` lists its branches — one
+entry continues, several make a choice, an empty list ends the story. Keep stories
+linear unless branching is genuinely intended. Never set `position`; the app places
+scenes automatically.
 
-### Media
+## Calendar, categories, and media
 
-Omit the `assets` section and all art fields. Add images and audio in the app after
+If the world has its own chronology, define a `calendar` of eras and months; dated
+entities name an era by slug and a month by 1-based index. Codex categories are added
+to the universe if their key is new.
+
+Omit the `assets` section and all art fields — add images and audio in the app after
 importing.
 
-Study `example-universe.json` — its story models every scene rule above: a title
-card, small one-beat scenes, dialogue lines split into their own scenes with a
-`speaker`, and descriptive scenes with no `speaker` at all.
+Study `example-universe.json`: a title card, then short multi-sentence descriptive
+beats with no `speaker`, then dialogue turns each in their own scene. It models every
+rule above.

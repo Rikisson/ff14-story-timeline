@@ -244,7 +244,8 @@
       "properties": {
         "text": {
           "type": "string",
-          "description": "Scene prose — a single beat: one line of dialogue or one short paragraph, never a wall of text. May contain inline reference tokens."
+          "description": "One beat of prose — a short paragraph or a character's full turn of speech. Don't split a single sentence across scenes, and don't pack several beats into one; a one-sentence scene is fine only when the moment is a deliberate beat. May contain inline reference tokens.",
+          "minLength": 1
         },
         "label": { "type": "string", "description": "Optional short scene title." },
         "speaker": {

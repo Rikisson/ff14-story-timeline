@@ -92,7 +92,7 @@
           "next": [{ "scene": "approach" }]
         },
         "approach": {
-          "text": "Rain lashed the white cliffs of ${pl:silverhold}[Silverhold]. ${ch:lyra-dawnwhisper}[Lyra] climbed the last stair to the gate, her cloak heavy with the storm.",
+          "text": "Rain lashed the white cliffs of ${pl:silverhold}[Silverhold]. ${ch:lyra-dawnwhisper}[Lyra] climbed the last stair to the gate, her cloak heavy with the storm. Seven years had passed since she last stood here, and the cold had not forgotten her.",
           "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
             { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
@@ -100,7 +100,7 @@
           "next": [{ "scene": "the-gate" }]
         },
         "the-gate": {
-          "text": "The gate groaned open. A knight stood in the torchlight, one hand resting on the hilt of his sword.",
+          "text": "The gate groaned open before she could knock. A knight stood in the torchlight, one hand resting on the hilt of his sword. He made no move to let her pass.",
           "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
             { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
@@ -129,7 +129,7 @@
           "next": [{ "scene": "the-threshold" }]
         },
         "the-threshold": {
-          "text": "Garrett held her gaze for a long moment. Then he stepped aside, and the open gate stood between them like a question.",
+          "text": "Garrett held her gaze for a long, measuring moment. Then, slowly, he stepped aside. The open gate stood between them like a question neither of them was ready to answer.",
           "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
             { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
