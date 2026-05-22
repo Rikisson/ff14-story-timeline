@@ -176,7 +176,11 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   authors stage characters without thinking about flips; the override
   covers exceptions (a left-slot character glancing offscreen). The
   field persists only when it disagrees with the slot default, so a
-  position change still re-flows naturally.
+  position change still re-flows naturally. A `right` facing renders
+  the sprite art as stored and a `left` facing mirrors it, so sprite
+  art is expected to face right by default — the upload crop step's
+  flip control normalizes orientation to that convention (see
+  `media-rules.md`).
 - **Scene constraints.** A given character may appear at most once in
   `characters[]`. Multiple characters in the same `position` are
   allowed; render order is `order` ascending, then insertion order.
@@ -471,7 +475,10 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   advances when a single `next` is wired.
 - **Sprites flip via `transform: scaleX(-1)` when facing left.** The
   facing flag is resolved per character through the slot-default
-  rule plus the optional `StagedCharacter.facing` override.
+  rule plus the optional `StagedCharacter.facing` override. An
+  un-flipped sprite is assumed to face right; that convention is
+  enforced upstream by the upload crop step's flip control rather
+  than trusted (see `media-rules.md`).
 - **Background asset resolves through a fallback chain.**
   `scene.backgroundAssetId → story.coverAssetId → theme surface`.
   The reader's BG `<img>` slots crossfade between resolved URLs;
