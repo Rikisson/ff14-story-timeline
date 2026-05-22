@@ -2,6 +2,7 @@ export * from './brand';
 export * from './button';
 export * from './collapsible-section';
 export * from './detail-card';
+export * from './entity-kind-icon';
 export * from './entity-list-pane';
 export * from './entity-picker';
 export * from './form-error';

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { EntityKind } from '@shared/models';
 import { PrimaryButtonComponent, GhostButtonComponent } from '../button';
+import { EntityKindIconComponent } from '../entity-kind-icon';
 import { LazyThumbComponent } from '../lazy-thumb';
 
 export interface ListPaneItem {
@@ -19,7 +21,13 @@ export interface ListPaneItem {
 
 @Component({
   selector: 'app-entity-list-pane',
-  imports: [PrimaryButtonComponent, GhostButtonComponent, LazyThumbComponent, TranslocoDirective],
+  imports: [
+    PrimaryButtonComponent,
+    GhostButtonComponent,
+    LazyThumbComponent,
+    EntityKindIconComponent,
+    TranslocoDirective,
+  ],
   host: { class: 'block min-h-0' },
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
@@ -70,6 +78,13 @@ export interface ListPaneItem {
                         alt=""
                         class="size-10 shrink-0 rounded object-cover"
                       />
+                    } @else if (kind(); as k) {
+                      <span
+                        class="grid size-10 shrink-0 place-items-center rounded bg-surface-muted text-foreground-faint"
+                        aria-hidden="true"
+                      >
+                        <app-entity-kind-icon class="size-5" [kind]="k" />
+                      </span>
                     }
                     <span class="flex min-w-0 flex-1 flex-col">
                       <span class="truncate font-medium text-foreground">{{ item.label }}</span>
@@ -111,6 +126,9 @@ export interface ListPaneItem {
 })
 export class EntityListPaneComponent {
   readonly items = input.required<ListPaneItem[]>();
+  // Drives the no-cover placeholder glyph. Left unset by non-entity
+  // panes (e.g. universe settings sections), which then render no slot.
+  readonly kind = input<EntityKind | undefined>(undefined);
   readonly selectedId = input<string | null>(null);
   readonly hasMore = input<boolean>(false);
   readonly loadingMore = input<boolean>(false);

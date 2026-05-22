@@ -53,6 +53,7 @@ import characterUk from '../i18n/uk.json';
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
             class="md:w-80 md:shrink-0"
+            [kind]="'character'"
             [items]="listItems()"
             [selectedId]="ctrl.selectedId()"
             [hasMore]="directory.hasMore()"

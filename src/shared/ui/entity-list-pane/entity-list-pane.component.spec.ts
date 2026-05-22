@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTransloco, TranslocoService } from '@jsverse/transloco';
+import { EntityKind } from '@shared/models';
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BundledTranslocoLoader } from '../../../app/transloco-loader';
@@ -10,6 +11,7 @@ import {
 
 async function setup(inputs?: Partial<{
   items: ListPaneItem[];
+  kind: EntityKind;
   selectedId: string | null;
   hasMore: boolean;
   loadingMore: boolean;
@@ -36,6 +38,7 @@ async function setup(inputs?: Partial<{
   await firstValueFrom(transloco.load('en'));
   const fixture = TestBed.createComponent(EntityListPaneComponent);
   fixture.componentRef.setInput('items', inputs?.items ?? []);
+  if (inputs?.kind !== undefined) fixture.componentRef.setInput('kind', inputs.kind);
   if (inputs?.selectedId !== undefined) fixture.componentRef.setInput('selectedId', inputs.selectedId);
   if (inputs?.hasMore !== undefined) fixture.componentRef.setInput('hasMore', inputs.hasMore);
   if (inputs?.loadingMore !== undefined) fixture.componentRef.setInput('loadingMore', inputs.loadingMore);
@@ -101,6 +104,18 @@ describe('EntityListPaneComponent', () => {
     expect(buttons[0].textContent).toContain('Alpha');
     expect(buttons[0].textContent).toContain('a-slug');
     expect(buttons[1].textContent).toContain('Beta');
+  });
+
+  it('renders a kind-icon placeholder for cover-less items when kind is set', async () => {
+    const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }], kind: 'character' });
+    const icon = (fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon');
+    expect(icon).toBeTruthy();
+  });
+
+  it('renders no thumbnail slot for cover-less items when kind is unset', async () => {
+    const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }] });
+    const icon = (fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon');
+    expect(icon).toBeNull();
   });
 
   it('marks the selected item via aria-selected', async () => {
