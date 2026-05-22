@@ -170,14 +170,28 @@ needs no token of its own.
 ## Detail cards
 
 The six entity detail views — story, character, event, place, plotline,
-codex entry — share `<app-detail-card>` (`shared/ui/detail-card/`): an
-optional cover **banner** (a contained band of fixed height, with no
-scrim) above a calm, left-aligned, scrollable **panel**. The cover is a
-header image, not a backdrop — the title sits below it in
-`--font-display`, management actions are standard button directives, and
-nothing lays text over the image. The `scrim` token stays in use for
-timeline tiles, which are small poster-thumbnails where a cover backdrop
-with text over it is the right treatment.
+codex entry — share `<app-detail-card>` (`shared/ui/detail-card/`): a
+calm, left-aligned, scrollable text **panel** paired with the entity's
+cover.
+
+When the card is wide enough — a container query at `56rem` — and a
+cover exists, the two sit side by side: the panel on the left over solid
+`surface`, the cover filling a right-hand column whose share of the card
+is the `--detail-cover-width` token (default `60%`). A horizontal
+`surface`-to-transparent gradient veils the cover's inner edge so the
+image dissolves into the panel's surface — a soft seam rather than a
+hard border. Narrower cards, and cards with no cover, fall back to a
+contained cover **banner** of fixed height above the panel (or the panel
+alone). Either way the panel's position never depends on whether a cover
+is present, so the layout doesn't jump.
+
+The cover is staging, never a substrate for text: the gradient seam
+lives in the gutter and the panel stays fully opaque, so no text is ever
+laid over image pixels and contrast holds regardless of the uploaded
+art. Titles render in `--font-display`; management actions are standard
+button directives. The `scrim` token stays in use for timeline tiles,
+which are small poster-thumbnails where a cover backdrop with text over
+it is the right treatment.
 
 ## Reader
 

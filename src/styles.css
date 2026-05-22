@@ -347,6 +347,13 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-bg-effect-cool       { filter: hue-rotate(-15deg) saturate(0.85) brightness(0.95); }
 .reader-bg-effect-warm       { filter: hue-rotate(15deg) saturate(1.1) brightness(1.05); }
 
+/* Detail-card layout. The cover's share of the card in the wide
+ * side-by-side layout; the text panel takes whatever is left. A token
+ * so the split retunes without touching the component. */
+:root {
+  --detail-cover-width: 60%;
+}
+
 /* Reader text panels. The story reader's floating card sits inside the
  * scene frame, bottom-centered; the event reader's page variant is
  * centered and narrower. Both are opaque so the reader's focus stays
