@@ -141,20 +141,28 @@ selector block. No component code changes.
 
 ## Typography
 
-Two self-hosted families, each shipped as Latin + Cyrillic `woff2`
-subsets so the app reads natively in English and Ukrainian. Both are
-declared once in `@theme` and are theme-agnostic — they do not change
-between light and dark.
+Three self-hosted families, each shipped as Latin + Cyrillic `woff2`
+subsets so the app reads natively in English and Ukrainian. All three
+are declared once in `@theme` and are theme-agnostic — they do not
+change between light and dark.
 
-- `--font-sans` (IBM Plex Sans) — the document default: body copy,
-  every UI control, form text, and the reader's scene text. Tailwind's
+- `--font-sans` (IBM Plex Sans) — the document default. Carries every
+  UI control: navigation, forms, buttons, settings panels, pickers,
+  catalog rows, and the reader's choice rows and chrome. Tailwind's
   `font-sans` utility and the base `body` rule both point at it.
+- `--font-reading` (Source Serif 4) — the prose surface. Applied
+  globally to `<app-typewriter-text>` (story scene text and event
+  description) and `<app-markdown-text>` (every detail-card description
+  and inline-ref hover popover), so the same humanist serif carries
+  every authored prose surface. The reader's speaker chip rides on it
+  too, so the name reads as part of the dialog it introduces. Designed
+  for long-form on screen — comfortable across the reader's
+  `0.9rem`–`1.3rem` font-size range.
 - `--font-display` (Cormorant) — a high-contrast display serif, applied
   through the `font-display` utility to headings only: page titles
   (`text-3xl`), entity detail-card titles (`text-2xl`), settings section
   titles (`text-xl`), and the editor's story title. It is frail at small
-  sizes — never set it on body text, labels, or micro-headings, which
-  stay on `--font-sans`.
+  sizes — never set it on body text, labels, or micro-headings.
 
 The Opovid wordmark is the one piece of identity outside the token
 families. `<app-brand>` (`shared/ui/brand/`) renders the name in
@@ -162,9 +170,11 @@ families. `<app-brand>` (`shared/ui/brand/`) renders the name in
 the English UI and «Оповідь» in the Ukrainian one. The opening letter is
 rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
 in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
-dark canvas. That colour appears only in the wordmark, the favicon and
-the landing flourish — never UI chrome — so it never collides with the
-`danger` role. The book mark beside the name reuses `--color-accent` and
+dark canvas. That colour appears in the wordmark, the favicon, the
+landing flourish, and the reader's speaker chip — where the opening
+letter of the speaker's name carries the same illuminated-capital
+treatment — and nowhere else, so it never collides with the `danger`
+role. The book mark beside the name reuses `--color-accent` and
 needs no token of its own.
 
 ## Detail cards

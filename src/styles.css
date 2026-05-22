@@ -6,8 +6,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant inactive (&:where(:disabled, [aria-disabled='true']));
 
-/* Type — Cormorant for display (headings + wordmark), IBM Plex Sans for
- * body and UI. Each self-hosted as Latin + Cyrillic subsets. */
+/* Type — Cormorant for display (headings + wordmark), Source Serif 4
+ * for prose surfaces (reader text and authored descriptions), and IBM
+ * Plex Sans for UI chrome. Each self-hosted as Latin + Cyrillic
+ * subsets. */
 @font-face {
   font-family: 'Cormorant';
   font-style: normal;
@@ -24,6 +26,24 @@
   font-weight: 500 700;
   font-display: swap;
   src: url('/fonts/cormorant-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/source-serif-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/source-serif-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -52,6 +72,7 @@
 @theme {
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', sans-serif;
+  --font-reading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --font-display: 'Cormorant', Georgia, 'Times New Roman', serif;
 
   --color-canvas: #faf5ea;
@@ -239,6 +260,17 @@ body {
   /* A faint paper grain over the canvas — opaque surfaces (cards, panels)
    * cover it, so it reads as the tooth of the page itself. */
   background-image: url('/grain.svg');
+}
+
+/* Prose surfaces run on Source Serif 4 (`--font-reading`) so the reader
+ * and authored descriptions feel like a book rather than a UI. Targets
+ * the typewriter (story scenes + event description) and the shared
+ * markdown body used by every detail card and hover popover; everything
+ * else keeps the document default `--font-sans`. See
+ * docs/styling-rules.md *Typography*. */
+app-typewriter-text,
+app-markdown-text {
+  font-family: var(--font-reading);
 }
 
 app-root {
@@ -553,8 +585,8 @@ html [data-testid='output-socket'] > *.multiple {
   background: var(--color-surface);
   color: var(--color-foreground);
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
-  font-family: var(--font-display);
-  font-size: 1.25em;
+  font-family: var(--font-reading);
+  font-size: 1em;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.4;
