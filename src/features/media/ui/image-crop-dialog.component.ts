@@ -19,7 +19,9 @@ import {
   CropRect,
   clampCropRect,
   cropFileToFile,
+  flipImageFile,
   initialCropRect,
+  mirrorCropRect,
   moveCropRect,
   resizeCropRect,
 } from '../data-access/image-crop';
@@ -28,6 +30,7 @@ import mediaUk from '../i18n/uk.json';
 
 export interface CropOpenOptions {
   aspect: CropAspect;
+  facingHint?: boolean;
 }
 
 interface DragState {
@@ -86,27 +89,45 @@ const ASPECTS: readonly CropAspect[] = ['free', '16:9', '9:16', '1:1'];
               >×</button>
             </header>
 
-            <div
-              class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3"
-              role="group"
-              [attr.aria-label]="t('crop.aspectLabel')"
-            >
-              @for (opt of aspectOptions(); track opt.value) {
-                <button
-                  type="button"
-                  class="rounded-md border px-3 py-1.5 text-sm font-medium"
-                  [class.border-accent-ring]="aspect() === opt.value"
-                  [class.bg-accent-soft]="aspect() === opt.value"
-                  [class.text-accent-soft-foreground]="aspect() === opt.value"
-                  [class.border-border]="aspect() !== opt.value"
-                  [class.text-foreground-muted]="aspect() !== opt.value"
-                  [attr.aria-pressed]="aspect() === opt.value"
-                  (click)="setAspect(opt.value)"
-                >{{ opt.label }}</button>
-              }
+            <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+              <div
+                class="flex flex-wrap items-center gap-2"
+                role="group"
+                [attr.aria-label]="t('crop.aspectLabel')"
+              >
+                @for (opt of aspectOptions(); track opt.value) {
+                  <button
+                    type="button"
+                    class="rounded-md border px-3 py-1.5 text-sm font-medium"
+                    [class.border-accent-ring]="aspect() === opt.value"
+                    [class.bg-accent-soft]="aspect() === opt.value"
+                    [class.text-accent-soft-foreground]="aspect() === opt.value"
+                    [class.border-border]="aspect() !== opt.value"
+                    [class.text-foreground-muted]="aspect() !== opt.value"
+                    [attr.aria-pressed]="aspect() === opt.value"
+                    (click)="setAspect(opt.value)"
+                  >{{ opt.label }}</button>
+                }
+              </div>
+              <button
+                type="button"
+                class="rounded-md border px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+                [class.border-accent-ring]="flipped()"
+                [class.bg-accent-soft]="flipped()"
+                [class.text-accent-soft-foreground]="flipped()"
+                [class.border-border]="!flipped()"
+                [class.text-foreground-muted]="!flipped()"
+                [attr.aria-pressed]="flipped()"
+                [disabled]="flipping() || processing()"
+                (click)="toggleFlip()"
+              >{{ t('crop.flip') }}</button>
             </div>
 
             <p class="m-0 px-4 pt-3 text-xs text-foreground-faint">{{ t('crop.instructions') }}</p>
+
+            @if (facingHint()) {
+              <p class="m-0 px-4 pt-2 text-xs text-foreground-faint">{{ t('crop.facingHint') }}</p>
+            }
 
             @if (cropError(); as e) {
               <p class="m-0 px-4 pt-2 text-sm text-danger-foreground">{{ e }}</p>
@@ -230,10 +251,16 @@ export class ImageCropDialogComponent {
   protected readonly cropRect = signal<CropRect | null>(null);
   protected readonly aspect = signal<CropAspect>('free');
   protected readonly processing = signal(false);
+  protected readonly flipping = signal(false);
+  protected readonly flipped = signal(false);
+  protected readonly facingHint = signal(false);
   protected readonly cropError = signal<string | null>(null);
   protected readonly announcement = signal('');
 
-  private file: File | null = null;
+  private originalFile: File | null = null;
+  private flippedFile: File | null = null;
+  private workingFile: File | null = null;
+  private pendingRect: CropRect | null = null;
   private pendingCorner: CropCorner | null = null;
   private drag: DragState | null = null;
   private settled = false;
@@ -263,19 +290,53 @@ export class ImageCropDialogComponent {
   }
 
   open(file: File, opts: CropOpenOptions): void {
-    this.file = file;
+    this.originalFile = file;
+    this.flippedFile = null;
+    this.flipped.set(false);
+    this.facingHint.set(opts.facingHint ?? false);
     this.aspect.set(opts.aspect);
     this.sourceSize.set(null);
     this.cropRect.set(null);
     this.processing.set(false);
+    this.flipping.set(false);
     this.cropError.set(null);
     this.announcement.set('');
     this.settled = false;
     this.drag = null;
     this.pendingCorner = null;
+    this.pendingRect = null;
+    this.setWorkingFile(file);
+    this.dialog().nativeElement.showModal();
+  }
+
+  private setWorkingFile(file: File): void {
+    this.workingFile = file;
     this.revokeUrl();
     this.objectUrl.set(URL.createObjectURL(file));
-    this.dialog().nativeElement.showModal();
+  }
+
+  protected async toggleFlip(): Promise<void> {
+    if (!this.originalFile || this.flipping() || this.processing()) return;
+    const next = !this.flipped();
+    if (next && !this.flippedFile) {
+      this.flipping.set(true);
+      this.cropError.set(null);
+      try {
+        this.flippedFile = await flipImageFile(this.originalFile);
+      } catch (err) {
+        this.cropError.set(err instanceof Error ? err.message : String(err));
+        this.flipping.set(false);
+        return;
+      }
+      this.flipping.set(false);
+    }
+    const rect = this.cropRect();
+    const size = this.sourceSize();
+    this.pendingRect = rect && size ? mirrorCropRect(rect, size) : null;
+    const target = next ? this.flippedFile : this.originalFile;
+    if (!target) return;
+    this.flipped.set(next);
+    this.setWorkingFile(target);
   }
 
   private clampOpts(): ClampOptions {
@@ -287,7 +348,13 @@ export class ImageCropDialogComponent {
     const size = { w: img.naturalWidth, h: img.naturalHeight };
     if (!size.w || !size.h) return;
     this.sourceSize.set(size);
-    this.cropRect.set(initialCropRect(size, this.clampOpts()));
+    const pending = this.pendingRect;
+    this.pendingRect = null;
+    this.cropRect.set(
+      pending
+        ? clampCropRect(pending, size, this.clampOpts())
+        : initialCropRect(size, this.clampOpts()),
+    );
     this.announce();
     setTimeout(() => this.rectEl()?.nativeElement.focus(), 0);
   }
@@ -403,11 +470,12 @@ export class ImageCropDialogComponent {
 
   protected async confirm(): Promise<void> {
     const rect = this.cropRect();
-    if (!rect || !this.file || this.processing()) return;
+    const file = this.workingFile;
+    if (!rect || !file || this.processing()) return;
     this.processing.set(true);
     this.cropError.set(null);
     try {
-      const cropped = await cropFileToFile(this.file, rect);
+      const cropped = await cropFileToFile(file, rect);
       this.settled = true;
       this.close();
       this.confirmed.emit(cropped);
@@ -418,9 +486,9 @@ export class ImageCropDialogComponent {
   }
 
   protected useFullImage(): void {
-    if (!this.file) return;
+    const file = this.workingFile;
+    if (!file) return;
     this.settled = true;
-    const file = this.file;
     this.close();
     this.confirmed.emit(file);
   }

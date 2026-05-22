@@ -35,6 +35,8 @@
     "instructions": "Drag the box to frame your crop, or pick a different aspect ratio.",
     "aspectLabel": "Aspect ratio",
     "free": "Free",
+    "flip": "Flip horizontal",
+    "facingHint": "Sprites should face right by default — use Flip if this character faces left.",
     "useFullImage": "Use full image",
     "confirm": "Crop & upload",
     "dimensions": "Crop area {{ width }} by {{ height }} pixels",
