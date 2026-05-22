@@ -10,11 +10,13 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import { EntityRef, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
   EntityPickerComponent,
   GhostButtonComponent,
   PrimaryButtonComponent,
+  RichTextInputComponent,
 } from '@shared/ui';
 import { CodexEntryDraft } from '../data-access/codex-entry.types';
 import { CodexCategoryTypeaheadComponent } from './codex-category-typeahead.component';
@@ -33,7 +35,9 @@ const RELATED_REFS_MAX = 50;
     GhostButtonComponent,
     EntityPickerComponent,
     CodexCategoryTypeaheadComponent,
+    RichTextInputComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -92,15 +96,16 @@ const RELATED_REFS_MAX = 50;
             (picked)="cover.set($event)"
           />
 
-          <label class="flex flex-col gap-1 text-sm">
+          <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
-            <textarea
-              formControlName="description"
-              rows="8"
-              class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
+            <app-rich-text-input
+              appContentLang
+              [value]="description()"
+              [ariaLabel]="g('tooltip.descriptionAria')"
               [placeholder]="t('empty.descriptionPlaceholder')"
-            ></textarea>
-          </label>
+              (valueChange)="description.set($event)"
+            />
+          </div>
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
@@ -122,7 +127,7 @@ const RELATED_REFS_MAX = 50;
               uiPrimary
               type="submit"
               [loading]="busy()"
-              [disabled]="form.invalid || busy()"
+              [disabled]="form.invalid || descriptionEmpty() || busy()"
             >
               {{ initial() ? g('action.save') : g('action.add') }}
             </button>
@@ -147,11 +152,12 @@ export class CodexEntryFormComponent {
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly cover = signal<string | undefined>(undefined);
   protected readonly categoryKey = signal<string | null>(null);
+  protected readonly description = signal<string>('');
+  protected readonly descriptionEmpty = computed(() => this.description().trim().length === 0);
 
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     title: ['', [Validators.required, Validators.maxLength(120)]],
-    description: ['', [Validators.required]],
   });
 
   constructor() {
@@ -160,8 +166,8 @@ export class CodexEntryFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         title: init?.title ?? '',
-        description: init?.description ?? '',
       });
+      this.description.set(init?.description ?? '');
       this.related.set(init?.relatedRefs ?? []);
       this.cover.set(init?.coverAssetId);
       this.categoryKey.set(init?.categoryKey ?? null);
@@ -170,13 +176,15 @@ export class CodexEntryFormComponent {
 
   protected onSubmit(): void {
     if (this.form.invalid) return;
+    const description = this.description().trim();
+    if (!description) return;
     const v = this.form.getRawValue();
     const refs = this.related();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       title: v.title.trim(),
       categoryKey: this.categoryKey() ?? undefined,
-      description: v.description.trim(),
+      description,
       coverAssetId: this.cover(),
       relatedRefs: refs.length > 0 ? refs : undefined,
     });

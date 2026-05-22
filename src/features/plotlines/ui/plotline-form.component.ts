@@ -3,8 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CoverSlotComponent } from '@features/media';
+import { ContentLangDirective } from '@features/universes';
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
-import { GhostButtonComponent, PrimaryButtonComponent } from '@shared/ui';
+import { GhostButtonComponent, PrimaryButtonComponent, RichTextInputComponent } from '@shared/ui';
 import { PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
 import plotlineEn from '../i18n/en.json';
 import plotlineUk from '../i18n/uk.json';
@@ -23,7 +24,9 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; labelKey: string }[] = [
     CoverSlotComponent,
     PrimaryButtonComponent,
     GhostButtonComponent,
+    RichTextInputComponent,
     TranslocoDirective,
+    ContentLangDirective,
   ],
   providers: [
     provideTranslocoScope({
@@ -74,17 +77,19 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; labelKey: string }[] = [
             (picked)="cover.set($event)"
           />
 
-          <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <label class="flex flex-col gap-1 text-sm">
-              <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
-              <textarea
-                formControlName="description"
-                rows="3"
-                class="rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 py-2 text-sm"
-                [placeholder]="t('empty.descriptionPlaceholder')"
-              ></textarea>
-            </label>
-            <label class="flex flex-col gap-1 text-sm">
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="font-medium text-foreground-muted">{{ g('field.description') }}</span>
+            <app-rich-text-input
+              appContentLang
+              [value]="description()"
+              [ariaLabel]="g('tooltip.descriptionAria')"
+              [placeholder]="t('empty.descriptionPlaceholder')"
+              (valueChange)="description.set($event)"
+            />
+          </div>
+
+          <div class="flex flex-wrap gap-3 text-sm">
+            <label class="flex flex-col gap-1">
               <span class="font-medium text-foreground-muted">{{ g('field.status') }}</span>
               <select
                 formControlName="status"
@@ -95,7 +100,7 @@ const STATUS_OPTIONS: { value: '' | PlotlineStatus; labelKey: string }[] = [
                 }
               </select>
             </label>
-            <label class="flex flex-col gap-1 text-sm">
+            <label class="flex flex-col gap-1">
               <span class="font-medium text-foreground-muted">{{ g('field.color') }}</span>
               <input
                 type="color"
@@ -140,6 +145,7 @@ export class PlotlineFormComponent {
   });
 
   protected readonly cover = signal<string | undefined>(undefined);
+  protected readonly description = signal<string>('');
 
   protected readonly statusOptionLabels = computed(() => {
     this.activeLang();
@@ -152,7 +158,6 @@ export class PlotlineFormComponent {
   protected readonly form = new FormBuilder().nonNullable.group({
     slug: ['', [Validators.required, Validators.pattern(SLUG_PATTERN), Validators.maxLength(SLUG_MAX_LENGTH)]],
     title: ['', [Validators.required, Validators.maxLength(120)]],
-    description: [''],
     color: ['#6366f1'],
     status: ['' as '' | PlotlineStatus],
   });
@@ -163,10 +168,10 @@ export class PlotlineFormComponent {
       this.form.reset({
         slug: init?.slug ?? '',
         title: init?.title ?? '',
-        description: init?.description ?? '',
         color: init?.color ?? '#6366f1',
         status: init?.status ?? '',
       });
+      this.description.set(init?.description ?? '');
       this.cover.set(init?.coverAssetId);
     });
   }
@@ -174,7 +179,7 @@ export class PlotlineFormComponent {
   protected onSubmit(): void {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
-    const description = v.description.trim();
+    const description = this.description().trim();
     const color = v.color.trim();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
