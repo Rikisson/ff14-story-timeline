@@ -138,17 +138,6 @@ type CrossfadeSlot = 'A' | 'B';
                 (animate.enter)="onSpriteEnter($event, s.id)"
                 (animate.leave)="onSpriteLeave($event, s.id)"
               />
-            } @else {
-              <div
-                class="reader-sprite reader-sprite-hidden absolute bottom-0 flex aspect-[9/16] h-[55%] items-center justify-center rounded-lg border border-dashed border-scrim-foreground/40 bg-scrim/30 px-2 text-center text-sm text-scrim-foreground/80"
-                [class.reader-sprite-muted]="!s.isSpeaker"
-                [attr.data-sprite-id]="s.id"
-                [style.left.%]="s.leftPercent"
-                (animate.enter)="onSpriteEnter($event, s.id)"
-                (animate.leave)="onSpriteLeave($event, s.id)"
-              >
-                {{ t('empty.noSprite') }}
-              </div>
             }
           }
         </div>

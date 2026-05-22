@@ -25,9 +25,6 @@
     "storyUnavailable": "This story isn't available. The link may be private, or the story may have been removed.",
     "eventUnavailable": "This event isn't available. The link may be private, or the event may have been removed."
   },
-  "empty": {
-    "noSprite": "no sprite"
-  },
   "aria": {
     "narration": "Scene narration"
   },
