@@ -27,6 +27,14 @@ describe('markdownToTiptapHtml', () => {
     expect(html).toContain('&lt;x&gt;');
     expect(html).not.toContain('<x>');
   });
+
+  it('keeps an authored blank line as its own paragraph block', () => {
+    const nbsp = String.fromCharCode(0x00a0);
+    const html = markdownToTiptapHtml('a' + String.fromCharCode(10, 10) + nbsp + String.fromCharCode(10, 10) + 'b');
+    expect(html).toContain('<p>a</p>');
+    expect(html).toContain('<p>b</p>');
+    expect(html).toContain('<p>' + nbsp + '</p>');
+  });
 });
 
 describe('tiptapJsonToMarkdown', () => {
@@ -85,5 +93,29 @@ describe('tiptapJsonToMarkdown', () => {
 
   it('returns empty for empty doc', () => {
     expect(tiptapJsonToMarkdown({ type: 'doc', content: [] })).toBe('');
+  });
+
+  it('preserves an authored blank line between paragraphs', () => {
+    const md = tiptapJsonToMarkdown({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'first' }] },
+        { type: 'paragraph' },
+        { type: 'paragraph', content: [{ type: 'text', text: 'second' }] },
+      ],
+    });
+    const gap = String.fromCharCode(10, 10);
+    expect(md.split(gap)).toEqual(['first', String.fromCharCode(0x00a0), 'second']);
+  });
+
+  it('drops a trailing empty paragraph', () => {
+    const md = tiptapJsonToMarkdown({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'only' }] },
+        { type: 'paragraph' },
+      ],
+    });
+    expect(md).toBe('only');
   });
 });

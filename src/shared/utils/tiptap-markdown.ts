@@ -70,10 +70,18 @@ export function tiptapJsonToMarkdown(doc: PMNode): string {
     .trimEnd();
 }
 
+// An empty paragraph — the author pressed Enter on a blank line to space
+// out their text — has no plain-markdown representation: any run of blank
+// lines collapses to a single paragraph break. Emit a non-breaking space
+// so the paragraph survives `marked` as its own block and the gap renders.
+const BLANK_LINE = '\u00a0';
+
 function serializeBlock(node: PMNode, indent = ''): string {
   switch (node.type) {
-    case 'paragraph':
-      return indent + serializeInline(node.content ?? []);
+    case 'paragraph': {
+      const text = serializeInline(node.content ?? []);
+      return indent + (text || BLANK_LINE);
+    }
     case 'bulletList':
       return (node.content ?? [])
         .map((li) => serializeListItem(li, indent))
