@@ -94,7 +94,7 @@ const SCROLL_STEP = 320;
             @if (store.hasMore()) {
               <button
                 type="button"
-                class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl font-light text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring disabled:opacity-60"
+                class="flex w-12 shrink-0 items-stretch justify-center self-stretch rounded-md border border-border-strong bg-surface text-3xl text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring disabled:opacity-60"
                 [disabled]="store.loadingMore()"
                 [attr.aria-label]="t('tooltip.loadMore', { lane: headerLabel(t) || t('field.allItems') })"
                 (click)="store.loadMore()"
