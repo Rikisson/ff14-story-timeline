@@ -386,6 +386,11 @@ html [data-testid='output-socket'] > *.multiple {
   --reader-card-width: 60%;
   --reader-page-width: 42rem;
   --reader-card-opacity: 0.9;
+  /* Story card total height — em-based so it scales modestly with
+   * --scene-font-size. The card itself is fixed; inside, the choice
+   * region sizes to its actual content from the bottom up and the text
+   * region takes whatever's left (scrolls if overflowing). */
+  --reader-card-height: 10.5em;
 }
 .reader-card {
   position: absolute;
@@ -398,7 +403,7 @@ html [data-testid='output-socket'] > *.multiple {
   display: flex;
   flex-direction: column;
   gap: 0.4em;
-  padding: 0.875rem 1rem;
+  padding: 1em 2em;
   border: 1px solid var(--color-border);
   border-radius: 0.625rem;
   /* Only the fill honors the reader's opacity preference — border, text,
@@ -414,6 +419,16 @@ html [data-testid='output-socket'] > *.multiple {
   transition:
     opacity var(--motion-base) ease-in-out,
     visibility var(--motion-base);
+}
+/* Story card — fixed total height, two-row grid: the text region fills
+ * whatever space the choice/continuation row leaves over (and scrolls
+ * if overflowing), and the choice region sizes to its actual content
+ * from the bottom up, pushing the text up as more choices appear. The
+ * event panel keeps the inherited flex layout. */
+.reader-card:not(.reader-card-page) {
+  height: var(--reader-card-height);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 /* Collapsed by the reader's hide-text toggle — fades out and goes
  * non-interactive while staying in the DOM, so the typewriter keeps its
@@ -432,14 +447,15 @@ html [data-testid='output-socket'] > *.multiple {
   bottom: auto;
   transform: translate(-50%, -50%);
   width: var(--reader-page-width);
-  max-height: 78vh;
-  padding: 1.25rem 1.5rem;
+  height: 78vh;
 }
 /* The card itself doesn't scroll — the text body does. That keeps the
- * continuation anchor pinned below the text, and keeps the card's
+ * choice/continuation row pinned below the text, and keeps the card's
  * padding from being clipped at the scroll end (a flexbox quirk that
- * drops a scroll container's own padding-bottom). */
-.reader-card-page app-typewriter-text {
+ * drops a scroll container's own padding-bottom). Applies to both
+ * variants: the story card's fixed text row in its two-row grid, and
+ * the event panel's full-height page. */
+.reader-card app-typewriter-text {
   min-height: 0;
   overflow-y: auto;
 }
