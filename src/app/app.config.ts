@@ -5,13 +5,14 @@ import {
   inject,
   isDevMode,
   LOCALE_ID,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
 import { provideTranslocoMessageformat } from '@jsverse/transloco-messageformat';
-import { LocaleService } from '@shared/services';
+import { BrandTitleService, LocaleService } from '@shared/services';
 
 import { routes } from './app.routes';
 import { BundledTranslocoLoader } from './transloco-loader';
@@ -34,6 +35,9 @@ export const appConfig: ApplicationConfig = {
       loader: BundledTranslocoLoader,
     }),
     provideTranslocoMessageformat(),
+    provideAppInitializer(() => {
+      inject(BrandTitleService);
+    }),
     { provide: LOCALE_ID, useFactory: () => inject(LocaleService).active() },
   ],
 };

@@ -144,6 +144,20 @@ contain no raw colors, only token references:
 A new theme retunes identity by redefining the tone tokens in its
 selector block. No component code changes.
 
+## Brand
+
+The Opovid wordmark is the one piece of identity that lives outside the
+token families. `<app-brand>` (`shared/ui/brand/`) renders the name in
+`--font-brand` — self-hosted Cormorant, two subset files for Latin
+("Opovid") and Ukrainian Cyrillic («Оповідь») — and follows
+`LocaleService` so it reads natively in either language. The opening
+letter is rubricated in `--color-brand-rubric`, a true theme token: a
+deep garnet in light, lightened to a rose-garnet in dark so it keeps
+WCAG AA on the dark canvas. That colour appears only in the wordmark,
+the favicon and the landing flourish — never UI chrome — so it never
+collides with the `danger` role. The book mark beside the name reuses
+`--color-accent` and needs no token of its own.
+
 ## Reader
 
 The reader carries a small layout vocabulary in `src/styles.css` that

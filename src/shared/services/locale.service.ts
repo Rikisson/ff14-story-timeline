@@ -1,17 +1,13 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
+import { LOCALE_META } from './locale-meta';
 
 export type UiLocale = 'en' | 'uk';
 
 const STORAGE_KEY = 'uiLocale';
 const SUPPORTED: UiLocale[] = ['en', 'uk'];
 const DEFAULT_LOCALE: UiLocale = 'en';
-
-const LABELS: Record<UiLocale, string> = {
-  en: 'English',
-  uk: 'Українська',
-};
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
@@ -51,7 +47,11 @@ export class LocaleService {
   }
 
   labelFor(locale: UiLocale): string {
-    return LABELS[locale];
+    return LOCALE_META[locale].label;
+  }
+
+  shortFor(locale: UiLocale): string {
+    return LOCALE_META[locale].short;
   }
 
   private readInitial(): UiLocale {

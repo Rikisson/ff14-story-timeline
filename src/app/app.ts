@@ -17,7 +17,12 @@ import { CalendarService } from '@features/calendar';
 import { CodexCategoriesService } from '@features/codex';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { LayoutStore } from '@shared/data-access';
-import { GhostButtonComponent, LocaleToggleComponent, ThemeToggleComponent } from '@shared/ui';
+import {
+  BrandComponent,
+  GhostButtonComponent,
+  LocaleToggleComponent,
+  ThemeToggleComponent,
+} from '@shared/ui';
 import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
 @Component({
@@ -28,6 +33,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     RouterLinkActive,
     TranslocoDirective,
     AuthButtonComponent,
+    BrandComponent,
     GhostButtonComponent,
     LocaleToggleComponent,
     ThemeToggleComponent,

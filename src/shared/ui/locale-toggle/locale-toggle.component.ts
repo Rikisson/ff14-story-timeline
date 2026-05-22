@@ -17,7 +17,7 @@ import { LocaleService, type UiLocale } from '@shared/services';
         [title]="t('tooltip.localeTitle', { current: currentLabel(), next: nextLabel() })"
         (click)="cycle()"
       >
-        {{ active() }}
+        {{ shortCode() }}
       </button>
     </ng-container>
   `,
@@ -26,6 +26,8 @@ export class LocaleToggleComponent {
   private readonly locale = inject(LocaleService);
 
   protected readonly active = this.locale.active;
+
+  protected readonly shortCode = computed(() => this.locale.shortFor(this.active()));
 
   protected readonly currentLabel = computed(() => this.locale.labelFor(this.active()));
   protected readonly nextLabel = computed(() => this.locale.labelFor(this.peekNext()));

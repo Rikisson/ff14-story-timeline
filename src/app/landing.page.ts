@@ -3,15 +3,16 @@ import { Router } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { UniverseStore } from '@features/universes';
-import { PageComponent } from '@shared/ui';
+import { BrandComponent, PageComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-landing-page',
-  imports: [PageComponent, TranslocoDirective],
+  imports: [BrandComponent, PageComponent, TranslocoDirective],
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
       <app-page>
         <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
+        <app-brand size="hero" class="brand-enter mb-4" />
         @if (loading()) {
           <span
             class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
@@ -41,6 +42,22 @@ import { PageComponent } from '@shared/ui';
         </div>
       </app-page>
     </ng-container>
+  `,
+  styles: `
+    .brand-enter {
+      animation: brand-enter 0.6s ease-out both;
+    }
+    @keyframes brand-enter {
+      from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-enter {
+        animation: none;
+      }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

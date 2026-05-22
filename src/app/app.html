@@ -1,6 +1,9 @@
 <ng-container *transloco="let t; prefix: 'general'">
   @if (!chromeHidden()) {
   <header class="relative z-20 flex items-center gap-6 border-b border-border px-6 py-3">
+    <a routerLink="/" class="inline-flex no-underline">
+      <app-brand />
+    </a>
     <app-universe-selector />
     @if (hasActiveUniverse()) {
       <nav class="flex flex-1 items-center gap-4">
