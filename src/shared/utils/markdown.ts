@@ -21,7 +21,11 @@ interface InlineRefToken extends Tokens.Generic {
   displayText: string;
 }
 
-export function renderMarkdown(text: string, options: MarkdownRefOption[] = []): string {
+export function renderMarkdown(
+  text: string,
+  options: MarkdownRefOption[] = [],
+  flattenRefs = false,
+): string {
   if (!text) return '';
   const lookup = new Map<string, MarkdownRefOption>();
   for (const o of options) lookup.set(`${o.kind}:${o.id}`, o);
@@ -53,6 +57,9 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
           const kind = INLINE_REF_KIND_BY_PREFIX[t.prefix];
           const match = lookup.get(`${kind}:${t.id}`);
           const display = escapeHtml(t.displayText || match?.label || '');
+          if (flattenRefs) {
+            return display;
+          }
           if (match) {
             return `<a class="${INLINE_REF_BASE_CLASS} ${KIND_TEXT_CLASS[kind]}" data-entity-ref-kind="${kind}" data-entity-ref-id="${escapeHtml(t.id)}" tabindex="0" title="${escapeHtml(match.label)}">${display}</a>`;
           }
@@ -65,9 +72,13 @@ export function renderMarkdown(text: string, options: MarkdownRefOption[] = []):
   return m.parse(text) as string;
 }
 
-export function renderMarkdownInline(text: string, options: MarkdownRefOption[] = []): string {
+export function renderMarkdownInline(
+  text: string,
+  options: MarkdownRefOption[] = [],
+  flattenRefs = false,
+): string {
   if (!text) return '';
-  const full = renderMarkdown(text, options);
+  const full = renderMarkdown(text, options, flattenRefs);
   return full.replace(/^\s*<p>([\s\S]*?)<\/p>\s*$/u, '$1');
 }
 

@@ -57,6 +57,9 @@ export class MarkdownTextComponent {
    */
   readonly options = input<InlineRefOption[]>([]);
   readonly inline = input<boolean>(false);
+  // Renders refs as plain text so a ref inside a hover popover can't
+  // spawn another popover from within it.
+  readonly flattenRefs = input<boolean>(false);
 
   private readonly hover = inject(EntityRefHoverService);
   private readonly resolver = inject(EntityResolverCache);
@@ -82,8 +85,8 @@ export class MarkdownTextComponent {
       ? explicit.map((o) => ({ kind: o.kind, id: o.id, label: o.label }))
       : this.optionsFromResolver();
     const raw = this.inline()
-      ? renderMarkdownInline(this.text(), merged)
-      : renderMarkdown(this.text(), merged);
+      ? renderMarkdownInline(this.text(), merged, this.flattenRefs())
+      : renderMarkdown(this.text(), merged, this.flattenRefs());
     return this.sanitizer.bypassSecurityTrustHtml(raw);
   });
 

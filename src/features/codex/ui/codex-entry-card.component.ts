@@ -6,6 +6,7 @@ import {
   DetailCardComponent,
   EntityRefComponent,
   GhostButtonComponent,
+  MarkdownTextComponent,
 } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntry } from '../data-access/codex-entry.types';
@@ -15,6 +16,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
   imports: [
     DetailCardComponent,
     EntityRefComponent,
+    MarkdownTextComponent,
     GhostButtonComponent,
     DangerButtonComponent,
     TranslocoDirective,
@@ -43,7 +45,9 @@ import { CodexEntry } from '../data-access/codex-entry.types';
             }
           </div>
 
-          <p class="m-0 max-w-prose whitespace-pre-line text-sm text-foreground-muted">{{ entry().description }}</p>
+          @if (entry().description; as desc) {
+            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="desc" />
+          }
 
           @if ((entry().relatedRefs ?? []).length > 0) {
             <ul class="m-0 flex list-none flex-wrap items-center gap-1.5 p-0">

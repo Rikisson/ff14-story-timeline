@@ -56,6 +56,25 @@ describe('renderMarkdown', () => {
     expect(html).toMatch(/<li>\s*<strong><a[^>]*>Al<\/a><\/strong>/);
     expect(html).toContain('>Gri</a>');
   });
+
+  it('flattens refs to plain display text when flattenRefs is set', () => {
+    const html = renderMarkdown('Met ${ch:abc}[the lad] in ${pl:gri}[Gri].', lookup, true);
+    expect(html).not.toContain('<a');
+    expect(html).not.toContain('[');
+    expect(html).toContain('Met the lad in Gri.');
+  });
+
+  it('flattens unresolved refs without bracket fallback', () => {
+    const html = renderMarkdown('Lost ${ch:zzz}[unknown] forever.', lookup, true);
+    expect(html).not.toContain('[unknown]');
+    expect(html).toContain('Lost unknown forever.');
+  });
+
+  it('flattens refs to the entity name when display text is empty', () => {
+    const html = renderMarkdown('At ${pl:gri}[].', lookup, true);
+    expect(html).not.toContain('<a');
+    expect(html).toContain('At Gridania.');
+  });
 });
 
 describe('renderMarkdownInline', () => {
@@ -68,5 +87,12 @@ describe('renderMarkdownInline', () => {
   it('keeps multi-block content wrapped', () => {
     const html = renderMarkdownInline('para one\n\npara two');
     expect(html).toContain('<p>');
+  });
+
+  it('flattens refs while stripping the wrapping <p>', () => {
+    const html = renderMarkdownInline('Met ${ch:abc}[the lad].', lookup, true);
+    expect(html).not.toContain('<p>');
+    expect(html).not.toContain('<a');
+    expect(html).toBe('Met the lad.');
   });
 });

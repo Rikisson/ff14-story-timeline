@@ -3,10 +3,12 @@ import {
   ResolvedCanonicalEntity,
   ResolvedDirectoryRow,
 } from '@shared/data-access';
+import { MarkdownTextComponent } from '../markdown-text/markdown-text.component';
 import { EntityRefHoverService } from './entity-ref-hover.service';
 
 @Component({
   selector: 'app-entity-ref-popover',
+  imports: [MarkdownTextComponent],
   template: `
     <div
       role="tooltip"
@@ -20,9 +22,9 @@ import { EntityRefHoverService } from './entity-ref-hover.service';
       @if (name(); as n) {
         <p class="m-0 mt-0.5 text-sm font-semibold text-foreground">{{ n }}</p>
         @if (description(); as d) {
-          <p class="m-0 mt-2 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-foreground-muted">
-            {{ d }}
-          </p>
+          <div class="mt-2 line-clamp-3 text-xs leading-relaxed text-foreground-muted">
+            <app-markdown-text [text]="d" [inline]="true" [flattenRefs]="true" />
+          </div>
         }
       } @else {
         <p class="m-0 mt-1 text-sm text-foreground-faint">Unresolved reference</p>

@@ -7,6 +7,7 @@ import {
   DetailCardComponent,
   EntityRefComponent,
   GhostButtonComponent,
+  MarkdownTextComponent,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import { TimelineEvent } from '../data-access/event.types';
@@ -16,6 +17,7 @@ import { TimelineEvent } from '../data-access/event.types';
   imports: [
     DetailCardComponent,
     EntityRefComponent,
+    MarkdownTextComponent,
     GhostButtonComponent,
     DangerButtonComponent,
     TranslocoDirective,
@@ -40,7 +42,7 @@ import { TimelineEvent } from '../data-access/event.types';
           }
 
           @if (event().description; as desc) {
-            <p class="m-0 max-w-prose whitespace-pre-line text-sm text-foreground-muted">{{ desc }}</p>
+            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="desc" />
           }
 
           @if (relatedRefs().length > 0) {

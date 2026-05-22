@@ -5,6 +5,7 @@ import {
   DangerButtonComponent,
   DetailCardComponent,
   GhostButtonComponent,
+  MarkdownTextComponent,
   TagComponent,
   TagTone,
 } from '@shared/ui';
@@ -29,6 +30,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
   imports: [
     DetailCardComponent,
     TagComponent,
+    MarkdownTextComponent,
     GhostButtonComponent,
     DangerButtonComponent,
     TranslocoDirective,
@@ -74,7 +76,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
             }
 
             @if (plotline().description; as d) {
-              <p class="m-0 max-w-prose whitespace-pre-line text-sm text-foreground-muted">{{ d }}</p>
+              <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="d" />
             }
           </div>
         </app-detail-card>
