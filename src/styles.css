@@ -542,19 +542,27 @@ html [data-testid='output-socket'] > *.multiple {
   pointer-events: none;
 }
 .reader-card-speaker > span {
-  display: inline-flex;
+  display: inline-block;
   max-width: 100%;
   overflow: hidden;
-  padding: 0.15rem 0.6rem;
-  border-radius: 0.4rem;
-  background: var(--color-accent);
-  color: var(--color-accent-foreground);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
-  font-size: 0.8em;
-  font-weight: 600;
-  line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
+  padding: 0.25em 0.6em;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+  font-family: var(--font-display);
+  font-size: 1.25em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+/* Rubric splash on the opening letter — same brand-rubric token the
+ * Opovid wordmark uses for its illuminated capital. */
+.reader-card-speaker > span::first-letter {
+  color: var(--color-brand-rubric);
 }
 /* Reader header toggle (text box / characters) in its engaged state —
  * the content it controls is currently hidden. Reuses the app-wide
