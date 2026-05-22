@@ -46,7 +46,7 @@ export type BrandSize = 'header' | 'hero';
       height: 0.92em;
     }
     .brand-word {
-      font-family: var(--font-brand);
+      font-family: var(--font-display);
       font-weight: 600;
       color: var(--color-foreground);
       letter-spacing: 0.005em;

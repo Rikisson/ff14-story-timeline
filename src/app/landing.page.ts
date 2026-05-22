@@ -20,7 +20,7 @@ import { BrandComponent, PageComponent } from '@shared/ui';
           ></span>
           <p class="m-0 text-foreground-subtle">{{ t('message.loadingUniverses') }}</p>
         } @else if (universes().length === 0) {
-          <h1 class="m-0 text-2xl font-semibold text-foreground">{{ t('empty.landingNoUniversesTitle') }}</h1>
+          <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ t('empty.landingNoUniversesTitle') }}</h1>
           <p class="m-0 text-foreground-subtle">
             @if (canCreate()) {
               {{ t('empty.landingNoUniversesAuthor') }}
@@ -31,7 +31,7 @@ import { BrandComponent, PageComponent } from '@shared/ui';
             }
           </p>
         } @else {
-          <h1 class="m-0 text-2xl font-semibold text-foreground">{{ t('message.landingPickTitle') }}</h1>
+          <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ t('message.landingPickTitle') }}</h1>
           <p class="m-0 text-foreground-subtle">
             {{ t('message.landingPickHint') }}
             @if (!user()) {

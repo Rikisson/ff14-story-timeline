@@ -158,7 +158,9 @@ import editorUk from '../i18n/uk.json';
     .bar h1 {
       flex: 1;
       margin: 0;
-      font-size: 1.25rem;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
     }
     .dirty {
       color: var(--color-danger-foreground);
@@ -167,6 +169,7 @@ import editorUk from '../i18n/uk.json';
     .status {
       display: inline-block;
       margin-left: 0.5rem;
+      font-family: var(--font-sans);
       padding: 0.125rem 0.5rem;
       border-radius: 0.25rem;
       font-size: 0.75rem;

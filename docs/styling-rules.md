@@ -119,11 +119,6 @@ border-border`, applied in the base directive — reads consistently
 regardless of element or variant. Don't add per-button disabled
 overrides.
 
-A page that needs a heroically large button (oversized CTA over a hero
-image, e.g. catalog story detail) should keep its classes inline rather
-than fight the directive with overrides; introducing a size variant is
-warranted only once two pages share the need.
-
 ## Identity colors flow through the tone palette
 
 Lookup files map identity strings to tone-token utility classes — they
@@ -144,19 +139,45 @@ contain no raw colors, only token references:
 A new theme retunes identity by redefining the tone tokens in its
 selector block. No component code changes.
 
-## Brand
+## Typography
 
-The Opovid wordmark is the one piece of identity that lives outside the
-token families. `<app-brand>` (`shared/ui/brand/`) renders the name in
-`--font-brand` — self-hosted Cormorant, two subset files for Latin
-("Opovid") and Ukrainian Cyrillic («Оповідь») — and follows
-`LocaleService` so it reads natively in either language. The opening
-letter is rubricated in `--color-brand-rubric`, a true theme token: a
-deep garnet in light, lightened to a rose-garnet in dark so it keeps
-WCAG AA on the dark canvas. That colour appears only in the wordmark,
-the favicon and the landing flourish — never UI chrome — so it never
-collides with the `danger` role. The book mark beside the name reuses
-`--color-accent` and needs no token of its own.
+Two self-hosted families, each shipped as Latin + Cyrillic `woff2`
+subsets so the app reads natively in English and Ukrainian. Both are
+declared once in `@theme` and are theme-agnostic — they do not change
+between light and dark.
+
+- `--font-sans` (IBM Plex Sans) — the document default: body copy,
+  every UI control, form text, and the reader's scene text. Tailwind's
+  `font-sans` utility and the base `body` rule both point at it.
+- `--font-display` (Cormorant) — a high-contrast display serif, applied
+  through the `font-display` utility to headings only: page titles
+  (`text-3xl`), entity detail-card titles (`text-2xl`), settings section
+  titles (`text-xl`), and the editor's story title. It is frail at small
+  sizes — never set it on body text, labels, or micro-headings, which
+  stay on `--font-sans`.
+
+The Opovid wordmark is the one piece of identity outside the token
+families. `<app-brand>` (`shared/ui/brand/`) renders the name in
+`--font-display` and follows `LocaleService`, so it shows "Opovid" in
+the English UI and «Оповідь» in the Ukrainian one. The opening letter is
+rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
+in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
+dark canvas. That colour appears only in the wordmark, the favicon and
+the landing flourish — never UI chrome — so it never collides with the
+`danger` role. The book mark beside the name reuses `--color-accent` and
+needs no token of its own.
+
+## Detail cards
+
+The six entity detail views — story, character, event, place, plotline,
+codex entry — share `<app-detail-card>` (`shared/ui/detail-card/`): an
+optional cover **banner** (a contained band of fixed height, with no
+scrim) above a calm, left-aligned, scrollable **panel**. The cover is a
+header image, not a backdrop — the title sits below it in
+`--font-display`, management actions are standard button directives, and
+nothing lays text over the image. The `scrim` token stays in use for
+timeline tiles, which are small poster-thumbnails where a cover backdrop
+with text over it is the right treatment.
 
 ## Reader
 
@@ -186,6 +207,15 @@ keeps presentation knobs out of component code:
 Idle-fade chrome and the OS-level `prefers-reduced-motion` collapse
 are driven by component-local signals, not CSS variables, so they
 don't appear in the styling layer.
+
+## Motion
+
+`src/styles.css` defines a small duration scale — `--motion-fast`
+(120ms), `--motion-base` (200ms), `--motion-slow` (300ms) — so the
+hand-written CSS shares one rhythm for micro-interactions. Easing
+keywords (`ease-out`, `ease-in-out`) stay inline at the call site. The
+reader's longer, deliberately cinematic timings — scene crossfades and
+the page enter/exit fades — are bespoke and stay out of the scale.
 
 ## Theme switching
 

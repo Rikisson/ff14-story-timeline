@@ -104,7 +104,7 @@ export function createChromeIdle(
 }
 
 const ENTER_FADE_MS = 1500;
-export const EXIT_FADE_MS = 700;
+export const EXIT_FADE_MS = 500;
 export const REDUCED_MOTION_EXIT_MS = 300;
 
 export interface ReaderFade {

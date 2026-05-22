@@ -6,7 +6,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant inactive (&:where(:disabled, [aria-disabled='true']));
 
-/* Brand display face — Cormorant, self-hosted Latin + Cyrillic subsets. */
+/* Type — Cormorant for display (headings + wordmark), IBM Plex Sans for
+ * body and UI. Each self-hosted as Latin + Cyrillic subsets. */
 @font-face {
   font-family: 'Cormorant';
   font-style: normal;
@@ -25,15 +26,34 @@
   src: url('/fonts/cormorant-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
-
-:root {
-  --font-brand: 'Cormorant', Georgia, 'Times New Roman', serif;
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/plex-sans-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/plex-sans-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
-/* Semantic color tokens — see docs/styling-rules.md. Light values in
- * @theme, dark overrides in .dark. The two blocks mirror each other
- * structurally; only values differ. */
+/* Design tokens — see docs/styling-rules.md. The type families are
+ * theme-agnostic; the color tokens have light values here and dark
+ * overrides in .dark, the two blocks mirroring each other structurally
+ * so only values differ. */
 @theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', sans-serif;
+  --font-display: 'Cormorant', Georgia, 'Times New Roman', serif;
+
   --color-canvas: #faf5ea;
   --color-surface: #fffdf7;
   --color-surface-muted: #f0e9d6;
@@ -199,6 +219,15 @@
   --color-brand-rubric: #df9aa4;
 }
 
+/* Motion scale — shared duration vocabulary for hand-written CSS. The
+ * keywords (ease-out, ease-in-out) stay inline; only durations are
+ * tokenized so micro-interactions share one rhythm. */
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+}
+
 html,
 body {
   height: 100%;
@@ -206,7 +235,10 @@ body {
 }
 
 body {
-  @apply bg-canvas text-foreground;
+  @apply bg-canvas text-foreground font-sans;
+  /* A faint paper grain over the canvas — opaque surfaces (cards, panels)
+   * cover it, so it reads as the tooth of the page itself. */
+  background-image: url('/grain.svg');
 }
 
 app-root {
@@ -283,15 +315,22 @@ html [data-testid='output-socket'] > *.multiple {
   color: var(--color-foreground);
   text-decoration: none;
   cursor: pointer;
-  transition: color 0.12s ease;
+  transition: color var(--motion-fast) ease;
 }
 .reader-action::before {
   content: '▸' / '';
   flex-shrink: 0;
   color: var(--color-accent);
+  transition: transform var(--motion-fast) ease;
 }
 .reader-action:hover {
   color: var(--color-accent);
+}
+/* The marker slides toward the choice on hover/focus — a quiet cue that
+ * the line is interactive, beyond the colour shift alone. */
+.reader-action:hover::before,
+.reader-action:focus-visible::before {
+  transform: translateX(0.15em);
 }
 .reader-action:focus-visible {
   color: var(--color-accent);
@@ -340,11 +379,11 @@ html [data-testid='output-socket'] > *.multiple {
     transparent calc((1 - var(--reader-card-opacity, 1)) * 100%)
   );
   color: var(--color-foreground);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 0.55);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
   font-size: var(--scene-font-size, 1rem);
   transition:
-    opacity 0.2s ease-in-out,
-    visibility 0.2s;
+    opacity var(--motion-base) ease-in-out,
+    visibility var(--motion-base);
 }
 /* Collapsed by the reader's hide-text toggle — fades out and goes
  * non-interactive while staying in the DOM, so the typewriter keeps its
@@ -383,7 +422,7 @@ html [data-testid='output-socket'] > *.multiple {
 /* Character layer, toggled by the reader's hide-characters control — a
  * plain opacity fade; the layer is non-interactive either way. */
 .reader-stage {
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity var(--motion-base) ease-in-out;
 }
 .reader-stage-hidden {
   opacity: 0;
@@ -398,8 +437,8 @@ html [data-testid='output-socket'] > *.multiple {
   translate: -50%;
   transform-origin: bottom;
   transition:
-    left 0.3s ease-in-out,
-    filter 0.3s ease-in-out;
+    left var(--motion-slow) ease-in-out,
+    filter var(--motion-slow) ease-in-out;
 }
 .reader-sprite.reader-sprite-muted {
   filter: grayscale(0.6) brightness(0.9) drop-shadow(0 4px 6px rgb(0 0 0 / 0.25));
@@ -415,13 +454,13 @@ html [data-testid='output-socket'] > *.multiple {
  * property, not `transform`, so it composes with the translate/flip);
  * the outgoing pose is dropped at once, handled in the component. */
 .reader-sprite-fade-in {
-  animation: reader-sprite-fade-in 0.3s ease-out;
+  animation: reader-sprite-fade-in var(--motion-slow) ease-out;
 }
 .reader-sprite-fade-out {
-  animation: reader-sprite-fade-out 0.3s ease-in forwards;
+  animation: reader-sprite-fade-out var(--motion-slow) ease-in forwards;
 }
 .reader-sprite-pop-in {
-  animation: reader-sprite-pop-in 0.2s ease-out;
+  animation: reader-sprite-pop-in var(--motion-base) ease-out;
 }
 @keyframes reader-sprite-fade-in {
   from { opacity: 0; }
@@ -439,7 +478,9 @@ html [data-testid='output-socket'] > *.multiple {
   .reader-sprite-pop-in,
   .reader-card-speaker,
   .reader-card,
-  .reader-stage {
+  .reader-stage,
+  .reader-action,
+  .reader-action::before {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
   }
@@ -451,7 +492,7 @@ html [data-testid='output-socket'] > *.multiple {
   position: absolute;
   bottom: calc(100% + 0.375rem);
   translate: -50%;
-  transition: left 0.3s ease-in-out;
+  transition: left var(--motion-slow) ease-in-out;
   pointer-events: none;
 }
 .reader-card-speaker > span {

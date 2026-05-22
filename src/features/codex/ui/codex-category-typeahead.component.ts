@@ -84,7 +84,7 @@ import codexUk from '../i18n/uk.json';
 
               @if (open()) {
                 <div
-                  class="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border border-border bg-surface shadow-md"
+                  class="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border border-border bg-surface shadow-lg"
                 >
                   @if (creating()) {
                     <p class="m-0 px-3 py-2 text-sm italic text-foreground-faint" aria-live="polite">

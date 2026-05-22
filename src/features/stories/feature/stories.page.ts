@@ -75,7 +75,7 @@ import storyUk from '../i18n/uk.json';
                 />
               </div>
             } @else {
-              <p class="m-0 rounded-lg border border-dashed border-border-strong bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
+              <p class="m-0 rounded-lg border border-border bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
                 {{ t('empty.selectStory') }}
               </p>
             }

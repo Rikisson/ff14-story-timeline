@@ -39,7 +39,7 @@ import universeUk from '../i18n/uk.json';
       <ng-container *transloco="let g; prefix: 'general'">
         <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
           <div>
-            <h2 class="m-0 text-lg font-semibold text-foreground">{{ t('field.generalHeader') }}</h2>
+            <h2 class="m-0 font-display text-xl font-semibold text-foreground">{{ t('field.generalHeader') }}</h2>
             <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
               {{ t('message.generalSubtitle') }}
             </p>

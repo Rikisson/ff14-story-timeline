@@ -110,7 +110,7 @@ export interface EntityPickerCreateOption<R extends { kind: EntityKind; id: stri
 
           @if (open()) {
             <div
-              class="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border border-border bg-surface shadow-md"
+              class="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border border-border bg-surface shadow-lg"
             >
               @if (error()) {
                 <div class="flex items-center justify-between gap-2 px-3 py-2 text-sm text-danger-foreground">

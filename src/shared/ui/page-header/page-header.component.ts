@@ -3,9 +3,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'app-page-header',
   template: `
-    <header class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <header
+      class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border pb-3"
+    >
       <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 class="m-0 text-2xl font-semibold text-foreground">{{ title() }}</h1>
+        <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ title() }}</h1>
         @if (subtitle()) {
           <p class="m-0 text-sm text-foreground-subtle">{{ subtitle() }}</p>
         }
