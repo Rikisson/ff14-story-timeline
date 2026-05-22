@@ -1,6 +1,6 @@
 <ng-container *transloco="let t; prefix: 'general'">
   @if (!chromeHidden()) {
-  <header class="flex items-center gap-6 border-b border-border px-6 py-3">
+  <header class="relative z-20 flex items-center gap-6 border-b border-border px-6 py-3">
     <app-universe-selector />
     @if (hasActiveUniverse()) {
       <nav class="flex flex-1 items-center gap-4">
@@ -73,7 +73,7 @@
   }
   }
 
-  <main class="relative min-h-0 flex-1 overflow-auto">
+  <main class="relative z-0 min-h-0 flex-1 overflow-auto">
     <router-outlet />
     @if (isNavigating()) {
       <div
