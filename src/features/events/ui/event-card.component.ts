@@ -42,7 +42,7 @@ import { TimelineEvent } from '../data-access/event.types';
           }
 
           @if (event().description; as desc) {
-            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="desc" />
+            <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />
           }
 
           @if (relatedRefs().length > 0) {

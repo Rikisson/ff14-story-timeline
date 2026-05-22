@@ -46,7 +46,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
           </div>
 
           @if (entry().description; as desc) {
-            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="desc" />
+            <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />
           }
 
           @if ((entry().relatedRefs ?? []).length > 0) {

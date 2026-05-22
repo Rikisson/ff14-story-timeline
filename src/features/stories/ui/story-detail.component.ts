@@ -75,7 +75,7 @@ import storyUk from '../i18n/uk.json';
 
           @if (story().description; as d) {
             <app-markdown-text
-              class="max-w-prose text-sm text-foreground-muted"
+              class="text-sm text-foreground-muted"
               [text]="d"
               [inline]="true"
             />

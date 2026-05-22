@@ -36,7 +36,7 @@ import {
           <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ place().name }}</h2>
 
           @if (place().description; as d) {
-            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="d" />
+            <app-markdown-text class="text-sm text-foreground-muted" [text]="d" />
           }
 
           @if (relatedRefs().length > 0) {

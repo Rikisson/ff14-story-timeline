@@ -36,7 +36,7 @@ import {
           <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ character().name }}</h2>
 
           @if (character().description; as d) {
-            <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="d" />
+            <app-markdown-text class="text-sm text-foreground-muted" [text]="d" />
           }
 
           @if (relatedRefs().length > 0) {

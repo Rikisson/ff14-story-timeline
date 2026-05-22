@@ -76,7 +76,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
             }
 
             @if (plotline().description; as d) {
-              <app-markdown-text class="max-w-prose text-sm text-foreground-muted" [text]="d" />
+              <app-markdown-text class="text-sm text-foreground-muted" [text]="d" />
             }
           </div>
         </app-detail-card>

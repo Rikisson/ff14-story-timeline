@@ -21,8 +21,10 @@ import { AssetThumbResolver } from '@shared/data-access';
           ></div>
         </div>
       }
-      <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
-        <ng-content />
+      <div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-5">
+        <div class="flex w-full max-w-prose flex-col gap-3">
+          <ng-content />
+        </div>
       </div>
     </article>
   `,
