@@ -1,51 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-interface DocRef {
-  path: string;
-}
-
-interface RecordedOp {
-  op: 'set' | 'delete';
-  path: string;
-  data?: Record<string, unknown>;
-}
-
-let database: Map<string, Record<string, unknown>>;
-let recordedOps: RecordedOp[];
-
-vi.mock('firebase/firestore/lite', () => {
-  return {
-    doc: (_firestore: unknown, ...parts: string[]) => ({ path: parts.join('/') }) as DocRef,
-    collection: (..._args: unknown[]) => ({}),
-    getDoc: async () => ({ exists: () => false, data: () => undefined }),
-    getDocs: async () => ({ empty: true, size: 0, docs: [] }),
-    query: (..._args: unknown[]) => ({}),
-    where: (..._args: unknown[]) => ({}),
-    limit: (..._args: unknown[]) => ({}),
-    runTransaction: async (_firestore: unknown, fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        get: async (ref: DocRef) => {
-          const payload = database.get(ref.path);
-          return {
-            exists: () => payload !== undefined,
-            data: () => payload,
-            id: ref.path.split('/').pop() ?? '',
-          };
-        },
-        set: (ref: DocRef, data: Record<string, unknown>) => {
-          recordedOps.push({ op: 'set', path: ref.path, data });
-          database.set(ref.path, data);
-        },
-        delete: (ref: DocRef) => {
-          recordedOps.push({ op: 'delete', path: ref.path });
-          database.delete(ref.path);
-        },
-      };
-      return fn(tx);
-    },
-  };
-});
-
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore/lite';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   applyCategoryCreate,
   finaliseSave,
@@ -56,7 +11,41 @@ import {
   CodexCategoriesConfig,
 } from './codex-category.types';
 
-const FAKE_FIRESTORE = {} as never;
+interface RecordedOp {
+  op: 'set' | 'delete';
+  path: string;
+  data?: Record<string, unknown>;
+}
+
+let database: Map<string, Record<string, unknown>>;
+let recordedOps: RecordedOp[];
+
+// A real Firestore handle. `doc()` builds document references offline (no
+// I/O), so the production code can construct refs against it; reads and
+// writes are served entirely by `fakeTx`. This avoids mocking the
+// `firebase/firestore/lite` module, which is unreliable under the bundled
+// test runner.
+const firestore = getFirestore(initializeApp({ projectId: 'unit-test' }, 'codex-categories-spec'));
+
+const fakeTx = {
+  get: async (ref: { path: string }) => {
+    const payload = database.get(ref.path);
+    return {
+      exists: () => payload !== undefined,
+      data: () => payload,
+      id: ref.path.split('/').pop() ?? '',
+    };
+  },
+  set: (ref: { path: string }, data: Record<string, unknown>) => {
+    recordedOps.push({ op: 'set', path: ref.path, data });
+    database.set(ref.path, data);
+  },
+  delete: (ref: { path: string }) => {
+    recordedOps.push({ op: 'delete', path: ref.path });
+    database.delete(ref.path);
+  },
+};
+
 const CONFIG_PATH = 'universes/u1/_meta/codex_categories';
 
 beforeEach(() => {
@@ -66,12 +55,6 @@ beforeEach(() => {
 
 function withConfig(config: CodexCategoriesConfig): void {
   database.set(CONFIG_PATH, config as unknown as Record<string, unknown>);
-}
-
-async function runTx<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {
-  // Convenience that mirrors the production runTransaction surface.
-  const lite = await import('firebase/firestore/lite');
-  return lite.runTransaction(FAKE_FIRESTORE, fn) as Promise<T>;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,9 +150,7 @@ describe('applyCategoryCreate', () => {
   it('appends a new category with generated key and bumps version', async () => {
     withConfig({ categories: [{ id: 'c1', key: 'items', label: 'Items' }], version: 3 });
 
-    const created = await runTx((tx) =>
-      applyCategoryCreate(tx as never, FAKE_FIRESTORE, 'u1', { label: 'Lore' }),
-    );
+    const created = await applyCategoryCreate(fakeTx as never, firestore, 'u1', { label: 'Lore' });
 
     expect(created.key).toBe('lore');
     const written = recordedOps.find((o) => o.path === CONFIG_PATH)!;
@@ -183,9 +164,7 @@ describe('applyCategoryCreate', () => {
     withConfig({ categories: [{ id: 'c1', key: 'items', label: 'Items' }], version: 1 });
 
     await expect(
-      runTx((tx) =>
-        applyCategoryCreate(tx as never, FAKE_FIRESTORE, 'u1', { label: 'ITEMS' }),
-      ),
+      applyCategoryCreate(fakeTx as never, firestore, 'u1', { label: 'ITEMS' }),
     ).rejects.toThrow(CategoryConflictError);
   });
 
@@ -193,17 +172,14 @@ describe('applyCategoryCreate', () => {
     withConfig({ categories: [], version: 0 });
 
     await expect(
-      runTx((tx) =>
-        applyCategoryCreate(tx as never, FAKE_FIRESTORE, 'u1', { label: '   ' }),
-      ),
+      applyCategoryCreate(fakeTx as never, firestore, 'u1', { label: '   ' }),
     ).rejects.toThrow(/label cannot be empty/i);
   });
 
   it('initialises an empty config when the doc does not exist yet', async () => {
     // no withConfig — config doc absent
-    const created = await runTx((tx) =>
-      applyCategoryCreate(tx as never, FAKE_FIRESTORE, 'u1', { label: 'Lore' }),
-    );
+    const created = await applyCategoryCreate(fakeTx as never, firestore, 'u1', { label: 'Lore' });
+
     expect(created.key).toBe('lore');
     const written = recordedOps.find((o) => o.path === CONFIG_PATH)!;
     const after = written.data as unknown as CodexCategoriesConfig;
@@ -211,4 +187,3 @@ describe('applyCategoryCreate', () => {
     expect(after.categories).toHaveLength(1);
   });
 });
-

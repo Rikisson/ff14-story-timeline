@@ -1,8 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-interface DocRef {
-  path: string;
-}
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore/lite';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { SlugTakenError } from '@shared/models';
+import {
+  applyEntityDelete,
+  applyEntityWrite,
+  UNASSIGNED_LANE_KEY,
+} from './with-entity-projections';
+import type { DirectoryRowInputs, TimelineRowInputs } from './projection-rows';
 
 interface RecordedOp {
   op: 'set' | 'delete';
@@ -13,42 +18,33 @@ interface RecordedOp {
 let database: Map<string, Record<string, unknown>>;
 let recordedOps: RecordedOp[];
 
-vi.mock('firebase/firestore/lite', () => {
-  return {
-    doc: (_firestore: unknown, ...parts: string[]) => ({ path: parts.join('/') }) as DocRef,
-    runTransaction: async (_firestore: unknown, fn: (tx: unknown) => Promise<void>) => {
-      const tx = {
-        get: async (ref: DocRef) => {
-          const payload = database.get(ref.path);
-          return {
-            exists: () => payload !== undefined,
-            data: () => payload,
-            id: ref.path.split('/').pop() ?? '',
-          };
-        },
-        set: (ref: DocRef, data: Record<string, unknown>) => {
-          recordedOps.push({ op: 'set', path: ref.path, data });
-          database.set(ref.path, data);
-        },
-        delete: (ref: DocRef) => {
-          recordedOps.push({ op: 'delete', path: ref.path });
-          database.delete(ref.path);
-        },
-      };
-      await fn(tx);
-    },
-  };
-});
+// A real Firestore handle. `doc()` builds document references offline (no
+// I/O); reads and writes are served by `fakeTx`. The primitives
+// `applyEntityWrite` / `applyEntityDelete` take the transaction as a
+// parameter, so the test never touches the real transaction machinery and
+// never has to mock the `firebase/firestore/lite` module.
+const firestore = getFirestore(
+  initializeApp({ projectId: 'unit-test' }, 'with-entity-projections-spec'),
+);
 
-import { SlugTakenError } from '@shared/models';
-import {
-  deleteEntityWithProjections,
-  UNASSIGNED_LANE_KEY,
-  writeEntityWithProjections,
-} from './with-entity-projections';
-import type { DirectoryRowInputs, TimelineRowInputs } from './projection-rows';
-
-const FAKE_FIRESTORE = {} as unknown;
+const fakeTx = {
+  get: async (ref: { path: string }) => {
+    const payload = database.get(ref.path);
+    return {
+      exists: () => payload !== undefined,
+      data: () => payload,
+      id: ref.path.split('/').pop() ?? '',
+    };
+  },
+  set: (ref: { path: string }, data: Record<string, unknown>) => {
+    recordedOps.push({ op: 'set', path: ref.path, data });
+    database.set(ref.path, data);
+  },
+  delete: (ref: { path: string }) => {
+    recordedOps.push({ op: 'delete', path: ref.path });
+    database.delete(ref.path);
+  },
+};
 
 function setDocs(entries: Record<string, Record<string, unknown>>): void {
   for (const [path, data] of Object.entries(entries)) database.set(path, data);
@@ -80,9 +76,9 @@ beforeEach(() => {
   recordedOps = [];
 });
 
-describe('writeEntityWithProjections — create', () => {
+describe('applyEntityWrite —create', () => {
   it('writes canonical, directory, slug-index for a flat entity', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'character',
       id: 'c1',
@@ -117,7 +113,7 @@ describe('writeEntityWithProjections — create', () => {
   });
 
   it('writes timeline + lane rows for a story', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
       id: 's1',
@@ -157,7 +153,7 @@ describe('writeEntityWithProjections — create', () => {
   });
 
   it('writes an __unassigned__ lane row when plotlineIds is empty', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'event',
       id: 'e1',
@@ -182,7 +178,7 @@ describe('writeEntityWithProjections — create', () => {
   });
 
   it('marks drafts with visiblePublic=false on directory and timeline rows', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
       id: 's-draft',
@@ -213,7 +209,7 @@ describe('writeEntityWithProjections — create', () => {
   });
 });
 
-describe('writeEntityWithProjections — patch merge', () => {
+describe('applyEntityWrite —patch merge', () => {
   it('preserves existing fields not in the patch (the fix for the stale-write race)', async () => {
     setDocs({
       [`${U}/characters/me`]: {
@@ -225,7 +221,7 @@ describe('writeEntityWithProjections — patch merge', () => {
       },
     });
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'character',
       id: 'me',
@@ -248,12 +244,12 @@ describe('writeEntityWithProjections — patch merge', () => {
   });
 });
 
-describe('writeEntityWithProjections — slug uniqueness', () => {
+describe('applyEntityWrite —slug uniqueness', () => {
   it('throws SlugTakenError when the new slug belongs to another entity', async () => {
     setDocs({ [slugPath('character', 'taken')]: { entityId: 'other' } });
 
     await expect(
-      writeEntityWithProjections(FAKE_FIRESTORE as never, {
+      applyEntityWrite(fakeTx as never, firestore, {
         universeId: 'u1',
         kind: 'character',
         id: 'me',
@@ -271,7 +267,7 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
       [slugPath('character', 'mine')]: { entityId: 'me' },
     });
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'character',
       id: 'me',
@@ -291,7 +287,7 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
       [slugPath('character', 'old-name')]: { entityId: 'me' },
     });
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'character',
       id: 'me',
@@ -308,10 +304,10 @@ describe('writeEntityWithProjections — slug uniqueness', () => {
   });
 });
 
-describe('writeEntityWithProjections — fingerprint diff', () => {
+describe('applyEntityWrite —fingerprint diff', () => {
   it('skips projection writes when the projected slice is unchanged', async () => {
     const FIRST_RUN = async () => {
-      await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+      await applyEntityWrite(fakeTx as never, firestore, {
         universeId: 'u1',
         kind: 'place',
         id: 'p1',
@@ -327,7 +323,7 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
     // Reset op log; database keeps state.
     recordedOps = [];
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'place',
       id: 'p1',
@@ -346,7 +342,7 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
   });
 
   it('rewrites projections when label changes', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'place',
       id: 'p1',
@@ -358,7 +354,7 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
 
     recordedOps = [];
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'place',
       id: 'p1',
@@ -373,9 +369,9 @@ describe('writeEntityWithProjections — fingerprint diff', () => {
   });
 });
 
-describe('writeEntityWithProjections — lane diff', () => {
+describe('applyEntityWrite —lane diff', () => {
   it('deletes lanes the entity left and writes new lanes when plotlineIds change', async () => {
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
       id: 's1',
@@ -398,7 +394,7 @@ describe('writeEntityWithProjections — lane diff', () => {
 
     recordedOps = [];
 
-    await writeEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
       id: 's1',
@@ -426,7 +422,7 @@ describe('writeEntityWithProjections — lane diff', () => {
   });
 });
 
-describe('deleteEntityWithProjections', () => {
+describe('applyEntityDelete', () => {
   it('deletes canonical, directory, timeline, slug-index, and every lane row', async () => {
     setDocs({
       [`${U}/stories/s1`]: { slug: 'opening', title: 'Opening' },
@@ -437,7 +433,7 @@ describe('deleteEntityWithProjections', () => {
       [lanePath('pl-b', 'story', 's1')]: { laneKey: 'pl-b' },
     });
 
-    await deleteEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityDelete(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
       id: 's1',
@@ -460,7 +456,7 @@ describe('deleteEntityWithProjections', () => {
       [slugPath('character', 'aria')]: { entityId: 'c1' },
     });
 
-    await deleteEntityWithProjections(FAKE_FIRESTORE as never, {
+    await applyEntityDelete(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'character',
       id: 'c1',

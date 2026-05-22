@@ -1,19 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// media-assets.service.ts imports firebase/firestore/lite at module load.
-// These tests only exercise pure helpers, so stub the SDK to no-ops.
-vi.mock('firebase/firestore/lite', () => ({
-  collection: vi.fn(),
-  deleteDoc: vi.fn(),
-  doc: vi.fn(),
-  getDocs: vi.fn(),
-  orderBy: vi.fn(),
-  query: vi.fn(),
-  setDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  where: vi.fn(),
-}));
-
 import { assertMimeAndSize, processSprite, spriteFitsBounds } from './media-assets.service';
 
 function fakeFile(type: string, sizeBytes = 1024, name = 'art'): File {
