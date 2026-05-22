@@ -227,10 +227,13 @@
         "inGameDate": { "$ref": "#/$defs/inGameDate" },
         "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
         "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "startScene": { "type": "string", "description": "The key of the scene that opens the story." },
+        "startScene": {
+          "type": "string",
+          "description": "The key of the opening scene. Make it a 'showcase' scene whose text is just the story title."
+        },
         "scenes": {
           "type": "object",
-          "description": "Map of scene key to scene. Scene keys are short author-chosen strings, local to this story.",
+          "description": "Map of scene key to scene. Keys are short author-chosen strings, local to this story. Keep each scene small — one beat.",
           "additionalProperties": { "$ref": "#/$defs/scene" }
         }
       }
@@ -239,10 +242,13 @@
       "type": "object",
       "required": ["text", "characters", "next"],
       "properties": {
-        "text": { "type": "string", "description": "Scene prose. May contain inline reference tokens." },
+        "text": {
+          "type": "string",
+          "description": "Scene prose — a single beat: one line of dialogue or one short paragraph, never a wall of text. May contain inline reference tokens."
+        },
         "label": { "type": "string", "description": "Optional short scene title." },
         "speaker": {
-          "description": "Who is speaking: a character reference, or a plain string for a narrator or unnamed voice.",
+          "description": "The character speaking this line of dialogue. Set this only when the scene's text is spoken aloud by a character. Omit it for narration and description — never use a 'Narrator' label. A plain string is allowed only for a genuinely unnamed voice.",
           "oneOf": [{ "$ref": "#/$defs/ref" }, { "type": "string" }]
         },
         "backgroundAsset": { "type": "string" },
@@ -258,7 +264,10 @@
         "bgmSilence": { "type": "boolean" },
         "bgmTransition": { "enum": ["crossfade", "cut"] },
         "textSpeed": { "enum": ["slow", "normal", "fast", "instant"] },
-        "layout": { "enum": ["dialog", "showcase"] },
+        "layout": {
+          "enum": ["dialog", "showcase"],
+          "description": "Omit for normal scenes. Use 'showcase' only for the opening title-card scene."
+        },
         "transition": { "enum": ["crossfade", "fade-through-black"] },
         "transitionMs": { "type": "number" },
         "next": {

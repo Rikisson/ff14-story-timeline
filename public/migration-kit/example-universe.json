@@ -83,33 +83,58 @@
       "draft": false,
       "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 13 },
       "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
-      "startScene": "arrival",
+      "startScene": "title",
       "scenes": {
-        "arrival": {
-          "text": "Rain lashed the white cliffs as ${ch:lyra-dawnwhisper}[Lyra] climbed the last stair to the gate.",
-          "speaker": { "kind": "character", "ref": "lyra-dawnwhisper" },
+        "title": {
+          "text": "The Gathering Storm",
+          "layout": "showcase",
+          "characters": [],
+          "next": [{ "scene": "approach" }]
+        },
+        "approach": {
+          "text": "Rain lashed the white cliffs of ${pl:silverhold}[Silverhold]. ${ch:lyra-dawnwhisper}[Lyra] climbed the last stair to the gate, her cloak heavy with the storm.",
           "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
             { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
           ],
-          "next": [{ "label": "Knock on the gate", "scene": "the-gate" }]
+          "next": [{ "scene": "the-gate" }]
         },
         "the-gate": {
-          "text": "The gate groaned open. ${ch:garrett-stone}[Garrett Stone] stood in the torchlight, one hand on his sword.",
+          "text": "The gate groaned open. A knight stood in the torchlight, one hand resting on the hilt of his sword.",
+          "place": { "kind": "place", "ref": "silverhold" },
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
+            { "entity": { "kind": "character", "ref": "garrett-stone" }, "position": "right" }
+          ],
+          "next": [{ "scene": "challenge" }]
+        },
+        "challenge": {
+          "text": "You should not have come back, Lyra.",
           "speaker": { "kind": "character", "ref": "garrett-stone" },
           "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
             { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
             { "entity": { "kind": "character", "ref": "garrett-stone" }, "position": "right" }
           ],
-          "next": [{ "label": "Step inside", "scene": "the-hall" }]
+          "next": [{ "scene": "answer" }]
         },
-        "the-hall": {
-          "text": "Inside, the Order's banners hung heavy and damp. Whatever welcome she had hoped for, this was not it.",
+        "answer": {
+          "text": "And yet here I am. The coronation is tomorrow, and someone has to stop it.",
+          "speaker": { "kind": "character", "ref": "lyra-dawnwhisper" },
+          "place": { "kind": "place", "ref": "silverhold" },
           "characters": [
-            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
+            { "entity": { "kind": "character", "ref": "garrett-stone" }, "position": "right" }
           ],
-          "layout": "showcase",
+          "next": [{ "scene": "the-threshold" }]
+        },
+        "the-threshold": {
+          "text": "Garrett held her gaze for a long moment. Then he stepped aside, and the open gate stood between them like a question.",
+          "place": { "kind": "place", "ref": "silverhold" },
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
+            { "entity": { "kind": "character", "ref": "garrett-stone" }, "position": "right" }
+          ],
           "next": []
         }
       }
