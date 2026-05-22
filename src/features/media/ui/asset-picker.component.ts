@@ -342,7 +342,10 @@ export class AssetPickerComponent {
       return;
     }
     this.uploadError.set(null);
-    this.cropDialog().open(file, { aspect: this.defaultAspect() });
+    this.cropDialog().open(file, {
+      aspect: this.defaultAspect(),
+      facingHint: this.kind() === 'sprite',
+    });
   }
 
   protected onCropConfirmed(file: File): void {
