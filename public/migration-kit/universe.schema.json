@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ff14-story-timeline/migration-kit/universe.schema.json",
+  "title": "Universe Import Package",
+  "description": "A universe.json import package. Every entity is identified by a slug; entities reference each other by slug, never by id. Omit any field you have no value for.",
+  "type": "object",
+  "required": ["formatVersion"],
+  "properties": {
+    "formatVersion": {
+      "const": 1,
+      "description": "Schema version. Must be 1."
+    },
+    "generator": {
+      "type": "string",
+      "description": "Optional free-text note about what produced this file."
+    },
+    "exportedAt": {
+      "type": "number",
+      "description": "Optional epoch-millisecond timestamp. Ignored on import."
+    },
+    "universe": { "$ref": "#/$defs/universe" },
+    "calendar": { "$ref": "#/$defs/calendar" },
+    "codexCategories": {
+      "type": "array",
+      "description": "Codex categories. Added to the target universe if their key does not already exist.",
+      "items": { "$ref": "#/$defs/codexCategory" }
+    },
+    "assets": {
+      "type": "array",
+      "description": "Media metadata. Hand-authored packages normally omit this entirely — leave art fields off your entities and add images in the app after import.",
+      "items": { "$ref": "#/$defs/asset" }
+    },
+    "characters": { "type": "array", "items": { "$ref": "#/$defs/character" } },
+    "places": { "type": "array", "items": { "$ref": "#/$defs/place" } },
+    "plotlines": { "type": "array", "items": { "$ref": "#/$defs/plotline" } },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "codexEntries": { "type": "array", "items": { "$ref": "#/$defs/codexEntry" } },
+    "stories": { "type": "array", "items": { "$ref": "#/$defs/story" } }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "maxLength": 60,
+      "description": "Lowercase letters, digits, and hyphens. Unique within its kind. Derive it from the name (e.g. 'Lyra Dawnwhisper' -> 'lyra-dawnwhisper') and reuse it verbatim everywhere that entity is referenced."
+    },
+    "ref": {
+      "type": "object",
+      "description": "A structured reference to another entity, by slug.",
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "enum": ["character", "place", "event", "story", "plotline", "codexEntry"]
+        },
+        "ref": {
+          "allOf": [{ "$ref": "#/$defs/slug" }],
+          "description": "The slug of the target entity."
+        }
+      }
+    },
+    "inGameDate": {
+      "type": "object",
+      "description": "An in-world date. Every field is optional; an empty object means the date is unknown.",
+      "properties": {
+        "era": {
+          "type": "string",
+          "description": "The slug of an era defined in the calendar."
+        },
+        "year": { "type": "number" },
+        "month": { "type": "number", "description": "1-based index into the calendar's months array." },
+        "day": { "type": "number" },
+        "hour": { "type": "number" },
+        "minute": { "type": "number" },
+        "second": { "type": "number" },
+        "display": { "type": "string", "description": "Optional author-written override for the displayed date." }
+      }
+    },
+    "universe": {
+      "type": "object",
+      "description": "Universe metadata. Treated as informational on import — it never renames or replaces the target universe.",
+      "required": ["slug", "name", "locale"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "locale": { "enum": ["en", "uk"] },
+        "coverAsset": { "type": "string" }
+      }
+    },
+    "calendar": {
+      "type": "object",
+      "description": "The world calendar. Applied to the target universe only if it has no calendar yet.",
+      "required": ["eras", "months"],
+      "properties": {
+        "eras": { "type": "array", "items": { "$ref": "#/$defs/calendarEra" } },
+        "months": { "type": "array", "items": { "$ref": "#/$defs/calendarMonth" } },
+        "weekdays": { "type": "array", "items": { "$ref": "#/$defs/calendarWeekday" } }
+      }
+    },
+    "calendarEra": {
+      "type": "object",
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string" },
+        "maxYears": { "type": "number" },
+        "hoursPerDay": { "type": "number" },
+        "minutesPerHour": { "type": "number" },
+        "secondsPerMinute": { "type": "number" },
+        "resetsWeek": { "type": "boolean" }
+      }
+    },
+    "calendarMonth": {
+      "type": "object",
+      "required": ["name", "days"],
+      "properties": {
+        "name": { "type": "string" },
+        "days": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "calendarWeekday": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "short": { "type": "string" }
+      }
+    },
+    "codexCategory": {
+      "type": "object",
+      "required": ["key", "label"],
+      "properties": {
+        "key": { "$ref": "#/$defs/slug" },
+        "label": { "type": "string" },
+        "color": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["slug", "kind", "label"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "kind": { "enum": ["cover", "sprite", "background", "ambient", "sfx"] },
+        "label": { "type": "string" },
+        "file": { "type": "string", "description": "Path of the binary inside the archive's assets/ folder." },
+        "thumbFile": { "type": "string" },
+        "blurDataUrl": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "character": {
+      "type": "object",
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string" },
+        "description": { "type": "string", "description": "Prose. May contain inline reference tokens." },
+        "coverAsset": { "type": "string" },
+        "sprites": { "type": "array", "items": { "type": "string" } },
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "place": {
+      "type": "object",
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "coverAsset": { "type": "string" },
+        "backgrounds": { "type": "array", "items": { "type": "string" } },
+        "ambientAudio": { "type": "array", "items": { "type": "string" } },
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "plotline": {
+      "type": "object",
+      "required": ["slug", "title"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "coverAsset": { "type": "string" },
+        "color": { "type": "string" },
+        "status": { "enum": ["planned", "active", "resolved"] }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["slug", "name", "description", "inGameDate"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string" },
+        "description": { "type": "string", "description": "Prose. May contain inline reference tokens." },
+        "coverAsset": { "type": "string" },
+        "bgmAsset": { "type": "string" },
+        "backgroundEffect": { "enum": ["darken", "desaturate", "sepia", "cool", "warm"] },
+        "inGameDate": { "$ref": "#/$defs/inGameDate" },
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "nextRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "codexEntry": {
+      "type": "object",
+      "required": ["slug", "title", "description"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "description": "The key of a codex category." },
+        "description": { "type": "string", "description": "Prose. May contain inline reference tokens." },
+        "coverAsset": { "type": "string" },
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "story": {
+      "type": "object",
+      "required": ["slug", "title", "inGameDate", "startScene", "scenes"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "coverAsset": { "type": "string" },
+        "bgmAsset": { "type": "string" },
+        "draft": { "type": "boolean", "description": "Defaults to false. Set true to import the story unpublished." },
+        "inGameDate": { "$ref": "#/$defs/inGameDate" },
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "startScene": { "type": "string", "description": "The key of the scene that opens the story." },
+        "scenes": {
+          "type": "object",
+          "description": "Map of scene key to scene. Scene keys are short author-chosen strings, local to this story.",
+          "additionalProperties": { "$ref": "#/$defs/scene" }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "required": ["text", "characters", "next"],
+      "properties": {
+        "text": { "type": "string", "description": "Scene prose. May contain inline reference tokens." },
+        "label": { "type": "string", "description": "Optional short scene title." },
+        "speaker": {
+          "description": "Who is speaking: a character reference, or a plain string for a narrator or unnamed voice.",
+          "oneOf": [{ "$ref": "#/$defs/ref" }, { "type": "string" }]
+        },
+        "backgroundAsset": { "type": "string" },
+        "backgroundEffect": { "enum": ["darken", "desaturate", "sepia", "cool", "warm"] },
+        "characters": {
+          "type": "array",
+          "description": "Characters staged on screen during this scene.",
+          "items": { "$ref": "#/$defs/stagedCharacter" }
+        },
+        "place": { "$ref": "#/$defs/ref" },
+        "sfxAsset": { "type": "string" },
+        "bgmAsset": { "type": "string" },
+        "bgmSilence": { "type": "boolean" },
+        "bgmTransition": { "enum": ["crossfade", "cut"] },
+        "textSpeed": { "enum": ["slow", "normal", "fast", "instant"] },
+        "layout": { "enum": ["dialog", "showcase"] },
+        "transition": { "enum": ["crossfade", "fade-through-black"] },
+        "transitionMs": { "type": "number" },
+        "next": {
+          "type": "array",
+          "description": "Branches out of this scene. One entry is a linear continuation; several entries make a choice. An empty array is an ending.",
+          "items": { "$ref": "#/$defs/sceneNext" }
+        },
+        "nextRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "stagedCharacter": {
+      "type": "object",
+      "required": ["entity", "position"],
+      "properties": {
+        "entity": { "$ref": "#/$defs/ref" },
+        "position": { "type": "string", "description": "Stage slot, e.g. left, center, right." },
+        "order": { "type": "number" },
+        "sprite": { "type": "string" },
+        "facing": { "enum": ["left", "right"] }
+      }
+    },
+    "sceneNext": {
+      "type": "object",
+      "required": ["scene"],
+      "properties": {
+        "label": { "type": "string", "description": "Choice text shown to the reader. Omit for a linear continuation." },
+        "scene": { "type": "string", "description": "The key of the scene this branch leads to." }
+      }
+    }
+  }
+}

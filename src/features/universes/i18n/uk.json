@@ -5,6 +5,7 @@
     "accessHeader": "Доступ",
     "calendarHeader": "Календар",
     "categoriesHeader": "Категорії",
+    "transferHeader": "Імпорт та експорт",
     "ownerLabel": "Власник",
     "contributorLabel": "Співавтор",
     "youBadge": "ви",
@@ -33,7 +34,8 @@
     "sectionHintGeneral": "Назва, слаг, опис, обкладинка",
     "sectionHintAccess": "Власник і співавтори",
     "sectionHintCalendar": "Ери та місяці",
-    "sectionHintCategories": "Категорії кодексу"
+    "sectionHintCategories": "Категорії кодексу",
+    "sectionHintTransfer": "Експорт та імпорт пакунків"
   },
   "empty": {
     "noActive": "Немає активного всесвіту.",

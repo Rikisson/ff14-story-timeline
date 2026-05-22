@@ -19,6 +19,7 @@
     "paths": {
       "@features/auth": ["src/features/auth/index.ts"],
       "@features/universes": ["src/features/universes/index.ts"],
+      "@features/universe-transfer": ["src/features/universe-transfer/index.ts"],
       "@features/stories": ["src/features/stories/index.ts"],
       "@features/characters": ["src/features/characters/index.ts"],
       "@features/places": ["src/features/places/index.ts"],

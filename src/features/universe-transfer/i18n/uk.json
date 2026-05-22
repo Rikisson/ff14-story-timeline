@@ -1,0 +1,57 @@
+{
+  "field": {
+    "exportHeader": "Експортувати цей всесвіт",
+    "importHeader": "Імпортувати пакунок",
+    "chooseFile": "Виберіть файл пакунка",
+    "kitHeader": "Набір для міграції",
+    "includeMedia": "Включити медіафайли",
+    "onConflict": "Коли назва вже існує тут",
+    "acknowledgeWarnings": "Імпортувати попри попередження вище"
+  },
+  "action": {
+    "export": "Експортувати всесвіт",
+    "validate": "Перевірити файл",
+    "downloadSchema": "Схема",
+    "downloadExample": "Приклад",
+    "downloadReadme": "Інструкції",
+    "import": "Імпортувати пакунок",
+    "conflictRename": "Імпортувати копію під новою назвою",
+    "conflictSkip": "Залишити те, що вже є"
+  },
+  "message": {
+    "exportSubtitle": "Завантажте переносний пакунок .universe з даними та медіа цього світу.",
+    "importSubtitle": "Перевірте пакунок .universe або .json щодо цього всесвіту, а потім імпортуйте його.",
+    "kitSubtitle": "Передайте ці файли ШІ-помічнику, щоб перетворити ваші нотатки на придатний для імпорту пакунок.",
+    "exporting": "Пакування медіа… {{ done }} / {{ total }}",
+    "exportDone": "Експорт готовий.",
+    "exportPartial": "Експорт завершено. Медіафайли, які не вдалося завантажити: {{ failed }}.",
+    "exportFailed": "Помилка експорту: {{ error }}",
+    "readError": "Не вдалося прочитати файл: {{ error }}",
+    "reportReady": "Цей пакунок готовий до імпорту.",
+    "reportBlocked": "Виправте перелічені нижче проблеми перед імпортом.",
+    "packageSource": "Пакунок зі всесвіту «{{ name }}».",
+    "collisionNote": "{{ count }} вже є в цьому всесвіті",
+    "assetsLine": "{{ withBinary }} з {{ total }} медіафайлів ({{ size }})",
+    "calendarApply": "У цьому всесвіті ще немає календаря — буде додано календар із пакунка.",
+    "categoriesNew": "Нових категорій кодексу для додавання: {{ count }}.",
+    "importing": "Імпортування…",
+    "importComplete": "Імпорт завершено.",
+    "importCounts": "Створено {{ created }}, перейменовано {{ renamed }}, пропущено {{ skipped }}.",
+    "importMedia": "Завантажено медіафайлів: {{ uploaded }}",
+    "importFailed": "Деякі записи не вдалося записати: {{ failed }}. Перевірте та імпортуйте знову, щоб повторити."
+  },
+  "report": {
+    "countsHeader": "Вміст",
+    "configHeader": "Конфігурація",
+    "errorsHeader": "Проблеми",
+    "warningsHeader": "Попередження"
+  },
+  "enum": {
+    "character": "персонажі",
+    "place": "місця",
+    "event": "події",
+    "story": "історії",
+    "plotline": "сюжетні лінії",
+    "codexEntry": "записи кодексу"
+  }
+}

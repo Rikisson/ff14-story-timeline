@@ -1,0 +1,57 @@
+{
+  "field": {
+    "exportHeader": "Export this universe",
+    "importHeader": "Import a package",
+    "chooseFile": "Choose a package file",
+    "kitHeader": "Migration Kit",
+    "includeMedia": "Include media files",
+    "onConflict": "When a name already exists here",
+    "acknowledgeWarnings": "Import despite the warnings above"
+  },
+  "action": {
+    "export": "Export universe",
+    "validate": "Validate file",
+    "downloadSchema": "Schema",
+    "downloadExample": "Example",
+    "downloadReadme": "Instructions",
+    "import": "Import package",
+    "conflictRename": "Import the incoming copy under a new name",
+    "conflictSkip": "Keep what is already here"
+  },
+  "message": {
+    "exportSubtitle": "Download a portable .universe package of this world's data and media.",
+    "importSubtitle": "Check a .universe or .json package against this universe, then import it.",
+    "kitSubtitle": "Hand these files to an AI assistant to turn your notes into an importable package.",
+    "exporting": "Packing media… {{ done }} / {{ total }}",
+    "exportDone": "Export ready.",
+    "exportPartial": "Export finished. Media files that could not be downloaded: {{ failed }}.",
+    "exportFailed": "Export failed: {{ error }}",
+    "readError": "Could not read the file: {{ error }}",
+    "reportReady": "This package is ready to import.",
+    "reportBlocked": "Fix the problems listed below before importing.",
+    "packageSource": "Package from “{{ name }}”.",
+    "collisionNote": "{{ count }} already in this universe",
+    "assetsLine": "{{ withBinary }} of {{ total }} media files ({{ size }})",
+    "calendarApply": "This universe has no calendar yet — the package's calendar will be added.",
+    "categoriesNew": "New codex categories to add: {{ count }}.",
+    "importing": "Importing…",
+    "importComplete": "Import complete.",
+    "importCounts": "Created {{ created }}, renamed {{ renamed }}, skipped {{ skipped }}.",
+    "importMedia": "Media files uploaded: {{ uploaded }}",
+    "importFailed": "Some entries could not be written: {{ failed }}. Validate and import again to retry."
+  },
+  "report": {
+    "countsHeader": "Contents",
+    "configHeader": "Configuration",
+    "errorsHeader": "Problems",
+    "warningsHeader": "Warnings"
+  },
+  "enum": {
+    "character": "characters",
+    "place": "places",
+    "event": "events",
+    "story": "stories",
+    "plotline": "plotlines",
+    "codexEntry": "codex entries"
+  }
+}

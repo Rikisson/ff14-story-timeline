@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CalendarSettingsPanelComponent } from '@features/calendar';
 import { CodexCategoriesSettingsPanelComponent } from '@features/codex';
+import { UniverseTransferPage } from '@features/universe-transfer';
 import {
   EntityListPaneComponent,
   ListPaneItem,
@@ -16,7 +17,7 @@ import { UniverseMembersComponent } from '../ui/universe-members.component';
 import universeEn from '../i18n/en.json';
 import universeUk from '../i18n/uk.json';
 
-export type UniverseSettingsSection = 'general' | 'access' | 'calendar' | 'categories';
+export type UniverseSettingsSection = 'general' | 'access' | 'calendar' | 'categories' | 'transfer';
 
 const DEFAULT_SECTION: UniverseSettingsSection = 'general';
 
@@ -25,6 +26,7 @@ const SECTION_LABEL_KEY: Record<UniverseSettingsSection, string> = {
   access: 'universe.field.accessHeader',
   calendar: 'universe.field.calendarHeader',
   categories: 'universe.field.categoriesHeader',
+  transfer: 'universe.field.transferHeader',
 };
 
 const SECTION_HINT_KEY: Record<UniverseSettingsSection, string> = {
@@ -32,10 +34,17 @@ const SECTION_HINT_KEY: Record<UniverseSettingsSection, string> = {
   access: 'universe.message.sectionHintAccess',
   calendar: 'universe.message.sectionHintCalendar',
   categories: 'universe.message.sectionHintCategories',
+  transfer: 'universe.message.sectionHintTransfer',
 };
 
 function isSection(value: string | null): value is UniverseSettingsSection {
-  return value === 'general' || value === 'access' || value === 'calendar' || value === 'categories';
+  return (
+    value === 'general' ||
+    value === 'access' ||
+    value === 'calendar' ||
+    value === 'categories' ||
+    value === 'transfer'
+  );
 }
 
 @Component({
@@ -49,6 +58,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
     UniverseMembersComponent,
     CalendarSettingsPanelComponent,
     CodexCategoriesSettingsPanelComponent,
+    UniverseTransferPage,
     TranslocoDirective,
   ],
   providers: [
@@ -63,10 +73,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   template: `
     <ng-container *transloco="let t; prefix: 'universe'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.settingsTitle')"
-          [subtitle]="universe()?.name ?? ''"
-        />
+        <app-page-header [title]="t('field.settingsTitle')" [subtitle]="universe()?.name ?? ''" />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -78,7 +85,10 @@ function isSection(value: string | null): value is UniverseSettingsSection {
             (select)="onSelect($event)"
           />
 
-          <section class="flex min-h-0 flex-1 flex-col" [attr.aria-label]="t('tooltip.sectionDetails')">
+          <section
+            class="flex min-h-0 flex-1 flex-col"
+            [attr.aria-label]="t('tooltip.sectionDetails')"
+          >
             <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
               @switch (section()) {
                 @case ('general') {
@@ -92,6 +102,9 @@ function isSection(value: string | null): value is UniverseSettingsSection {
                 }
                 @case ('categories') {
                   <app-codex-categories-settings-panel />
+                }
+                @case ('transfer') {
+                  <app-universe-transfer-page />
                 }
               }
             </div>
@@ -127,8 +140,8 @@ export class UniverseSettingsPage {
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     this.activeLang();
     const sections: UniverseSettingsSection[] = this.isOwner()
-      ? ['general', 'access', 'calendar', 'categories']
-      : ['general', 'calendar', 'categories'];
+      ? ['general', 'access', 'calendar', 'categories', 'transfer']
+      : ['general', 'calendar', 'categories', 'transfer'];
     return sections.map((s) => ({
       id: s,
       label: this.transloco.translate(SECTION_LABEL_KEY[s]),

@@ -37,6 +37,7 @@
     "@tiptap/extension-text": "^3.22.5",
     "@tiptap/pm": "^3.22.5",
     "@tiptap/suggestion": "^3.22.5",
+    "fflate": "^0.8.3",
     "firebase": "^12.12.1",
     "marked": "^18.0.2",
     "rete": "^2.0.6",

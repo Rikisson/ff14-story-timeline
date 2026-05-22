@@ -1,0 +1,118 @@
+{
+  "formatVersion": 1,
+  "generator": "hand-authored example",
+  "universe": {
+    "slug": "aetheria",
+    "name": "Aetheria",
+    "description": "A high-fantasy world of warring orders and old magic.",
+    "locale": "en"
+  },
+  "calendar": {
+    "eras": [
+      { "slug": "third-age", "name": "The Third Age", "maxYears": 1000, "resetsWeek": true }
+    ],
+    "months": [
+      { "name": "Frostfall", "days": 30 },
+      { "name": "Embertide", "days": 31 },
+      { "name": "Highsun", "days": 31 }
+    ],
+    "weekdays": [
+      { "name": "Sunday", "short": "Sun" },
+      { "name": "Moonday", "short": "Mon" }
+    ]
+  },
+  "codexCategories": [
+    {
+      "key": "factions",
+      "label": "Factions",
+      "color": "#6b8fd6",
+      "description": "Orders, guilds, and powers that shape the world."
+    }
+  ],
+  "characters": [
+    {
+      "slug": "lyra-dawnwhisper",
+      "name": "Lyra Dawnwhisper",
+      "description": "An archmage of the Azure Order, exiled for a heresy she did not commit.",
+      "relatedRefs": [{ "kind": "place", "ref": "silverhold" }]
+    },
+    {
+      "slug": "garrett-stone",
+      "name": "Garrett Stone",
+      "description": "A knight-captain sworn to ${pl:silverhold}[Silverhold], torn between duty and conscience."
+    }
+  ],
+  "places": [
+    {
+      "slug": "silverhold",
+      "name": "Silverhold",
+      "description": "A fortress city carved into the white cliffs, seat of the Azure Order."
+    }
+  ],
+  "plotlines": [
+    {
+      "slug": "the-shattered-crown",
+      "title": "The Shattered Crown",
+      "description": "The succession crisis that follows the old king's death.",
+      "status": "active",
+      "color": "#d6a36b"
+    }
+  ],
+  "events": [
+    {
+      "slug": "the-coronation",
+      "name": "The Contested Coronation",
+      "description": "Two claimants are crowned on the same day within ${pl:silverhold}[Silverhold].",
+      "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 14 },
+      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }]
+    }
+  ],
+  "codexEntries": [
+    {
+      "slug": "the-azure-order",
+      "title": "The Azure Order",
+      "category": "factions",
+      "description": "An ancient circle of mages. ${ch:lyra-dawnwhisper}[Lyra Dawnwhisper] was once its brightest member."
+    }
+  ],
+  "stories": [
+    {
+      "slug": "the-gathering-storm",
+      "title": "The Gathering Storm",
+      "description": "Lyra returns to Silverhold on the eve of the coronation.",
+      "draft": false,
+      "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 13 },
+      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
+      "startScene": "arrival",
+      "scenes": {
+        "arrival": {
+          "text": "Rain lashed the white cliffs as ${ch:lyra-dawnwhisper}[Lyra] climbed the last stair to the gate.",
+          "speaker": { "kind": "character", "ref": "lyra-dawnwhisper" },
+          "place": { "kind": "place", "ref": "silverhold" },
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
+          ],
+          "next": [{ "label": "Knock on the gate", "scene": "the-gate" }]
+        },
+        "the-gate": {
+          "text": "The gate groaned open. ${ch:garrett-stone}[Garrett Stone] stood in the torchlight, one hand on his sword.",
+          "speaker": { "kind": "character", "ref": "garrett-stone" },
+          "place": { "kind": "place", "ref": "silverhold" },
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "left" },
+            { "entity": { "kind": "character", "ref": "garrett-stone" }, "position": "right" }
+          ],
+          "next": [{ "label": "Step inside", "scene": "the-hall" }]
+        },
+        "the-hall": {
+          "text": "Inside, the Order's banners hung heavy and damp. Whatever welcome she had hoped for, this was not it.",
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
+          ],
+          "layout": "showcase",
+          "next": []
+        }
+      }
+    }
+  ]
+}

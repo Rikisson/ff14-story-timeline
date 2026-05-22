@@ -5,6 +5,7 @@
     "accessHeader": "Access",
     "calendarHeader": "Calendar",
     "categoriesHeader": "Categories",
+    "transferHeader": "Import & Export",
     "ownerLabel": "Owner",
     "contributorLabel": "Contributor",
     "youBadge": "you",
@@ -33,7 +34,8 @@
     "sectionHintGeneral": "Name, slug, description, cover",
     "sectionHintAccess": "Owner and contributors",
     "sectionHintCalendar": "Eras and months",
-    "sectionHintCategories": "Codex category buckets"
+    "sectionHintCategories": "Codex category buckets",
+    "sectionHintTransfer": "Export and import packages"
   },
   "empty": {
     "noActive": "No active universe.",
