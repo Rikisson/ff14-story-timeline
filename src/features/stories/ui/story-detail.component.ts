@@ -46,7 +46,7 @@ import storyUk from '../i18n/uk.json';
     <ng-container *transloco="let t; prefix: 'story'">
       <app-detail-card [coverAssetId]="story().coverAssetId">
         @if (canEdit()) {
-          <div class="flex shrink-0 items-center justify-end gap-2">
+          <div class="flex shrink-0 items-center gap-2">
             <a uiGhost [routerLink]="['/edit', story().id]">{{ t('action.edit') }}</a>
             <button
               uiDanger

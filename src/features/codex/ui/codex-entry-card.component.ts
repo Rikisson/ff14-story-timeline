@@ -27,7 +27,7 @@ import { CodexEntry } from '../data-access/codex-entry.types';
     <ng-container *transloco="let g; prefix: 'general'">
       <app-detail-card [coverAssetId]="entry().coverAssetId">
         @if (canEdit()) {
-          <div class="flex shrink-0 items-center justify-end gap-2">
+          <div class="flex shrink-0 items-center gap-2">
             <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
             <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
           </div>
