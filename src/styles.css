@@ -247,6 +247,29 @@ app-root {
   height: 100%;
 }
 
+/* Rich-text editor — TipTap creates `.ProseMirror` imperatively at
+ * runtime, so it doesn't carry Angular's `_ngcontent` scope attribute
+ * and component CSS can't reach it. Override globally via the
+ * `.rich-text-host` hook the component does control. See
+ * docs/styling-rules.md. */
+.rich-text-host .ProseMirror {
+  outline: none;
+  min-height: 4rem;
+}
+.rich-text-host .ProseMirror p {
+  margin: 0 0 0.5em;
+}
+.rich-text-host .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+.rich-text-host .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-foreground-faint);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
 /* Rete editor — overrides the plugin's encapsulated styles via its
  * stable data-testid hooks. See docs/styling-rules.md. */
 html [data-testid='node'] {

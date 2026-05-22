@@ -37,7 +37,7 @@ import { FetchInlineRefOptions, RefSuggestion } from './ref-suggestion.extension
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
       <div
-        class="flex flex-col gap-1 rounded-md border border-border-strong bg-surface"
+        class="flex flex-col gap-1 rounded-md border border-border-strong bg-surface focus-within:ring-2 focus-within:ring-accent-ring"
         [class.opacity-60]="!ready()"
       >
         <div
@@ -71,7 +71,7 @@ import { FetchInlineRefOptions, RefSuggestion } from './ref-suggestion.extension
         </div>
         <div
           #host
-          class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground focus-within:ring-2 focus-within:ring-accent-ring"
+          class="rich-text-host min-h-20 px-3 py-2 text-sm leading-relaxed text-foreground"
           [attr.aria-label]="ariaLabel() || null"
         ></div>
       </div>
@@ -80,26 +80,6 @@ import { FetchInlineRefOptions, RefSuggestion } from './ref-suggestion.extension
   styles: `
     :host {
       display: block;
-    }
-    .rich-text-host :focus-visible {
-      outline: none;
-    }
-    .rich-text-host .ProseMirror {
-      outline: none;
-      min-height: 4rem;
-    }
-    .rich-text-host .ProseMirror p {
-      margin: 0 0 0.5em;
-    }
-    .rich-text-host .ProseMirror p:last-child {
-      margin-bottom: 0;
-    }
-    .rich-text-host .ProseMirror p.is-editor-empty:first-child::before {
-      content: attr(data-placeholder);
-      color: var(--color-foreground-faint);
-      pointer-events: none;
-      float: left;
-      height: 0;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
