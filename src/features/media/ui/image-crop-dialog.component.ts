@@ -79,7 +79,7 @@ const ASPECTS: readonly CropAspect[] = ['free', '16:9', '9:16', '1:1'];
         >
           <div class="flex max-h-[90vh] w-[min(56rem,94vw)] flex-col">
             <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <h3 class="m-0 text-base font-semibold text-foreground">{{ t('crop.title') }}</h3>
+              <h2 class="m-0 text-base font-semibold text-foreground">{{ t('crop.title') }}</h2>
               <button
                 uiGhost
                 type="button"

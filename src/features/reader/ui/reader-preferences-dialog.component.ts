@@ -48,7 +48,7 @@ const FONT_SIZES: readonly FontSize[] = ['small', 'medium', 'large', 'xl'];
       >
         <div class="flex max-h-[80vh] w-[min(28rem,92vw)] flex-col">
           <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <h3 class="m-0 text-base font-semibold text-foreground">{{ t('prefs.title') }}</h3>
+            <h2 class="m-0 text-base font-semibold text-foreground">{{ t('prefs.title') }}</h2>
             <button
               uiGhost
               type="button"

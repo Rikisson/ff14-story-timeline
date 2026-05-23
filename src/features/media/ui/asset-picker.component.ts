@@ -59,7 +59,7 @@ import mediaUk from '../i18n/uk.json';
         >
           <div class="flex max-h-[80vh] w-[min(48rem,92vw)] flex-col">
             <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <h3 class="m-0 text-base font-semibold text-foreground">{{ resolvedTitle() }}</h3>
+              <h2 class="m-0 text-base font-semibold text-foreground">{{ resolvedTitle() }}</h2>
               <button
                 uiGhost
                 type="button"

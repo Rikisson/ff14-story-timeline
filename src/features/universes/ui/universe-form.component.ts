@@ -31,7 +31,7 @@ import universeUk from '../i18n/uk.json';
           class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
           (ngSubmit)="onSubmit()"
         >
-          <h3 class="m-0 text-base font-semibold text-foreground">{{ t('field.createDialogTitle') }}</h3>
+          <h2 class="m-0 text-base font-semibold text-foreground">{{ t('field.createDialogTitle') }}</h2>
 
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="flex flex-col gap-1 text-sm">
