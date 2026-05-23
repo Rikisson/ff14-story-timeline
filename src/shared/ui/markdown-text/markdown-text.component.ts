@@ -29,7 +29,6 @@ import { EntityRefHoverService } from '../entity-ref/entity-ref-hover.service';
     }
     .markdown-body p {
       margin: 0 0 0.75em;
-      line-height: 1.55;
     }
     .markdown-body ul {
       margin: 0 0 0.75em;

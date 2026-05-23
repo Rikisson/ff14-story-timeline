@@ -67,7 +67,7 @@ import calendarUk from '../i18n/uk.json';
           }
           <header class="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 class="m-0 font-display text-xl font-semibold text-foreground">{{ t('field.header') }}</h2>
+              <h2 class="m-0 text-base font-semibold text-foreground">{{ t('field.header') }}</h2>
               <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
                 {{ t('field.subtitle') }}
               </p>

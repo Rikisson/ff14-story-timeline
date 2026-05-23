@@ -320,11 +320,13 @@ body {
  * and authored descriptions feel like a book rather than a UI. Targets
  * the typewriter (story scenes + event description) and the shared
  * markdown body used by every detail card and hover popover; everything
- * else keeps the document default `--font-sans`. See
- * docs/styling-rules.md *Typography*. */
+ * else keeps the document default `--font-sans`. `line-height` is set
+ * here too — humanist serifs need more leading for long-form than UI
+ * sans does. See docs/styling-rules.md *Typography*. */
 app-typewriter-text,
 app-markdown-text {
   font-family: var(--font-reading);
+  line-height: 1.625;
 }
 
 app-root {
@@ -413,8 +415,13 @@ html [data-testid='output-socket'] > *.multiple {
   gap: 0.4em;
   width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0.2em;
+  /* Subtle brand-rubric rule under each choice — bridges the
+   * sans-serif UI of the choices with the serif dialog above. The
+   * color-mix keeps it as a hint rather than a hard underline. */
   border: none;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-brand-rubric), transparent 65%);
   background: none;
   appearance: none;
   font: inherit;

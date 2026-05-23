@@ -35,7 +35,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
       <ng-container *transloco="let g; prefix: 'general'">
         <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
           <div>
-            <h2 class="m-0 font-display text-xl font-semibold text-foreground">{{ t('field.accessHeader') }}</h2>
+            <h2 class="m-0 text-base font-semibold text-foreground">{{ t('field.accessHeader') }}</h2>
             @if (universe(); as u) {
               <p class="m-0 mt-0.5 text-sm text-foreground-subtle">
                 {{ t('message.ownerSubtitle', { name: u.name }) }}

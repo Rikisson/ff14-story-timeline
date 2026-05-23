@@ -159,10 +159,13 @@ change between light and dark.
   for long-form on screen — comfortable across the reader's
   `0.9rem`–`1.3rem` font-size range.
 - `--font-display` (Cormorant) — a high-contrast display serif, applied
-  through the `font-display` utility to headings only: page titles
-  (`text-3xl`), entity detail-card titles (`text-2xl`), settings section
-  titles (`text-xl`), and the editor's story title. It is frail at small
-  sizes — never set it on body text, labels, or micro-headings.
+  through the `font-display` utility to narrative-tier headings only:
+  page titles (`text-3xl`), entity detail-card titles (`text-2xl`), and
+  the editor's story title. It is frail at small sizes — never set it on
+  body text, labels, or micro-headings. Functional surfaces (settings
+  section dividers, form headers) live at `text-base` on `--font-sans`
+  by design — the font follows the size tier, and tooling sits in the
+  control-panel vocabulary rather than the documentary one.
 
 The Opovid wordmark is the one piece of identity outside the token
 families. `<app-brand>` (`shared/ui/brand/`) renders the name in
@@ -171,10 +174,11 @@ the English UI and «Оповідь» in the Ukrainian one. The opening letter i
 rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
 in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
 dark canvas. That colour appears in the wordmark, the favicon, the
-landing flourish, and the reader's speaker chip — where the opening
+landing flourish, the reader's speaker chip — where the opening
 letter of the speaker's name carries the same illuminated-capital
-treatment — and nowhere else, so it never collides with the `danger`
-role. The book mark beside the name reuses `--color-accent` and
+treatment — and as a 35%-opacity rule under each reader choice row to
+bridge the sans-serif UI with the serif dialog above; and nowhere
+else, so it never collides with the `danger` role. The book mark beside the name reuses `--color-accent` and
 needs no token of its own.
 
 ## Detail cards

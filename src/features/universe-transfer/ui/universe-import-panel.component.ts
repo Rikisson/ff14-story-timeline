@@ -19,7 +19,7 @@ import { MigrationKitCardComponent } from './migration-kit-card.component';
     <ng-container *transloco="let t; prefix: 'universeTransfer'">
       <section class="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
         <div>
-          <h2 class="m-0 font-display text-xl font-semibold text-foreground">{{ t('field.importHeader') }}</h2>
+          <h2 class="m-0 text-base font-semibold text-foreground">{{ t('field.importHeader') }}</h2>
           <p class="m-0 mt-0.5 text-sm text-foreground-subtle">{{ t('message.importSubtitle') }}</p>
         </div>
 
