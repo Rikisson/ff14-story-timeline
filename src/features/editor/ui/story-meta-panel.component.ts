@@ -45,7 +45,7 @@ const PLOTLINE_REFS_MAX = 10;
   template: `
     <ng-container *transloco="let t; prefix: 'editor'">
       @if (meta(); as m) {
-        <h3>{{ t('field.storyInfo') }}</h3>
+        <h2>{{ t('field.storyInfo') }}</h2>
 
         <div class="field">
           <label for="meta-title">{{ t('field.title') }}</label>
@@ -179,7 +179,7 @@ const PLOTLINE_REFS_MAX = 10;
       border-radius: 0.5rem;
       background: var(--color-surface);
     }
-    h3 {
+    h2 {
       margin: 0 0 1rem;
     }
     .field {

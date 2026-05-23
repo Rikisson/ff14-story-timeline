@@ -415,16 +415,16 @@ html [data-testid='output-socket'] > *.multiple {
   gap: 0.4em;
   width: 100%;
   margin: 0;
-  padding: 0 0 0.2em;
-  /* Subtle brand-rubric rule under each choice — bridges the
-   * sans-serif UI of the choices with the serif dialog above. The
-   * color-mix keeps it as a hint rather than a hard underline. */
+  padding: 0;
   border: none;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--color-brand-rubric), transparent 65%);
   background: none;
   appearance: none;
   font: inherit;
+  /* Choice text shares the prose family so the choices read as part of
+   * the same voice as the dialog above them rather than as detached
+   * UI controls. Declared after `font: inherit` so the shorthand reset
+   * doesn't strip it. */
+  font-family: var(--font-reading);
   font-size: var(--scene-font-size, 1rem);
   line-height: 1.4;
   text-align: left;

@@ -71,7 +71,7 @@ function defaultFacingFor(position: string): Facing {
       @if (sceneId(); as id) {
         @if (scene(); as s) {
           <header class="header">
-            <h3>{{ t('field.scenePrefix') }} <code>{{ headLabel(id, s) }}</code></h3>
+            <h2>{{ t('field.scenePrefix') }} <code>{{ headLabel(id, s) }}</code></h2>
             @if (isStartScene()) {
               <span class="badge">{{ t('field.startBadge') }}</span>
             } @else {
@@ -324,7 +324,7 @@ function defaultFacingFor(position: string): Facing {
       gap: 0.5rem;
       margin-bottom: 0.25rem;
     }
-    .header h3 {
+    .header h2 {
       margin: 0;
       flex: 1;
     }

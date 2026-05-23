@@ -55,9 +55,9 @@ const SCROLL_STEP = 320;
       >
         @if (showHeader()) {
           <header class="flex items-center gap-2">
-            <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
+            <h2 class="m-0 text-sm font-semibold uppercase tracking-wide text-foreground-faint">
               {{ headerLabel(t) }}
-            </h3>
+            </h2>
           </header>
         }
 

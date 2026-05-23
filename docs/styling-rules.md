@@ -148,16 +148,18 @@ change between light and dark.
 
 - `--font-sans` (IBM Plex Sans) — the document default. Carries every
   UI control: navigation, forms, buttons, settings panels, pickers,
-  catalog rows, and the reader's choice rows and chrome. Tailwind's
-  `font-sans` utility and the base `body` rule both point at it.
+  catalog rows, and the reader's chrome (back button, preferences,
+  fullscreen). Tailwind's `font-sans` utility and the base `body` rule
+  both point at it.
 - `--font-reading` (Source Serif 4) — the prose surface. Applied
   globally to `<app-typewriter-text>` (story scene text and event
   description) and `<app-markdown-text>` (every detail-card description
   and inline-ref hover popover), so the same humanist serif carries
-  every authored prose surface. The reader's speaker chip rides on it
-  too, so the name reads as part of the dialog it introduces. Designed
-  for long-form on screen — comfortable across the reader's
-  `0.9rem`–`1.3rem` font-size range.
+  every authored prose surface. The reader's speaker chip and choice
+  rows ride on it as well, so the name above the dialog and the
+  choices below it read as continuations of the same voice rather
+  than as detached UI controls. Designed for long-form on screen —
+  comfortable across the reader's `0.9rem`–`1.3rem` font-size range.
 - `--font-display` (Cormorant) — a high-contrast display serif, applied
   through the `font-display` utility to narrative-tier headings only:
   page titles (`text-3xl`), entity detail-card titles (`text-2xl`), and
@@ -174,11 +176,10 @@ the English UI and «Оповідь» in the Ukrainian one. The opening letter i
 rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
 in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
 dark canvas. That colour appears in the wordmark, the favicon, the
-landing flourish, the reader's speaker chip — where the opening
+landing flourish, and the reader's speaker chip — where the opening
 letter of the speaker's name carries the same illuminated-capital
-treatment — and as a 35%-opacity rule under each reader choice row to
-bridge the sans-serif UI with the serif dialog above; and nowhere
-else, so it never collides with the `danger` role. The book mark beside the name reuses `--color-accent` and
+treatment — and nowhere else, so it never collides with the `danger`
+role. The book mark beside the name reuses `--color-accent` and
 needs no token of its own.
 
 ## Detail cards
