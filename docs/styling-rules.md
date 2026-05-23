@@ -88,9 +88,9 @@ Two examples covering the awkward cases:
 
 ## Button hierarchy
 
-Four variants live in `shared/ui/button/`. Pick the one that matches the
-button's role on the screen, not the noun on its label — "Add" can be
-primary or secondary depending on what else is on the page.
+Five variants live in `shared/ui/button/`. Pick the one that matches
+the button's role on the screen, not the noun on its label — "Add" can
+be primary or secondary depending on what else is on the page.
 
 - `uiPrimary` (filled accent) — the page's dominant action. The Add CTA
   on a list page (events, stories, characters), Save on a form or
@@ -106,9 +106,16 @@ primary or secondary depending on what else is on the page.
   form footers, Reset, Edit on a card (paired with Delete), Remove for
   asset clearing (paired with Replace), View more pagination, header
   utilities like Copy UID / Sign out, catalog filter Reset.
+- `uiGhostDanger` (transparent + danger text) — destructive but quiet,
+  for actions that share a corner with their non-destructive sibling
+  and would visually drown it as a filled button. Delete on entity
+  detail cards (paired with Edit) — the corner placement plus the
+  confirmation modal carry the safety load; the filled `uiDanger`
+  reads as too loud at that scale.
 - `uiDanger` (filled `danger-strong`) — destructive, irreversible
-  actions. Delete on entity cards, Remove era / season / sprite /
-  category / member, scene Delete in the editor.
+  actions where the destructiveness is the screen's focus. Remove era
+  / season / sprite / category / member in settings, scene Delete in
+  the editor.
 
 All four directives match both `<button>` and `<a>` host elements. On
 buttons the disabled input maps to the native `disabled` attribute; on

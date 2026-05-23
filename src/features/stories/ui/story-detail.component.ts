@@ -7,7 +7,7 @@ import { ContentLangDirective } from '@features/universes';
 import { isInGameDateEmpty } from '@shared/models';
 import {
   BookIconComponent,
-  DangerButtonComponent,
+  GhostDangerButtonComponent,
   DetailCardComponent,
   EntityRefComponent,
   GhostButtonComponent,
@@ -30,7 +30,7 @@ import storyUk from '../i18n/uk.json';
     PrimaryButtonComponent,
     BookIconComponent,
     GhostButtonComponent,
-    DangerButtonComponent,
+    GhostDangerButtonComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -53,7 +53,7 @@ import storyUk from '../i18n/uk.json';
             <div class="flex shrink-0 items-center gap-2">
               <a uiGhost [routerLink]="['/edit', story().id]">{{ t('action.edit') }}</a>
               <button
-                uiDanger
+                uiGhostDanger
                 type="button"
                 [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
                 (click)="confirmDelete()"

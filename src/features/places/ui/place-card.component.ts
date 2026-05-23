@@ -3,7 +3,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { Place } from '../data-access/place.types';
 import {
-  DangerButtonComponent,
+  GhostDangerButtonComponent,
   DetailCardComponent,
   EntityRefComponent,
   GhostButtonComponent,
@@ -17,7 +17,7 @@ import {
     EntityRefComponent,
     MarkdownTextComponent,
     GhostButtonComponent,
-    DangerButtonComponent,
+    GhostDangerButtonComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -30,7 +30,7 @@ import {
           @if (canEdit()) {
             <div class="flex shrink-0 items-center gap-2">
               <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-              <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
+              <button uiGhostDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
             </div>
           }
         </div>
