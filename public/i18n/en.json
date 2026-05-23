@@ -76,7 +76,7 @@
       "seedConfirm": "Seed test data? This overwrites the default universe and its seeded entities (calendar, codex categories, characters, places, events, stories, plotlines, codex entries) by ID.",
       "loadingUniverses": "Loading universes…",
       "landingPickTitle": "Pick a universe",
-      "landingPickHint": "Use the universe menu in the top-left to choose what to read.",
+      "landingPickHint": "Use the universe menu in the top-right to choose what to read.",
       "landingSignInHint": "Sign in if you'd like to author or edit.",
       "tiptapRefHint": "Type $'{' for entity refs",
       "pickerError": "Couldn't load matches",

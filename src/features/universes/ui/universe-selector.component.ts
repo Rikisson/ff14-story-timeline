@@ -36,7 +36,7 @@ import universeUk from '../i18n/uk.json';
       <div class="relative">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-lg font-semibold text-foreground hover:bg-surface-muted"
+          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-foreground hover:bg-surface-muted"
           [attr.aria-haspopup]="'menu'"
           [attr.aria-expanded]="open()"
           [attr.aria-label]="t('tooltip.switchUniverse')"

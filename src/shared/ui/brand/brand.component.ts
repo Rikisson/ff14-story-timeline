@@ -10,13 +10,18 @@ export type BrandSize = 'header' | 'hero';
     <span class="brand-mark" aria-hidden="true">
       <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="13" cy="13" r="12" stroke="currentColor" stroke-width="1.5" />
-        <path
-          d="M13 8.5C11.2 7.7 9.2 7.7 7.6 9.3V16.7C9.2 18.3 11.2 18.3 13 17.5C14.8 18.3 16.8 18.3 18.4 16.7V9.3C16.8 7.7 14.8 7.7 13 8.5Z"
+        <g
+          transform="translate(1 1)"
           stroke="currentColor"
-          stroke-width="1.3"
+          stroke-width="1.5"
+          stroke-linecap="round"
           stroke-linejoin="round"
-        />
-        <line x1="13" y1="8.5" x2="13" y2="17.5" stroke="currentColor" stroke-width="1.3" />
+        >
+          <path
+            d="M12 7C10.4 5.7 8.3 5 6 5H3v13h3c2.3 0 4.4.7 6 2 1.6-1.3 3.7-2 6-2h3V5h-3c-2.3 0-4.4.7-6 2Z"
+          />
+          <path d="M12 7v13" />
+        </g>
       </svg>
     </span>
     <span class="brand-word">
