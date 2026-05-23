@@ -147,9 +147,8 @@ import { SfxController } from './sfx-controller';
                         uiSecondary
                         type="button"
                         [attr.aria-pressed]="cardHidden()"
-                        [class.reader-toggle-active]="cardHidden() && !isShowcaseScene()"
+                        [class.reader-toggle-active]="cardHidden()"
                         [attr.aria-label]="cardHidden() ? t('action.showText') : t('action.hideText')"
-                        [disabled]="isShowcaseScene()"
                         (click)="cardHidden.set(!cardHidden())"
                       >
                         {{ t('action.textBoxEmoji') }}
@@ -288,9 +287,6 @@ export class ReaderStoryPage implements ReaderLeavable {
     () => this.fade.blocksInput() || this.sceneOpacity() !== 1,
   );
 
-  protected readonly isShowcaseScene = computed(
-    () => (this.store.currentScene()?.layout ?? 'dialog') === 'showcase',
-  );
 
   protected toggleFullscreen(): void {
     if (this.layout.browserFullscreen()) {

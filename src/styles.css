@@ -456,6 +456,28 @@ html [data-testid='output-socket'] > *.multiple {
 .reader-bg-effect-cool       { filter: hue-rotate(-15deg) saturate(0.85) brightness(0.95); }
 .reader-bg-effect-warm       { filter: hue-rotate(15deg) saturate(1.1) brightness(1.05); }
 
+/* Showcase scene caption — sized so the reader's font-size preference
+ * scales it (multiplying --scene-font-size by the three Tailwind size
+ * jumps: text-3xl/4xl/5xl at default font). Fades with the same
+ * hide-text toggle as the dialog card so toggling it off leaves the
+ * visual unobstructed. */
+.showcase-caption {
+  font-size: calc(var(--scene-font-size, 1rem) * 1.875);
+  transition:
+    opacity var(--motion-base) ease-in-out,
+    visibility var(--motion-base);
+}
+@media (min-width: 640px) {
+  .showcase-caption { font-size: calc(var(--scene-font-size, 1rem) * 2.25); }
+}
+@media (min-width: 768px) {
+  .showcase-caption { font-size: calc(var(--scene-font-size, 1rem) * 3); }
+}
+.showcase-caption.showcase-caption-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
 /* Detail-card layout. The cover's share of the card in the wide
  * side-by-side layout; the text panel takes whatever is left. A token
  * so the split retunes without touching the component. */
@@ -612,7 +634,8 @@ html [data-testid='output-socket'] > *.multiple {
   .reader-card,
   .reader-stage,
   .reader-action,
-  .reader-action::before {
+  .reader-action::before,
+  .showcase-caption {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
   }

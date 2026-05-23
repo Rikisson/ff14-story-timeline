@@ -183,10 +183,11 @@ type CrossfadeSlot = 'A' | 'B';
           @case ('showcase') {
             @if (text(); as caption) {
               <div
-                class="pointer-events-none absolute inset-0 flex items-center justify-center px-8"
+                class="showcase-caption pointer-events-none absolute inset-0 flex items-center justify-center px-8"
+                [class.showcase-caption-hidden]="cardHidden()"
                 appContentLang
               >
-                <p class="m-0 text-center font-display text-3xl font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)] sm:text-4xl md:text-5xl">
+                <p class="m-0 text-center font-display font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)]">
                   {{ caption }}
                 </p>
               </div>
