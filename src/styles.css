@@ -500,7 +500,7 @@ html [data-testid='output-socket'] > *.multiple {
 :root {
   --reader-card-width: 60%;
   --reader-page-width: 42rem;
-  --reader-card-opacity: 0.9;
+  --reader-card-opacity: 0.75;
   /* Story card total height — em-based so it scales modestly with
    * --scene-font-size. The card itself is fixed; inside, the choice
    * region sizes to its actual content from the bottom up and the text

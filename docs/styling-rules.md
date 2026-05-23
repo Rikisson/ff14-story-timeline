@@ -162,11 +162,12 @@ change between light and dark.
   comfortable across the reader's `0.9rem`–`1.3rem` font-size range.
 - `--font-display` (Cormorant) — a high-contrast display serif, applied
   through the `font-display` utility to narrative-tier headings only:
-  page titles (`text-3xl`), entity detail-card titles (`text-2xl`), and
-  the editor's story title. It is frail at small sizes — never set it on
-  body text, labels, or micro-headings. Functional surfaces (settings
-  section dividers, form headers) live at `text-base` on `--font-sans`
-  by design — the font follows the size tier, and tooling sits in the
+  page titles (`text-3xl`), entity detail-card titles (`text-2xl`), the
+  reader's story / event header title (`text-xl`), and the editor's
+  story title. It is frail at small sizes — never set it on body text,
+  labels, or micro-headings. Functional surfaces (settings section
+  dividers, form headers) live at `text-base` on `--font-sans` by
+  design — the font follows the size tier, and tooling sits in the
   control-panel vocabulary rather than the documentary one.
 
 The Opovid wordmark is the one piece of identity outside the token
