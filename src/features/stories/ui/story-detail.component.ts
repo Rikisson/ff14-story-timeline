@@ -47,34 +47,45 @@ import storyUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'story'">
       <app-detail-card [coverAssetId]="story().coverAssetId">
-        @if (canEdit()) {
-          <div class="flex shrink-0 items-center gap-2">
-            <a uiGhost [routerLink]="['/edit', story().id]">{{ t('action.edit') }}</a>
-            <button
-              uiDanger
-              type="button"
-              [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
-              (click)="confirmDelete()"
-            >
-              {{ t('action.delete') }}
-            </button>
+        <div class="flex items-start justify-between gap-3">
+          <h2 appContentLang class="m-0 min-w-0 flex-1 font-display text-2xl font-semibold text-foreground">{{ storyTitle() }}</h2>
+          @if (canEdit()) {
+            <div class="flex shrink-0 items-center gap-2">
+              <a uiGhost [routerLink]="['/edit', story().id]">{{ t('action.edit') }}</a>
+              <button
+                uiDanger
+                type="button"
+                [attr.aria-label]="t('tooltip.deleteStory', { title: storyTitle() })"
+                (click)="confirmDelete()"
+              >
+                {{ t('action.delete') }}
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (story().draft || formattedDate()) {
+          <div appContentLang class="flex flex-wrap items-center gap-2">
+            @if (story().draft) {
+              <app-tag tone="amber">{{ t('field.draftBadge') }}</app-tag>
+            }
+            @if (formattedDate(); as d) {
+              <span class="text-xs font-medium uppercase tracking-wider text-foreground-muted">{{ d }}</span>
+            }
           </div>
         }
 
+        <a
+          uiPrimary
+          class="self-start"
+          [routerLink]="['/reader/story', story().id]"
+          [attr.aria-label]="t('tooltip.readStory', { title: storyTitle() })"
+        >
+          <app-book-icon icon-leading class="size-4" />
+          {{ t('action.readNow') }}
+        </a>
+
         <div appContentLang class="contents">
-          <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ storyTitle() }}</h2>
-
-          @if (story().draft || formattedDate()) {
-            <div class="flex flex-wrap items-center gap-2">
-              @if (story().draft) {
-                <app-tag tone="amber">{{ t('field.draftBadge') }}</app-tag>
-              }
-              @if (formattedDate(); as d) {
-                <span class="text-xs font-medium uppercase tracking-wider text-foreground-muted">{{ d }}</span>
-              }
-            </div>
-          }
-
           @if (story().description; as d) {
             <app-markdown-text
               class="text-sm text-foreground-muted"
@@ -91,16 +102,6 @@ import storyUk from '../i18n/uk.json';
             </ul>
           }
         </div>
-
-        <a
-          uiPrimary
-          class="mt-1 self-start"
-          [routerLink]="['/reader/story', story().id]"
-          [attr.aria-label]="t('tooltip.readStory', { title: storyTitle() })"
-        >
-          <app-book-icon icon-leading class="size-4" />
-          {{ t('action.readNow') }}
-        </a>
       </app-detail-card>
     </ng-container>
   `,

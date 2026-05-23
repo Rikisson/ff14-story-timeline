@@ -25,16 +25,17 @@ import {
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
       <app-detail-card [coverAssetId]="place().coverAssetId">
-        @if (canEdit()) {
-          <div class="flex shrink-0 items-center gap-2">
-            <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-            <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-          </div>
-        }
+        <div class="flex items-start justify-between gap-3">
+          <h2 appContentLang class="m-0 min-w-0 flex-1 font-display text-2xl font-semibold text-foreground">{{ place().name }}</h2>
+          @if (canEdit()) {
+            <div class="flex shrink-0 items-center gap-2">
+              <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
+            </div>
+          }
+        </div>
 
         <div appContentLang class="contents">
-          <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ place().name }}</h2>
-
           @if (place().description; as d) {
             <app-markdown-text class="text-sm text-foreground-muted" [text]="d" />
           }

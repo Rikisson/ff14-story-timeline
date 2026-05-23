@@ -50,15 +50,8 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
     <ng-container *transloco="let t; prefix: 'plotline'">
       <ng-container *transloco="let g; prefix: 'general'">
         <app-detail-card [coverAssetId]="plotline().coverAssetId">
-          @if (canEdit()) {
-            <div class="flex shrink-0 items-center gap-2">
-              <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-              <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-            </div>
-          }
-
-          <div appContentLang class="contents">
-            <div class="flex items-center gap-2">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
               @if (plotline().color; as c) {
                 <span
                   class="inline-block size-4 shrink-0 rounded-full border border-border"
@@ -66,9 +59,17 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
                   aria-hidden="true"
                 ></span>
               }
-              <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ plotline().title }}</h2>
+              <h2 appContentLang class="m-0 min-w-0 flex-1 font-display text-2xl font-semibold text-foreground">{{ plotline().title }}</h2>
             </div>
+            @if (canEdit()) {
+              <div class="flex shrink-0 items-center gap-2">
+                <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
+                <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
+              </div>
+            }
+          </div>
 
+          <div appContentLang class="contents">
             @if (statusInfo(); as s) {
               <div class="flex flex-wrap items-center gap-2">
                 <app-tag [tone]="s.tone">{{ t(s.labelKey) }}</app-tag>

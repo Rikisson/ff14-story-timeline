@@ -26,15 +26,8 @@ import { CodexEntry } from '../data-access/codex-entry.types';
   template: `
     <ng-container *transloco="let g; prefix: 'general'">
       <app-detail-card [coverAssetId]="entry().coverAssetId">
-        @if (canEdit()) {
-          <div class="flex shrink-0 items-center gap-2">
-            <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-            <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-          </div>
-        }
-
-        <div appContentLang class="contents">
-          <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-start justify-between gap-3">
+          <div appContentLang class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ entry().title }}</h2>
             @if (categoryLabel(); as c) {
               <span
@@ -44,7 +37,15 @@ import { CodexEntry } from '../data-access/codex-entry.types';
               >{{ c }}</span>
             }
           </div>
+          @if (canEdit()) {
+            <div class="flex shrink-0 items-center gap-2">
+              <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
+              <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
+            </div>
+          }
+        </div>
 
+        <div appContentLang class="contents">
           @if (entry().description; as desc) {
             <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />
           }

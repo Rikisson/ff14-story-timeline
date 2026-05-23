@@ -45,20 +45,31 @@ import eventUk from '../i18n/uk.json';
     <ng-container *transloco="let g; prefix: 'general'">
       <ng-container *transloco="let e; prefix: 'event'">
         <app-detail-card [coverAssetId]="event().coverAssetId">
-          @if (canEdit()) {
-            <div class="flex shrink-0 items-center gap-2">
-              <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
-              <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
-            </div>
+          <div class="flex items-start justify-between gap-3">
+            <h2 appContentLang class="m-0 min-w-0 flex-1 font-display text-2xl font-semibold text-foreground">{{ event().name }}</h2>
+            @if (canEdit()) {
+              <div class="flex shrink-0 items-center gap-2">
+                <button uiGhost type="button" (click)="edit.emit()">{{ g('action.edit') }}</button>
+                <button uiDanger type="button" (click)="remove.emit()">{{ g('action.delete') }}</button>
+              </div>
+            }
+          </div>
+
+          @if (formattedDate(); as d) {
+            <span appContentLang class="text-xs font-medium uppercase tracking-wider text-foreground-muted">{{ d }}</span>
           }
 
+          <a
+            uiPrimary
+            class="self-start"
+            [routerLink]="['/reader/event', event().id]"
+            [attr.aria-label]="e('tooltip.readEvent', { name: event().name })"
+          >
+            <app-book-icon icon-leading class="size-4" />
+            {{ e('action.readNow') }}
+          </a>
+
           <div appContentLang class="contents">
-            <h2 class="m-0 font-display text-2xl font-semibold text-foreground">{{ event().name }}</h2>
-
-            @if (formattedDate(); as d) {
-              <span class="text-xs font-medium uppercase tracking-wider text-foreground-muted">{{ d }}</span>
-            }
-
             @if (event().description; as desc) {
               <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />
             }
@@ -71,16 +82,6 @@ import eventUk from '../i18n/uk.json';
               </ul>
             }
           </div>
-
-          <a
-            uiPrimary
-            class="mt-1 self-start"
-            [routerLink]="['/reader/event', event().id]"
-            [attr.aria-label]="e('tooltip.readEvent', { name: event().name })"
-          >
-            <app-book-icon icon-leading class="size-4" />
-            {{ e('action.readNow') }}
-          </a>
         </app-detail-card>
       </ng-container>
     </ng-container>
