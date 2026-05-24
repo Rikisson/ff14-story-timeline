@@ -7,14 +7,16 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
-  setDoc,
+  runTransaction,
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
-import { SlugTakenError } from '@shared/models';
+import { CapExceededError, SlugTakenError } from '@shared/models';
+import { StaffRole, UserDoc } from '@features/auth';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   DEFAULT_UNIVERSE_LOCALE,
@@ -25,6 +27,7 @@ import {
 } from './universe.types';
 
 const PAGE_SIZE = 50;
+const UNIVERSE_CAP = 2;
 
 function fromStored(id: string, data: StoredUniverse): Universe {
   return {
@@ -68,25 +71,61 @@ export class UniversesService {
     return first ? fromStored(first.id, first.data() as StoredUniverse) : undefined;
   }
 
-  async create(draft: UniverseDraft, ownerUid: string): Promise<string> {
+  async create(draft: UniverseDraft, authorUid: string): Promise<string> {
     const existing = await this.findBySlug(draft.slug);
     if (existing) throw new SlugTakenError('universe', draft.slug);
 
     const id = crypto.randomUUID();
-    const data: StoredUniverse = {
-      slug: draft.slug,
-      name: draft.name,
-      description: draft.description,
-      locale: draft.locale,
-      authorUid: ownerUid,
-      editorUids: [],
-      deletedAt: null,
-      storageBytes: 0,
-      assetCount: 0,
-      createdAt: Date.now(),
-    };
-    await setDoc(doc(this.firebase.firestore, 'universes', id), data);
+    const universeRef = doc(this.firebase.firestore, 'universes', id);
+    const userRef = doc(this.firebase.firestore, 'users', authorUid);
+
+    await runTransaction(this.firebase.firestore, async (tx) => {
+      const userSnap = await tx.get(userRef);
+      const userData = userSnap.exists() ? (userSnap.data() as UserDoc) : null;
+      const currentCount = userData?.authoredUniverseCount ?? 0;
+      const isAdmin = userData?.staffRole === 'admin';
+
+      if (currentCount >= UNIVERSE_CAP && !isAdmin) {
+        throw new CapExceededError(UNIVERSE_CAP);
+      }
+
+      const now = Date.now();
+      tx.set(userRef, {
+        authoredUniverseCount: currentCount + 1,
+        createdAt: userData?.createdAt ?? now,
+        updatedAt: now,
+        ...(isAdmin ? { staffRole: 'admin' as StaffRole } : {}),
+      });
+
+      const data: StoredUniverse = {
+        slug: draft.slug,
+        name: draft.name,
+        description: draft.description,
+        locale: draft.locale,
+        authorUid,
+        editorUids: [],
+        deletedAt: null,
+        storageBytes: 0,
+        assetCount: 0,
+        createdAt: now,
+      };
+      tx.set(universeRef, data);
+    });
+
     return id;
+  }
+
+  async softDelete(universeId: string, authorUid: string): Promise<void> {
+    const universeRef = doc(this.firebase.firestore, 'universes', universeId);
+    const userRef = doc(this.firebase.firestore, 'users', authorUid);
+    const now = Date.now();
+    await runTransaction(this.firebase.firestore, async (tx) => {
+      tx.update(universeRef, { deletedAt: now, updatedAt: now });
+      tx.update(userRef, {
+        authoredUniverseCount: increment(-1),
+        updatedAt: now,
+      });
+    });
   }
 
   async update(id: string, patch: UniverseUpdate): Promise<void> {

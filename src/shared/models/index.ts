@@ -1,6 +1,7 @@
 export type { EntityKind, EntityRef } from './entity-ref';
 export { SLUG_PATTERN, SLUG_MAX_LENGTH, SlugTakenError } from './slug';
 export type { SlugScope } from './slug';
+export { CapExceededError } from './cap-exceeded-error';
 export { isInGameDateEmpty } from './in-game-date';
 export type { InGameDate } from './in-game-date';
 export type { BackgroundEffect } from './background-effect';
