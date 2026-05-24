@@ -17,6 +17,9 @@ function makeUniverse(override: Partial<Universe> = {}): Universe {
     locale: 'en',
     authorUid: 'owner1',
     editorUids: [],
+    deletedAt: null,
+    storageBytes: 0,
+    assetCount: 0,
     createdAt: 0,
     ...override,
   };

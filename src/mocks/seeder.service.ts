@@ -81,6 +81,9 @@ export class SeederService {
       locale: DEFAULT_UNIVERSE_LOCALE,
       authorUid,
       editorUids: [],
+      deletedAt: null,
+      storageBytes: 0,
+      assetCount: 0,
       createdAt: Date.now(),
     };
     await setDoc(doc(this.firebase.firestore, 'universes', DEFAULT_UNIVERSE_ID), data);
