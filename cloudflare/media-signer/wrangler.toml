@@ -19,10 +19,6 @@ ALLOWED_ORIGINS = "http://localhost:4200,https://rikisson.github.io"
 #   R2_ACCESS_KEY_ID
 #   R2_SECRET_ACCESS_KEY
 
-# Per-UID rate limit counter for /sign-upload + /sign-delete + /bulk-delete.
-# Create the namespace once via:
-#   pnpm exec wrangler kv namespace create MEDIA_RATE_LIMIT
-# then paste the printed id below.
 [[kv_namespaces]]
 binding = "MEDIA_RATE_LIMIT"
-id = "REPLACE_WITH_REAL_ID_AFTER_KV_CREATE"
+id = "349f1208216247d9ba623e9178df31fa"
