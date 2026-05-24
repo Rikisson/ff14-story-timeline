@@ -3,12 +3,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Universe creators — keep in sync with src/features/universes/data-access/universe-creators.ts
-    function isUniverseCreator() {
+    // ─── Helpers ────────────────────────────────────────────────────────────────
+
+    function isAdmin() {
       return request.auth != null
-        && request.auth.uid in [
-          'uDRxrMxHMtNZfgbpNjbJat1BPBE3'
-        ];
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid))
+           .data.staffRole == 'admin';
     }
 
     function isMember(universeId) {
@@ -17,92 +18,193 @@ service cloud.firestore {
         && (u.authorUid == request.auth.uid || request.auth.uid in u.editorUids);
     }
 
+    function isUniverseActive(universeId) {
+      return get(/databases/$(database)/documents/universes/$(universeId))
+             .data.deletedAt == null;
+    }
+
+    function isPendingCleanup(universeId) {
+      return get(/databases/$(database)/documents/universes/$(universeId))
+             .data.deletedAt != null;
+    }
+
+    function isUnderUniverseCap(uid) {
+      let userPath = /databases/$(database)/documents/users/$(uid);
+      return !exists(userPath)
+        || get(userPath).data.authoredUniverseCount < 2;
+    }
+
+    // Legacy gate — replaced by canCreateUniverse() in PR 5.
+    function isUniverseCreator() {
+      return request.auth != null
+        && request.auth.uid in [
+          'uDRxrMxHMtNZfgbpNjbJat1BPBE3'
+        ];
+    }
+
+    function canCreateUniverse() {
+      return request.auth != null
+        && (isAdmin() || isUnderUniverseCap(request.auth.uid));
+    }
+
+    // ─── users/{uid} ───────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      allow read: if request.auth != null
+                  && (request.auth.uid == uid || isAdmin());
+
+      allow create: if request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(['authoredUniverseCount', 'createdAt'])
+                    && request.resource.data.authoredUniverseCount == 0;
+
+      allow update: if isAdmin()
+                    || (
+                      request.auth.uid == uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['authoredUniverseCount', 'updatedAt'])
+                      && request.resource.data.authoredUniverseCount >= 0
+                      && request.resource.data.authoredUniverseCount <= 2
+                    );
+
+      allow delete: if isAdmin();
+    }
+
+    // ─── universes/{u} ─────────────────────────────────────────────────────────
+
     match /universes/{universeId} {
-      // Public read — guests need this to browse and pick a universe.
-      allow read: if true;
+      allow read: if resource.data.deletedAt == null
+                  || isMember(universeId)
+                  || isAdmin();
 
+      // PR 5 flips this gate to canCreateUniverse()
       allow create: if isUniverseCreator()
-        && request.resource.data.authorUid == request.auth.uid;
+                    && request.resource.data.authorUid == request.auth.uid
+                    && request.resource.data.deletedAt == null
+                    && request.resource.data.storageBytes == 0
+                    && request.resource.data.assetCount == 0;
 
-      allow update: if request.auth != null
-        && resource.data.authorUid == request.auth.uid
-        && request.resource.data.authorUid == resource.data.authorUid;
+      allow update: if isMember(universeId)
+                    && (
+                      (isUniverseActive(universeId)
+                       && request.resource.data.storageBytes >= 0
+                       && request.resource.data.storageBytes <= 5368709120
+                       && request.resource.data.assetCount >= 0
+                       && request.resource.data.assetCount <= 10000)
+                      || (
+                        resource.data.deletedAt == null
+                        && request.resource.data.deletedAt is number
+                        && (resource.data.authorUid == request.auth.uid || isAdmin())
+                      )
+                    );
 
-      allow delete: if request.auth != null
-        && resource.data.authorUid == request.auth.uid;
+      // Hard-delete only after soft-delete has marked the universe pending cleanup.
+      allow delete: if (resource.data.authorUid == request.auth.uid || isAdmin())
+                    && resource.data.deletedAt != null;
 
       match /characters/{characterId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId)
+                              && isUniverseActive(universeId)
+                              && (!('sprites' in request.resource.data)
+                                  || request.resource.data.sprites.size() <= 32);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /places/{placeId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId)
+                              && isUniverseActive(universeId)
+                              && (!('backgrounds' in request.resource.data)
+                                  || request.resource.data.backgrounds.size() <= 32)
+                              && (!('ambientAudio' in request.resource.data)
+                                  || request.resource.data.ambientAudio.size() <= 24);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /events/{eventId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /stories/{storyId} {
-        allow read: if resource.data.draft == false || isMember(universeId);
-        allow create, update, delete: if isMember(universeId);
+        allow read: if (isUniverseActive(universeId) && resource.data.draft == false)
+                    || isMember(universeId)
+                    || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
 
-        // Content subdoc: visibility tracks the parent story's draft flag.
         match /_content/{contentDocId} {
-          allow read: if get(/databases/$(database)/documents/universes/$(universeId)/stories/$(storyId)).data.draft == false
-            || isMember(universeId);
-          allow create, update, delete: if isMember(universeId);
+          allow read: if (isUniverseActive(universeId)
+                          && get(/databases/$(database)/documents/universes/$(universeId)/stories/$(storyId)).data.draft == false)
+                      || isMember(universeId)
+                      || isAdmin();
+          allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+          allow delete: if isMember(universeId)
+                        && (isUniverseActive(universeId) || isPendingCleanup(universeId));
         }
       }
 
       match /plotlines/{plotlineId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /codexEntries/{codexEntryId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /_meta/{docId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /_assets/{assetId} {
-        allow read: if true;
-        allow create, update, delete: if isMember(universeId);
+        allow read: if isUniverseActive(universeId) || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
-      // Directory projection — one row per entity across all kinds.
-      // Public read is gated per-row by `visiblePublic`; queries must
-      // include `where('visiblePublic', '==', true)` for guests, since
-      // Firestore rules gate each returned doc rather than auto-filtering.
       match /_directory/{rowId} {
-        allow read: if resource.data.visiblePublic == true || isMember(universeId);
-        allow create, update, delete: if isMember(universeId);
+        allow read: if resource.data.visiblePublic == true || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
-      // Timeline projections — same shape as the directory rule.
       match /_timelineEntries/{rowId} {
-        allow read: if resource.data.visiblePublic == true || isMember(universeId);
-        allow create, update, delete: if isMember(universeId);
+        allow read: if resource.data.visiblePublic == true || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
       match /_timelineLaneEntries/{rowId} {
-        allow read: if resource.data.visiblePublic == true || isMember(universeId);
-        allow create, update, delete: if isMember(universeId);
+        allow read: if resource.data.visiblePublic == true || isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
-      // Slug uniqueness index. Member-only because slug lookups happen
-      // by exact doc ID (never by query), so a public read rule would
-      // only enable enumeration.
+      // Slug uniqueness index — member-only because lookups happen by exact doc ID
+      // (never by query), so a public read rule would only enable enumeration.
       match /_slugIndex/{rowId} {
-        allow read, create, update, delete: if isMember(universeId);
+        allow read: if isMember(universeId) || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
     }
   }
