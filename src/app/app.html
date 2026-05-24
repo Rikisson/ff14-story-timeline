@@ -51,11 +51,6 @@
     } @else {
       <span class="flex-1"></span>
     }
-    @if (canSeed()) {
-      <button uiGhost type="button" [loading]="seeding()" (click)="seedTestData()">
-        {{ t('action.seedTestData') }}
-      </button>
-    }
     <app-universe-selector />
     <app-locale-toggle />
     <app-theme-toggle />

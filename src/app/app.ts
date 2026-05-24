@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Injector, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   NavigationCancel,
@@ -10,7 +10,7 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
@@ -19,11 +19,9 @@ import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { LayoutStore } from '@shared/data-access';
 import {
   BrandComponent,
-  GhostButtonComponent,
   LocaleToggleComponent,
   ThemeToggleComponent,
 } from '@shared/ui';
-import { SEED_AUTHOR_UID } from '../mocks/seed-author';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +32,6 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
     TranslocoDirective,
     AuthButtonComponent,
     BrandComponent,
-    GhostButtonComponent,
     LocaleToggleComponent,
     ThemeToggleComponent,
     UniverseSelectorComponent,
@@ -43,9 +40,7 @@ import { SEED_AUTHOR_UID } from '../mocks/seed-author';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  private readonly injector = inject(Injector);
   private readonly router = inject(Router);
-  private readonly transloco = inject(TranslocoService);
   private readonly user = inject(AuthStore).user;
   private readonly universes = inject(UniverseStore);
   private readonly codexCategories = inject(CodexCategoriesService);
@@ -53,8 +48,6 @@ export class App {
   private readonly layout = inject(LayoutStore);
 
   protected readonly chromeHidden = this.layout.chromeHidden;
-  protected readonly canSeed = computed(() => this.user()?.uid === SEED_AUTHOR_UID);
-  protected readonly seeding = signal(false);
   protected readonly hasActiveUniverse = computed(() => !!this.universes.activeUniverse());
 
   protected readonly isNavigating = toSignal(
@@ -86,22 +79,4 @@ export class App {
     if (ca) errors.push({ entityKey: 'calendar', message: ca });
     return errors;
   });
-
-  protected async seedTestData(): Promise<void> {
-    const u = this.user();
-    if (!u || !this.canSeed()) return;
-    const ok = window.confirm(this.transloco.translate('general.message.seedConfirm'));
-    if (!ok) return;
-    this.seeding.set(true);
-    try {
-      const { SeederService, DEFAULT_UNIVERSE_ID } = await import('../mocks/seeder.service');
-      await this.injector.get(SeederService).seedAll(u.uid);
-      await this.universes.refresh();
-      this.universes.setActive(DEFAULT_UNIVERSE_ID);
-    } catch (err) {
-      console.error('Seed failed', err);
-    } finally {
-      this.seeding.set(false);
-    }
-  }
 }
