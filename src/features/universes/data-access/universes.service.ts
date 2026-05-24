@@ -77,6 +77,7 @@ export class UniversesService {
     const q = query(
       collection(this.firebase.firestore, 'universes'),
       where('slug', '==', slug),
+      where('deletedAt', '==', null),
       limit(1),
     );
     const snap = await getDocs(q);

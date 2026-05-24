@@ -65,7 +65,7 @@ service cloud.firestore {
 
     match /universes/{universeId} {
       allow read: if resource.data.deletedAt == null
-                  || isMember(universeId)
+                  || resource.data.authorUid == request.auth.uid
                   || isAdmin();
 
       allow create: if canCreateUniverse()
