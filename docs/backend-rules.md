@@ -16,6 +16,20 @@ Where the bits go and what the bill looks like — data layer, binary storage, r
 
 Posture is "Firebase for now, schema portable to Postgres later." A migration to Supabase or comparable is not planned, but stays cheap to perform if the catalog outgrows what Firestore queries comfortably serve.
 
+## User accounts
+
+A single `users/{uid}` doc per authenticated user, bootstrapped on first sign-in via `UserDocService.bootstrap()` — an idempotent transactional create-if-missing, fire-and-forget from `AuthStore.onInit`.
+
+Doc shape: `{ staffRole?: 'admin', authoredUniverseCount: number, createdAt: number, updatedAt?: number }`.
+
+- `staffRole`, when present, bypasses the universe-authorship cap and enables admin-only operations: reading soft-deleted universes, hard-deleting after soft-delete, and writing `staffRole` on any user doc.
+- `authoredUniverseCount` is the count of live universes where `authorUid == uid` and `deletedAt == null`. The universe-create and universe-soft-delete transactions maintain it. Capped at 2 for non-admins.
+- `createdAt` is set at first bootstrap; `updatedAt` mirrors the last counter mutation.
+
+Counter integrity is **advisory, not a security boundary**. Rules bound `authoredUniverseCount` to `[0, 2]` for non-admin self-writes and lock `staffRole` to admin-only writes, but Firestore rules cannot enforce cross-document atomicity between `users/{uid}` and `universes/{u}` writes inside a single transaction. A determined authenticated user could manipulate their own counter. The friends-and-family mitigation is layered: per-universe 5 GB storage ceiling enforced at the Worker, a reconciliation script that recomputes counters from canonical universe rows, and a Cloud Billing budget alert. Strict enforcement post-launch routes counter writes through a server-side Cloud Function or Worker holding admin credentials.
+
+Naming: `authoredUniverseCount` is unambiguous about what it counts. Future concepts like a personal library of read-only purchased universes get their own field (e.g. `libraryUniverseIds`) and never share semantic space.
+
 ## Portability posture
 
 - **Flat documents per entity.** The Story metadata/content split is the only exception, and it ports 1:1 to a relation in Postgres.
@@ -92,6 +106,9 @@ Projection fan-out has to be bounded or a single write balloons into hundreds of
 - **`relatedRefs` per entity: 50.** Bounds inline-ref hydration size on detail pages; for Story / Event the cap also caps `characterIds[]` / `placeIds[]` array length on timeline projection rows. For Character / Place / Codex, `relatedRefs` doesn't fan out to projections, so the cap is a UX / cost ceiling rather than a fan-out one.
 - **Selected timeline lanes in the filter UI: 10.** Each selected lane fires its own query with its own cursor; the cap bounds concurrent read fan-out per pagination step.
 - **Inline-ref batch hydration per render pass: 30.** Matches Firestore's `in` chunk cap; the resolver chunks larger payloads transparently.
+- **`Character.sprites`: 32.** Bounds the sprite picker and per-character asset payload at scene render. Enforced in rules on every character write.
+- **`Place.backgrounds`: 32.** Same rationale for place backgrounds; same rule enforcement.
+- **`Place.ambientAudio`: 24.** Bounds preload payload on scene mount. Same rule enforcement.
 
 ### Cache invalidation
 
@@ -129,6 +146,25 @@ Three lifecycle transitions invalidate projection rows beyond the canonical edit
 - **Calendar config change** invalidates `dateSortKey` for every story and event in the universe. The calendar settings save blocks behind a progress modal until the universe-scope rebuild completes — stale sort keys would scramble the timeline silently, so the save isn't done until the rebuild is.
 - **Category rename** triggers a scoped rebuild of every codex directory row whose `categoryKey` matches the renamed category. The settings UI shows a toast with progress; rows refresh in place as the rebuild advances. The rebuild path — chunked into `writeBatch` commits of ≤500 ops, idempotent on retry because each row's `sourceFingerprint` is derived from its current canonical projected slice, not from prior projection state — handles arbitrary fanout. A single `runTransaction` can't, because Firestore caps transactions at 500 ops and a popular category may have many more entries. `id` and `key` are stable, so canonical codex entry docs aren't touched.
 - **Category delete** is blocked until every codex entry referencing it has been reassigned or removed; the settings UI surfaces the affected entry count and a reassign-or-remove flow before the delete is allowed to proceed.
+
+## Soft-delete & cleanup
+
+`universes/{u}.deletedAt: number | null` is always present. `null` means the universe is active; a unix-ms timestamp means it has been soft-deleted and is pending cascade.
+
+Lifecycle:
+
+1. **Soft-delete.** `UniversesService.softDelete` runs a transaction that sets `deletedAt = now` on the universe and decrements the author's `users/{uid}.authoredUniverseCount`. The authorship-cap slot is freed at this moment, not at hard-delete, so a soft-delete immediately makes room for a fresh universe.
+2. **Cascade.** A client-side walker (`UniverseDeletionService`) lists and deletes every subcollection, every `_assets` doc, and every R2 object the universe owns. The walk is idempotent and can resume from partial state after a refresh.
+3. **Hard-delete.** The final step removes the universe doc itself. The rule layer enforces `deletedAt != null` as a precondition, so a hard-delete cannot bypass the soft step.
+
+Rules track this lifecycle via two helpers:
+
+- `isUniverseActive(universeId)` — `deletedAt == null`.
+- `isPendingCleanup(universeId)` — `deletedAt != null`.
+
+Active universes accept the full member CRUD surface. Soft-deleted universes accept **delete only** on subcollection docs (the cleanup permission), reject create / update on subcollections, and disappear from public reads at the universe doc level. Members and admins can still read the universe doc and its subcollections to drive a resume-cleanup UI.
+
+Soft-delete is permanent — no undo. Restoration is via `.universe` archive import or a fresh create.
 
 ## Realtime listeners
 

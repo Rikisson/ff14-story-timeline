@@ -133,10 +133,13 @@ These are design decisions, not gaps. Do not "fix" them.
 - **Projections** (`_directory`, `_timelineEntries`, `_timelineLaneEntries`) and the
   **slug index** (`_slugIndex`) are never exported or imported — they are
   regenerable, and the import rebuilds them through the normal write path.
-- **Server-managed fields** — `id`, `authorUid`, `createdAt` / `updatedAt` /
-  `publishedAt`, `version`, `sourceFingerprint` — are omitted from the format. The
-  importer mints or sets them; the validator notes them as *info* and ignores them
-  if a file supplies them.
+- **Server-managed fields** — `id`, `authorUid`, `editorUids`, `createdAt` /
+  `updatedAt` / `publishedAt`, `version`, `sourceFingerprint`, and the
+  universe-level counter trio `deletedAt` / `storageBytes` / `assetCount`, plus the
+  per-asset `objects` / `totalBytes` — are omitted from the format. The importer
+  mints or sets them, recomputing the counters from the imported asset bytes rather
+  than trusting any source-environment value. The validator notes any of these
+  fields as *info* and ignores them if a file supplies them.
 - Entities are keyed and cross-referenced by **slug**, never raw id. This is what
   makes a package portable between universes — keep it.
 - **Import is additive.** It merges into the active universe, never creates one, and

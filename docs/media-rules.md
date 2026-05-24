@@ -21,7 +21,7 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 ## Schema
 
 - Asset metadata lives in a central per-universe collection: `universes/{u}/_assets/{assetId}`. One doc per uploaded asset.
-- Asset doc shape: `{ id, kind, url, thumbUrl?, label, blurDataUrl?, tags?, authorUid, createdAt, updatedAt? }`. `kind` matches the value used in the storage path. `thumbUrl` is populated for cover assets and points at the 640w `.thumb.webp` sibling object.
+- Asset doc shape: `{ id, kind, url, thumbUrl?, label, blurDataUrl?, tags?, authorUid, objects, totalBytes, createdAt, updatedAt? }`. `kind` matches the value used in the storage path. `thumbUrl` is populated for cover assets and points at the 640w `.thumb.webp` sibling object. `objects: { key, bytes }[]` carries one entry per R2 object backing the asset — a cover asset has two entries (full + thumb), everything else has one. `totalBytes` is the sum of `objects[].bytes` and feeds the universe-level `storageBytes` counter and the reconciliation script.
 - The v1 asset kind set:
   - `cover` — single decorative image per entity (cards, headers).
   - `sprite` — staged character image with alpha; swappable by mood, pose, expression, or outfit.
