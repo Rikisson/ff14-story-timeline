@@ -27,7 +27,14 @@ import {
 const PAGE_SIZE = 50;
 
 function fromStored(id: string, data: StoredUniverse): Universe {
-  return { id, ...data, locale: data.locale ?? DEFAULT_UNIVERSE_LOCALE };
+  return {
+    id,
+    ...data,
+    locale: data.locale ?? DEFAULT_UNIVERSE_LOCALE,
+    deletedAt: data.deletedAt ?? null,
+    storageBytes: data.storageBytes ?? 0,
+    assetCount: data.assetCount ?? 0,
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +44,7 @@ export class UniversesService {
   async listAll(): Promise<Universe[]> {
     const q = query(
       collection(this.firebase.firestore, 'universes'),
+      where('deletedAt', '==', null),
       orderBy('createdAt', 'desc'),
       limit(PAGE_SIZE),
     );
@@ -72,6 +80,9 @@ export class UniversesService {
       locale: draft.locale,
       authorUid: ownerUid,
       editorUids: [],
+      deletedAt: null,
+      storageBytes: 0,
+      assetCount: 0,
       createdAt: Date.now(),
     };
     await setDoc(doc(this.firebase.firestore, 'universes', id), data);

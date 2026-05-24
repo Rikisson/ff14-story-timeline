@@ -13,6 +13,9 @@ export interface Universe {
   locale: UniverseLocale;
   authorUid: string;
   editorUids: string[];
+  deletedAt: number | null;
+  storageBytes: number;
+  assetCount: number;
   createdAt: number;
   updatedAt?: number;
 }
