@@ -3,6 +3,11 @@ export type AssetKind = 'cover' | 'sprite' | 'background' | 'ambient' | 'sfx';
 export const IMAGE_ASSET_KINDS: readonly AssetKind[] = ['cover', 'sprite', 'background'];
 export const AUDIO_ASSET_KINDS: readonly AssetKind[] = ['ambient', 'sfx'];
 
+export interface AssetObjectRef {
+  key: string;
+  bytes: number;
+}
+
 export interface AssetDoc {
   id: string;
   kind: AssetKind;
@@ -15,6 +20,8 @@ export interface AssetDoc {
   blurDataUrl?: string;
   tags?: string[];
   authorUid: string;
+  objects: AssetObjectRef[];
+  totalBytes: number;
   createdAt: number;
   updatedAt?: number;
 }

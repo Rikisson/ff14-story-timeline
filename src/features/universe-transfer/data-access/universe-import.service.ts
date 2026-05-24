@@ -311,6 +311,8 @@ export class UniverseImportService {
             blurDataUrl: asset.blurDataUrl,
             tags: asset.tags,
             authorUid,
+            objects: [],
+            totalBytes: 0,
             createdAt: now,
           };
           await setDoc(

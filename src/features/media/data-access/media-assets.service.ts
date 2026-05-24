@@ -152,6 +152,8 @@ export class MediaAssetsService {
       blurDataUrl: input.blurDataUrl,
       tags: input.tags,
       authorUid,
+      objects: [],
+      totalBytes: 0,
       createdAt: Date.now(),
     };
 
