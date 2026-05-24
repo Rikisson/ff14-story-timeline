@@ -76,7 +76,7 @@ import universeUk from '../i18n/uk.json';
                   {{ t('message.dangerSubtitle') }}
                 </p>
                 <p class="m-0 mt-1 text-xs text-foreground-faint">
-                  {{ t('message.deleteEntityCounts', { assets: u.assetCount, count: '·' }) }}
+                  {{ t('message.deleteMediaCount', { count: u.assetCount }) }}
                 </p>
               </div>
               <div>

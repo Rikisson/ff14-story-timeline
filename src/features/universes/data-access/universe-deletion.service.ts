@@ -98,9 +98,13 @@ export class UniverseDeletionService {
     const r2Keys = collectAssetKeys(docsData);
 
     for (const chunk of chunkInto(r2Keys, R2_BULK_DELETE_CHUNK)) {
-      await this.r2.bulkDelete(universeId, chunk).catch((err) => {
-        console.warn('cascade bulk-delete partial failure', err);
-      });
+      const results = await this.r2.bulkDelete(universeId, chunk);
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length > 0) {
+        throw new Error(
+          `Failed to delete ${failed.length} R2 object(s); resume cleanup to retry.`,
+        );
+      }
     }
 
     await this.batchDelete(

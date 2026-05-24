@@ -16,7 +16,7 @@ import {
   where,
 } from 'firebase/firestore/lite';
 import { CapExceededError, SlugTakenError } from '@shared/models';
-import { StaffRole, UserDoc } from '@features/auth';
+import { StaffRole, UserDoc, UserDocService } from '@features/auth';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   DEFAULT_UNIVERSE_LOCALE,
@@ -43,6 +43,7 @@ function fromStored(id: string, data: StoredUniverse): Universe {
 @Injectable({ providedIn: 'root' })
 export class UniversesService {
   private readonly firebase = inject(FirebaseService);
+  private readonly userDocs = inject(UserDocService);
 
   async listAll(): Promise<Universe[]> {
     const q = query(
@@ -86,6 +87,8 @@ export class UniversesService {
   async create(draft: UniverseDraft, authorUid: string): Promise<string> {
     const existing = await this.findBySlug(draft.slug);
     if (existing) throw new SlugTakenError('universe', draft.slug);
+
+    await this.userDocs.bootstrap(authorUid);
 
     const id = crypto.randomUUID();
     const universeRef = doc(this.firebase.firestore, 'universes', id);

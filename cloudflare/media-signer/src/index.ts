@@ -36,7 +36,7 @@ export default {
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
     try {
-      const uid = await verifyAuth(request, env);
+      const { uid, token } = await verifyAuth(request, env);
       if (!(await checkRateLimit(env.MEDIA_RATE_LIMIT, uid))) {
         return errorResp(cors, 429, 'Too many requests. Wait a minute before retrying.');
       }
@@ -44,7 +44,7 @@ export default {
 
       if (route === 'POST /sign-upload') {
         const body = parseSignBody(rawBody);
-        const counters = await loadUniverseForUpload(env, uid, body.universeId);
+        const counters = await loadUniverseForUpload(env, uid, token, body.universeId);
         assertByteCap(body.kind, body.byteLength);
         assertUniverseCap({ ...counters, byteLength: body.byteLength });
         const signed = await signR2Url(env, body, 'PUT');
@@ -52,13 +52,13 @@ export default {
       }
       if (route === 'POST /sign-delete') {
         const body = parseDeleteBody(rawBody);
-        await assertMembership(env, uid, body.universeId);
+        await assertMembership(env, uid, token, body.universeId);
         const signed = await signR2Url(env, { ...body, byteLength: 0 }, 'DELETE');
         return jsonResp(cors, { deleteUrl: signed });
       }
       if (route === 'POST /bulk-delete') {
         const body = parseBulkDeleteBody(rawBody);
-        await assertMembership(env, uid, body.universeId);
+        await assertMembership(env, uid, token, body.universeId);
         const results = await bulkDeleteR2Objects(env, body.keys);
         return jsonResp(cors, { results });
       }
@@ -75,7 +75,7 @@ export default {
   },
 };
 
-async function verifyAuth(request: Request, env: Env): Promise<string> {
+async function verifyAuth(request: Request, env: Env): Promise<{ uid: string; token: string }> {
   const auth = request.headers.get('Authorization');
   if (!auth?.startsWith('Bearer ')) throw new Error('AUTH: missing bearer token');
   const token = auth.slice('Bearer '.length).trim();
@@ -86,7 +86,7 @@ async function verifyAuth(request: Request, env: Env): Promise<string> {
   if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
     throw new Error('AUTH: token missing uid');
   }
-  return payload.sub;
+  return { uid: payload.sub, token };
 }
 
 interface UniverseCountersSnapshot {
@@ -97,11 +97,17 @@ interface UniverseCountersSnapshot {
 async function loadUniverseForUpload(
   env: Env,
   uid: string,
+  token: string,
   universeId: string,
 ): Promise<UniverseCountersSnapshot> {
   const docUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/universes/${universeId}`;
-  const res = await fetch(docUrl);
+  const res = await fetch(docUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (res.status === 404) throw new Error('FORBIDDEN: universe not found');
+  if (res.status === 401 || res.status === 403) {
+    throw new Error('FORBIDDEN: not a member of this universe');
+  }
   if (!res.ok) throw new Error(`FORBIDDEN: universe lookup failed (${res.status})`);
   const data = (await res.json()) as { fields?: Record<string, FirestoreField> };
   const authorUid = stringField(data.fields?.['authorUid']);
@@ -115,8 +121,13 @@ async function loadUniverseForUpload(
   };
 }
 
-async function assertMembership(env: Env, uid: string, universeId: string): Promise<void> {
-  await loadUniverseForUpload(env, uid, universeId);
+async function assertMembership(
+  env: Env,
+  uid: string,
+  token: string,
+  universeId: string,
+): Promise<void> {
+  await loadUniverseForUpload(env, uid, token, universeId);
 }
 
 async function signR2Url(

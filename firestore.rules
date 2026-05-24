@@ -74,16 +74,38 @@ service cloud.firestore {
                     && request.resource.data.storageBytes == 0
                     && request.resource.data.assetCount == 0;
 
-      allow update: if isMember(universeId)
-                    && (
-                      (isUniverseActive(universeId)
-                       && request.resource.data.storageBytes >= 0
-                       && request.resource.data.storageBytes <= 5368709120
-                       && request.resource.data.assetCount >= 0
-                       && request.resource.data.assetCount <= 10000)
+      allow update: if isMember(universeId) && (
+                      // Counter writes from the asset upload/delete transaction.
+                      (
+                        isUniverseActive(universeId)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['storageBytes', 'assetCount', 'updatedAt'])
+                        && request.resource.data.storageBytes is int
+                        && request.resource.data.storageBytes >= 0
+                        && request.resource.data.storageBytes <= 524288000
+                        && request.resource.data.assetCount is int
+                        && request.resource.data.assetCount >= 0
+                        && request.resource.data.assetCount <= 500
+                      )
+                      // Metadata edits (slug, name, description, cover, locale).
+                      || (
+                        isUniverseActive(universeId)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['slug', 'name', 'description', 'coverAssetId', 'locale', 'updatedAt'])
+                      )
+                      // Editor roster changes (author or admin only).
+                      || (
+                        isUniverseActive(universeId)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['editorUids', 'updatedAt'])
+                        && (resource.data.authorUid == request.auth.uid || isAdmin())
+                      )
+                      // Soft-delete transition (author or admin only).
                       || (
                         resource.data.deletedAt == null
                         && request.resource.data.deletedAt is number
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['deletedAt', 'updatedAt'])
                         && (resource.data.authorUid == request.auth.uid || isAdmin())
                       )
                     );

@@ -70,44 +70,48 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
                     @if (isYou(uid)) {
                       <span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">{{ t('field.youBadge') }}</span>
                     }
-                    <button
-                      uiDanger
-                      type="button"
-                      [disabled]="busy()"
-                      (click)="confirmRemove(u.id, uid)"
-                    >{{ g('action.remove') }}</button>
+                    @if (isOwner()) {
+                      <button
+                        uiDanger
+                        type="button"
+                        [disabled]="busy()"
+                        (click)="confirmRemove(u.id, uid)"
+                      >{{ g('action.remove') }}</button>
+                    }
                   </div>
                 </li>
               }
             </ul>
 
-            <form [formGroup]="form" class="flex flex-col gap-2" (ngSubmit)="onAdd(u.id, u.authorUid, u.editorUids)">
-              <label class="flex flex-col gap-1 text-sm">
-                <span class="font-medium text-foreground-muted">{{ t('field.addContributorLabel') }}</span>
-                <input
-                  type="text"
-                  formControlName="uid"
-                  autocomplete="off"
-                  spellcheck="false"
-                  class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 font-mono text-xs"
-                  [placeholder]="t('empty.uidPlaceholder')"
-                />
-                <span class="text-xs text-foreground-faint">
-                  {{ t('message.uidHint') }}
-                </span>
-              </label>
-              @if (errorMessage(); as e) {
-                <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
-              }
-              <div>
-                <button
-                  uiPrimary
-                  type="submit"
-                  [loading]="busy()"
-                  [disabled]="form.invalid || busy()"
-                >{{ t('action.addContributor') }}</button>
-              </div>
-            </form>
+            @if (isOwner()) {
+              <form [formGroup]="form" class="flex flex-col gap-2" (ngSubmit)="onAdd(u.id, u.authorUid, u.editorUids)">
+                <label class="flex flex-col gap-1 text-sm">
+                  <span class="font-medium text-foreground-muted">{{ t('field.addContributorLabel') }}</span>
+                  <input
+                    type="text"
+                    formControlName="uid"
+                    autocomplete="off"
+                    spellcheck="false"
+                    class="h-10 rounded-md border border-border-strong bg-surface text-foreground placeholder:text-foreground-faint px-3 font-mono text-xs"
+                    [placeholder]="t('empty.uidPlaceholder')"
+                  />
+                  <span class="text-xs text-foreground-faint">
+                    {{ t('message.uidHint') }}
+                  </span>
+                </label>
+                @if (errorMessage(); as e) {
+                  <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
+                }
+                <div>
+                  <button
+                    uiPrimary
+                    type="submit"
+                    [loading]="busy()"
+                    [disabled]="form.invalid || busy()"
+                  >{{ t('action.addContributor') }}</button>
+                </div>
+              </form>
+            }
           } @else {
             <p class="m-0 text-sm italic text-foreground-faint">{{ t('empty.noActive') }}</p>
           }
@@ -124,6 +128,7 @@ export class UniverseMembersComponent {
   private readonly transloco = inject(TranslocoService);
 
   protected readonly universe = this.store.activeUniverse;
+  protected readonly isOwner = this.store.isOwnerOfActive;
   protected readonly busy = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 

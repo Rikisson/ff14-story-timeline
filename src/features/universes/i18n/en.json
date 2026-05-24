@@ -48,7 +48,7 @@
     "dangerSubtitle": "Permanently delete this universe. Everything inside — stories, characters, places, events, codex, media — is removed. This cannot be undone.",
     "deleteConfirmPrompt": "This will permanently delete {{ name }} and everything inside. Type the universe slug to confirm.",
     "deleteSlugMismatch": "Slug doesn't match. Type it exactly.",
-    "deleteEntityCounts": "{{ assets }} media · {{ count }} entities",
+    "deleteMediaCount": "{{ count }} media",
     "cleanupPendingSubtitle": "These universes were soft-deleted but cleanup didn't finish. Resume to delete the remaining data.",
     "cleanupRunning": "Cleaning up — {{ processed }} of {{ total }} ({{ step }})",
     "cleanupSoftDeleting": "Marking universe for deletion…",
