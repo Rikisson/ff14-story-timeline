@@ -6,6 +6,9 @@
     "calendarHeader": "Календар",
     "categoriesHeader": "Категорії",
     "transferHeader": "Імпорт та експорт",
+    "dangerHeader": "Зона небезпеки",
+    "slugConfirmLabel": "Введіть слаг всесвіту для підтвердження",
+    "cleanupPendingHeader": "Очищення в процесі",
     "ownerLabel": "Власник",
     "contributorLabel": "Співавтор",
     "youBadge": "ви",
@@ -19,7 +22,12 @@
     "create": "Створити",
     "addContributor": "Додати співавтора",
     "settingsMenu": "Налаштування всесвіту",
-    "createMenu": "+ Створити всесвіт"
+    "createMenu": "+ Створити всесвіт",
+    "deleteUniverse": "Видалити всесвіт",
+    "confirmDelete": "Видалити назавжди",
+    "cancelDelete": "Скасувати",
+    "resumeCleanup": "Продовжити очищення",
+    "dismissProgress": "Закрити"
   },
   "message": {
     "generalSubtitle": "Редагуйте назву, слаг, опис та обкладинку всесвіту.",
@@ -35,7 +43,17 @@
     "sectionHintAccess": "Власник і співавтори",
     "sectionHintCalendar": "Ери та місяці",
     "sectionHintCategories": "Категорії кодексу",
-    "sectionHintTransfer": "Експорт та імпорт пакунків"
+    "sectionHintTransfer": "Експорт та імпорт пакунків",
+    "sectionHintDanger": "Видалити цей всесвіт",
+    "dangerSubtitle": "Назавжди видалити цей всесвіт. Усе всередині — історії, персонажі, місця, події, кодекс, медіа — буде видалено. Це не можна скасувати.",
+    "deleteConfirmPrompt": "Це назавжди видалить «{{ name }}» і весь вміст. Введіть слаг всесвіту для підтвердження.",
+    "deleteSlugMismatch": "Слаг не збігається. Введіть точно.",
+    "deleteEntityCounts": "{{ assets }} медіа · {{ count }} сутностей",
+    "cleanupPendingSubtitle": "Ці всесвіти було позначено на видалення, але очищення не завершилося. Продовжіть, щоб видалити решту.",
+    "cleanupRunning": "Очищення — {{ processed }} з {{ total }} ({{ step }})",
+    "cleanupSoftDeleting": "Позначаю всесвіт для видалення…",
+    "cleanupDone": "Очищення завершено.",
+    "cleanupFailed": "Помилка очищення: {{ error }}"
   },
   "empty": {
     "noActive": "Немає активного всесвіту.",

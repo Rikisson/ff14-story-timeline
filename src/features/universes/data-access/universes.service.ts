@@ -55,6 +55,18 @@ export class UniversesService {
     return snap.docs.map((d) => fromStored(d.id, d.data() as StoredUniverse));
   }
 
+  async listPendingForAuthor(uid: string): Promise<Universe[]> {
+    const q = query(
+      collection(this.firebase.firestore, 'universes'),
+      where('authorUid', '==', uid),
+      where('deletedAt', '!=', null),
+      orderBy('deletedAt', 'desc'),
+      limit(PAGE_SIZE),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => fromStored(d.id, d.data() as StoredUniverse));
+  }
+
   async get(id: string): Promise<Universe | undefined> {
     const snap = await getDoc(doc(this.firebase.firestore, 'universes', id));
     return snap.exists() ? fromStored(snap.id, snap.data() as StoredUniverse) : undefined;

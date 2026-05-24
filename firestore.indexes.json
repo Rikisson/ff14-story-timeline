@@ -9,6 +9,14 @@
       ]
     },
     {
+      "collectionGroup": "universes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorUid", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "_directory",
       "queryScope": "COLLECTION",
       "fields": [

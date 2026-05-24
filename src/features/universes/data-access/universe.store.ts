@@ -10,6 +10,7 @@ const STORAGE_KEY = 'ff14-story-timeline.activeUniverseId';
 
 interface UniverseState {
   universes: Universe[];
+  pendingForAuthor: Universe[];
   activeUniverseId: string | null;
   loading: boolean;
   error: string | null;
@@ -17,6 +18,7 @@ interface UniverseState {
 
 const initialState: UniverseState = {
   universes: [],
+  pendingForAuthor: [],
   activeUniverseId: null,
   loading: false,
   error: null,
@@ -81,27 +83,43 @@ export const UniverseStore = signalStore(
       return !!uid && UNIVERSE_CREATOR_UIDS.includes(uid);
     }),
   })),
-  withMethods((store, service = inject(UniversesService)) => ({
-    setActive(id: string | null): void {
-      patchState(store, { activeUniverseId: id });
-    },
-    async refresh(): Promise<void> {
-      patchState(store, { loading: true, error: null });
-      try {
-        const universes = await service.listAll();
-        const currentId = store.activeUniverseId();
-        const stillValid = currentId && universes.some((u) => u.id === currentId);
-        patchState(store, {
-          universes,
-          activeUniverseId: stillValid ? currentId : null,
-          loading: false,
-        });
-      } catch (err) {
-        console.error('failed to load universes', err);
-        patchState(store, { loading: false, error: errorMessage(err) });
-      }
-    },
-  })),
+  withMethods(
+    (store, service = inject(UniversesService), auth = inject(AuthStore)) => ({
+      setActive(id: string | null): void {
+        patchState(store, { activeUniverseId: id });
+      },
+      async refresh(): Promise<void> {
+        patchState(store, { loading: true, error: null });
+        try {
+          const universes = await service.listAll();
+          const currentId = store.activeUniverseId();
+          const stillValid = currentId && universes.some((u) => u.id === currentId);
+          patchState(store, {
+            universes,
+            activeUniverseId: stillValid ? currentId : null,
+            loading: false,
+          });
+        } catch (err) {
+          console.error('failed to load universes', err);
+          patchState(store, { loading: false, error: errorMessage(err) });
+        }
+      },
+      async refreshPending(): Promise<void> {
+        const uid = auth.user()?.uid;
+        if (!uid) {
+          patchState(store, { pendingForAuthor: [] });
+          return;
+        }
+        try {
+          const pending = await service.listPendingForAuthor(uid);
+          patchState(store, { pendingForAuthor: pending });
+        } catch (err) {
+          console.error('failed to load pending-cleanup universes', err);
+          patchState(store, { pendingForAuthor: [] });
+        }
+      },
+    }),
+  ),
   withHooks((store) => {
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
     const auth = inject(AuthStore);
@@ -118,6 +136,7 @@ export const UniverseStore = signalStore(
           if (uid === lastUid) return;
           lastUid = uid;
           void store.refresh();
+          void store.refreshPending();
         });
 
         effect(() => {

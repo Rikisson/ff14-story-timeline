@@ -14,10 +14,17 @@ import {
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseGeneralSettingsComponent } from '../ui/universe-general-settings.component';
 import { UniverseMembersComponent } from '../ui/universe-members.component';
+import { UniverseDeletionPanelComponent } from './universe-deletion-panel.component';
 import universeEn from '../i18n/en.json';
 import universeUk from '../i18n/uk.json';
 
-export type UniverseSettingsSection = 'general' | 'access' | 'calendar' | 'categories' | 'transfer';
+export type UniverseSettingsSection =
+  | 'general'
+  | 'access'
+  | 'calendar'
+  | 'categories'
+  | 'transfer'
+  | 'dangerZone';
 
 const DEFAULT_SECTION: UniverseSettingsSection = 'general';
 
@@ -27,6 +34,7 @@ const SECTION_LABEL_KEY: Record<UniverseSettingsSection, string> = {
   calendar: 'universe.field.calendarHeader',
   categories: 'universe.field.categoriesHeader',
   transfer: 'universe.field.transferHeader',
+  dangerZone: 'universe.field.dangerHeader',
 };
 
 const SECTION_HINT_KEY: Record<UniverseSettingsSection, string> = {
@@ -35,6 +43,7 @@ const SECTION_HINT_KEY: Record<UniverseSettingsSection, string> = {
   calendar: 'universe.message.sectionHintCalendar',
   categories: 'universe.message.sectionHintCategories',
   transfer: 'universe.message.sectionHintTransfer',
+  dangerZone: 'universe.message.sectionHintDanger',
 };
 
 function isSection(value: string | null): value is UniverseSettingsSection {
@@ -43,7 +52,8 @@ function isSection(value: string | null): value is UniverseSettingsSection {
     value === 'access' ||
     value === 'calendar' ||
     value === 'categories' ||
-    value === 'transfer'
+    value === 'transfer' ||
+    value === 'dangerZone'
   );
 }
 
@@ -59,6 +69,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
     CalendarSettingsPanelComponent,
     CodexCategoriesSettingsPanelComponent,
     UniverseTransferPage,
+    UniverseDeletionPanelComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -106,6 +117,9 @@ function isSection(value: string | null): value is UniverseSettingsSection {
                 @case ('transfer') {
                   <app-universe-transfer-page />
                 }
+                @case ('dangerZone') {
+                  <app-universe-deletion-panel />
+                }
               }
             </div>
           </section>
@@ -132,6 +146,13 @@ export class UniverseSettingsPage {
     const raw = this.routeParams().get('section');
     if (isSection(raw)) {
       if (raw === 'access' && !this.isOwner()) return DEFAULT_SECTION;
+      if (
+        raw === 'dangerZone' &&
+        !this.isOwner() &&
+        this.store.pendingForAuthor().length === 0
+      ) {
+        return DEFAULT_SECTION;
+      }
       return raw;
     }
     return DEFAULT_SECTION;
@@ -139,9 +160,12 @@ export class UniverseSettingsPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     this.activeLang();
-    const sections: UniverseSettingsSection[] = this.isOwner()
+    const hasPending = this.store.pendingForAuthor().length > 0;
+    const owner = this.isOwner();
+    const sections: UniverseSettingsSection[] = owner
       ? ['general', 'access', 'calendar', 'categories', 'transfer']
       : ['general', 'calendar', 'categories', 'transfer'];
+    if (owner || hasPending) sections.push('dangerZone');
     return sections.map((s) => ({
       id: s,
       label: this.transloco.translate(SECTION_LABEL_KEY[s]),

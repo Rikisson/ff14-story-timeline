@@ -28,6 +28,7 @@ function makeUniverse(override: Partial<Universe> = {}): Universe {
 function setup(options: {
   uid?: string | null;
   universes?: Universe[];
+  pending?: Universe[];
   storedActiveId?: string;
 } = {}) {
   localStorage.clear();
@@ -41,7 +42,10 @@ function setup(options: {
   );
   const loadingSignal = signal(true);
   const mockAuth = { user: userSignal, loading: loadingSignal };
-  const mockService = { listAll: vi.fn(async () => options.universes ?? []) };
+  const mockService = {
+    listAll: vi.fn(async () => options.universes ?? []),
+    listPendingForAuthor: vi.fn(async () => options.pending ?? []),
+  };
 
   TestBed.configureTestingModule({
     providers: [
@@ -262,6 +266,31 @@ describe('UniverseStore', () => {
     it('returns true for a user in the creator allowlist', () => {
       const { store } = setup({ uid: CREATOR_UID });
       expect(store.canCreateUniverse()).toBe(true);
+    });
+  });
+
+  // ── refreshPending ───────────────────────────────────────────────────────────
+
+  describe('refreshPending', () => {
+    it('populates pendingForAuthor from the service', async () => {
+      const u = makeUniverse({ id: 'p1', authorUid: 'me', deletedAt: 100 });
+      const { store } = setup({ uid: 'me', pending: [u] });
+      await store.refreshPending();
+      expect(store.pendingForAuthor()).toEqual([u]);
+    });
+
+    it('clears pendingForAuthor when no user is signed in', async () => {
+      const u = makeUniverse({ id: 'p1', authorUid: 'me', deletedAt: 100 });
+      const { store } = setup({ uid: null, pending: [u] });
+      await store.refreshPending();
+      expect(store.pendingForAuthor()).toEqual([]);
+    });
+
+    it('falls back to empty on service failure', async () => {
+      const { store, mockService } = setup({ uid: 'me' });
+      mockService.listPendingForAuthor.mockRejectedValueOnce(new Error('boom'));
+      await store.refreshPending();
+      expect(store.pendingForAuthor()).toEqual([]);
     });
   });
 
