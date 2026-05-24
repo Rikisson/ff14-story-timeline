@@ -13,13 +13,13 @@ import { SecondaryButtonComponent } from '@shared/ui';
           <p class="m-0 mt-0.5 text-xs text-foreground-subtle">{{ t('message.kitSubtitle') }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <a uiSecondary href="/migration-kit/universe.schema.json" download>
+          <a uiSecondary href="migration-kit/universe.schema.json" download>
             {{ t('action.downloadSchema') }}
           </a>
-          <a uiSecondary href="/migration-kit/example-universe.json" download>
+          <a uiSecondary href="migration-kit/example-universe.json" download>
             {{ t('action.downloadExample') }}
           </a>
-          <a uiSecondary href="/migration-kit/README.md" download>
+          <a uiSecondary href="migration-kit/README.md" download>
             {{ t('action.downloadReadme') }}
           </a>
         </div>

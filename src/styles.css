@@ -15,7 +15,7 @@
   font-style: normal;
   font-weight: 500 700;
   font-display: swap;
-  src: url('/fonts/cormorant-latin.woff2') format('woff2');
+  src: url('fonts/cormorant-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -25,7 +25,7 @@
   font-style: normal;
   font-weight: 500 700;
   font-display: swap;
-  src: url('/fonts/cormorant-cyrillic.woff2') format('woff2');
+  src: url('fonts/cormorant-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -33,7 +33,7 @@
   font-style: italic;
   font-weight: 500 700;
   font-display: swap;
-  src: url('/fonts/cormorant-latin-italic.woff2') format('woff2');
+  src: url('fonts/cormorant-latin-italic.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -43,7 +43,7 @@
   font-style: italic;
   font-weight: 500 700;
   font-display: swap;
-  src: url('/fonts/cormorant-cyrillic-italic.woff2') format('woff2');
+  src: url('fonts/cormorant-cyrillic-italic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -51,7 +51,7 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/source-serif-latin.woff2') format('woff2');
+  src: url('fonts/source-serif-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -61,7 +61,7 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/source-serif-cyrillic.woff2') format('woff2');
+  src: url('fonts/source-serif-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -69,7 +69,7 @@
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/source-serif-latin-italic.woff2') format('woff2');
+  src: url('fonts/source-serif-latin-italic.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -79,7 +79,7 @@
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/source-serif-cyrillic-italic.woff2') format('woff2');
+  src: url('fonts/source-serif-cyrillic-italic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -87,7 +87,7 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/plex-sans-latin.woff2') format('woff2');
+  src: url('fonts/plex-sans-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -97,7 +97,7 @@
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/plex-sans-cyrillic.woff2') format('woff2');
+  src: url('fonts/plex-sans-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -105,7 +105,7 @@
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/plex-sans-latin-italic.woff2') format('woff2');
+  src: url('fonts/plex-sans-latin-italic.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -115,7 +115,7 @@
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/plex-sans-cyrillic-italic.woff2') format('woff2');
+  src: url('fonts/plex-sans-cyrillic-italic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
@@ -313,7 +313,7 @@ body {
   @apply bg-canvas text-foreground font-sans;
   /* A faint paper grain over the canvas — opaque surfaces (cards, panels)
    * cover it, so it reads as the tooth of the page itself. */
-  background-image: url('/grain.svg');
+  background-image: url('grain.svg');
 }
 
 /* Prose surfaces run on Source Serif 4 (`--font-reading`) so the reader
