@@ -12,6 +12,7 @@ import {
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { AuthUser } from './auth.types';
 import { translateFirebaseAuthError } from './firebase-auth-error';
+import { UserDocService } from './user-doc.service';
 
 interface AuthState {
   user: AuthUser | null;
@@ -64,6 +65,7 @@ export const AuthStore = signalStore(
   })),
   withHooks((store) => {
     const firebase = inject(FirebaseService);
+    const userDocService = inject(UserDocService);
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
     return {
       onInit() {
@@ -73,6 +75,11 @@ export const AuthStore = signalStore(
         }
         onAuthStateChanged(firebase.auth, (user) => {
           patchState(store, { user: toAuthUser(user), loading: false, error: null });
+          if (user) {
+            userDocService.bootstrap(user.uid).catch((err) => {
+              console.error('user doc bootstrap failed', err);
+            });
+          }
         });
       },
     };
