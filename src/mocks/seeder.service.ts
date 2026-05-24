@@ -73,6 +73,16 @@ interface SeedItem {
 export class SeederService {
   private readonly firebase = inject(FirebaseService);
 
+  async seedAdminUser(adminUid: string, authoredUniverseCount: number): Promise<void> {
+    const now = Date.now();
+    await setDoc(doc(this.firebase.firestore, 'users', adminUid), {
+      staffRole: 'admin',
+      authoredUniverseCount,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
   async seedDefaultUniverse(authorUid: string): Promise<void> {
     const data: StoredUniverse = {
       slug: DEFAULT_UNIVERSE_SLUG,
@@ -218,6 +228,7 @@ export class SeederService {
   }
 
   async seedAll(authorUid: string): Promise<void> {
+    await this.seedAdminUser(authorUid, 1);
     await this.seedDefaultUniverse(authorUid);
     // Calendar + categories are needed by the event / codex projection
     // builders downstream, so seed them first.
