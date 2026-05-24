@@ -10,16 +10,68 @@ export interface R2ObjectRef {
   filename: string;
 }
 
+export interface BulkDeleteResult {
+  key: string;
+  ok: boolean;
+  status: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class R2Service {
   private readonly firebase = inject(FirebaseService);
 
-  async signUpload(ref: R2ObjectRef): Promise<string> {
-    return this.requestSignedUrl('/sign-upload', ref, 'uploadUrl');
+  async signUpload(ref: R2ObjectRef, byteLength: number): Promise<string> {
+    this.assertConfigured();
+    const idToken = await this.firebase.auth.currentUser?.getIdToken();
+    if (!idToken) throw new Error('Sign in to upload media.');
+    const res = await fetch(`${r2Config.signerUrl}/sign-upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...ref, byteLength }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { [k: string]: string | undefined };
+    if (!res.ok) {
+      throw new Error(body['error'] ?? `Media backend error (${res.status})`);
+    }
+    const url = body['uploadUrl'];
+    if (!url) throw new Error('Media backend returned no URL.');
+    return url;
   }
 
   async signDelete(ref: R2ObjectRef): Promise<string> {
-    return this.requestSignedUrl('/sign-delete', ref, 'deleteUrl');
+    this.assertConfigured();
+    const idToken = await this.firebase.auth.currentUser?.getIdToken();
+    if (!idToken) throw new Error('Sign in to delete media.');
+    const res = await fetch(`${r2Config.signerUrl}/sign-delete`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(ref),
+    });
+    const body = (await res.json().catch(() => ({}))) as { [k: string]: string | undefined };
+    if (!res.ok) {
+      throw new Error(body['error'] ?? `Media backend error (${res.status})`);
+    }
+    const url = body['deleteUrl'];
+    if (!url) throw new Error('Media backend returned no URL.');
+    return url;
+  }
+
+  async bulkDelete(universeId: string, keys: string[]): Promise<BulkDeleteResult[]> {
+    this.assertConfigured();
+    if (keys.length === 0) return [];
+    const idToken = await this.firebase.auth.currentUser?.getIdToken();
+    if (!idToken) throw new Error('Sign in to delete media.');
+    const res = await fetch(`${r2Config.signerUrl}/bulk-delete`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ universeId, keys }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      results?: BulkDeleteResult[];
+      error?: string;
+    };
+    if (!res.ok) throw new Error(body.error ?? `Media backend error (${res.status})`);
+    return body.results ?? [];
   }
 
   publicUrlFor(ref: R2ObjectRef): string {
@@ -33,28 +85,6 @@ export class R2Service {
     if (parts.length !== 5 || parts[0] !== 'universes') return null;
     const [, universeId, kind, assetId, filename] = parts;
     return { universeId, kind: kind as AssetKind, assetId, filename };
-  }
-
-  private async requestSignedUrl(
-    path: '/sign-upload' | '/sign-delete',
-    ref: R2ObjectRef,
-    field: 'uploadUrl' | 'deleteUrl',
-  ): Promise<string> {
-    this.assertConfigured();
-    const idToken = await this.firebase.auth.currentUser?.getIdToken();
-    if (!idToken) throw new Error('Sign in to upload media.');
-    const res = await fetch(`${r2Config.signerUrl}${path}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(ref),
-    });
-    const body = (await res.json().catch(() => ({}))) as { [k: string]: string | undefined };
-    if (!res.ok) {
-      throw new Error(body['error'] ?? `Media backend error (${res.status})`);
-    }
-    const url = body[field];
-    if (!url) throw new Error('Media backend returned no URL.');
-    return url;
   }
 
   private assertConfigured(): void {

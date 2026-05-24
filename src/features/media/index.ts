@@ -1,4 +1,6 @@
 export { MediaAssetsService } from './data-access/media-assets.service';
+export { uploadCommitTxBody, assetDeleteTxBody } from './data-access/media-assets.tx';
+export type { AssetWriteRefs, IncrementFactory } from './data-access/media-assets.tx';
 export { AssetPickerComponent } from './ui/asset-picker.component';
 export { CoverSlotComponent } from './ui/cover-slot.component';
 export { ImageCropDialogComponent } from './ui/image-crop-dialog.component';

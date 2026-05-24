@@ -1,5 +1,13 @@
 import { AwsClient } from 'aws4fetch';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import {
+  AssetKind,
+  parseBulkDeleteBody,
+  parseDeleteBody,
+  parseSignBody,
+} from './parse-body';
+import { assertByteCap, assertUniverseCap } from './quotas';
+import { checkRateLimit } from './rate-limit';
 
 interface Env {
   FIREBASE_PROJECT_ID: string;
@@ -10,16 +18,7 @@ interface Env {
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
-}
-
-const ASSET_KINDS = ['cover', 'sprite', 'background', 'ambient', 'sfx'] as const;
-type AssetKind = (typeof ASSET_KINDS)[number];
-
-interface SignBody {
-  universeId: string;
-  kind: AssetKind;
-  assetId: string;
-  filename: string;
+  MEDIA_RATE_LIMIT: KVNamespace;
 }
 
 const FIREBASE_JWKS = createRemoteJWKSet(
@@ -27,9 +26,6 @@ const FIREBASE_JWKS = createRemoteJWKSet(
     'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com',
   ),
 );
-
-const PATH_SEGMENT = /^[A-Za-z0-9_-]+$/;
-const FILENAME = /^[\w.\-]+$/;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -40,23 +36,40 @@ export default {
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
     try {
-      if (route !== 'POST /sign-upload' && route !== 'POST /sign-delete') {
-        return errorResp(cors, 404, 'Not found');
-      }
       const uid = await verifyAuth(request, env);
-      const body = parseBody(await request.json());
-      await assertMembership(env, uid, body.universeId);
-      const method = url.pathname === '/sign-upload' ? 'PUT' : 'DELETE';
-      const signed = await signR2Url(env, body, method);
-      const responseKey = method === 'PUT' ? 'uploadUrl' : 'deleteUrl';
-      return jsonResp(cors, { [responseKey]: signed });
+      if (!(await checkRateLimit(env.MEDIA_RATE_LIMIT, uid))) {
+        return errorResp(cors, 429, 'Too many requests. Wait a minute before retrying.');
+      }
+      const rawBody = await request.json();
+
+      if (route === 'POST /sign-upload') {
+        const body = parseSignBody(rawBody);
+        const counters = await loadUniverseForUpload(env, uid, body.universeId);
+        assertByteCap(body.kind, body.byteLength);
+        assertUniverseCap({ ...counters, byteLength: body.byteLength });
+        const signed = await signR2Url(env, body, 'PUT');
+        return jsonResp(cors, { uploadUrl: signed });
+      }
+      if (route === 'POST /sign-delete') {
+        const body = parseDeleteBody(rawBody);
+        await assertMembership(env, uid, body.universeId);
+        const signed = await signR2Url(env, { ...body, byteLength: 0 }, 'DELETE');
+        return jsonResp(cors, { deleteUrl: signed });
+      }
+      if (route === 'POST /bulk-delete') {
+        const body = parseBulkDeleteBody(rawBody);
+        await assertMembership(env, uid, body.universeId);
+        const results = await bulkDeleteR2Objects(env, body.keys);
+        return jsonResp(cors, { results });
+      }
+      return errorResp(cors, 404, 'Not found');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      const status = message.startsWith('AUTH:')
-        ? 401
-        : message.startsWith('FORBIDDEN:')
-          ? 403
-          : 400;
+      let status = 400;
+      if (message.startsWith('AUTH:')) status = 401;
+      else if (message.startsWith('FORBIDDEN:')) status = 403;
+      else if (/too large/i.test(message)) status = 413;
+      else if (/storage cap exceeded|asset count cap reached/i.test(message)) status = 507;
       return errorResp(cors, status, message);
     }
   },
@@ -76,7 +89,16 @@ async function verifyAuth(request: Request, env: Env): Promise<string> {
   return payload.sub;
 }
 
-async function assertMembership(env: Env, uid: string, universeId: string): Promise<void> {
+interface UniverseCountersSnapshot {
+  storageBytes: number;
+  assetCount: number;
+}
+
+async function loadUniverseForUpload(
+  env: Env,
+  uid: string,
+  universeId: string,
+): Promise<UniverseCountersSnapshot> {
   const docUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/universes/${universeId}`;
   const res = await fetch(docUrl);
   if (res.status === 404) throw new Error('FORBIDDEN: universe not found');
@@ -87,25 +109,27 @@ async function assertMembership(env: Env, uid: string, universeId: string): Prom
   if (authorUid !== uid && !editorUids.includes(uid)) {
     throw new Error('FORBIDDEN: not a member of this universe');
   }
+  return {
+    storageBytes: integerField(data.fields?.['storageBytes']),
+    assetCount: integerField(data.fields?.['assetCount']),
+  };
 }
 
-function parseBody(raw: unknown): SignBody {
-  if (!raw || typeof raw !== 'object') throw new Error('Invalid body');
-  const r = raw as Record<string, unknown>;
-  const universeId = String(r['universeId'] ?? '');
-  const kind = String(r['kind'] ?? '') as AssetKind;
-  const assetId = String(r['assetId'] ?? '');
-  const filename = String(r['filename'] ?? '');
-  if (!PATH_SEGMENT.test(universeId)) throw new Error('Invalid universeId');
-  if (!ASSET_KINDS.includes(kind)) throw new Error('Invalid kind');
-  if (!PATH_SEGMENT.test(assetId)) throw new Error('Invalid assetId');
-  if (!FILENAME.test(filename) || filename === '.' || filename === '..') {
-    throw new Error('Invalid filename');
-  }
-  return { universeId, kind, assetId, filename };
+async function assertMembership(env: Env, uid: string, universeId: string): Promise<void> {
+  await loadUniverseForUpload(env, uid, universeId);
 }
 
-async function signR2Url(env: Env, body: SignBody, method: 'PUT' | 'DELETE'): Promise<string> {
+async function signR2Url(
+  env: Env,
+  body: {
+    universeId: string;
+    kind: AssetKind;
+    assetId: string;
+    filename: string;
+    byteLength: number;
+  },
+  method: 'PUT' | 'DELETE',
+): Promise<string> {
   const r2 = new AwsClient({
     accessKeyId: env.R2_ACCESS_KEY_ID,
     secretAccessKey: env.R2_SECRET_ACCESS_KEY,
@@ -118,14 +142,41 @@ async function signR2Url(env: Env, body: SignBody, method: 'PUT' | 'DELETE'): Pr
     `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.R2_BUCKET}/${key}`,
   );
   target.searchParams.set('X-Amz-Expires', String(ttl));
-  const signed = await r2.sign(new Request(target.toString(), { method }), {
+  const headers: Record<string, string> =
+    method === 'PUT' ? { 'Content-Length': String(body.byteLength) } : {};
+  const signed = await r2.sign(new Request(target.toString(), { method, headers }), {
     aws: { signQuery: true },
   });
   return signed.url;
 }
 
+interface BulkDeleteResult {
+  key: string;
+  ok: boolean;
+  status: number;
+}
+
+async function bulkDeleteR2Objects(env: Env, keys: string[]): Promise<BulkDeleteResult[]> {
+  const r2 = new AwsClient({
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    service: 's3',
+    region: 'auto',
+  });
+  return Promise.all(
+    keys.map(async (key) => {
+      const target = `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.R2_BUCKET}/${key}`;
+      const signed = await r2.sign(new Request(target, { method: 'DELETE' }));
+      const res = await fetch(signed);
+      return { key, ok: res.ok || res.status === 404, status: res.status };
+    }),
+  );
+}
+
 type FirestoreField = {
   stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
   arrayValue?: { values?: FirestoreField[] };
 };
 
@@ -136,6 +187,13 @@ function stringField(field: FirestoreField | undefined): string | undefined {
 function arrayStringField(field: FirestoreField | undefined): string[] {
   const values = field?.arrayValue?.values ?? [];
   return values.map((v) => v.stringValue ?? '').filter((s) => s.length > 0);
+}
+
+function integerField(field: FirestoreField | undefined): number {
+  if (!field) return 0;
+  if (typeof field.integerValue === 'string') return Number(field.integerValue);
+  if (typeof field.doubleValue === 'number') return field.doubleValue;
+  return 0;
 }
 
 function corsHeaders(env: Env, origin: string | null): Record<string, string> {

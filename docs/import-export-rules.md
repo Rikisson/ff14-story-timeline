@@ -138,8 +138,11 @@ These are design decisions, not gaps. Do not "fix" them.
   universe-level counter trio `deletedAt` / `storageBytes` / `assetCount`, plus the
   per-asset `objects` / `totalBytes` — are omitted from the format. The importer
   mints or sets them, recomputing the counters from the imported asset bytes rather
-  than trusting any source-environment value. The validator notes any of these
-  fields as *info* and ignores them if a file supplies them.
+  than trusting any source-environment value. Per-asset imports commit through a
+  Firestore `runTransaction` that writes the `_assets/{assetId}` doc and bumps the
+  host universe's `storageBytes` / `assetCount` in one step — mirroring the live
+  upload pipeline. The validator notes any of these fields as *info* and ignores
+  them if a file supplies them.
 - Entities are keyed and cross-referenced by **slug**, never raw id. This is what
   makes a package portable between universes — keep it.
 - **Import is additive.** It merges into the active universe, never creates one, and

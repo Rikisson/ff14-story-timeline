@@ -26,7 +26,9 @@ Doc shape: `{ staffRole?: 'admin', authoredUniverseCount: number, createdAt: num
 - `authoredUniverseCount` is the count of live universes where `authorUid == uid` and `deletedAt == null`. The universe-create and universe-soft-delete transactions maintain it. Capped at 2 for non-admins.
 - `createdAt` is set at first bootstrap; `updatedAt` mirrors the last counter mutation.
 
-Counter integrity is **advisory, not a security boundary**. Rules bound `authoredUniverseCount` to `[0, 2]` for non-admin self-writes and lock `staffRole` to admin-only writes, but Firestore rules cannot enforce cross-document atomicity between `users/{uid}` and `universes/{u}` writes inside a single transaction. A determined authenticated user could manipulate their own counter. The friends-and-family mitigation is layered: per-universe 5 GB storage ceiling enforced at the Worker, a reconciliation script that recomputes counters from canonical universe rows, and a Cloud Billing budget alert. Strict enforcement post-launch routes counter writes through a server-side Cloud Function or Worker holding admin credentials.
+On the write side, `MediaAssetsService.upload` / `MediaAssetsService.delete` commit asset writes via `runTransaction`: the `_assets/{assetId}` doc and the host universe's `storageBytes` / `assetCount` counters move in one atomic step. `UniverseImportService.uploadAssets` follows the same pattern per imported asset.
+
+Counter integrity is **advisory, not a security boundary**. Rules bound `authoredUniverseCount` to `[0, 2]` for non-admin self-writes and lock `staffRole` to admin-only writes, but Firestore rules cannot enforce cross-document atomicity between `users/{uid}` and `universes/{u}` writes inside a single transaction. A determined authenticated user could manipulate their own counter. The friends-and-family mitigation is layered: per-universe 500 MB storage ceiling enforced at the Worker, a reconciliation script that recomputes counters from canonical universe rows, and a Cloud Billing budget alert. Strict enforcement post-launch routes counter writes through a server-side Cloud Function or Worker holding admin credentials.
 
 Naming: `authoredUniverseCount` is unambiguous about what it counts. Future concepts like a personal library of read-only purchased universes get their own field (e.g. `libraryUniverseIds`) and never share semantic space.
 
@@ -201,6 +203,14 @@ Three signals to watch as the app grows; each maps to a specific mitigation, non
 | Search-service operational cost       | Self-host Typesense before reaching for Algolia                                             |
 
 Media egress is the non-canary — mitigated structurally by R2; should not appear on a cost report.
+
+### Worker rate limit
+
+The `media-signer` Worker rate-limits every authenticated route at **30 requests/minute/UID** via a KV namespace binding (`MEDIA_RATE_LIMIT`). The window is a fixed minute bucket — `rate:{uid}:{minute}` — incremented on each request, TTL'd to 120s. Over-cap requests return `429`.
+
+The limiter is sloppy under high concurrency (KV lacks atomic increment); two near-simultaneous reads may both write `count + 1` from the same value. Acceptable for F&F-stage — the cap is a canary against signing-loop abuse, not a security boundary. The hard ceiling stays the Cloud Billing budget alert.
+
+`POST /bulk-delete` counts as exactly one request regardless of how many keys it carries (≤ 50), so the cascade walker doesn't hit the limiter during a single soft-delete cleanup.
 
 ## Pricing model awareness
 

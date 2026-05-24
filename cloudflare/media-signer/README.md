@@ -8,12 +8,26 @@ Single environment by design: localhost dev and the deployed app both hit this W
 
 ## Contract
 
-Both routes accept `POST` with `Authorization: Bearer <firebase-id-token>` and a JSON body:
+All routes accept `POST` with `Authorization: Bearer <firebase-id-token>`.
+
+`/sign-upload` body:
 
 ```json
 {
   "universeId": "...",
   "kind": "cover | sprite | background | ambient | sfx",
+  "assetId": "...",
+  "filename": "...",
+  "byteLength": 12345
+}
+```
+
+`/sign-delete` body (no `byteLength`):
+
+```json
+{
+  "universeId": "...",
+  "kind": "...",
   "assetId": "...",
   "filename": "..."
 }
@@ -21,11 +35,31 @@ Both routes accept `POST` with `Authorization: Bearer <firebase-id-token>` and a
 
 Responses:
 
-- `POST /sign-upload` → `{ "uploadUrl": "https://...r2.cloudflarestorage.com/...?X-Amz-Signature=..." }`
+- `POST /sign-upload` → `{ "uploadUrl": "https://...r2.cloudflarestorage.com/...?X-Amz-Signature=..." }`. The signed URL binds `Content-Length` — the client must PUT exactly `byteLength` bytes (browsers set Content-Length from the blob size automatically).
 - `POST /sign-delete` → `{ "deleteUrl": "https://...r2.cloudflarestorage.com/...?X-Amz-Signature=..." }`
-- `4xx` errors → `{ "error": "..." }` with `401` (auth), `403` (membership), `400` (validation), `404` (route).
+- `POST /bulk-delete` → see below.
+- `4xx`/`5xx` → `{ "error": "..." }`. `401` (auth), `403` (membership), `400` (validation), `413` (kind byte cap), `507` (universe storage / count cap), `429` (rate limit), `404` (route).
 
 The client `PUT`s or `DELETE`s the asset body directly to the returned URL. Public reads are served from `R2_PUBLIC_BASE` (custom domain or `r2.dev`), composed by the client as `${R2_PUBLIC_BASE}/universes/{u}/{kind}/{assetId}/{filename}`.
+
+### `/bulk-delete`
+
+Server-side bulk deletion. Used by the universe-deletion cascade walker so a single soft-deleted universe's cleanup doesn't bottleneck on browser concurrent-connection limits.
+
+```json
+{
+  "universeId": "...",
+  "keys": [
+    "universes/{u}/cover/{assetId}/{filename}",
+    "universes/{u}/cover/{assetId}/{filename}.thumb.webp"
+  ]
+}
+```
+
+- Max 50 keys per call (returns `400` above).
+- Each key must start with `universes/{universeId}/` matching the body's `universeId`.
+- Counted as **one** rate-limited request regardless of key count.
+- Response: `{ "results": [{ "key": "...", "ok": true, "status": 204 }, ...] }`. 404 from R2 is treated as success (idempotent — already-deleted is fine).
 
 ## One-time Cloudflare setup
 
@@ -81,5 +115,7 @@ pnpm dev
 ## Limits and known constraints
 
 - Presigned URLs expire after `PRESIGN_TTL_SECONDS` (default 300). Always request a fresh URL per upload — don't cache.
-- The Worker does not enforce per-kind size limits; the client does. A signed URL technically allows the holder to upload up to R2's per-object limit. Acceptable today because only authenticated members can request URLs.
+- The Worker enforces per-kind stored byte caps and a per-universe 500 MB / 500-doc ceiling (read from `universes/{u}` counters via Firestore REST) before signing. The signed PUT URL also binds `Content-Length`, so a holder cannot upload a body larger than what they declared.
+- **Rate limit**: 30 requests/minute per UID across all routes, backed by the `MEDIA_RATE_LIMIT` KV namespace. Fixed minute buckets. Over-cap requests return `429`. The limit is sloppy under high concurrency (KV has no atomic increment); a hard ceiling lives on the Cloud Billing budget alert.
+- **KV bootstrap (one-time)**: `pnpm exec wrangler kv namespace create MEDIA_RATE_LIMIT` then paste the printed id into `wrangler.toml`'s `[[kv_namespaces]]` block. Without this, the Worker returns 500 on every request.
 - CORS on the signed URL itself is enforced by R2 bucket CORS, not the Worker. Update the bucket CORS rule when the app gains a new origin.

@@ -12,6 +12,17 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 - Storage path: `universes/{u}/{assetKind}/{assetId}/{filename}`. Path encodes universe and asset kind only — never ownership. The same asset can be referenced by any number of entities.
 - Uploads and deletes flow through the `media-signer` Worker (`cloudflare/media-signer/`), which checks the caller's Firebase id token + universe membership and returns a short-lived presigned R2 URL. The client `PUT`s/`DELETE`s the asset body directly to that URL; public reads come from the bucket's public base composed client-side as `${publicBase}/universes/{u}/{kind}/{assetId}/{filename}`. Worker contract and Cloudflare setup live in its README.
 - One Worker + one bucket cover both localhost and the deployed app. Split into `[env.dev]` / `[env.prod]` (drafted in `wrangler.toml`) when real users would notice if a deploy broke things.
+- **Per-kind stored byte caps**, enforced at the `media-signer` Worker on every `/sign-upload`. The client computes `byteLength` after transcoding and sends it with the sign request; the Worker checks it against the kind cap and against the host universe's remaining storage headroom (per `backend-rules.md` *Cost canaries*), then signs the PUT URL with a `Content-Length` binding so R2 rejects mismatched bodies.
+
+  | Kind | Stored cap |
+  |---|---|
+  | `cover` | 2.5 MiB |
+  | `background` | 2.5 MiB |
+  | `sprite` | 4 MiB |
+  | `ambient` | 10 MiB |
+  | `sfx` | 3 MiB |
+
+  Cover thumbnails (`.thumb.webp` sibling object) sign without a separate kind cap but count toward universe storage.
 - `cacheControl: 'public, max-age=31536000'` on every upload.
 - New uploads get new asset IDs; never overwrite an existing object.
 - Image binaries are WebP on disk. Cover, background, and sprite uploads accept JPEG, PNG, WebP, or AVIF. Cover and background are downscaled and transcoded to lossy WebP in-browser before the PUT. Sprites are normalized losslessly: an in-bounds WebP is stored byte-for-byte so authored transparency stays bit-exact, while a non-WebP or oversize sprite is downscaled and re-encoded through `canvas.toBlob('image/webp', 1)` — lossless on Chromium, a max-quality WebP on Firefox, with a lossless PNG fallback where the browser cannot encode WebP. The lossy cover/background path is never used for a sprite.
@@ -35,6 +46,8 @@ How asset binaries and metadata are stored, authored, and loaded. Engine-level r
 ## Editor
 
 - Uploads register a new doc in `_assets` and a binary in storage; both writes succeed or both are rolled back.
+- Upload commit is a Firestore `runTransaction` writing the `_assets/{assetId}` doc and bumping the host universe's `storageBytes` / `assetCount` counters in one atomic step. On failure after R2 bytes have already landed, the client best-effort `DELETE`s those objects via the Worker so the bucket doesn't accumulate orphans. Delete is the symmetric `runTransaction`: `tx.get` reads `totalBytes`, `tx.delete` removes the doc, `tx.update` decrements counters; the R2 cleanup routes through `/bulk-delete` to avoid browser concurrent-connection limits when a cover (full + thumb) is removed.
+- **Audio duration gate**, client-validated before signing. Ambient ≤ 600s, SFX ≤ 60s. Files past the gate are rejected at the picker — no transcode, no recovery.
 - Uploads enforce a max file size on every kind before write. Oversize dimensions are downscaled — not rejected — so the user's first try succeeds; truly broken inputs (wrong mime or unreadable) surface a clear error. Per-kind targets: cover and background scale to fit within 2560×1440 (16:9); sprites scale to fit within 1440×2560 (9:16) — the same pixel envelope rotated to portrait. There is no minimum-dimension gate — a small but correctly framed asset is the author's call.
 - Every image upload opens an in-browser crop step before the asset is created. The crop dialog opens at the aspect ratio the kind expects — 16:9 for covers and backgrounds, 9:16 for sprites — and also offers 1:1 and free-form; the author can reframe, switch ratios, flip the image horizontally, or skip cropping entirely with "Use full image". The horizontal flip normalizes orientation at the upload boundary: on a sprite upload the crop step shows a hint that characters should face right, the facing the scene renderer assumes for an un-flipped sprite, so authors fix orientation here rather than fighting it at scene time. A flip always re-encodes the binary, so the byte-for-byte sprite passthrough described under *Storage* applies only to an un-flipped in-bounds WebP. The cropper is a standalone, reusable component wired once into the shared asset picker, so it covers every image-upload surface; the crop is re-encoded losslessly and preserves sprite transparency. Audio uploads skip it.
 - Owner entity edit pages select from the universe asset library (filtered by kind) to populate their asset-ID arrays. Reorder and remove are local operations on the entity; rename and delete-from-library happen on the asset doc itself.

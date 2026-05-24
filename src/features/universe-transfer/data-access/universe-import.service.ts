@@ -1,5 +1,11 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { doc, getDoc, setDoc } from 'firebase/firestore/lite';
+import {
+  doc,
+  getDoc,
+  increment,
+  runTransaction,
+  setDoc,
+} from 'firebase/firestore/lite';
 import { AuthStore } from '@features/auth';
 import { Calendar, CalendarProjectionContext, CalendarService } from '@features/calendar';
 import { Character, buildCharacterDirectoryInputs } from '@features/characters';
@@ -16,7 +22,7 @@ import {
   buildEventDirectoryInputs,
   buildEventTimelineInputs,
 } from '@features/events';
-import { StoredAsset } from '@features/media';
+import { StoredAsset, uploadCommitTxBody } from '@features/media';
 import { Place, buildPlaceDirectoryInputs } from '@features/places';
 import { Plotline, buildPlotlineDirectoryInputs } from '@features/plotlines';
 import { StoriesService, Story, StoryContent } from '@features/stories';
@@ -287,21 +293,21 @@ export class UniverseImportService {
         } else {
           const filename = baseName(asset.file as string);
           const ref: R2ObjectRef = { universeId, kind: asset.kind, assetId, filename };
-          await this.putBinary(ref, bytes, filename);
+          const fullPut = await this.putBinary(ref, bytes, filename);
 
+          let thumbRef: R2ObjectRef | undefined;
+          let thumbPut: { key: string; bytes: number } | undefined;
           let thumbUrl: string | undefined;
           const thumbBytes = asset.thumbFile ? dryRun.binaries.get(asset.thumbFile) : undefined;
           if (asset.thumbFile && thumbBytes) {
             const thumbName = baseName(asset.thumbFile);
-            const thumbRef: R2ObjectRef = {
-              universeId,
-              kind: asset.kind,
-              assetId,
-              filename: thumbName,
-            };
-            await this.putBinary(thumbRef, thumbBytes, thumbName);
+            thumbRef = { universeId, kind: asset.kind, assetId, filename: thumbName };
+            thumbPut = await this.putBinary(thumbRef, thumbBytes, thumbName);
             thumbUrl = this.r2.publicUrlFor(thumbRef);
           }
+
+          const objects = thumbPut ? [fullPut, thumbPut] : [fullPut];
+          const totalBytes = objects.reduce((sum, o) => sum + o.bytes, 0);
 
           const storedAsset: StoredAsset = {
             kind: asset.kind,
@@ -311,13 +317,20 @@ export class UniverseImportService {
             blurDataUrl: asset.blurDataUrl,
             tags: asset.tags,
             authorUid,
-            objects: [],
-            totalBytes: 0,
+            objects,
+            totalBytes,
             createdAt: now,
           };
-          await setDoc(
-            doc(this.firebase.firestore, 'universes', universeId, '_assets', assetId),
-            storedAsset,
+          const assetRef = doc(
+            this.firebase.firestore,
+            'universes',
+            universeId,
+            '_assets',
+            assetId,
+          );
+          const universeRef = doc(this.firebase.firestore, 'universes', universeId);
+          await runTransaction(this.firebase.firestore, (tx) =>
+            uploadCommitTxBody(tx, { assetRef, universeRef }, storedAsset, increment),
           );
           uploaded++;
         }
@@ -333,14 +346,22 @@ export class UniverseImportService {
     return { uploaded, failed };
   }
 
-  private async putBinary(ref: R2ObjectRef, bytes: Uint8Array, filename: string): Promise<void> {
-    const uploadUrl = await this.r2.signUpload(ref);
+  private async putBinary(
+    ref: R2ObjectRef,
+    bytes: Uint8Array,
+    filename: string,
+  ): Promise<{ key: string; bytes: number }> {
+    const uploadUrl = await this.r2.signUpload(ref, bytes.byteLength);
     const response = await fetch(uploadUrl, {
       method: 'PUT',
       body: new Blob([new Uint8Array(bytes)]),
       headers: { 'Content-Type': mimeFor(filename), 'Cache-Control': CACHE_CONTROL },
     });
     if (!response.ok) throw new Error(`Asset upload failed (${response.status}).`);
+    return {
+      key: `universes/${ref.universeId}/${ref.kind}/${ref.assetId}/${ref.filename}`,
+      bytes: bytes.byteLength,
+    };
   }
 
   private calendarContext(): CalendarProjectionContext {

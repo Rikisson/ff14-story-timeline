@@ -1,13 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import {
   collection as fsCollection,
-  deleteDoc,
   doc,
   getDocs,
+  increment,
   orderBy,
   query,
   QueryConstraint,
-  setDoc,
+  runTransaction,
   updateDoc,
   where,
 } from 'firebase/firestore/lite';
@@ -24,7 +24,9 @@ import {
   IMAGE_ASSET_KINDS,
   StoredAsset,
 } from './asset.types';
+import { assertAudioDuration, readAudioDurationSeconds } from './audio-duration';
 import { canvasToBlob, encodeCanvasLossless } from './image-crop';
+import { assetDeleteTxBody, uploadCommitTxBody } from './media-assets.tx';
 
 const ASSETS_COLLECTION = '_assets';
 const CACHE_CONTROL = 'public, max-age=31536000';
@@ -104,6 +106,11 @@ export class MediaAssetsService {
     const universeId = this.requireUniverseId();
     assertMimeAndSize(input.kind, input.file);
 
+    if (input.kind === 'ambient' || input.kind === 'sfx') {
+      const seconds = await readAudioDurationSeconds(input.file);
+      assertAudioDuration(input.kind, seconds);
+    }
+
     let file = input.file;
     let thumbFile: File | undefined;
     if (isImageKind(input.kind)) {
@@ -124,9 +131,10 @@ export class MediaAssetsService {
       filename: sanitizeFilename(file.name),
     };
 
-    await this.putObject(objectRef, file);
+    const fullPut = await this.putObject(objectRef, file);
 
     let thumbRef: R2ObjectRef | undefined;
+    let thumbPut: { key: string; bytes: number } | undefined;
     if (thumbFile) {
       thumbRef = {
         universeId,
@@ -135,14 +143,15 @@ export class MediaAssetsService {
         filename: sanitizeFilename(thumbFile.name),
       };
       try {
-        await this.putObject(thumbRef, thumbFile);
+        thumbPut = await this.putObject(thumbRef, thumbFile);
       } catch (err) {
-        // The full image is already in R2; clean it up so we don't leave an
-        // orphan when the thumb leg fails.
         await this.deleteObject(objectRef).catch(() => undefined);
         throw err;
       }
     }
+
+    const objects = thumbPut ? [fullPut, thumbPut] : [fullPut];
+    const totalBytes = objects.reduce((sum, o) => sum + o.bytes, 0);
 
     const stored: StoredAsset = {
       kind: input.kind,
@@ -152,20 +161,26 @@ export class MediaAssetsService {
       blurDataUrl: input.blurDataUrl,
       tags: input.tags,
       authorUid,
-      objects: [],
-      totalBytes: 0,
+      objects,
+      totalBytes,
       createdAt: Date.now(),
     };
 
+    const assetRef = doc(
+      this.firebase.firestore,
+      'universes',
+      universeId,
+      ASSETS_COLLECTION,
+      assetId,
+    );
+    const universeRef = doc(this.firebase.firestore, 'universes', universeId);
     try {
-      await setDoc(
-        doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, assetId),
-        stored,
+      await runTransaction(this.firebase.firestore, (tx) =>
+        uploadCommitTxBody(tx, { assetRef, universeRef }, stored, increment),
       );
     } catch (err) {
-      // Best-effort cleanup so the bucket doesn't accumulate orphans when the
-      // metadata write fails. If the cleanup itself fails, surface the original
-      // error — the orphan is recoverable, the failed write isn't.
+      // R2 bytes already landed — clean them up so the bucket doesn't accumulate
+      // orphans. Counter drift is advisory per spec § 9.1.
       await this.deleteObject(objectRef).catch(() => undefined);
       if (thumbRef) await this.deleteObject(thumbRef).catch(() => undefined);
       throw err;
@@ -175,8 +190,9 @@ export class MediaAssetsService {
     return created;
   }
 
-  private async putObject(ref: R2ObjectRef, file: File): Promise<void> {
-    const uploadUrl = await this.r2.signUpload(ref);
+  private async putObject(ref: R2ObjectRef, file: File): Promise<{ key: string; bytes: number }> {
+    const byteLength = file.size;
+    const uploadUrl = await this.r2.signUpload(ref, byteLength);
     const res = await fetch(uploadUrl, {
       method: 'PUT',
       body: file,
@@ -185,6 +201,7 @@ export class MediaAssetsService {
     if (!res.ok) {
       throw new Error(`Upload failed (${res.status}).`);
     }
+    return { key: objectKeyFor(ref), bytes: byteLength };
   }
 
   async list(filter: AssetListFilter = {}): Promise<AssetDoc[]> {
@@ -213,15 +230,21 @@ export class MediaAssetsService {
 
   async delete(asset: AssetDoc): Promise<void> {
     const universeId = this.requireUniverseId();
-    const refs = [asset.url, asset.thumbUrl]
-      .filter((u): u is string => !!u)
-      .map((u) => this.r2.parseObjectRef(u))
-      .filter((r): r is R2ObjectRef => r !== null);
-    for (const ref of refs) {
-      await this.deleteObject(ref).catch(() => undefined);
+    if (asset.objects.length > 0) {
+      await this.r2
+        .bulkDelete(universeId, asset.objects.map((o) => o.key))
+        .catch((err) => console.warn('asset bulk-delete partial failure', err));
     }
-    await deleteDoc(
-      doc(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION, asset.id),
+    const assetRef = doc(
+      this.firebase.firestore,
+      'universes',
+      universeId,
+      ASSETS_COLLECTION,
+      asset.id,
+    );
+    const universeRef = doc(this.firebase.firestore, 'universes', universeId);
+    await runTransaction(this.firebase.firestore, (tx) =>
+      assetDeleteTxBody(tx, { assetRef, universeRef }, increment),
     );
     this.bus.publishAssetWrite({ universeId, assetId: asset.id });
   }
@@ -363,6 +386,10 @@ async function encodeBitmapToWebP(
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]/g, '_');
+}
+
+function objectKeyFor(ref: R2ObjectRef): string {
+  return `universes/${ref.universeId}/${ref.kind}/${ref.assetId}/${ref.filename}`;
 }
 
 function stripExtension(name: string): string {
