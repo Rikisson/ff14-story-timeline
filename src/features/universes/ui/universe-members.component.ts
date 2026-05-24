@@ -50,9 +50,9 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
               >
                 <div class="flex flex-col">
                   <span class="font-medium text-foreground-muted">{{ t('field.ownerLabel') }}</span>
-                  <code class="break-all text-xs text-foreground-subtle">{{ u.ownerUid }}</code>
+                  <code class="break-all text-xs text-foreground-subtle">{{ u.authorUid }}</code>
                 </div>
-                @if (isYou(u.ownerUid)) {
+                @if (isYou(u.authorUid)) {
                   <span class="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">
                     {{ t('field.youBadge') }}
                   </span>
@@ -81,7 +81,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
               }
             </ul>
 
-            <form [formGroup]="form" class="flex flex-col gap-2" (ngSubmit)="onAdd(u.id, u.ownerUid, u.editorUids)">
+            <form [formGroup]="form" class="flex flex-col gap-2" (ngSubmit)="onAdd(u.id, u.authorUid, u.editorUids)">
               <label class="flex flex-col gap-1 text-sm">
                 <span class="font-medium text-foreground-muted">{{ t('field.addContributorLabel') }}</span>
                 <input
@@ -137,10 +137,10 @@ export class UniverseMembersComponent {
     return this.currentUid() === uid;
   }
 
-  protected async onAdd(universeId: string, ownerUid: string, editorUids: string[]): Promise<void> {
+  protected async onAdd(universeId: string, authorUid: string, editorUids: string[]): Promise<void> {
     if (this.form.invalid) return;
     const uid = this.form.getRawValue().uid.trim();
-    if (uid === ownerUid) {
+    if (uid === authorUid) {
       this.errorMessage.set(this.transloco.translate('universe.message.uidAlreadyOwner'));
       return;
     }

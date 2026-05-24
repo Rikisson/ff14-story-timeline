@@ -82,9 +82,9 @@ async function assertMembership(env: Env, uid: string, universeId: string): Prom
   if (res.status === 404) throw new Error('FORBIDDEN: universe not found');
   if (!res.ok) throw new Error(`FORBIDDEN: universe lookup failed (${res.status})`);
   const data = (await res.json()) as { fields?: Record<string, FirestoreField> };
-  const ownerUid = stringField(data.fields?.['ownerUid']);
+  const authorUid = stringField(data.fields?.['authorUid']);
   const editorUids = arrayStringField(data.fields?.['editorUids']);
-  if (ownerUid !== uid && !editorUids.includes(uid)) {
+  if (authorUid !== uid && !editorUids.includes(uid)) {
     throw new Error('FORBIDDEN: not a member of this universe');
   }
 }

@@ -44,7 +44,7 @@ function sampleInput(): ExportInput {
       slug: 'eorzea',
       name: 'Eorzea',
       locale: 'en',
-      ownerUid: 'owner',
+      authorUid: 'owner',
       editorUids: [],
       createdAt: 1,
     },

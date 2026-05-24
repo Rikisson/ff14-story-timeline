@@ -15,7 +15,7 @@ function makeUniverse(override: Partial<Universe> = {}): Universe {
     slug: 'test',
     name: 'Test Universe',
     locale: 'en',
-    ownerUid: 'owner1',
+    authorUid: 'owner1',
     editorUids: [],
     createdAt: 0,
     ...override,
@@ -154,21 +154,21 @@ describe('UniverseStore', () => {
     });
 
     it('returns universes the user owns', async () => {
-      const u = makeUniverse({ ownerUid: 'me' });
+      const u = makeUniverse({ authorUid: 'me' });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       expect(store.myUniverses()).toEqual([u]);
     });
 
     it('returns universes the user is an editor on', async () => {
-      const u = makeUniverse({ ownerUid: 'other', editorUids: ['me'] });
+      const u = makeUniverse({ authorUid: 'other', editorUids: ['me'] });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       expect(store.myUniverses()).toEqual([u]);
     });
 
     it('excludes universes the user has no role in', async () => {
-      const u = makeUniverse({ ownerUid: 'other', editorUids: [] });
+      const u = makeUniverse({ authorUid: 'other', editorUids: [] });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       expect(store.myUniverses()).toEqual([]);
@@ -193,7 +193,7 @@ describe('UniverseStore', () => {
     });
 
     it('returns true when the user is the owner', async () => {
-      const u = makeUniverse({ id: 'u1', ownerUid: 'me' });
+      const u = makeUniverse({ id: 'u1', authorUid: 'me' });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       store.setActive('u1');
@@ -201,7 +201,7 @@ describe('UniverseStore', () => {
     });
 
     it('returns true when the user is an editor', async () => {
-      const u = makeUniverse({ id: 'u1', ownerUid: 'other', editorUids: ['me'] });
+      const u = makeUniverse({ id: 'u1', authorUid: 'other', editorUids: ['me'] });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       store.setActive('u1');
@@ -209,7 +209,7 @@ describe('UniverseStore', () => {
     });
 
     it('returns false when the user has no role in the active universe', async () => {
-      const u = makeUniverse({ id: 'u1', ownerUid: 'other', editorUids: [] });
+      const u = makeUniverse({ id: 'u1', authorUid: 'other', editorUids: [] });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       store.setActive('u1');
@@ -227,7 +227,7 @@ describe('UniverseStore', () => {
     });
 
     it('returns true when the user is the owner', async () => {
-      const u = makeUniverse({ id: 'u1', ownerUid: 'me' });
+      const u = makeUniverse({ id: 'u1', authorUid: 'me' });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       store.setActive('u1');
@@ -235,7 +235,7 @@ describe('UniverseStore', () => {
     });
 
     it('returns false when the user is only an editor', async () => {
-      const u = makeUniverse({ id: 'u1', ownerUid: 'other', editorUids: ['me'] });
+      const u = makeUniverse({ id: 'u1', authorUid: 'other', editorUids: ['me'] });
       const { store } = setup({ uid: 'me', universes: [u] });
       await store.refresh();
       store.setActive('u1');

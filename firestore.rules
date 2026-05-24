@@ -14,7 +14,7 @@ service cloud.firestore {
     function isMember(universeId) {
       let u = get(/databases/$(database)/documents/universes/$(universeId)).data;
       return request.auth != null
-        && (u.ownerUid == request.auth.uid || request.auth.uid in u.editorUids);
+        && (u.authorUid == request.auth.uid || request.auth.uid in u.editorUids);
     }
 
     match /universes/{universeId} {
@@ -22,14 +22,14 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if isUniverseCreator()
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.authorUid == request.auth.uid;
 
       allow update: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.ownerUid == resource.data.ownerUid;
+        && resource.data.authorUid == request.auth.uid
+        && request.resource.data.authorUid == resource.data.authorUid;
 
       allow delete: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid;
+        && resource.data.authorUid == request.auth.uid;
 
       match /characters/{characterId} {
         allow read: if true;

@@ -11,7 +11,7 @@ export interface Universe {
   description?: string;
   coverAssetId?: string;
   locale: UniverseLocale;
-  ownerUid: string;
+  authorUid: string;
   editorUids: string[];
   createdAt: number;
   updatedAt?: number;

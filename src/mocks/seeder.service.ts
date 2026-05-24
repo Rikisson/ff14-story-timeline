@@ -79,7 +79,7 @@ export class SeederService {
       name: 'Default universe',
       description: 'Seeded universe used for bootstrap data.',
       locale: DEFAULT_UNIVERSE_LOCALE,
-      ownerUid: authorUid,
+      authorUid,
       editorUids: [],
       createdAt: Date.now(),
     };

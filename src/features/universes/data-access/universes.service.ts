@@ -70,7 +70,7 @@ export class UniversesService {
       name: draft.name,
       description: draft.description,
       locale: draft.locale,
-      ownerUid,
+      authorUid: ownerUid,
       editorUids: [],
       createdAt: Date.now(),
     };

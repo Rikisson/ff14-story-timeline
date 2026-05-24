@@ -58,7 +58,7 @@ export const UniverseStore = signalStore(
       const uid = auth.user()?.uid;
       if (!uid) return [];
       return store.universes().filter(
-        (u) => u.ownerUid === uid || u.editorUids.includes(uid),
+        (u) => u.authorUid === uid || u.editorUids.includes(uid),
       );
     }),
     isMemberOfActive: computed<boolean>(() => {
@@ -67,14 +67,14 @@ export const UniverseStore = signalStore(
       if (!uid || !id) return false;
       const u = store.universes().find((x) => x.id === id);
       if (!u) return false;
-      return u.ownerUid === uid || u.editorUids.includes(uid);
+      return u.authorUid === uid || u.editorUids.includes(uid);
     }),
     isOwnerOfActive: computed<boolean>(() => {
       const uid = auth.user()?.uid;
       const id = store.activeUniverseId();
       if (!uid || !id) return false;
       const u = store.universes().find((x) => x.id === id);
-      return !!u && u.ownerUid === uid;
+      return !!u && u.authorUid === uid;
     }),
     canCreateUniverse: computed<boolean>(() => {
       const uid = auth.user()?.uid;
