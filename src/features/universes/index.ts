@@ -6,7 +6,6 @@ export type {
   DeletionPhase,
 } from './data-access/universe-deletion.service';
 export { universeGuard, editorGuard } from './data-access/universe.guard';
-export { UNIVERSE_CREATOR_UIDS } from './data-access/universe-creators';
 export { UniverseSelectorComponent } from './ui/universe-selector.component';
 export { ContentLangDirective } from './ui/content-lang.directive';
 export { UNIVERSE_ROUTES } from './universes.routes';

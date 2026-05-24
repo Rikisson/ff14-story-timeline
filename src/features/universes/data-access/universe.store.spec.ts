@@ -3,11 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthStore } from '@features/auth';
 import { Universe } from './universe.types';
-import { UNIVERSE_CREATOR_UIDS } from './universe-creators';
 import { UniversesService } from './universes.service';
 import { UniverseStore } from './universe.store';
-
-const CREATOR_UID = UNIVERSE_CREATOR_UIDS[0];
 
 function makeUniverse(override: Partial<Universe> = {}): Universe {
   return {
@@ -258,13 +255,8 @@ describe('UniverseStore', () => {
       expect(store.canCreateUniverse()).toBe(false);
     });
 
-    it('returns false for a user not in the creator allowlist', () => {
-      const { store } = setup({ uid: 'random-uid' });
-      expect(store.canCreateUniverse()).toBe(false);
-    });
-
-    it('returns true for a user in the creator allowlist', () => {
-      const { store } = setup({ uid: CREATOR_UID });
+    it('returns true for any signed-in user', () => {
+      const { store } = setup({ uid: 'any-uid' });
       expect(store.canCreateUniverse()).toBe(true);
     });
   });

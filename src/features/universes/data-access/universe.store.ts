@@ -2,7 +2,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { AuthStore } from '@features/auth';
-import { UNIVERSE_CREATOR_UIDS } from './universe-creators';
 import { Universe } from './universe.types';
 import { UniversesService } from './universes.service';
 
@@ -78,10 +77,7 @@ export const UniverseStore = signalStore(
       const u = store.universes().find((x) => x.id === id);
       return !!u && u.authorUid === uid;
     }),
-    canCreateUniverse: computed<boolean>(() => {
-      const uid = auth.user()?.uid;
-      return !!uid && UNIVERSE_CREATOR_UIDS.includes(uid);
-    }),
+    canCreateUniverse: computed<boolean>(() => !!auth.user()?.uid),
   })),
   withMethods(
     (store, service = inject(UniversesService), auth = inject(AuthStore)) => ({

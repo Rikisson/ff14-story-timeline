@@ -8,15 +8,8 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  collection,
-  documentId,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore/lite';
 import { UniverseStore } from '@features/universes';
-import { FirebaseService } from '../../app/firebase/firebase.service';
+import { AssetDocsFetcher } from './asset-docs-fetcher.service';
 import { CacheInvalidationBus } from './cache-invalidation.bus';
 
 /**
@@ -33,7 +26,6 @@ export interface AssetThumb {
   label?: string;
 }
 
-const ASSETS_COLLECTION = '_assets';
 const FIRESTORE_IN_CHUNK = 30;
 
 /**
@@ -67,7 +59,7 @@ export type AssetThumbSignalValue = AssetThumb | null | undefined;
  */
 @Injectable({ providedIn: 'root' })
 export class AssetThumbResolver {
-  private readonly firebase = inject(FirebaseService);
+  private readonly fetcher = inject(AssetDocsFetcher);
   private readonly universes = inject(UniverseStore);
   private readonly bus = inject(CacheInvalidationBus);
 
@@ -155,7 +147,7 @@ export class AssetThumbResolver {
       const idList = [...ids];
       for (let i = 0; i < idList.length; i += FIRESTORE_IN_CHUNK) {
         const chunk = idList.slice(i, i + FIRESTORE_IN_CHUNK);
-        const fetched = await this.fetchChunk(universeId, chunk);
+        const fetched = await this.fetcher.fetchAssets(universeId, chunk);
         for (const id of chunk) {
           const sig = this.cache.get(cacheKey(universeId, id));
           // `null` records the resolved-missing state so the consumer
@@ -164,34 +156,6 @@ export class AssetThumbResolver {
         }
       }
     }
-  }
-
-  private async fetchChunk(
-    universeId: string,
-    assetIds: string[],
-  ): Promise<Map<string, AssetThumb>> {
-    const out = new Map<string, AssetThumb>();
-    const q = query(
-      collection(this.firebase.firestore, 'universes', universeId, ASSETS_COLLECTION),
-      where(documentId(), 'in', assetIds),
-    );
-    const snap = await getDocs(q);
-    for (const d of snap.docs) {
-      const data = d.data() as {
-        url: string;
-        thumbUrl?: string;
-        blurDataUrl?: string;
-        label?: string;
-      };
-      out.set(d.id, {
-        id: d.id,
-        url: data.url,
-        thumbUrl: data.thumbUrl,
-        blurDataUrl: data.blurDataUrl,
-        label: data.label,
-      });
-    }
-    return out;
   }
 }
 

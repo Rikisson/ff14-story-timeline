@@ -34,14 +34,6 @@ service cloud.firestore {
         || get(userPath).data.authoredUniverseCount < 2;
     }
 
-    // Legacy gate — replaced by canCreateUniverse() in PR 5.
-    function isUniverseCreator() {
-      return request.auth != null
-        && request.auth.uid in [
-          'uDRxrMxHMtNZfgbpNjbJat1BPBE3'
-        ];
-    }
-
     function canCreateUniverse() {
       return request.auth != null
         && (isAdmin() || isUnderUniverseCap(request.auth.uid));
@@ -76,8 +68,7 @@ service cloud.firestore {
                   || isMember(universeId)
                   || isAdmin();
 
-      // PR 5 flips this gate to canCreateUniverse()
-      allow create: if isUniverseCreator()
+      allow create: if canCreateUniverse()
                     && request.resource.data.authorUid == request.auth.uid
                     && request.resource.data.deletedAt == null
                     && request.resource.data.storageBytes == 0
