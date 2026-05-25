@@ -6,8 +6,8 @@ describe('STORED_CAP_BYTES', () => {
     expect(STORED_CAP_BYTES).toEqual({
       cover: 2_621_440,
       background: 2_621_440,
-      sprite: 4_194_304,
-      ambient: 10_485_760,
+      sprite: 5_242_880,
+      ambient: 15_728_640,
       sfx: 3_145_728,
     });
   });

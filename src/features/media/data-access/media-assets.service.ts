@@ -24,7 +24,6 @@ import {
   IMAGE_ASSET_KINDS,
   StoredAsset,
 } from './asset.types';
-import { assertAudioDuration, readAudioDurationSeconds } from './audio-duration';
 import { canvasToBlob, encodeCanvasLossless } from './image-crop';
 import { assetDeleteTxBody, uploadCommitTxBody } from './media-assets.tx';
 
@@ -105,11 +104,6 @@ export class MediaAssetsService {
   async upload(input: AssetUploadInput, authorUid: string): Promise<AssetDoc> {
     const universeId = this.requireUniverseId();
     assertMimeAndSize(input.kind, input.file);
-
-    if (input.kind === 'ambient' || input.kind === 'sfx') {
-      const seconds = await readAudioDurationSeconds(input.file);
-      assertAudioDuration(input.kind, seconds);
-    }
 
     let file = input.file;
     let thumbFile: File | undefined;
