@@ -179,20 +179,30 @@ change between light and dark.
 The Opovid wordmark is the one piece of identity outside the token
 families. `<app-brand>` (`shared/ui/brand/`) renders the name in
 `--font-display` and follows `LocaleService`, so it shows "Opovid" in
-the English UI and «Оповідь» in the Ukrainian one. The opening letter is
-rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
-in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
-dark canvas. That colour appears in the wordmark's initial, the
-favicon, the landing flourish, and the reader's speaker chip — where
-the opening letter of the speaker's name carries the same
-illuminated-capital treatment — and nowhere else, so it never collides
-with the `danger` role. The book mark beside the name is drawn as a
-thin `--color-accent` stroke over the page background — a calm UI
-presence that lets the wordmark lead. The favicon shares that mark's
-geometry but inverts the treatment: a solid `--color-brand-rubric`
-disc with a white open book, deliberately heavier so the glyph
-survives 16×16 in the browser tab. Geometry stays unified across both
-surfaces; weight and fill diverge by medium.
+the English UI and «Оповідь» in the Ukrainian one.
+
+The brand uses two colour tokens that encode different roles, and the
+separation is the whole point:
+
+- `--color-accent` (mustard light, warm orange dark) is the
+  **interaction** colour. It carries the book mark beside the
+  wordmark, primary CTAs, focus rings, and selection highlights —
+  wherever the user is asked to act.
+- `--color-brand-rubric` (deep garnet light, rose-garnet dark — a true
+  theme token tuned for AA on the dark canvas) is the **signature**
+  colour. It rubricates the wordmark's opening letter, the favicon,
+  the landing flourish, and the reader's speaker chip's illuminated
+  capital. Nowhere else, so it never collides with the `danger` role
+  and never dilutes into a second accent.
+
+The book mark beside the wordmark renders in `--color-accent` as a
+thin stroke over the page background — a calm UI presence that lets
+the wordmark lead. The favicon shares that mark's geometry but
+inverts the treatment: a solid `--color-brand-rubric` disc with a
+white open book, deliberately heavier so the glyph survives 16×16 in
+the browser tab. Geometry stays unified across both surfaces; weight
+and fill diverge by medium. Accent never stands in for identity;
+rubric never stands in for action.
 
 ## Detail cards
 
@@ -280,4 +290,56 @@ the page enter/exit fades — are bespoke and stay out of the scale.
 
 # Implementation
 
-*(Empty — every shipped styling pass is reflected in the rules above.)*
+## Move user-authored identity colours onto the tone palette
+
+`Plotline.color` and `CodexCategory.color` currently store raw sRGB
+hex from `<input type="color">`. The hex bypasses the token system —
+no contrast guarantee in either theme, no constraint preventing
+near-identical user picks, and the codex chip drives `[style.color]`
+directly off the user hex, so an invisible-text-on-dark failure is
+reachable. The plotline swatch renders the hex inside a
+`border-border-strong` ring as a defensive fix, but the underlying
+hex is still unconstrained.
+
+Move both fields onto the tone palette, categories first because
+they carry higher blast radius:
+
+1. **Codex categories.** Replace the colour input in
+   `codex-categories-settings-panel.component.ts` with a 6-swatch
+   picker over `indigo | emerald | amber | fuchsia | sky | rose` +
+   `neutral`. Rename `CodexCategory.color: string` →
+   `CodexCategory.tone: TonePalette`. The card chip in
+   `codex-entry-card.component.ts` swaps `[style.borderColor]` /
+   `[style.color]` for `bg-tone-{name}-soft
+   text-tone-{name}-foreground` (and earns a real background tint
+   instead of just an outline, now that the colour is trustworthy).
+   Settings panel surfaces a one-time inline note explaining the
+   migration. Existing categories get snapped to the nearest tone by
+   HSL distance on first read; the migration writes the snapped value
+   back so subsequent reads are clean.
+2. **Plotlines.** Same migration applied to `Plotline.color` →
+   `Plotline.tone: TonePalette`. The 16px swatch in
+   `plotline-card.component.ts` becomes `<span class="size-4
+   rounded-full bg-tone-{name}">`, dropping the inline style binding
+   and the defensive border. Same HSL-distance snap for legacy
+   values.
+
+Both changes move the archive format in lockstep —
+`docs/import-export-rules.md` field shape changes, round-trip tests
+for category/plotline tone follow.
+
+## Extended tone palette (defer until six tones run short)
+
+The current palette has six tones (`indigo / emerald / amber /
+fuchsia / sky / rose`); five are spent on entity kinds, leaving one
+free. For codex categories and plotlines that share an authored
+universe, this may run thin once authors hit large cardinality.
+
+Defer this work until authors actually hit the wall. When they do:
+add 3–4 new tones to `styles.css`, each with the full five-facet ×
+two-theme treatment, hand-tuned for AA against `surface-muted` and
+the dark equivalents. Candidate names: `teal` (clearly different
+from `sky`), `violet` (clearly different from `indigo`), `garnet` or
+`crimson` (a deep red that does **not** read as rubric — skip
+`ruby`, it collides with the reserved `--color-brand-rubric`
+signature colour).

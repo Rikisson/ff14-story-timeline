@@ -54,7 +54,7 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
             <div class="flex min-w-0 flex-1 items-center gap-2">
               @if (plotline().color; as c) {
                 <span
-                  class="inline-block size-4 shrink-0 rounded-full border border-border"
+                  class="inline-block size-4 shrink-0 rounded-full border border-border-strong"
                   [style.background-color]="c"
                   aria-hidden="true"
                 ></span>
