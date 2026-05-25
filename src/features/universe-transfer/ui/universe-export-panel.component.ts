@@ -55,16 +55,27 @@ import { UniverseExportService } from '../data-access/universe-export.service';
               }}
             </span>
           }
-          @if (progress().phase === 'done') {
-            @if (progress().assetsFailed > 0) {
-              <span class="text-sm text-warning-foreground">
-                {{ t('message.exportPartial', { failed: progress().assetsFailed }) }}
-              </span>
-            } @else {
-              <span class="text-sm text-success-foreground">{{ t('message.exportDone') }}</span>
-            }
+          @if (progress().phase === 'done' && progress().assetsFailed === 0) {
+            <span class="text-sm text-success-foreground">{{ t('message.exportDone') }}</span>
           }
         </div>
+
+        @if (progress().phase === 'done' && progress().assetsFailed > 0) {
+          <div class="rounded-md border border-warning-border bg-warning p-3">
+            <p class="m-0 text-sm text-warning-foreground">
+              @if (progress().assetsFailed === progress().assetsTotal) {
+                {{ t('message.exportAllFailed', { total: progress().assetsTotal }) }}
+              } @else {
+                {{
+                  t('message.exportPartial', {
+                    failed: progress().assetsFailed,
+                    total: progress().assetsTotal,
+                  })
+                }}
+              }
+            </p>
+          </div>
+        }
 
         @if (progress().phase === 'error') {
           <p class="m-0 text-sm text-danger-foreground">

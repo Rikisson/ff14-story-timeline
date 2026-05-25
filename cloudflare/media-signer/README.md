@@ -71,13 +71,13 @@ npx wrangler login
 npx wrangler r2 bucket create narrative
 ```
 
-Configure the bucket for **public reads** (Cloudflare dashboard: R2 → bucket → Settings → Public access). Bind a custom domain if you want a portable URL; otherwise note the bucket's `*.r2.dev` URL. Add a CORS rule to the bucket allowing `PUT, DELETE` from every origin the app runs on:
+Configure the bucket for **public reads** (Cloudflare dashboard: R2 → bucket → Settings → Public access). Bind a custom domain if you want a portable URL; otherwise note the bucket's `*.r2.dev` URL. Add a CORS rule to the bucket allowing `GET, PUT, DELETE` from every origin the app runs on — `GET` is required so the universe-export feature can `fetch()` asset binaries into a `.universe` archive (without it, `<img>` tags still render but export silently produces metadata-only archives):
 
 ```json
 [
   {
     "AllowedOrigins": ["http://localhost:4200", "https://<you>.github.io"],
-    "AllowedMethods": ["PUT", "DELETE"],
+    "AllowedMethods": ["GET", "PUT", "DELETE"],
     "AllowedHeaders": ["Content-Type", "Cache-Control"],
     "MaxAgeSeconds": 86400
   }
