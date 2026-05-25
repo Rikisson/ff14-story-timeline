@@ -137,7 +137,6 @@ export class RichTextInputComponent {
       const v = this.value();
       const ed = this.editor;
       if (!ed) return;
-      if (v === this.lastEmitted) return;
       const currentMd = tiptapJsonToMarkdown(ed.getJSON() as never);
       if (v === currentMd) return;
       ed.commands.setContent(markdownToTiptapHtml(v), { emitUpdate: false });
