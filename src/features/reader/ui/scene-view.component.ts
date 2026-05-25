@@ -18,7 +18,7 @@ import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { ContentLangDirective } from '@features/universes';
 import { SceneLayout, TextSpeed } from '@features/stories';
 import { BackgroundEffect } from '@shared/models';
-import { TypewriterTextComponent } from '@shared/ui';
+import { MarkdownTextComponent, TypewriterTextComponent } from '@shared/ui';
 import { InlineRefOption } from '@shared/utils';
 import readerEn from '../i18n/en.json';
 import readerUk from '../i18n/uk.json';
@@ -73,6 +73,7 @@ type CrossfadeSlot = 'A' | 'B';
   host: { class: 'block' },
   imports: [
     TypewriterTextComponent,
+    MarkdownTextComponent,
     TranslocoDirective,
     ContentLangDirective,
     ChoiceListComponent,
@@ -181,15 +182,19 @@ type CrossfadeSlot = 'A' | 'B';
             </div>
           }
           @case ('showcase') {
-            @if (text(); as caption) {
+            @if (text()) {
               <div
                 class="showcase-caption pointer-events-none absolute inset-0 flex items-center justify-center px-8"
                 [class.showcase-caption-hidden]="cardHidden()"
                 appContentLang
               >
-                <p class="m-0 text-center font-display font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)]">
-                  {{ caption }}
-                </p>
+                <app-markdown-text
+                  class="text-center font-display font-semibold leading-tight text-scrim-foreground drop-shadow-[0_4px_18px_rgb(0_0_0/0.65)]"
+                  [text]="text()"
+                  [options]="inlineRefOptions()"
+                  [inline]="true"
+                  [flattenRefs]="true"
+                />
               </div>
             }
           }

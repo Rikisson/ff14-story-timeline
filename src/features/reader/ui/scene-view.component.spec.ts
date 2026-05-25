@@ -6,6 +6,7 @@ import { EntityResolverCache } from '@shared/data-access';
 import { EntityRefHoverService } from '@shared/ui';
 import { UniverseStore } from '@features/universes';
 import { SceneLayout, TextSpeed } from '@features/stories';
+import { InlineRefOption } from '@shared/utils';
 import { SceneViewComponent } from './scene-view.component';
 
 /** ContentLangDirective only reads `activeUniverse()` for a `lang` attr. */
@@ -34,6 +35,7 @@ interface MountOptions {
   layout?: SceneLayout;
   cardHidden?: boolean;
   textSpeed?: TextSpeed;
+  inlineRefOptions?: InlineRefOption[];
 }
 
 async function mount(inputs: MountOptions): Promise<ComponentFixture<SceneViewComponent>> {
@@ -62,6 +64,8 @@ async function mount(inputs: MountOptions): Promise<ComponentFixture<SceneViewCo
     fixture.componentRef.setInput('cardHidden', inputs.cardHidden);
   if (inputs.textSpeed !== undefined)
     fixture.componentRef.setInput('textSpeed', inputs.textSpeed);
+  if (inputs.inlineRefOptions !== undefined)
+    fixture.componentRef.setInput('inlineRefOptions', inputs.inlineRefOptions);
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
@@ -79,9 +83,7 @@ describe('SceneViewComponent', () => {
 
   describe('hiding the dialog card', () => {
     const SENTINEL = 'SCENE_TEXT_SENTINEL_42';
-    // The showcase caption is the centered `<p>`; the dialog card's
-    // typewriter also emits `<p>` (markdown), so match on `text-center`.
-    const CAPTION = 'article p.text-center';
+    const CAPTION = 'article .showcase-caption';
 
     it('renders the floating card, visible, for a dialog scene', async () => {
       const fx = await mount({
@@ -145,6 +147,29 @@ describe('SceneViewComponent', () => {
       expect(caption).not.toBeNull();
       expect(caption?.textContent).toContain(SENTINEL);
       expect(host.querySelector('.reader-card')).toBeNull();
+    });
+  });
+
+  describe('showcase ref flattening', () => {
+    const CAPTION = 'article .showcase-caption';
+
+    it('replaces inline-ref tokens with their authored display text', async () => {
+      const fx = await mount({
+        text: 'Enter ${ch:abc-123}[Alice], stage left.',
+        layout: 'showcase',
+      });
+      const caption = (fx.nativeElement as HTMLElement).querySelector(CAPTION);
+      expect(caption?.textContent?.trim()).toBe('Enter Alice, stage left.');
+    });
+
+    it('falls back to the resolved option label when display text is empty', async () => {
+      const fx = await mount({
+        text: 'Meet ${ch:abc-123}[] at the gate.',
+        layout: 'showcase',
+        inlineRefOptions: [{ kind: 'character', id: 'abc-123', label: 'Alice' }],
+      });
+      const caption = (fx.nativeElement as HTMLElement).querySelector(CAPTION);
+      expect(caption?.textContent?.trim()).toBe('Meet Alice at the gate.');
     });
   });
 });
