@@ -181,28 +181,40 @@ families. `<app-brand>` (`shared/ui/brand/`) renders the name in
 `--font-display` and follows `LocaleService`, so it shows "Opovid" in
 the English UI and «Оповідь» in the Ukrainian one.
 
-The brand uses two colour tokens that encode different roles, and the
-separation is the whole point:
+The brand carries a three-colour palette drawn from the
+illuminated-manuscript tradition — rubric for the initial, ochre for
+the flourish, ink for the body text:
 
-- `--color-accent` (mustard light, warm orange dark) is the
-  **interaction** colour. It carries the book mark beside the
-  wordmark, primary CTAs, focus rings, and selection highlights —
-  wherever the user is asked to act.
-- `--color-brand-rubric` (deep garnet light, rose-garnet dark — a true
-  theme token tuned for AA on the dark canvas) is the **signature**
-  colour. It rubricates the wordmark's opening letter, the favicon,
-  the landing flourish, and the reader's speaker chip's illuminated
-  capital. Nowhere else, so it never collides with the `danger` role
-  and never dilutes into a second accent.
+- `--color-brand-rubric` (deep garnet light, rose-garnet dark — a
+  true theme token tuned for AA on the dark canvas) is the
+  **signature** colour, the rubric. It carries the wordmark's
+  opening letter, the favicon, the landing flourish, and the
+  reader's speaker chip's illuminated capital. Nowhere else, so it
+  never collides with the `danger` role and never dilutes into a
+  second accent.
+- `--color-accent` (mustard light, burnt orange dark) is the
+  **flourish** colour — the warm earth tone playing the gold-leaf
+  role in the triad. It carries the brand mark's hairline book
+  glyph beside the wordmark, *and* every interactive surface in the
+  UI: primary CTAs, focus rings, selection highlights. The double
+  duty is intentional and historically grounded — in manuscripts,
+  gold marked both decorative flourishes and reader cues, the seam
+  between ornament and instruction. The form difference (a thin
+  stroke glyph in the header chrome vs. filled rectangular CTAs in
+  content areas) and the spatial separation (header vs. detail
+  panels) keep the two readings distinct in practice.
+- `--color-foreground` and its muted variants carry the **ink** —
+  the wordmark's body letters after the rubricated initial, and
+  every other prose surface in the app.
 
-The book mark beside the wordmark renders in `--color-accent` as a
-thin stroke over the page background — a calm UI presence that lets
-the wordmark lead. The favicon shares that mark's geometry but
-inverts the treatment: a solid `--color-brand-rubric` disc with a
-white open book, deliberately heavier so the glyph survives 16×16 in
-the browser tab. Geometry stays unified across both surfaces; weight
-and fill diverge by medium. Accent never stands in for identity;
-rubric never stands in for action.
+The favicon shares the brand mark's geometry but breaks from the
+header treatment for tab-bar legibility: a solid
+`--color-brand-rubric` disc with a white open book, deliberately
+heavier so the glyph survives 16×16 in the browser tab. The chrome
+mark is an ochre flourish; the favicon is a rubric seal. Geometry
+stays unified across both surfaces; colour and weight diverge by
+medium. Rubric never stands in for action; accent doubles as
+interaction and brand-mark flourish, by design.
 
 ## Detail cards
 
