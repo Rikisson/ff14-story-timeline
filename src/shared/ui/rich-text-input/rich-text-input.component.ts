@@ -27,6 +27,7 @@ import Text from '@tiptap/extension-text';
 import { UniverseStore } from '@features/universes';
 import { EntityDirectoryService } from '@shared/data-access';
 import { InlineRefOption, markdownToTiptapHtml, tiptapJsonToMarkdown } from '@shared/utils';
+import { EntityRefEditService } from './entity-ref-edit.service';
 import { EntityRefNode } from './entity-ref-node';
 import { createSuggestionRender } from './ref-suggestion-renderer';
 import { FetchInlineRefOptions, RefSuggestion } from './ref-suggestion.extension';
@@ -102,6 +103,7 @@ export class RichTextInputComponent {
   private readonly transloco = inject(TranslocoService);
   private readonly directory = inject(EntityDirectoryService);
   private readonly universes = inject(UniverseStore);
+  private readonly editService = inject(EntityRefEditService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private editor: Editor | null = null;
@@ -121,7 +123,10 @@ export class RichTextInputComponent {
   constructor() {
     if (this.isBrowser) {
       afterNextRender(() => this.initEditor());
-      this.destroyRef.onDestroy(() => this.editor?.destroy());
+      this.destroyRef.onDestroy(() => {
+        this.editService.close();
+        this.editor?.destroy();
+      });
     }
 
     effect(() => {
@@ -183,7 +188,9 @@ export class RichTextInputComponent {
         Italic,
         History,
         Placeholder.configure({ placeholder: this.placeholder() }),
-        EntityRefNode,
+        EntityRefNode.configure({
+          onEditRequest: (req) => this.editService.open(req),
+        }),
         RefSuggestion.configure({
           fetchOptions,
           optionsRef: this.optionsRef,

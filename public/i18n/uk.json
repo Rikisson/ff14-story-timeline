@@ -16,12 +16,14 @@
       "reset": "Скинути",
       "loadMore": "Показати ще",
       "seedTestData": "Заповнити тестовими даними",
-      "backToTimeline": "Назад до хронології"
+      "backToTimeline": "Назад до хронології",
+      "tiptapResetLabel": "Скинути до назви сутності"
     },
     "field": {
       "name": "Назва",
       "title": "Назва",
       "slug": "Слаг",
+      "label": "Підпис",
       "description": "Опис",
       "descriptionOptional": "Опис (необовʼязково)",
       "color": "Колір",
@@ -105,6 +107,7 @@
       "tiptapToolbar": "Форматування поля «{{ field }}»",
       "tiptapBold": "Жирний (Ctrl+B)",
       "tiptapItalic": "Курсив (Ctrl+I)",
+      "tiptapEditRef": "Редагувати підпис посилання",
       "themeAria": "Тема: {{ pref }}. Натисніть, щоб змінити.",
       "themeSystem": "Системна тема (натисніть для світлої)",
       "themeLight": "Світла тема (натисніть для темної)",

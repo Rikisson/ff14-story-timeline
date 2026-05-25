@@ -16,12 +16,14 @@
       "reset": "Reset",
       "loadMore": "View more",
       "seedTestData": "Seed test data",
-      "backToTimeline": "Back to timeline"
+      "backToTimeline": "Back to timeline",
+      "tiptapResetLabel": "Reset to entity name"
     },
     "field": {
       "name": "Name",
       "title": "Title",
       "slug": "Slug",
+      "label": "Label",
       "description": "Description",
       "descriptionOptional": "Description (optional)",
       "color": "Color",
@@ -105,6 +107,7 @@
       "tiptapToolbar": "{{ field }} formatting",
       "tiptapBold": "Bold (Ctrl+B)",
       "tiptapItalic": "Italic (Ctrl+I)",
+      "tiptapEditRef": "Edit reference label",
       "themeAria": "Theme: {{ pref }}. Click to change.",
       "themeSystem": "System theme (click for light)",
       "themeLight": "Light theme (click for dark)",
