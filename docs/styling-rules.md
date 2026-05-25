@@ -14,13 +14,20 @@ Tailwind v4 is the styling layer. Components reference semantic tokens defined i
 literals, no `rgb(…)` / `rgba(…)` calls, no `dark:` siblings. If a
 component needs a color, the right token already exists or you add one.
 
-The single exception is **user-issued color stored in user data** —
-values the end user typed (e.g., the color picker for a plotline or a
-codex category). Those flow through `[style.color]` / `[style.background]`
-bindings with a token-based fallback for the null case
-(`p.color ?? 'var(--color-foreground-subtle)'`). Default values in seed
-data and form pickers are user-facing palette choices, not design-system
-chrome — those stay raw too.
+Two exceptions exist:
+
+1. **User-issued color stored in user data** — values the end user
+   typed (e.g., the color picker for a plotline or a codex category).
+   Those flow through `[style.color]` / `[style.background]` bindings
+   with a token-based fallback for the null case
+   (`p.color ?? 'var(--color-foreground-subtle)'`). Default values in
+   seed data and form pickers are user-facing palette choices, not
+   design-system chrome — those stay raw too.
+2. **The `theme-color` meta tags in `src/index.html`** — these set
+   the browser-chrome colour around the viewport, and the OS can't
+   read CSS variables, so the canvas values are inlined as literal
+   hex. Keep them in sync when retuning `--color-canvas` in either
+   theme.
 
 Themes adapt by redefining the token values, not by adding utilities to
 components. Adding a new theme is a single new selector block in
@@ -188,10 +195,10 @@ the flourish, ink for the body text:
 - `--color-brand-rubric` (deep garnet light, rose-garnet dark — a
   true theme token tuned for AA on the dark canvas) is the
   **signature** colour, the rubric. It carries the wordmark's
-  opening letter, the favicon, the landing flourish, and the
-  reader's speaker chip's illuminated capital. Nowhere else, so it
-  never collides with the `danger` role and never dilutes into a
-  second accent.
+  opening letter (wherever `<app-brand>` renders — header chrome,
+  landing-page hero), the favicon, and the reader's speaker chip's
+  illuminated capital. Nowhere else, so it never collides with the
+  `danger` role and never dilutes into a second accent.
 - `--color-accent` (mustard light, burnt orange dark) is the
   **flourish** colour — the warm earth tone playing the gold-leaf
   role in the triad. It carries the brand mark's hairline book

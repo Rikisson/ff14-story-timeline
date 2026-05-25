@@ -53,7 +53,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
                   <code class="break-all text-xs text-foreground-subtle">{{ u.authorUid }}</code>
                 </div>
                 @if (isYou(u.authorUid)) {
-                  <span class="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">
+                  <span class="shrink-0 rounded-full bg-surface-strong px-2 py-0.5 text-xs text-foreground">
                     {{ t('field.youBadge') }}
                   </span>
                 }
@@ -68,7 +68,7 @@ const UID_PATTERN = /^[A-Za-z0-9]{20,128}$/;
                   </div>
                   <div class="flex items-center gap-2">
                     @if (isYou(uid)) {
-                      <span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-soft-foreground">{{ t('field.youBadge') }}</span>
+                      <span class="rounded-full bg-surface-strong px-2 py-0.5 text-xs text-foreground">{{ t('field.youBadge') }}</span>
                     }
                     @if (isOwner()) {
                       <button
