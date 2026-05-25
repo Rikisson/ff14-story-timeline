@@ -182,12 +182,17 @@ families. `<app-brand>` (`shared/ui/brand/`) renders the name in
 the English UI and «Оповідь» in the Ukrainian one. The opening letter is
 rubricated in `--color-brand-rubric`, a true theme token: a deep garnet
 in light, lightened to a rose-garnet in dark so it keeps WCAG AA on the
-dark canvas. That colour appears in the wordmark, the favicon, the
-landing flourish, and the reader's speaker chip — where the opening
-letter of the speaker's name carries the same illuminated-capital
-treatment — and nowhere else, so it never collides with the `danger`
-role. The book mark beside the name reuses `--color-accent` and
-needs no token of its own.
+dark canvas. That colour appears in the wordmark's initial, the
+favicon, the landing flourish, and the reader's speaker chip — where
+the opening letter of the speaker's name carries the same
+illuminated-capital treatment — and nowhere else, so it never collides
+with the `danger` role. The book mark beside the name is drawn as a
+thin `--color-accent` stroke over the page background — a calm UI
+presence that lets the wordmark lead. The favicon shares that mark's
+geometry but inverts the treatment: a solid `--color-brand-rubric`
+disc with a white open book, deliberately heavier so the glyph
+survives 16×16 in the browser tab. Geometry stays unified across both
+surfaces; weight and fill diverge by medium.
 
 ## Detail cards
 
