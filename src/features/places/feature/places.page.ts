@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
@@ -10,10 +10,10 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
+  ArchivesHeaderComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
-  PageHeaderComponent,
 } from '@shared/ui';
 import { BackgroundLibraryComponent } from '../ui/background-library.component';
 import { PlaceCardComponent } from '../ui/place-card.component';
@@ -25,10 +25,10 @@ import placeUk from '../i18n/uk.json';
   selector: 'app-places-page',
   host: { class: 'block h-full' },
   imports: [
+    ArchivesHeaderComponent,
     BackgroundLibraryComponent,
     EntityListPaneComponent,
     PageComponent,
-    PageHeaderComponent,
     PlaceCardComponent,
     PlaceFormComponent,
     TranslocoDirective,
@@ -45,10 +45,7 @@ import placeUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'place'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.pageTitle')"
-          [subtitle]="t('field.pageSubtitle')"
-        />
+        <app-archives-header />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -64,6 +61,9 @@ import placeUk from '../i18n/uk.json';
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
+            [searchable]="true"
+            [searchValue]="search()"
+            (searchChange)="search.set($event)"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
@@ -139,14 +139,20 @@ export class PlacesPage {
     removeLabel: (p) => p.name,
   });
 
-  protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.directory.rows().map((row) => ({
-      id: row.id,
-      label: row.label,
-      secondary: row.secondary,
-      coverAssetId: row.coverAssetId,
-    })),
-  );
+  protected readonly search = signal('');
+
+  protected readonly listItems = computed<ListPaneItem[]>(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.directory
+      .rows()
+      .map((row) => ({
+        id: row.id,
+        label: row.label,
+        secondary: row.secondary,
+        coverAssetId: row.coverAssetId,
+      }))
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
+  });
 
   constructor() {
     effect(() => {

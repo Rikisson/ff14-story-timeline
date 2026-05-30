@@ -8,14 +8,13 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { SecondaryButtonComponent } from '@shared/ui';
 import { AuthStore } from '../data-access/auth.store';
 import authEn from '../i18n/en.json';
 import authUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-auth-button',
-  imports: [SecondaryButtonComponent, TranslocoDirective],
+  imports: [TranslocoDirective],
   providers: [
     provideTranslocoScope({
       scope: 'auth',
@@ -33,7 +32,7 @@ import authUk from '../i18n/uk.json';
         <div class="relative">
           <button
             type="button"
-            class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground-muted hover:bg-surface-muted"
+            class="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
             [attr.aria-haspopup]="'menu'"
             [attr.aria-expanded]="open()"
             [attr.aria-label]="t('tooltip.accountMenu', { name: accountLabel() })"
@@ -82,7 +81,11 @@ import authUk from '../i18n/uk.json';
           }
         </div>
       } @else {
-        <button uiSecondary type="button" (click)="auth.login()">{{ t('action.signIn') }}</button>
+        <button
+          type="button"
+          class="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
+          (click)="auth.login()"
+        >{{ t('action.signIn') }}</button>
       }
       @if (auth.error(); as err) {
         <span class="text-sm text-danger-foreground" role="alert">{{ err }}</span>

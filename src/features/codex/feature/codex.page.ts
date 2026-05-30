@@ -9,10 +9,10 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
+  ArchivesHeaderComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
-  PageHeaderComponent,
 } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
@@ -27,12 +27,12 @@ import codexUk from '../i18n/uk.json';
   selector: 'app-codex-page',
   host: { class: 'block h-full' },
   imports: [
+    ArchivesHeaderComponent,
     CodexCategoryTypeaheadComponent,
     EntityListPaneComponent,
     CodexEntryCardComponent,
     CodexEntryFormComponent,
     PageComponent,
-    PageHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -47,20 +47,7 @@ import codexUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'codex'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.pageTitle')"
-          [subtitle]="t('field.pageSubtitle')"
-        >
-          <div class="w-60">
-            <span class="sr-only">{{ t('field.category') }}</span>
-            <app-codex-category-typeahead
-              [value]="categoryFilter()"
-              [allowCreate]="false"
-              [placeholder]="t('action.filterByCategory')"
-              (valueChange)="categoryFilter.set($event)"
-            />
-          </div>
-        </app-page-header>
+        <app-archives-header />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -76,10 +63,25 @@ import codexUk from '../i18n/uk.json';
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
+            [searchable]="true"
+            [searchValue]="search()"
+            [hasFilters]="true"
+            [filtersActive]="categoryFilter() !== null"
+            (searchChange)="search.set($event)"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
-          />
+          >
+            <label list-filters class="flex flex-col gap-1">
+              <span class="text-xs font-medium text-foreground-subtle">{{ t('field.category') }}</span>
+              <app-codex-category-typeahead
+                [value]="categoryFilter()"
+                [allowCreate]="false"
+                [placeholder]="t('action.filterByCategory')"
+                (valueChange)="categoryFilter.set($event)"
+              />
+            </label>
+          </app-entity-list-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {
@@ -126,6 +128,7 @@ export class CodexPage {
   );
 
   protected readonly categoryFilter = signal<string | null>(null);
+  protected readonly search = signal('');
 
   protected readonly directory = createEntityDirectoryQueryStore({
     universeId: computed(() => this.universes.activeUniverseId()),
@@ -152,16 +155,20 @@ export class CodexPage {
 
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     const byKey = this.categories.categoryByKey();
-    return this.directory.rows().map((row) => ({
-      id: row.id,
-      label: row.label,
-      // Codex surfaces have the categories config hydrated already, so the
-      // live label resolves locally from `categoryKey`. Cross-kind surfaces
-      // (which don't hold the config) fall back to the projection's
-      // denormalized `secondary`.
-      secondary: row.categoryKey ? byKey.get(row.categoryKey)?.label : row.secondary,
-      coverAssetId: row.coverAssetId,
-    }));
+    const q = this.search().trim().toLowerCase();
+    return this.directory
+      .rows()
+      .map((row) => ({
+        id: row.id,
+        label: row.label,
+        // Codex surfaces have the categories config hydrated already, so the
+        // live label resolves locally from `categoryKey`. Cross-kind surfaces
+        // (which don't hold the config) fall back to the projection's
+        // denormalized `secondary`.
+        secondary: row.categoryKey ? byKey.get(row.categoryKey)?.label : row.secondary,
+        coverAssetId: row.coverAssetId,
+      }))
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
   });
 
   constructor() {

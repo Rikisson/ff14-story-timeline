@@ -62,7 +62,7 @@ import editorUk from '../i18n/uk.json';
         <p>{{ t('message.loading') }}</p>
       } @else if (store.error(); as err) {
         <p class="error">{{ err }}</p>
-        <p><a routerLink="/library">{{ t('action.backToStories') }}</a></p>
+        <p><a routerLink="/stories">{{ t('action.backToStories') }}</a></p>
       } @else if (store.storyId()) {
         <header class="bar">
           <h1>

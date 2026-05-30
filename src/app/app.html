@@ -5,44 +5,9 @@
       <app-brand />
     </a>
     @if (hasActiveUniverse()) {
-      <nav class="flex flex-1 items-center gap-4">
-        <a
-          routerLink="/library"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.stories') }}</a>
-        <a
-          routerLink="/events"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.events') }}</a>
-        <a
-          routerLink="/plotlines"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.plotlines') }}</a>
-
-        <span class="h-4 w-px bg-border-strong" aria-hidden="true"></span>
-
-        <a
-          routerLink="/characters"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.characters') }}</a>
-        <a
-          routerLink="/places"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.places') }}</a>
-        <a
-          routerLink="/codex"
-          routerLinkActive="text-foreground font-medium"
-          class="text-foreground-subtle no-underline"
-        >{{ t('nav.codex') }}</a>
-      </nav>
-    } @else {
-      <span class="flex-1"></span>
+      <app-archives-button />
     }
+    <span class="flex-1"></span>
     <app-universe-selector />
     <app-locale-toggle />
     <app-theme-toggle />

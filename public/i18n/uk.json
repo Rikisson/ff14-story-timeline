@@ -15,6 +15,8 @@
       "retry": "Повторити",
       "reset": "Скинути",
       "loadMore": "Показати ще",
+      "search": "Пошук",
+      "filters": "Фільтри",
       "seedTestData": "Заповнити тестовими даними",
       "backToTimeline": "Назад до огляду",
       "tiptapResetLabel": "Скинути до назви сутності"
@@ -48,6 +50,7 @@
     },
     "nav": {
       "timeline": "Хронологія",
+      "archives": "Архіви",
       "stories": "Історії",
       "events": "Події",
       "plotlines": "Сюжетні лінії",
@@ -108,6 +111,7 @@
       "tiptapBold": "Жирний (Ctrl+B)",
       "tiptapItalic": "Курсив (Ctrl+I)",
       "tiptapEditRef": "Редагувати підпис посилання",
+      "archivesAria": "Архіви",
       "themeAria": "Тема: {{ pref }}. Натисніть, щоб змінити.",
       "themeSystem": "Системна тема (натисніть для світлої)",
       "themeLight": "Світла тема (натисніть для темної)",

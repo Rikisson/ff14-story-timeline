@@ -1,3 +1,5 @@
+export * from './archives-button';
+export * from './archives-header';
 export * from './book-icon';
 export * from './brand';
 export * from './button';

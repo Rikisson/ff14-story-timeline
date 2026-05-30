@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { EntityKind } from '@shared/models';
 import { PrimaryButtonComponent, GhostButtonComponent } from '../button';
@@ -39,6 +39,60 @@ export interface ListPaneItem {
           <button uiPrimary type="button" class="w-full shrink-0" (click)="create.emit()">
             {{ createLabel() }}
           </button>
+        }
+
+        @if (searchable() || hasFilters()) {
+          <div class="flex shrink-0 items-center gap-2">
+            @if (searchable()) {
+              <label class="min-w-0 flex-1">
+                <span class="sr-only">{{ g('action.search') }}</span>
+                <input
+                  type="search"
+                  class="h-9 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground placeholder:text-foreground-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                  [value]="searchValue()"
+                  [placeholder]="g('action.search')"
+                  [attr.aria-label]="g('action.search')"
+                  (input)="onSearch($event)"
+                />
+              </label>
+            }
+            @if (hasFilters()) {
+              <button
+                type="button"
+                class="relative grid size-9 shrink-0 place-items-center rounded-md border border-border-strong text-foreground-subtle transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                [class.bg-surface-muted]="filtersExpanded()"
+                [attr.aria-expanded]="filtersExpanded()"
+                aria-controls="list-filter-panel"
+                [attr.aria-label]="g('action.filters')"
+                (click)="filtersExpanded.set(!filtersExpanded())"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 5h16M7 12h10M10 19h4" />
+                </svg>
+                @if (filtersActive()) {
+                  <span class="absolute right-1 top-1 size-1.5 rounded-full bg-accent" aria-hidden="true"></span>
+                }
+              </button>
+            }
+          </div>
+        }
+
+        @if (hasFilters() && filtersExpanded()) {
+          <div
+            id="list-filter-panel"
+            class="shrink-0 rounded-md border border-border bg-surface-subtle p-3"
+          >
+            <ng-content select="[list-filters]" />
+          </div>
         }
 
         @if (showError()) {
@@ -144,10 +198,17 @@ export class EntityListPaneComponent {
   readonly createLabel = input<string>('+ New');
   readonly emptyMessage = input<string>('Nothing here yet.');
   readonly ariaLabel = input<string>('List');
+  readonly searchable = input<boolean>(false);
+  readonly searchValue = input<string>('');
+  readonly hasFilters = input<boolean>(false);
+  readonly filtersActive = input<boolean>(false);
 
   readonly select = output<string>();
   readonly create = output<void>();
   readonly loadMore = output<void>();
+  readonly searchChange = output<string>();
+
+  protected readonly filtersExpanded = signal(false);
 
   // Render-state precedence: error first (terminal), then loading-with-
   // no-items, then empty-message. A list with items keeps rendering even
@@ -162,4 +223,8 @@ export class EntityListPaneComponent {
     if (e instanceof Error) return e.message;
     return String(e);
   });
+
+  protected onSearch(event: Event): void {
+    this.searchChange.emit((event.target as HTMLInputElement).value);
+  }
 }

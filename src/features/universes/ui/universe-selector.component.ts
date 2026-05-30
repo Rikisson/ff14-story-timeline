@@ -36,13 +36,13 @@ import universeUk from '../i18n/uk.json';
       <div class="relative">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-foreground hover:bg-surface-muted"
+          class="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
           [attr.aria-haspopup]="'menu'"
           [attr.aria-expanded]="open()"
           [attr.aria-label]="t('tooltip.switchUniverse')"
           (click)="toggle()"
         >
-          <span>{{ label() }}</span>
+          <span class="max-w-[12rem] truncate">{{ label() }}</span>
           <svg
             aria-hidden="true"
             width="14"

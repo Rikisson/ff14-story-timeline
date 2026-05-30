@@ -7,10 +7,10 @@ import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createEntityDirectoryQueryStore } from '@shared/data-access';
 import {
+  ArchivesHeaderComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
-  PageHeaderComponent,
 } from '@shared/ui';
 import { StoryDetailComponent } from '../ui/story-detail.component';
 import storyEn from '../i18n/en.json';
@@ -20,10 +20,10 @@ import storyUk from '../i18n/uk.json';
   selector: 'app-stories-page',
   host: { class: 'block h-full' },
   imports: [
+    ArchivesHeaderComponent,
     StoryDetailComponent,
     EntityListPaneComponent,
     PageComponent,
-    PageHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -38,10 +38,7 @@ import storyUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'story'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.title')"
-          [subtitle]="t('message.subtitle')"
-        />
+        <app-archives-header />
 
         @if (actionError(); as e) {
           <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
@@ -61,6 +58,9 @@ import storyUk from '../i18n/uk.json';
             [createLabel]="t('action.newStory')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.storiesList')"
+            [searchable]="true"
+            [searchValue]="search()"
+            (searchChange)="search.set($event)"
             (select)="onSelect($event)"
             (create)="createStory()"
             (loadMore)="directory.loadMore()"
@@ -123,17 +123,23 @@ export class StoriesPage {
 
   protected readonly selected = this.selectedStory.asReadonly();
 
-  protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.directory.rows().map((row) => ({
-      id: row.id,
-      label: row.label || this.transloco.translate('story.field.untitled'),
-      secondary: row.secondary,
-      coverAssetId: row.coverAssetId,
-      badge: row.draft
-        ? { text: this.transloco.translate('story.field.draft'), tone: 'amber' }
-        : undefined,
-    })),
-  );
+  protected readonly search = signal('');
+
+  protected readonly listItems = computed<ListPaneItem[]>(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.directory
+      .rows()
+      .map((row) => ({
+        id: row.id,
+        label: row.label || this.transloco.translate('story.field.untitled'),
+        secondary: row.secondary,
+        coverAssetId: row.coverAssetId,
+        badge: row.draft
+          ? { text: this.transloco.translate('story.field.draft'), tone: 'amber' as const }
+          : undefined,
+      }))
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
+  });
 
   constructor() {
     let fetchSeq = 0;
@@ -155,7 +161,7 @@ export class StoriesPage {
   }
 
   protected onSelect(id: string): void {
-    void this.router.navigate(['/library', id]);
+    void this.router.navigate(['/stories', id]);
   }
 
   protected async createStory(): Promise<void> {
@@ -181,7 +187,7 @@ export class StoriesPage {
       return;
     }
     if (this.selectedId() === id) {
-      void this.router.navigate(['/library']);
+      void this.router.navigate(['/stories']);
     }
     void this.directory.refresh();
   }

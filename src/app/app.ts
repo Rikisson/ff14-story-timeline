@@ -7,7 +7,6 @@ import {
   NavigationStart,
   Router,
   RouterLink,
-  RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -18,6 +17,7 @@ import { CodexCategoriesService } from '@features/codex';
 import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
 import { LayoutStore } from '@shared/data-access';
 import {
+  ArchivesButtonComponent,
   BrandComponent,
   LocaleToggleComponent,
   ThemeToggleComponent,
@@ -28,8 +28,8 @@ import {
   imports: [
     RouterOutlet,
     RouterLink,
-    RouterLinkActive,
     TranslocoDirective,
+    ArchivesButtonComponent,
     AuthButtonComponent,
     BrandComponent,
     LocaleToggleComponent,

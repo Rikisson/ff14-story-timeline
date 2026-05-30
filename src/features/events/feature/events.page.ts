@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
@@ -15,10 +15,10 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
+  ArchivesHeaderComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
-  PageHeaderComponent,
 } from '@shared/ui';
 import { EventFormComponent } from '../ui/event-form.component';
 import eventEn from '../i18n/en.json';
@@ -28,11 +28,11 @@ import eventUk from '../i18n/uk.json';
   selector: 'app-events-page',
   host: { class: 'block h-full' },
   imports: [
+    ArchivesHeaderComponent,
     EntityListPaneComponent,
     EventCardComponent,
     EventFormComponent,
     PageComponent,
-    PageHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -47,10 +47,7 @@ import eventUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'event'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.pageTitle')"
-          [subtitle]="t('field.pageSubtitle')"
-        />
+        <app-archives-header />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -66,6 +63,9 @@ import eventUk from '../i18n/uk.json';
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
+            [searchable]="true"
+            [searchValue]="search()"
+            (searchChange)="search.set($event)"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
@@ -139,14 +139,20 @@ export class EventsPage {
     removeLabel: (e) => e.name,
   });
 
-  protected readonly listItems = computed<ListPaneItem[]>(() =>
-    this.directory.rows().map((row) => ({
-      id: row.id,
-      label: row.label,
-      secondary: row.secondary,
-      coverAssetId: row.coverAssetId,
-    })),
-  );
+  protected readonly search = signal('');
+
+  protected readonly listItems = computed<ListPaneItem[]>(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.directory
+      .rows()
+      .map((row) => ({
+        id: row.id,
+        label: row.label,
+        secondary: row.secondary,
+        coverAssetId: row.coverAssetId,
+      }))
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
+  });
 
   constructor() {
     effect(() => {

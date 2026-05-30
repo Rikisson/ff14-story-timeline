@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -9,10 +9,10 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
+  ArchivesHeaderComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
-  PageHeaderComponent,
 } from '@shared/ui';
 import { PlotlinesService } from '../data-access/plotlines.service';
 import { Plotline, PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
@@ -31,9 +31,9 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   selector: 'app-plotlines-page',
   host: { class: 'block h-full' },
   imports: [
+    ArchivesHeaderComponent,
     EntityListPaneComponent,
     PageComponent,
-    PageHeaderComponent,
     PlotlineCardComponent,
     PlotlineFormComponent,
     TranslocoDirective,
@@ -50,10 +50,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   template: `
     <ng-container *transloco="let t; prefix: 'plotline'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('field.pageTitle')"
-          [subtitle]="t('field.pageSubtitle')"
-        />
+        <app-archives-header />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -69,6 +66,9 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
             [createLabel]="t('action.create')"
             [emptyMessage]="t('empty.list')"
             [ariaLabel]="t('tooltip.list')"
+            [searchable]="true"
+            [searchValue]="search()"
+            (searchChange)="search.set($event)"
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
@@ -142,19 +142,25 @@ export class PlotlinesPage {
     removeLabel: (p) => p.title,
   });
 
+  protected readonly search = signal('');
+
   protected readonly listItems = computed<ListPaneItem[]>(() => {
     this.activeLang();
-    return this.directory.rows().map((row) => {
-      const status = row.status as PlotlineStatus | undefined;
-      return {
-        id: row.id,
-        label: row.label,
-        // The directory projection carries the English status label; the
-        // page re-translates via the local `status` field for locale parity.
-        secondary: status ? this.transloco.translate(STATUS_KEY[status]) : undefined,
-        coverAssetId: row.coverAssetId,
-      };
-    });
+    const q = this.search().trim().toLowerCase();
+    return this.directory
+      .rows()
+      .map((row) => {
+        const status = row.status as PlotlineStatus | undefined;
+        return {
+          id: row.id,
+          label: row.label,
+          // The directory projection carries the English status label; the
+          // page re-translates via the local `status` field for locale parity.
+          secondary: status ? this.transloco.translate(STATUS_KEY[status]) : undefined,
+          coverAssetId: row.coverAssetId,
+        };
+      })
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
   });
 
   constructor() {

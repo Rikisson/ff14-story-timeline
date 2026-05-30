@@ -8,8 +8,12 @@ export const routes: Routes = [
     loadComponent: () => import('./landing.page').then((m) => m.LandingPage),
   },
   {
-    path: 'library',
+    path: 'stories',
     loadChildren: () => import('@features/stories').then((m) => m.STORIES_ROUTES),
+  },
+  {
+    path: 'library',
+    redirectTo: 'stories',
   },
   {
     path: 'reader',
