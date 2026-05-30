@@ -10,7 +10,7 @@ import { ThemeService, type ThemePreference } from '@shared/services';
     <ng-container *transloco="let t; prefix: 'general'">
       <button
         type="button"
-        class="inline-flex size-9 items-center justify-center rounded-md text-foreground-subtle
+        class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-foreground-subtle
                hover:bg-surface-muted hover:text-foreground
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
         [attr.aria-label]="t('tooltip.themeAria', { pref: preference() })"

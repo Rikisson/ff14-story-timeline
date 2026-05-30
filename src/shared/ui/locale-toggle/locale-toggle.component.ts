@@ -10,7 +10,7 @@ import { LocaleService, type UiLocale } from '@shared/services';
     <ng-container *transloco="let t; prefix: 'general'">
       <button
         type="button"
-        class="inline-flex h-9 items-center justify-center rounded-md px-2 text-xs font-medium uppercase tracking-wide text-foreground-subtle
+        class="inline-flex h-9 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-medium uppercase tracking-wide text-foreground-subtle
                hover:bg-surface-muted hover:text-foreground
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
         [attr.aria-label]="t('tooltip.localeAria', { label: currentLabel() })"

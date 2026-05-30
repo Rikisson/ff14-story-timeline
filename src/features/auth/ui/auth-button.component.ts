@@ -32,25 +32,26 @@ import authUk from '../i18n/uk.json';
         <div class="relative">
           <button
             type="button"
-            class="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
+            class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
+            [class.bg-surface-muted]="open()"
+            [class.text-foreground]="open()"
             [attr.aria-haspopup]="'menu'"
             [attr.aria-expanded]="open()"
             [attr.aria-label]="t('tooltip.accountMenu', { name: accountLabel() })"
             (click)="toggle()"
           >
-            <span class="max-w-[12rem] truncate">{{ accountLabel() }}</span>
             <svg
+              class="size-5"
               aria-hidden="true"
-              width="14"
-              height="14"
-              viewBox="0 0 20 20"
+              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <polyline points="5 8 10 13 15 8" />
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" />
             </svg>
           </button>
 
