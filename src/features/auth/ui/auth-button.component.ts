@@ -58,8 +58,11 @@ import authUk from '../i18n/uk.json';
           @if (open()) {
             <div
               role="menu"
-              class="absolute right-0 top-full z-10 mt-1 min-w-[200px] rounded-md border border-border bg-surface shadow-lg"
+              class="absolute right-0 top-full z-10 mt-1 min-w-[200px] max-w-[16rem] rounded-md border border-border bg-surface shadow-lg"
             >
+              <p class="m-0 truncate border-b border-border px-3 py-2 text-sm font-medium text-foreground">
+                {{ accountLabel() }}
+              </p>
               <ul class="m-0 list-none p-1">
                 <li>
                   <button
