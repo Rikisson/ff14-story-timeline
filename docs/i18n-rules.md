@@ -67,7 +67,7 @@ the prose does not.
   levels.
 - **Scope**: feature/concept name, singular camelCase. Current scopes:
   `general`, `auth`, `character`, `place`, `story`, `event`, `plotline`,
-  `codex`, `editor`, `timeline`, `player`, `universe`, `calendar`,
+  `codex`, `editor`, `explore`, `reader`, `universe`, `calendar`,
   `era`, `media`.
 - **Group** *(optional)*: pick what the scope actually needs from
   `action`, `field`, `empty`, `message`, `tooltip`, `validation`,

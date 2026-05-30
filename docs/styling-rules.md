@@ -195,8 +195,9 @@ the flourish, ink for the body text:
 - `--color-brand-rubric` (deep garnet light, rose-garnet dark — a
   true theme token tuned for AA on the dark canvas) is the
   **signature** colour, the rubric. It carries the wordmark's
-  opening letter (wherever `<app-brand>` renders — header chrome,
-  landing-page hero), the favicon, and the reader's speaker chip's
+  opening letter — wherever `<app-brand>` renders: the app header (the
+  Opovid wordmark on the universe catalog, the active universe's name
+  once you're inside one), the favicon, and the reader's speaker chip's
   illuminated capital. Nowhere else, so it never collides with the
   `danger` role and never dilutes into a second accent.
 - `--color-accent` (mustard light, burnt orange dark) is the

@@ -73,7 +73,7 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 | Character, Place, Codex     | character, place, codex | —                                 |
 | Universe, Plotline          | —                       | —                                 |
 
-- **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use the timeline view.
+- **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use Explore.
 - **Continuation is the one runtime exception.** Story end-scenes and Events expose `nextRefs: EntityRef<'story' | 'event'>[]` for an authored "Continue reading" handoff. The schema keeps the array shape but the editors cap selection to one — branching is the scene graph's job, not `nextRefs`'. Authored intent, not date-derived adjacency.
 - **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
 - **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
@@ -93,12 +93,11 @@ Directory-backed pickers (related-ref pickers, plotline filter, inline-ref sugge
 
 Picker styling, the *Draft* pill, loading / empty / error states, the auto-create row, and the progress modals / toasts driven by the rebuild service all live under the standing tokens and component rules in `styling-rules.md`. Every visible string in the picker — placeholders, error copy, "no matches" empty state, *Create category "X"* affirmative, *Draft* pill — goes through Transloco per `i18n-rules.md`; nothing inline.
 
-## Timeline UX
+## Explore UX
 
-- **Per-lane pagination is the default.** When the user selects N plotline lanes in the filter, each lane fires its own query against `_timelineLaneEntries` with its own cursor, loading state, and error state. Each lane carries its own *Load more* button — there is no shared global "load more" across lanes.
-- **No selected plotlines = one global query** against `_timelineEntries`, single cursor, single *Load more*. Switching from global to filtered (or adding/removing lanes) resets per-lane cursors; the existing pages aren't preserved across filter changes.
-- **Unassigned lane.** When the filter selection includes the synthetic `__unassigned__` lane, it renders alongside selected plotline lanes with the same per-lane semantics.
-- **Selected-lane cap.** See `backend-rules.md` *Cardinality limits* — the UI rejects selecting more than 10 lanes so concurrent query fan-out per pagination step stays bounded.
+- **One date stream, refined client-side.** Explore runs a single global query against `_timelineEntries` — the interleaved story+event stream — with one cursor and one *Load more*. Type (all / stories / events), a single plotline, and free-text title search filter the loaded rows in the client rather than refetching. Default order is oldest-first (ascending in-game date).
+- **Plotline filtering is client-side for now.** A selected plotline narrows the loaded rows by their `plotlineIds`; the server-side plotline filter and the swimlane projection it reads return with a `plotlineIds` array-contains index — see `backend-rules.md` *Timeline projections*.
+- **Search is a loaded-rows filter.** Title search refines what's already paged in — a convenience over the visible stream, not a universe-wide find. The projection-backed picker search is the path that reaches every entity.
 
 ## Scope locks
 
@@ -366,7 +365,7 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   Metadata (slug, title, description, refs, lifecycle) at
   `universes/{u}/stories/{sid}`; content (`startSceneId`, `scenes`) at
   `universes/{u}/stories/{sid}/_content/main`.
-- **Catalog and timeline list views read metadata only.** Reader and
+- **Catalog and Explore list views read metadata only.** Reader and
   editor read both via `StoriesService.getStoryWithContent()`.
 - **Saves write both docs in a single transaction** with the version
   stamp on the metadata doc. Optimistic-concurrency contract uses the

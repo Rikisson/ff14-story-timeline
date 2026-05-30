@@ -66,7 +66,7 @@ The per-kind `secondary` line follows the rules in `narrative-engine-impl.md` *S
 
 `universes/{u}/_timelineEntries/{kind}_{id}` for the mixed story+event date stream, and `universes/{u}/_timelineLaneEntries/{laneKey}_{kind}_{id}` for plotline-filtered swimlanes. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`. Entries with no plotline land in `laneKey: '__unassigned__'`.
 
-The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. A multi-plotline UI runs one query per selected lane with its own cursor; `array-contains-any` caps at 10 and forecloses per-lane pagination, so fan-out is the cost shape.
+The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. Explore reads the single `_timelineEntries` stream and refines type / plotline / title client-side over the loaded page (see `narrative-engine-impl.md` *Explore UX*). The `_timelineLaneEntries` swimlanes back the deferred server-side plotline filter, which needs a `plotlineIds` array-contains index; once it returns, a multi-plotline UI fans out one query per selected lane (`array-contains-any` caps at 10, foreclosing per-lane pagination), so fan-out is the cost shape.
 
 `dateDisplay` is not stored. The client formats from `inGameDate` through `formatInGameDate` (see `narrative-engine-impl.md` *Calendar*) so a calendar config edit doesn't require a content rewrite.
 
