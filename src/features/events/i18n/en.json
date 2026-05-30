@@ -21,8 +21,7 @@
     "descriptionLong": "Long descriptions scroll inside the reader card. Consider splitting into a one-scene story for richer pacing."
   },
   "action": {
-    "create": "+ Add event",
-    "readNow": "Read now"
+    "create": "+ Add event"
   },
   "empty": {
     "list": "No events yet.",

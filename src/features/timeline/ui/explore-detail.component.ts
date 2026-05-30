@@ -60,6 +60,7 @@ export interface ExploreDetailVm {
   ],
   template: `
     <ng-container *transloco="let t; prefix: 'explore'">
+      <ng-container *transloco="let g; prefix: 'general'">
       <app-detail-card [coverAssetId]="vm().coverAssetId">
         <div class="flex flex-wrap items-center gap-2">
           @if (vm().draft) {
@@ -81,7 +82,7 @@ export interface ExploreDetailVm {
 
         <a uiPrimary class="self-start" [routerLink]="readLink()">
           <app-book-icon icon-leading class="size-4" />
-          {{ t('action.readNow') }}
+          {{ g('action.readNow') }}
         </a>
 
         @if (vm().description; as desc) {
@@ -96,6 +97,7 @@ export interface ExploreDetailVm {
           </ul>
         }
       </app-detail-card>
+      </ng-container>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

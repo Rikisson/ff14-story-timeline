@@ -46,6 +46,7 @@ import storyUk from '../i18n/uk.json';
   host: { class: 'block h-full' },
   template: `
     <ng-container *transloco="let t; prefix: 'story'">
+      <ng-container *transloco="let g; prefix: 'general'">
       <app-detail-card [coverAssetId]="story().coverAssetId">
         <div class="flex items-start justify-between gap-3">
           <h2 appContentLang class="m-0 min-w-0 flex-1 font-display text-2xl font-semibold text-foreground">{{ storyTitle() }}</h2>
@@ -82,7 +83,7 @@ import storyUk from '../i18n/uk.json';
           [attr.aria-label]="t('tooltip.readStory', { title: storyTitle() })"
         >
           <app-book-icon icon-leading class="size-4" />
-          {{ t('action.readNow') }}
+          {{ g('action.readNow') }}
         </a>
 
         <div appContentLang class="contents">
@@ -103,6 +104,7 @@ import storyUk from '../i18n/uk.json';
           }
         </div>
       </app-detail-card>
+      </ng-container>
     </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

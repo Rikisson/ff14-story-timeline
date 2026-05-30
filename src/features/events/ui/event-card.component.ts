@@ -66,7 +66,7 @@ import eventUk from '../i18n/uk.json';
             [attr.aria-label]="e('tooltip.readEvent', { name: event().name })"
           >
             <app-book-icon icon-leading class="size-4" />
-            {{ e('action.readNow') }}
+            {{ g('action.readNow') }}
           </a>
 
           <div appContentLang class="contents">
