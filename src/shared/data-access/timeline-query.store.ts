@@ -20,7 +20,6 @@ import { CacheInvalidationBus } from './cache-invalidation.bus';
 import { UNASSIGNED_LANE_KEY } from './projection-rows';
 
 const TIMELINE_COLLECTION = '_timelineEntries';
-const LANE_COLLECTION = '_timelineLaneEntries';
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
@@ -54,18 +53,13 @@ export interface TimelineStreamStoreOptions {
   includeDrafts: Signal<boolean>;
   sortDirection: Signal<SortDirection>;
   /**
-   * `null` selects the global stream over `_timelineEntries` (no lane
-   * filter). A string selects the per-lane stream over
-   * `_timelineLaneEntries`, filtered by `where('laneKey', '==', X)` —
-   * including the `__unassigned__` sentinel for the no-plotline lane.
-   *
-   * Read reactively at query-build time, so a parent that flips the lane
-   * key (e.g. user toggles a plotline filter) re-fetches against the
-   * right collection automatically. The store must not branch on this in
-   * its constructor — Angular signal inputs aren't bound until change
-   * detection, so a constructor-time read returns the initial value.
+   * `null` streams every entry over `_timelineEntries`. A plotline id
+   * narrows the same collection with `where('plotlineIds', 'array-contains', id)`
+   * — no separate per-lane projection. Read reactively at query-build
+   * time so toggling the filter re-fetches automatically; never read in
+   * the constructor, where a signal input still holds its initial value.
    */
-  laneKey: Signal<string | null>;
+  plotlineId: Signal<string | null>;
   pageSize?: number;
 }
 
@@ -83,21 +77,16 @@ export interface TimelineQueryStore {
 export { UNASSIGNED_LANE_KEY };
 
 /**
- * Timeline stream store. One instance per rendered lane — global,
- * per-plotline, or unassigned — driven by the `laneKey` signal:
- *
- *   - `null` → reads `_timelineEntries` ordered by `dateSortKey`. The
- *     mixed story+event date stream with no plotline filter.
- *   - string → reads `_timelineLaneEntries` filtered by
- *     `where('laneKey', '==', X)`. Each plotline (and the
- *     `__unassigned__` sentinel) gets its own instance with its own
- *     cursor.
+ * Timeline stream store over `_timelineEntries` — the mixed story+event
+ * date stream. `plotlineId` narrows it to one arc via an `array-contains`
+ * match on the row's `plotlineIds`, on the same collection (no per-lane
+ * projection).
  *
  * See `docs/narrative-engine-impl.md` *Timeline UX* and
  * `docs/backend-rules.md` *Timeline projections*.
  *
  * Reset semantics: changing `universeId`, `includeDrafts`,
- * `sortDirection`, or `laneKey` resets the cursor and re-fetches page 1.
+ * `sortDirection`, or `plotlineId` resets the cursor and re-fetches page 1.
  *
  * Cache invalidation: an `entity-write` event for a row currently in the
  * page refetches the page in place; writes for off-page rows are
@@ -115,23 +104,20 @@ export function createTimelineStreamStore(
     includeDrafts: opts.includeDrafts,
     sortDirection: opts.sortDirection,
     pageSize: opts.pageSize,
-    extraResetKey: () => opts.laneKey() ?? '__global__',
+    extraResetKey: () => opts.plotlineId() ?? '__all__',
     buildQuery: (firestore, universeId, cursor, pageSize) => {
-      const lane = opts.laneKey();
+      const plotlineId = opts.plotlineId();
       const constraints: QueryConstraint[] = [];
       if (!opts.includeDrafts()) constraints.push(where('visiblePublic', '==', true));
-      if (lane !== null) constraints.push(where('laneKey', '==', lane));
+      if (plotlineId !== null) {
+        constraints.push(where('plotlineIds', 'array-contains', plotlineId));
+      }
       constraints.push(where('dateKnown', '==', true));
       constraints.push(orderBy('dateSortKey', opts.sortDirection()));
       if (cursor) constraints.push(startAfter(cursor));
       constraints.push(limit(pageSize));
       return query(
-        collection(
-          firestore,
-          'universes',
-          universeId,
-          lane !== null ? LANE_COLLECTION : TIMELINE_COLLECTION,
-        ),
+        collection(firestore, 'universes', universeId, TIMELINE_COLLECTION),
         ...constraints,
       );
     },

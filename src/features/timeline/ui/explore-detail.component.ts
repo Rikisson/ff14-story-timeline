@@ -2,9 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { CalendarService } from '@features/calendar';
+import { EntityRef } from '@shared/models';
 import { TimelineRow } from '@shared/data-access';
 import {
+  BookIconComponent,
   DetailCardComponent,
+  EntityKindIconComponent,
+  EntityRefComponent,
   MarkdownTextComponent,
   PrimaryButtonComponent,
   TagComponent,
@@ -21,27 +25,24 @@ export interface ExploreDetailVm {
   coverAssetId?: string;
   inGameDate: TimelineRow['inGameDate'];
   draft: boolean;
-  plotlineIds: string[];
-}
-
-export interface ExplorePlotlineChip {
-  id: string;
-  title: string;
-  color?: string;
+  /** Plotline arcs then related people/places, rendered as entity chips. */
+  refs: EntityRef[];
 }
 
 /**
- * Detail pane for a selected story or event. Cover on the right, text on
- * the left (the shared `DetailCard` convention), with a Read CTA into the
- * reader. The richer "continues / next in arc" nudge is deferred until the
- * connections model lands; today the nudge is the Read action plus the
- * arc chips.
+ * Detail pane for a selected story or event, matching the entity-card
+ * convention: cover, a kind + date meta row, a "Read now" CTA into the
+ * reader, the description, and entity-ref chips. The richer
+ * "continues / next in arc" nudge waits on the connections model.
  */
 @Component({
   selector: 'app-explore-detail',
   host: { class: 'block h-full min-h-0' },
   imports: [
+    BookIconComponent,
     DetailCardComponent,
+    EntityKindIconComponent,
+    EntityRefComponent,
     MarkdownTextComponent,
     PrimaryButtonComponent,
     RouterLink,
@@ -60,39 +61,40 @@ export interface ExplorePlotlineChip {
   template: `
     <ng-container *transloco="let t; prefix: 'explore'">
       <app-detail-card [coverAssetId]="vm().coverAssetId">
-        <div class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-foreground-faint">
-          <span class="inline-flex items-center gap-1.5">
-            <span aria-hidden="true">{{ vm().kind === 'story' ? '📖' : '◆' }}</span>
-            {{ kindLabel(t) }}
-          </span>
-          @if (formattedDate()) {
-            <span aria-hidden="true">·</span>
-            <span>{{ formattedDate() }}</span>
-          }
+        <div class="flex flex-wrap items-center gap-2">
           @if (vm().draft) {
             <app-tag tone="amber">{{ t('badge.draft') }}</app-tag>
           }
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-foreground-muted">
+            <app-entity-kind-icon class="size-3.5" [kind]="vm().kind" />
+            <span>{{ kindLabel(t) }}</span>
+            @if (formattedDate(); as d) {
+              <span aria-hidden="true">·</span>
+              <span>{{ d }}</span>
+            }
+          </span>
         </div>
 
         <h2 class="m-0 font-display text-2xl font-semibold text-foreground">
           {{ vm().title || t('field.untitled') }}
         </h2>
 
-        @if (plotlines().length) {
-          <div class="flex flex-wrap gap-1.5">
-            @for (p of plotlines(); track p.id) {
-              <app-tag tone="sky">{{ p.title }}</app-tag>
-            }
-          </div>
-        }
+        <a uiPrimary class="self-start" [routerLink]="readLink()">
+          <app-book-icon icon-leading class="size-4" />
+          {{ t('action.readNow') }}
+        </a>
 
         @if (vm().description; as desc) {
-          <app-markdown-text class="text-sm text-foreground-subtle" [text]="desc" />
+          <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />
         }
 
-        <div class="pt-2">
-          <a uiPrimary [routerLink]="readLink()">{{ t('action.read') }}</a>
-        </div>
+        @if (vm().refs.length) {
+          <ul class="m-0 flex list-none flex-wrap items-center gap-1.5 p-0">
+            @for (r of vm().refs; track r.kind + ':' + r.id) {
+              <li><app-entity-ref [ref]="r" /></li>
+            }
+          </ul>
+        }
       </app-detail-card>
     </ng-container>
   `,
@@ -100,7 +102,6 @@ export interface ExplorePlotlineChip {
 })
 export class ExploreDetailComponent {
   readonly vm = input.required<ExploreDetailVm>();
-  readonly plotlines = input<ExplorePlotlineChip[]>([]);
 
   private readonly calendar = inject(CalendarService);
 

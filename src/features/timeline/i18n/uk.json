@@ -12,6 +12,7 @@
     "placeholder": "Пошук за назвою"
   },
   "filter": {
+    "typeLabel": "Тип",
     "all": "Усі",
     "stories": "Історії",
     "events": "Події"
@@ -21,7 +22,8 @@
     "newestFirst": "Спочатку нові",
     "clearFilters": "Очистити фільтри",
     "loadMore": "Завантажити ще",
-    "read": "Читати"
+    "readNow": "Читати",
+    "filters": "Фільтри"
   },
   "kind": {
     "story": "Історія",

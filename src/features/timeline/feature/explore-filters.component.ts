@@ -10,7 +10,7 @@ export type ExploreType = 'all' | 'story' | 'event';
 
 export interface ExploreFilters {
   type: ExploreType;
-  /** Single plotline drives the server-side lane stream; `null` = global. */
+  /** Single plotline; narrows the same `_timelineEntries` stream server-side. */
   plotlineId: string | null;
   /** Free-text title match, applied client-side over loaded rows. */
   search: string;
@@ -23,11 +23,11 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
 };
 
 /**
- * Filter strip above the Explore list. Type narrows by kind; plotline
- * picks a single arc (driving the lane stream so pagination stays
- * server-side); search matches titles. Person / place / date / status
- * filters are deliberately not offered yet — they need composite indexes
- * that aren't authored (`docs/backend-rules.md` *Pagination and filtering*).
+ * Filter controls for Explore — type, a single plotline, and sort. Lives
+ * inside the list pane's collapsible panel; search sits separately at the
+ * top of the pane. Person / place / date / status filters are deferred
+ * (they need composite indexes that aren't authored yet, per
+ * `docs/backend-rules.md` *Pagination and filtering*).
  */
 @Component({
   selector: 'app-explore-filters',
@@ -44,25 +44,13 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
   template: `
     <ng-container *transloco="let t; prefix: 'explore'">
       <ng-container *transloco="let g; prefix: 'general'">
-        <div class="flex flex-wrap items-center gap-3">
-          <label class="min-w-48 max-w-xs flex-1">
-            <span class="sr-only">{{ t('search.placeholder') }}</span>
-            <input
-              type="search"
-              [value]="value().search"
-              (input)="onSearch($event)"
-              [placeholder]="t('search.placeholder')"
-              class="h-10 w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground"
-            />
-          </label>
-
-          <label class="flex">
-            <span class="sr-only">{{ t('filter.all') }}</span>
+        <div class="flex flex-col gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-foreground-subtle">{{ t('filter.typeLabel') }}</span>
             <select
-              class="h-10 rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground"
+              class="h-9 w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-foreground"
               [value]="value().type"
               (change)="onType($event)"
-              [attr.aria-label]="t('field.title')"
             >
               <option value="all">{{ t('filter.all') }}</option>
               <option value="story">{{ t('filter.stories') }}</option>
@@ -70,8 +58,8 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
             </select>
           </label>
 
-          <label class="w-56">
-            <span class="sr-only">{{ g('field.plotlines') }}</span>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-foreground-subtle">{{ g('field.plotlines') }}</span>
             <app-entity-picker
               [value]="plotlineRefs()"
               [kinds]="plotlineKinds"
@@ -81,13 +69,12 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
             />
           </label>
 
-          <label class="flex">
-            <span class="sr-only">{{ t('field.sortByDate') }}</span>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-foreground-subtle">{{ t('field.sortByDate') }}</span>
             <select
-              class="h-10 rounded-md border border-border-strong bg-surface px-3 text-sm text-foreground"
+              class="h-9 w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-foreground"
               [value]="sortDirection()"
               (change)="onSort($event)"
-              [attr.aria-label]="t('field.sortByDate')"
             >
               <option value="asc">{{ t('action.oldestFirst') }}</option>
               <option value="desc">{{ t('action.newestFirst') }}</option>
@@ -95,7 +82,7 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
           </label>
 
           @if (hasActive()) {
-            <button uiGhost type="button" (click)="reset.emit()">
+            <button uiGhost type="button" class="self-start" (click)="reset.emit()">
               {{ t('action.clearFilters') }}
             </button>
           }
@@ -123,13 +110,6 @@ export class ExploreFiltersComponent {
     const v = this.value();
     return v.type !== 'all' || v.plotlineId !== null || v.search.trim() !== '';
   });
-
-  protected onSearch(event: Event): void {
-    this.filtersChange.emit({
-      ...this.value(),
-      search: (event.target as HTMLInputElement).value,
-    });
-  }
 
   protected onType(event: Event): void {
     const type = (event.target as HTMLSelectElement).value as ExploreType;

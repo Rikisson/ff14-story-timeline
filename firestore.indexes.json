@@ -1,66 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "universes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "universes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "authorUid", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_directory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "labelFolded", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_directory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
-        { "fieldPath": "labelFolded", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_directory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "labelFolded", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_directory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "categoryKey", "order": "ASCENDING" },
-        { "fieldPath": "labelFolded", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_directory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "categoryKey", "order": "ASCENDING" },
-        { "fieldPath": "labelFolded", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "_timelineEntries",
       "queryScope": "COLLECTION",
       "fields": [
@@ -82,7 +22,28 @@
       "collectionGroup": "_timelineEntries",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
         { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "plotlineIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "dateSortKey", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "_timelineEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
+        { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "plotlineIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "dateSortKey", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "_timelineEntries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "plotlineIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "dateSortKey", "order": "ASCENDING" }
       ]
     },
@@ -91,26 +52,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "dateKnown", "order": "ASCENDING" },
-        { "fieldPath": "dateSortKey", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_timelineLaneEntries",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
-        { "fieldPath": "laneKey", "order": "ASCENDING" },
-        { "fieldPath": "dateKnown", "order": "ASCENDING" },
-        { "fieldPath": "dateSortKey", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_timelineLaneEntries",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "visiblePublic", "order": "ASCENDING" },
-        { "fieldPath": "laneKey", "order": "ASCENDING" },
-        { "fieldPath": "dateKnown", "order": "ASCENDING" },
+        { "fieldPath": "plotlineIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "dateSortKey", "order": "DESCENDING" }
       ]
     },
@@ -130,24 +72,7 @@
         { "fieldPath": "laneKey", "order": "ASCENDING" },
         { "fieldPath": "dateKnown", "order": "ASCENDING" },
         { "fieldPath": "dateSortKey", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_assets",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "codexEntries",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "categoryKey", "order": "ASCENDING" },
-        { "fieldPath": "titleFolded", "order": "ASCENDING" }
       ]
     }
-  ],
-  "fieldOverrides": []
+  ]
 }

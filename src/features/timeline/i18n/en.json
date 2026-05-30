@@ -12,6 +12,7 @@
     "placeholder": "Search by title"
   },
   "filter": {
+    "typeLabel": "Type",
     "all": "All",
     "stories": "Stories",
     "events": "Events"
@@ -21,7 +22,8 @@
     "newestFirst": "Newest first",
     "clearFilters": "Clear filters",
     "loadMore": "Load more",
-    "read": "Read"
+    "readNow": "Read now",
+    "filters": "Filters"
   },
   "kind": {
     "story": "Story",
