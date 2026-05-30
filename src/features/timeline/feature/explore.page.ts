@@ -64,7 +64,7 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
   template: `
     <ng-container *transloco="let t; prefix: 'explore'">
       <app-page class="h-full">
-        <app-page-header [title]="t('field.title')" [subtitle]="t('message.subtitle')" />
+        <app-page-header [title]="t('field.title')" />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-explore-list

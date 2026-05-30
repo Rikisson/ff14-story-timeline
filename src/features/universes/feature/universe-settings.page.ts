@@ -84,7 +84,7 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   template: `
     <ng-container *transloco="let t; prefix: 'universe'">
       <app-page class="h-full">
-        <app-page-header [title]="t('field.settingsTitle')" [subtitle]="universe()?.name ?? ''" />
+        <app-page-header [title]="t('field.settingsTitle')" />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
@@ -138,7 +138,6 @@ export class UniverseSettingsPage {
     initialValue: this.transloco.getActiveLang(),
   });
 
-  protected readonly universe = this.store.activeUniverse;
   private readonly isOwner = this.store.isOwnerOfActive;
   private readonly routeParams = toSignal(this.route.paramMap, { requireSync: true });
 

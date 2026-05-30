@@ -40,10 +40,7 @@ import {
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
       <app-page class="h-full">
-        <app-page-header
-          [title]="t('message.landingPickTitle')"
-          [subtitle]="t('message.landingPickHint')"
-        />
+        <app-page-header [title]="t('message.landingPickTitle')" />
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane

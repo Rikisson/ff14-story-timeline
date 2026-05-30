@@ -52,7 +52,7 @@
     },
     "nav": {
       "timeline": "Timeline",
-      "explore": "Explore",
+      "explore": "Explore universe",
       "archives": "Archives",
       "settings": "Universe settings",
       "stories": "Stories",
@@ -84,7 +84,7 @@
       "refreshError": "Couldn't load {{ resource }}:",
       "seedConfirm": "Seed test data? This overwrites the default universe and its seeded entities (calendar, codex categories, characters, places, events, stories, plotlines, codex entries) by ID.",
       "loadingUniverses": "Loading universes…",
-      "landingPickTitle": "Pick a universe",
+      "landingPickTitle": "Universes",
       "landingPickHint": "Choose a universe to dive into, or create your own.",
       "landingSignInHint": "Sign in if you'd like to author or edit.",
       "tiptapRefHint": "Type $'{' for entity refs",
