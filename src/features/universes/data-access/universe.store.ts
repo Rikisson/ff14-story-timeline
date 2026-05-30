@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { AuthStore } from '@features/auth';
-import { Universe } from './universe.types';
+import { Universe, UniverseDraft } from './universe.types';
 import { UniversesService } from './universes.service';
 
 const STORAGE_KEY = 'ff14-story-timeline.activeUniverseId';
@@ -83,6 +83,12 @@ export const UniverseStore = signalStore(
     (store, service = inject(UniversesService), auth = inject(AuthStore)) => ({
       setActive(id: string | null): void {
         patchState(store, { activeUniverseId: id });
+      },
+      async createUniverse(draft: UniverseDraft, uid: string): Promise<string> {
+        const id = await service.create(draft, uid);
+        const universes = await service.listAll();
+        patchState(store, { universes, activeUniverseId: id });
+        return id;
       },
       async refresh(): Promise<void> {
         patchState(store, { loading: true, error: null });

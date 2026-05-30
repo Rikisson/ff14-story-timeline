@@ -4,6 +4,7 @@ import { EntityKind } from '@shared/models';
 import { PrimaryButtonComponent, GhostButtonComponent } from '../button';
 import { EntityKindIconComponent } from '../entity-kind-icon';
 import { LazyThumbComponent } from '../lazy-thumb';
+import { WorldIconComponent } from '../world-icon';
 
 export interface ListPaneItem {
   id: string;
@@ -26,6 +27,7 @@ export interface ListPaneItem {
     GhostButtonComponent,
     LazyThumbComponent,
     EntityKindIconComponent,
+    WorldIconComponent,
     TranslocoDirective,
   ],
   host: { class: 'block min-h-0' },
@@ -139,6 +141,13 @@ export interface ListPaneItem {
                       >
                         <app-entity-kind-icon class="size-5" [kind]="k" />
                       </span>
+                    } @else if (worldPlaceholder()) {
+                      <span
+                        class="grid size-10 shrink-0 place-items-center rounded bg-surface-muted text-foreground-faint"
+                        aria-hidden="true"
+                      >
+                        <app-world-icon class="size-5" />
+                      </span>
                     }
                     <span class="flex min-w-0 flex-1 flex-col">
                       <span class="truncate font-medium text-foreground">{{ item.label }}</span>
@@ -202,6 +211,7 @@ export class EntityListPaneComponent {
   readonly searchValue = input<string>('');
   readonly hasFilters = input<boolean>(false);
   readonly filtersActive = input<boolean>(false);
+  readonly worldPlaceholder = input<boolean>(false);
 
   readonly select = output<string>();
   readonly create = output<void>();

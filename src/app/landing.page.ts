@@ -1,80 +1,207 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
-import { UniverseStore } from '@features/universes';
-import { BrandComponent, PageComponent } from '@shared/ui';
+import {
+  Universe,
+  UniverseDetailComponent,
+  UniverseDraft,
+  UniverseFormComponent,
+  UniverseStore,
+} from '@features/universes';
+import { SlugTakenError } from '@shared/models';
+import {
+  EntityListPaneComponent,
+  ListPaneItem,
+  PageComponent,
+  PageHeaderComponent,
+} from '@shared/ui';
 
 @Component({
   selector: 'app-landing-page',
-  imports: [BrandComponent, PageComponent, TranslocoDirective],
+  host: { class: 'block h-full' },
+  imports: [
+    EntityListPaneComponent,
+    PageComponent,
+    PageHeaderComponent,
+    UniverseDetailComponent,
+    UniverseFormComponent,
+    TranslocoDirective,
+  ],
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
-      <app-page>
-        <div class="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
-        <app-brand size="hero" class="brand-enter mb-4" />
-        @if (loading()) {
-          <span
-            class="inline-block size-10 rounded-full border-4 border-border-strong border-t-foreground animate-spin"
-            aria-hidden="true"
-          ></span>
-          <p class="m-0 text-foreground-subtle">{{ t('message.loadingUniverses') }}</p>
-        } @else if (universes().length === 0) {
-          <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ t('empty.landingNoUniversesTitle') }}</h1>
-          <p class="m-0 text-foreground-subtle">
-            @if (canCreate()) {
-              {{ t('empty.landingNoUniversesAuthor') }}
-            } @else if (user()) {
-              {{ t('empty.landingNoUniversesUser') }}
+      <app-page class="h-full">
+        <app-page-header
+          [title]="t('message.landingPickTitle')"
+          [subtitle]="t('message.landingPickHint')"
+        />
+
+        <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+          <app-entity-list-pane
+            class="md:w-80 md:shrink-0"
+            [items]="listItems()"
+            [selectedId]="selectedId()"
+            [loading]="loading()"
+            [canCreate]="canCreate()"
+            [createLabel]="t('action.newUniverse')"
+            [emptyMessage]="emptyMessage()"
+            [ariaLabel]="t('tooltip.universesList')"
+            [worldPlaceholder]="true"
+            [searchable]="true"
+            [searchValue]="search()"
+            (searchChange)="search.set($event)"
+            (select)="selectedId.set($event)"
+            (create)="startCreate()"
+          />
+
+          <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.universesDetails')">
+            @if (selectedUniverse(); as u) {
+              <app-universe-detail
+                class="min-h-0 flex-1"
+                [universe]="u"
+                [canManage]="canManageSelected()"
+                (enterUniverse)="enter(u)"
+                (openSettings)="openSettings(u)"
+              />
             } @else {
-              {{ t('empty.landingNoUniversesGuest') }}
+              <p class="m-0 rounded-lg border border-border bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
+                {{ t('empty.catalogSelect') }}
+              </p>
             }
-          </p>
-        } @else {
-          <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ t('message.landingPickTitle') }}</h1>
-          <p class="m-0 text-foreground-subtle">
-            {{ t('message.landingPickHint') }}
-            @if (!user()) {
-              {{ t('message.landingSignInHint') }}
-            }
-          </p>
-        }
+          </section>
         </div>
       </app-page>
+
+      <dialog
+        #createDialog
+        class="m-auto rounded-lg p-0 bg-surface text-foreground backdrop:bg-backdrop"
+        [attr.aria-label]="t('tooltip.createUniverse')"
+        (close)="onDialogClose()"
+        (click)="onDialogBackdropClick($event)"
+      >
+        <div class="w-[min(28rem,90vw)] p-2">
+          <app-universe-form
+            [busy]="busy()"
+            [errorMessage]="errorMessage()"
+            (submitted)="onSubmit($event)"
+            (cancelled)="closeCreate()"
+          />
+        </div>
+      </dialog>
     </ng-container>
-  `,
-  styles: `
-    .brand-enter {
-      animation: brand-enter 0.6s ease-out both;
-    }
-    @keyframes brand-enter {
-      from {
-        opacity: 0;
-        transform: translateY(0.5rem);
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .brand-enter {
-        animation: none;
-      }
-    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingPage {
-  private readonly universeStore = inject(UniverseStore);
+  private readonly store = inject(UniverseStore);
   private readonly router = inject(Router);
-  protected readonly user = inject(AuthStore).user;
-  protected readonly loading = this.universeStore.loading;
-  protected readonly universes = this.universeStore.universes;
-  protected readonly activeId = this.universeStore.activeUniverseId;
-  protected readonly canCreate = this.universeStore.canCreateUniverse;
+  private readonly transloco = inject(TranslocoService);
+  private readonly user = inject(AuthStore).user;
+
+  protected readonly loading = this.store.loading;
+  protected readonly canCreate = this.store.canCreateUniverse;
+
+  protected readonly search = signal('');
+  protected readonly selectedId = linkedSignal(() => this.store.activeUniverseId());
+  protected readonly busy = signal(false);
+  protected readonly errorMessage = signal<string | null>(null);
+
+  private readonly createDialog = viewChild.required<ElementRef<HTMLDialogElement>>('createDialog');
 
   constructor() {
-    effect(() => {
-      if (this.activeId()) {
-        void this.router.navigate(['/explore'], { replaceUrl: true });
+    // Resume into the remembered universe only on the app's first navigation;
+    // reaching the catalog later (via the home link) must not bounce away.
+    const isFirstNavigation = this.router.getCurrentNavigation()?.id === 1;
+    if (isFirstNavigation && this.store.activeUniverseId()) {
+      void this.router.navigate(['/explore'], { replaceUrl: true });
+    }
+  }
+
+  protected readonly selectedUniverse = computed<Universe | null>(
+    () => this.store.universes().find((u) => u.id === this.selectedId()) ?? null,
+  );
+
+  protected readonly canManageSelected = computed(() => {
+    const uid = this.user()?.uid;
+    const u = this.selectedUniverse();
+    if (!uid || !u) return false;
+    return u.authorUid === uid || u.editorUids.includes(uid);
+  });
+
+  protected readonly listItems = computed<ListPaneItem[]>(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.store
+      .universes()
+      .map((u) => ({
+        id: u.id,
+        label: u.name,
+        coverAssetId: u.coverAssetId,
+      }))
+      .filter((item) => q === '' || item.label.toLowerCase().includes(q));
+  });
+
+  protected readonly emptyMessage = computed(() =>
+    this.transloco.translate(
+      this.canCreate() ? 'general.empty.landingNoUniversesAuthor' : 'general.empty.landingNoUniversesGuest',
+    ),
+  );
+
+  protected enter(u: Universe): void {
+    this.store.setActive(u.id);
+    void this.router.navigate(['/explore']);
+  }
+
+  protected openSettings(u: Universe): void {
+    this.store.setActive(u.id);
+    void this.router.navigate(['/universe/settings']);
+  }
+
+  protected startCreate(): void {
+    this.errorMessage.set(null);
+    this.createDialog().nativeElement.showModal();
+  }
+
+  protected closeCreate(): void {
+    this.createDialog().nativeElement.close();
+  }
+
+  protected onDialogClose(): void {
+    this.errorMessage.set(null);
+    this.busy.set(false);
+  }
+
+  protected onDialogBackdropClick(event: MouseEvent): void {
+    if (event.target === this.createDialog().nativeElement) {
+      this.closeCreate();
+    }
+  }
+
+  protected async onSubmit(draft: UniverseDraft): Promise<void> {
+    const u = this.user();
+    if (!u) return;
+    this.busy.set(true);
+    this.errorMessage.set(null);
+    try {
+      await this.store.createUniverse(draft, u.uid);
+      this.closeCreate();
+      await this.router.navigate(['/explore']);
+    } catch (err) {
+      if (err instanceof SlugTakenError) {
+        this.errorMessage.set(err.message);
+      } else {
+        this.errorMessage.set(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
       }
-    });
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

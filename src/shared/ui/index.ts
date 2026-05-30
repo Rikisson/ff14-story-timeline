@@ -22,3 +22,4 @@ export * from './tag';
 export * from './theme-toggle';
 export * from './toggle-button';
 export * from './typewriter';
+export * from './world-icon';

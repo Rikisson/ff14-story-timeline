@@ -7,6 +7,8 @@ export type {
 } from './data-access/universe-deletion.service';
 export { universeGuard, editorGuard } from './data-access/universe.guard';
 export { UniverseSelectorComponent } from './ui/universe-selector.component';
+export { UniverseDetailComponent } from './ui/universe-detail.component';
+export { UniverseFormComponent } from './ui/universe-form.component';
 export { ContentLangDirective } from './ui/content-lang.directive';
 export { UNIVERSE_ROUTES } from './universes.routes';
 export type {

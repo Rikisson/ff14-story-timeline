@@ -13,7 +13,6 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { AuthStore } from '@features/auth';
 import { BrandComponent } from '@shared/ui';
 import { SlugTakenError } from '@shared/models';
-import { UniversesService } from '../data-access/universes.service';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseDraft } from '../data-access/universe.types';
 import { UniverseFormComponent } from './universe-form.component';
@@ -136,7 +135,6 @@ import universeUk from '../i18n/uk.json';
 })
 export class UniverseSelectorComponent {
   private readonly store = inject(UniverseStore);
-  private readonly service = inject(UniversesService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthStore);
   private readonly transloco = inject(TranslocoService);
@@ -168,7 +166,7 @@ export class UniverseSelectorComponent {
   protected select(id: string): void {
     this.store.setActive(id);
     this.close();
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/explore']);
   }
 
   protected close(): void {
@@ -215,11 +213,9 @@ export class UniverseSelectorComponent {
     this.busy.set(true);
     this.errorMessage.set(null);
     try {
-      const id = await this.service.create(draft, u.uid);
-      await this.store.refresh();
-      this.store.setActive(id);
+      await this.store.createUniverse(draft, u.uid);
       this.closeCreate();
-      await this.router.navigate(['/']);
+      await this.router.navigate(['/explore']);
     } catch (err) {
       if (err instanceof SlugTakenError) {
         this.errorMessage.set(err.message);

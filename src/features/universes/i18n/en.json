@@ -20,6 +20,7 @@
   },
   "action": {
     "create": "Create",
+    "enter": "Explore universe",
     "addContributor": "Add contributor",
     "settingsMenu": "Universe settings",
     "createMenu": "+ Create universe",
