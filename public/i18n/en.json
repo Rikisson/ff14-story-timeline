@@ -112,6 +112,7 @@
       "tiptapItalic": "Italic (Ctrl+I)",
       "tiptapEditRef": "Edit reference label",
       "archivesAria": "Archives",
+      "home": "Home",
       "themeAria": "Theme: {{ pref }}. Click to change.",
       "themeSystem": "System theme (click for light)",
       "themeLight": "Light theme (click for dark)",

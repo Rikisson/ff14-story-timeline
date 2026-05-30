@@ -11,6 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
+import { BrandComponent } from '@shared/ui';
 import { SlugTakenError } from '@shared/models';
 import { UniversesService } from '../data-access/universes.service';
 import { UniverseStore } from '../data-access/universe.store';
@@ -21,7 +22,7 @@ import universeUk from '../i18n/uk.json';
 
 @Component({
   selector: 'app-universe-selector',
-  imports: [UniverseFormComponent, TranslocoDirective],
+  imports: [BrandComponent, UniverseFormComponent, TranslocoDirective],
   providers: [
     provideTranslocoScope({
       scope: 'universe',
@@ -36,17 +37,16 @@ import universeUk from '../i18n/uk.json';
       <div class="relative">
         <button
           type="button"
-          class="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-foreground-subtle hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
+          class="group -mx-1 inline-flex max-w-[16rem] items-center gap-1 rounded-md px-1 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground-faint"
           [attr.aria-haspopup]="'menu'"
           [attr.aria-expanded]="open()"
           [attr.aria-label]="t('tooltip.switchUniverse')"
           (click)="toggle()"
         >
-          <span class="max-w-[12rem] truncate">{{ label() }}</span>
+          <app-brand class="min-w-0" [showMark]="false" [wordOverride]="label()" />
           <svg
+            class="size-5 shrink-0 text-foreground-faint transition-colors group-hover:text-foreground-subtle"
             aria-hidden="true"
-            width="14"
-            height="14"
             viewBox="0 0 20 20"
             fill="none"
             stroke="currentColor"

@@ -50,6 +50,18 @@ export class App {
   protected readonly chromeHidden = this.layout.chromeHidden;
   protected readonly hasActiveUniverse = computed(() => !!this.universes.activeUniverse());
 
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+  protected readonly isLanding = computed(() => {
+    const path = this.url().split(/[?#]/)[0];
+    return path === '' || path === '/';
+  });
+
   protected readonly isNavigating = toSignal(
     this.router.events.pipe(
       filter(
