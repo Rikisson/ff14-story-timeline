@@ -51,7 +51,9 @@
     },
     "nav": {
       "timeline": "Хронологія",
+      "explore": "Огляд",
       "archives": "Архіви",
+      "settings": "Налаштування всесвіту",
       "stories": "Історії",
       "events": "Події",
       "plotlines": "Сюжетні лінії",

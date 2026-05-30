@@ -51,7 +51,9 @@
     },
     "nav": {
       "timeline": "Timeline",
+      "explore": "Explore",
       "archives": "Archives",
+      "settings": "Universe settings",
       "stories": "Stories",
       "events": "Events",
       "plotlines": "Plotlines",

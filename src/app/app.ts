@@ -14,12 +14,14 @@ import { filter, map, of, switchMap, timer } from 'rxjs';
 import { AuthButtonComponent, AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
 import { CodexCategoriesService } from '@features/codex';
-import { UniverseSelectorComponent, UniverseStore } from '@features/universes';
+import { UniverseStore } from '@features/universes';
 import { LayoutStore } from '@shared/data-access';
 import {
   ArchivesButtonComponent,
   BrandComponent,
+  ExploreButtonComponent,
   LocaleToggleComponent,
+  SettingsButtonComponent,
   ThemeToggleComponent,
 } from '@shared/ui';
 
@@ -32,9 +34,10 @@ import {
     ArchivesButtonComponent,
     AuthButtonComponent,
     BrandComponent,
+    ExploreButtonComponent,
     LocaleToggleComponent,
+    SettingsButtonComponent,
     ThemeToggleComponent,
-    UniverseSelectorComponent,
   ],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +64,12 @@ export class App {
     const path = this.url().split(/[?#]/)[0];
     return path === '' || path === '/';
   });
+
+  protected readonly inUniverse = computed(() => this.hasActiveUniverse() && !this.isLanding());
+  protected readonly isMember = this.universes.isMemberOfActive;
+  protected readonly brandWord = computed(() =>
+    this.inUniverse() ? this.universes.activeUniverse()?.name ?? null : null,
+  );
 
   protected readonly isNavigating = toSignal(
     this.router.events.pipe(
