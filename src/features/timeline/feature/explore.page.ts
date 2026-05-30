@@ -129,7 +129,7 @@ export class ExplorePage {
 
   protected readonly EMPTY = EMPTY_EXPLORE_FILTERS;
   protected readonly filters = signal<ExploreFilters>(EMPTY_EXPLORE_FILTERS);
-  protected readonly sortDirection = signal<SortDirection>('desc');
+  protected readonly sortDirection = signal<SortDirection>('asc');
 
   protected readonly filtersActive = computed(() => {
     const f = this.filters();

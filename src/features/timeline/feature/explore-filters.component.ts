@@ -94,7 +94,7 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
 })
 export class ExploreFiltersComponent {
   readonly value = input.required<ExploreFilters>();
-  readonly sortDirection = input<SortDirection>('desc');
+  readonly sortDirection = input<SortDirection>('asc');
   readonly filtersChange = output<ExploreFilters>();
   readonly sortDirectionChange = output<SortDirection>();
   readonly reset = output<void>();
