@@ -27,7 +27,7 @@ const ARCHIVE_LINKS: readonly ArchiveLink[] = [
           @for (link of links; track link.path) {
             <a
               [routerLink]="link.path"
-              routerLinkActive="border-foreground font-bold text-foreground"
+              routerLinkActive="border-accent! font-bold text-foreground"
               ariaCurrentWhenActive="page"
               class="border-b-2 border-transparent pb-0.5 text-sm text-foreground-subtle no-underline transition-colors hover:text-foreground
                      focus-visible:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-accent-ring"
