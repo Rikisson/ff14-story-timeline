@@ -37,8 +37,9 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
 /**
  * Explore — the universe home. A combined stories + events stream rendered
  * as a softly date-grouped master rail with an in-page detail pane, over
- * the `_timelineEntries` projection. A single plotline narrows the same
- * stream server-side; type and search refine the loaded rows client-side.
+ * the `_timelineEntries` projection. Type, plotline, and search refine the
+ * loaded rows client-side; server-side plotline filtering returns with the
+ * plotlines rework (it needs a `plotlineIds` array-contains index).
  */
 @Component({
   selector: 'app-explore-page',
@@ -141,13 +142,10 @@ export class ExplorePage {
   private readonly effectiveDrafts = computed(
     () => !!this.auth.user() && this.universes.isMemberOfActive(),
   );
-  private readonly plotlineId = computed(() => this.filters().plotlineId);
-
   protected readonly store = createTimelineStreamStore({
     universeId: this.universeId,
     includeDrafts: this.effectiveDrafts,
     sortDirection: this.sortDirection,
-    plotlineId: this.plotlineId,
   });
 
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
@@ -157,13 +155,14 @@ export class ExplorePage {
   protected readonly detailLoading = signal(false);
 
   private readonly visibleRows = computed<TimelineRow[]>(() => {
-    const { type, search } = this.filters();
+    const { type, plotlineId, search } = this.filters();
     const q = search.trim().toLowerCase();
     return this.store
       .rows()
       .filter(
         (r) =>
           (type === 'all' || r.kind === type) &&
+          (plotlineId === null || r.plotlineIds.includes(plotlineId)) &&
           (q === '' || r.title.toLowerCase().includes(q)),
       );
   });

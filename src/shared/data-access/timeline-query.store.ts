@@ -52,14 +52,6 @@ export interface TimelineStreamStoreOptions {
   /** Members include drafts; public reads must omit them per backend-rules. */
   includeDrafts: Signal<boolean>;
   sortDirection: Signal<SortDirection>;
-  /**
-   * `null` streams every entry over `_timelineEntries`. A plotline id
-   * narrows the same collection with `where('plotlineIds', 'array-contains', id)`
-   * — no separate per-lane projection. Read reactively at query-build
-   * time so toggling the filter re-fetches automatically; never read in
-   * the constructor, where a signal input still holds its initial value.
-   */
-  plotlineId: Signal<string | null>;
   pageSize?: number;
 }
 
@@ -78,15 +70,16 @@ export { UNASSIGNED_LANE_KEY };
 
 /**
  * Timeline stream store over `_timelineEntries` — the mixed story+event
- * date stream. `plotlineId` narrows it to one arc via an `array-contains`
- * match on the row's `plotlineIds`, on the same collection (no per-lane
- * projection).
+ * date stream ordered by `dateSortKey`. Refinement (type, plotline, title)
+ * runs client-side over loaded rows for now; server-side plotline
+ * filtering (`plotlineIds` array-contains) returns with the plotlines
+ * rework, once its composite index is deployed.
  *
  * See `docs/narrative-engine-impl.md` *Timeline UX* and
  * `docs/backend-rules.md` *Timeline projections*.
  *
- * Reset semantics: changing `universeId`, `includeDrafts`,
- * `sortDirection`, or `plotlineId` resets the cursor and re-fetches page 1.
+ * Reset semantics: changing `universeId`, `includeDrafts`, or
+ * `sortDirection` resets the cursor and re-fetches page 1.
  *
  * Cache invalidation: an `entity-write` event for a row currently in the
  * page refetches the page in place; writes for off-page rows are
@@ -104,14 +97,10 @@ export function createTimelineStreamStore(
     includeDrafts: opts.includeDrafts,
     sortDirection: opts.sortDirection,
     pageSize: opts.pageSize,
-    extraResetKey: () => opts.plotlineId() ?? '__all__',
+    extraResetKey: () => '',
     buildQuery: (firestore, universeId, cursor, pageSize) => {
-      const plotlineId = opts.plotlineId();
       const constraints: QueryConstraint[] = [];
       if (!opts.includeDrafts()) constraints.push(where('visiblePublic', '==', true));
-      if (plotlineId !== null) {
-        constraints.push(where('plotlineIds', 'array-contains', plotlineId));
-      }
       constraints.push(where('dateKnown', '==', true));
       constraints.push(orderBy('dateSortKey', opts.sortDirection()));
       if (cursor) constraints.push(startAfter(cursor));
