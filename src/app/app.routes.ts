@@ -22,9 +22,14 @@ export const routes: Routes = [
     redirectTo: 'reader/story/:id',
   },
   {
-    path: 'timeline',
+    path: 'explore',
     canActivate: [universeGuard],
-    loadChildren: () => import('@features/timeline').then((m) => m.TIMELINE_ROUTES),
+    loadChildren: () => import('@features/timeline').then((m) => m.EXPLORE_ROUTES),
+  },
+  {
+    path: 'timeline',
+    pathMatch: 'full',
+    redirectTo: 'explore',
   },
   {
     path: 'characters',

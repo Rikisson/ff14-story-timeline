@@ -1,1 +1,1 @@
-export { TIMELINE_ROUTES } from './timeline.routes';
+export { EXPLORE_ROUTES } from './explore.routes';

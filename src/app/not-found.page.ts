@@ -12,7 +12,7 @@ import { PageComponent } from '@shared/ui';
         <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
           <h1 class="m-0 font-display text-3xl font-semibold text-foreground">{{ t('empty.notFoundTitle') }}</h1>
           <p class="m-0 text-foreground-subtle">{{ t('empty.notFoundMessage') }}</p>
-          <a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a>
+          <a routerLink="/explore" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a>
         </div>
       </app-page>
     </ng-container>

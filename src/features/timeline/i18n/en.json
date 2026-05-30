@@ -1,23 +1,45 @@
 {
   "field": {
-    "title": "Timeline",
-    "sortByDate": "Sort by date",
-    "unassigned": "Unassigned",
-    "allItems": "All timeline items"
+    "title": "Explore",
+    "untitled": "Untitled",
+    "sortByDate": "Sort by date"
+  },
+  "message": {
+    "subtitle": "Browse the universe's stories and events along its calendar.",
+    "loading": "Loading…"
+  },
+  "search": {
+    "placeholder": "Search by title"
+  },
+  "filter": {
+    "all": "All",
+    "stories": "Stories",
+    "events": "Events"
   },
   "action": {
     "oldestFirst": "Oldest first",
     "newestFirst": "Newest first",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "read": "Read"
   },
-  "message": {
-    "subtitle": "Stories and events placed on the universe's calendar."
+  "kind": {
+    "story": "Story",
+    "event": "Event"
+  },
+  "group": {
+    "undated": "Undated"
+  },
+  "badge": {
+    "draft": "Draft"
   },
   "empty": {
-    "list": "Nothing to show on the timeline.",
-    "noItemsLane": "No items in this lane."
+    "list": "Nothing to show yet.",
+    "selectDetail": "Select a story or event to see its details.",
+    "notFound": "This item could not be found."
   },
   "tooltip": {
-    "loadMore": "Load 25 more items into {{ lane }}"
+    "list": "Stories and events",
+    "details": "Details"
   }
 }

@@ -73,7 +73,7 @@ export class LandingPage {
   constructor() {
     effect(() => {
       if (this.activeId()) {
-        void this.router.navigate(['/timeline'], { replaceUrl: true });
+        void this.router.navigate(['/explore'], { replaceUrl: true });
       }
     });
   }

@@ -87,7 +87,7 @@ import {
           } @else if (error(); as err) {
             <div class="mx-auto w-full max-w-7xl px-4 pt-4">
               <p class="text-danger-foreground">{{ err }}</p>
-              <p><a routerLink="/timeline" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
+              <p><a routerLink="/explore" class="text-accent hover:underline">{{ t('action.backToTimeline') }}</a></p>
             </div>
           } @else if (event(); as ev) {
             <app-scene-view

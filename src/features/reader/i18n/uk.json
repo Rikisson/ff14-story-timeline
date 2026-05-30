@@ -1,7 +1,7 @@
 {
   "action": {
     "back": "← Назад",
-    "backToTimeline": "Назад до хронології",
+    "backToTimeline": "Назад до огляду",
     "startOver": "Почати спочатку",
     "restart": "Перезапустити",
     "continue": "Далі",
