@@ -10,9 +10,12 @@ import {
 } from '@shared/data-access';
 import {
   ArchivesSelectorComponent,
-  EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
+  SidePaneComponent,
+  SidePaneHeaderComponent,
+  SidePaneListComponent,
+  SidePaneSearchComponent,
 } from '@shared/ui';
 import { CodexCategoriesService } from '../data-access/codex-categories.service';
 import { CodexEntriesService } from '../data-access/codex-entries.service';
@@ -29,10 +32,13 @@ import codexUk from '../i18n/uk.json';
   imports: [
     ArchivesSelectorComponent,
     CodexCategoryTypeaheadComponent,
-    EntityListPaneComponent,
     CodexEntryCardComponent,
     CodexEntryFormComponent,
     PageComponent,
+    SidePaneComponent,
+    SidePaneHeaderComponent,
+    SidePaneListComponent,
+    SidePaneSearchComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -48,39 +54,46 @@ import codexUk from '../i18n/uk.json';
     <ng-container *transloco="let t; prefix: 'codex'">
       <app-page class="h-full">
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-entity-list-pane
-            class="md:w-80 md:shrink-0"
-            [kind]="'codexEntry'"
-            [items]="listItems()"
-            [selectedId]="ctrl.selectedId()"
-            [hasMore]="directory.hasMore()"
-            [loadingMore]="directory.loadingMore()"
-            [loading]="directory.loading()"
-            [error]="directory.error()"
-            [canCreate]="ctrl.canCreate()"
-            [createLabel]="t('action.create')"
-            [emptyMessage]="t('empty.list')"
-            [ariaLabel]="t('tooltip.list')"
-            [searchable]="true"
-            [searchValue]="search()"
-            [hasFilters]="true"
-            [filtersActive]="categoryFilter() !== null"
-            (searchChange)="search.set($event)"
-            (select)="onSelect($event)"
-            (create)="ctrl.startCreate()"
-            (loadMore)="directory.loadMore()"
-          >
-            <app-archives-selector list-title />
-            <label list-filters class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-foreground-subtle">{{ t('field.category') }}</span>
-              <app-codex-category-typeahead
-                [value]="categoryFilter()"
-                [allowCreate]="false"
-                [placeholder]="t('action.filterByCategory')"
-                (valueChange)="categoryFilter.set($event)"
-              />
-            </label>
-          </app-entity-list-pane>
+          <app-side-pane class="md:w-80 md:shrink-0" [ariaLabel]="t('tooltip.list')">
+            <app-side-pane-header
+              [canCreate]="ctrl.canCreate()"
+              [createLabel]="t('action.create')"
+              (create)="ctrl.startCreate()"
+            >
+              <app-archives-selector />
+            </app-side-pane-header>
+
+            <app-side-pane-search
+              [searchValue]="search()"
+              [hasFilters]="true"
+              [filtersActive]="categoryFilter() !== null"
+              (searchChange)="search.set($event)"
+            >
+              <label class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-foreground-subtle">{{ t('field.category') }}</span>
+                <app-codex-category-typeahead
+                  [value]="categoryFilter()"
+                  [allowCreate]="false"
+                  [placeholder]="t('action.filterByCategory')"
+                  (valueChange)="categoryFilter.set($event)"
+                />
+              </label>
+            </app-side-pane-search>
+
+            <app-side-pane-list
+              [kind]="'codexEntry'"
+              [items]="listItems()"
+              [selectedId]="ctrl.selectedId()"
+              [hasMore]="directory.hasMore()"
+              [loadingMore]="directory.loadingMore()"
+              [loading]="directory.loading()"
+              [error]="directory.error()"
+              [emptyMessage]="t('empty.list')"
+              [ariaLabel]="t('tooltip.list')"
+              (select)="onSelect($event)"
+              (loadMore)="directory.loadMore()"
+            />
+          </app-side-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {

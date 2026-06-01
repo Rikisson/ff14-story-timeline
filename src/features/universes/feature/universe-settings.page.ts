@@ -5,7 +5,13 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { CalendarSettingsPanelComponent } from '@features/calendar';
 import { CodexCategoriesSettingsPanelComponent } from '@features/codex';
 import { UniverseTransferPage } from '@features/universe-transfer';
-import { EntityListPaneComponent, ListPaneItem, PageComponent } from '@shared/ui';
+import {
+  ListPaneItem,
+  PageComponent,
+  SidePaneComponent,
+  SidePaneHeaderComponent,
+  SidePaneListComponent,
+} from '@shared/ui';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseGeneralSettingsComponent } from '../ui/universe-general-settings.component';
 import { UniverseMembersComponent } from '../ui/universe-members.component';
@@ -56,8 +62,10 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   selector: 'app-universe-settings-page',
   host: { class: 'block h-full' },
   imports: [
-    EntityListPaneComponent,
     PageComponent,
+    SidePaneComponent,
+    SidePaneHeaderComponent,
+    SidePaneListComponent,
     UniverseGeneralSettingsComponent,
     UniverseMembersComponent,
     CalendarSettingsPanelComponent,
@@ -79,15 +87,17 @@ function isSection(value: string | null): value is UniverseSettingsSection {
     <ng-container *transloco="let t; prefix: 'universe'">
       <app-page class="h-full">
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-entity-list-pane
-            class="md:w-72 md:shrink-0"
-            [title]="t('field.settingsTitle')"
-            [items]="listItems()"
-            [selectedId]="section()"
-            [ariaLabel]="t('tooltip.settingsList')"
-            [emptyMessage]="t('empty.noSections')"
-            (select)="onSelect($event)"
-          />
+          <app-side-pane class="md:w-72 md:shrink-0" [ariaLabel]="t('tooltip.settingsList')">
+            <app-side-pane-header [title]="t('field.settingsTitle')" />
+
+            <app-side-pane-list
+              [items]="listItems()"
+              [selectedId]="section()"
+              [ariaLabel]="t('tooltip.settingsList')"
+              [emptyMessage]="t('empty.noSections')"
+              (select)="onSelect($event)"
+            />
+          </app-side-pane>
 
           <section
             class="flex min-h-0 flex-1 flex-col"

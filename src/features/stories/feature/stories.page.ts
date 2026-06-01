@@ -8,9 +8,12 @@ import { UniverseStore } from '@features/universes';
 import { createEntityDirectoryQueryStore } from '@shared/data-access';
 import {
   ArchivesSelectorComponent,
-  EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
+  SidePaneComponent,
+  SidePaneHeaderComponent,
+  SidePaneListComponent,
+  SidePaneSearchComponent,
 } from '@shared/ui';
 import { StoryDetailComponent } from '../ui/story-detail.component';
 import storyEn from '../i18n/en.json';
@@ -22,8 +25,11 @@ import storyUk from '../i18n/uk.json';
   imports: [
     ArchivesSelectorComponent,
     StoryDetailComponent,
-    EntityListPaneComponent,
     PageComponent,
+    SidePaneComponent,
+    SidePaneHeaderComponent,
+    SidePaneListComponent,
+    SidePaneSearchComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -43,28 +49,31 @@ import storyUk from '../i18n/uk.json';
         }
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-entity-list-pane
-            class="md:w-80 md:shrink-0"
-            [kind]="'story'"
-            [items]="listItems()"
-            [selectedId]="selectedId()"
-            [hasMore]="directory.hasMore()"
-            [loadingMore]="directory.loadingMore()"
-            [loading]="directory.loading()"
-            [error]="directory.error()"
-            [canCreate]="canCreate()"
-            [createLabel]="t('action.newStory')"
-            [emptyMessage]="t('empty.list')"
-            [ariaLabel]="t('tooltip.storiesList')"
-            [searchable]="true"
-            [searchValue]="search()"
-            (searchChange)="search.set($event)"
-            (select)="onSelect($event)"
-            (create)="createStory()"
-            (loadMore)="directory.loadMore()"
-          >
-            <app-archives-selector list-title />
-          </app-entity-list-pane>
+          <app-side-pane class="md:w-80 md:shrink-0" [ariaLabel]="t('tooltip.storiesList')">
+            <app-side-pane-header
+              [canCreate]="canCreate()"
+              [createLabel]="t('action.newStory')"
+              (create)="createStory()"
+            >
+              <app-archives-selector />
+            </app-side-pane-header>
+
+            <app-side-pane-search [searchValue]="search()" (searchChange)="search.set($event)" />
+
+            <app-side-pane-list
+              [kind]="'story'"
+              [items]="listItems()"
+              [selectedId]="selectedId()"
+              [hasMore]="directory.hasMore()"
+              [loadingMore]="directory.loadingMore()"
+              [loading]="directory.loading()"
+              [error]="directory.error()"
+              [emptyMessage]="t('empty.list')"
+              [ariaLabel]="t('tooltip.storiesList')"
+              (select)="onSelect($event)"
+              (loadMore)="directory.loadMore()"
+            />
+          </app-side-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.storyDetails')">
             @if (selected(); as s) {

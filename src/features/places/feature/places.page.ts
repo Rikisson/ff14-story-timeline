@@ -11,9 +11,12 @@ import {
 } from '@shared/data-access';
 import {
   ArchivesSelectorComponent,
-  EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
+  SidePaneComponent,
+  SidePaneHeaderComponent,
+  SidePaneListComponent,
+  SidePaneSearchComponent,
 } from '@shared/ui';
 import { BackgroundLibraryComponent } from '../ui/background-library.component';
 import { PlaceCardComponent } from '../ui/place-card.component';
@@ -27,10 +30,13 @@ import placeUk from '../i18n/uk.json';
   imports: [
     ArchivesSelectorComponent,
     BackgroundLibraryComponent,
-    EntityListPaneComponent,
     PageComponent,
     PlaceCardComponent,
     PlaceFormComponent,
+    SidePaneComponent,
+    SidePaneHeaderComponent,
+    SidePaneListComponent,
+    SidePaneSearchComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -46,28 +52,31 @@ import placeUk from '../i18n/uk.json';
     <ng-container *transloco="let t; prefix: 'place'">
       <app-page class="h-full">
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-entity-list-pane
-            class="md:w-80 md:shrink-0"
-            [kind]="'place'"
-            [items]="listItems()"
-            [selectedId]="ctrl.selectedId()"
-            [hasMore]="directory.hasMore()"
-            [loadingMore]="directory.loadingMore()"
-            [loading]="directory.loading()"
-            [error]="directory.error()"
-            [canCreate]="ctrl.canCreate()"
-            [createLabel]="t('action.create')"
-            [emptyMessage]="t('empty.list')"
-            [ariaLabel]="t('tooltip.list')"
-            [searchable]="true"
-            [searchValue]="search()"
-            (searchChange)="search.set($event)"
-            (select)="onSelect($event)"
-            (create)="ctrl.startCreate()"
-            (loadMore)="directory.loadMore()"
-          >
-            <app-archives-selector list-title />
-          </app-entity-list-pane>
+          <app-side-pane class="md:w-80 md:shrink-0" [ariaLabel]="t('tooltip.list')">
+            <app-side-pane-header
+              [canCreate]="ctrl.canCreate()"
+              [createLabel]="t('action.create')"
+              (create)="ctrl.startCreate()"
+            >
+              <app-archives-selector />
+            </app-side-pane-header>
+
+            <app-side-pane-search [searchValue]="search()" (searchChange)="search.set($event)" />
+
+            <app-side-pane-list
+              [kind]="'place'"
+              [items]="listItems()"
+              [selectedId]="ctrl.selectedId()"
+              [hasMore]="directory.hasMore()"
+              [loadingMore]="directory.loadingMore()"
+              [loading]="directory.loading()"
+              [error]="directory.error()"
+              [emptyMessage]="t('empty.list')"
+              [ariaLabel]="t('tooltip.list')"
+              (select)="onSelect($event)"
+              (loadMore)="directory.loadMore()"
+            />
+          </app-side-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {

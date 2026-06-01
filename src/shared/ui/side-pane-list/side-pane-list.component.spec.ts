@@ -4,10 +4,8 @@ import { EntityKind } from '@shared/models';
 import { firstValueFrom } from 'rxjs';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BundledTranslocoLoader } from '../../../app/transloco-loader';
-import {
-  EntityListPaneComponent,
-  ListPaneItem,
-} from './entity-list-pane.component';
+import { ListPaneItem } from '../side-pane-list-item';
+import { SidePaneListComponent } from './side-pane-list.component';
 
 async function setup(inputs?: Partial<{
   items: ListPaneItem[];
@@ -17,13 +15,11 @@ async function setup(inputs?: Partial<{
   loadingMore: boolean;
   loading: boolean;
   error: unknown;
-  canCreate: boolean;
-  createLabel: string;
   emptyMessage: string;
   ariaLabel: string;
-}>): Promise<ComponentFixture<EntityListPaneComponent>> {
+}>): Promise<ComponentFixture<SidePaneListComponent>> {
   TestBed.configureTestingModule({
-    imports: [EntityListPaneComponent],
+    imports: [SidePaneListComponent],
     providers: [
       provideTransloco({
         config: { availableLangs: ['en', 'uk'], defaultLang: 'en', fallbackLang: 'en' },
@@ -31,12 +27,9 @@ async function setup(inputs?: Partial<{
       }),
     ],
   });
-  // *transloco renders its body only once the language file resolves.
-  // The bundled loader is async, so block on the load before any
-  // detectChanges so test assertions can read final markup.
   const transloco = TestBed.inject(TranslocoService);
   await firstValueFrom(transloco.load('en'));
-  const fixture = TestBed.createComponent(EntityListPaneComponent);
+  const fixture = TestBed.createComponent(SidePaneListComponent);
   fixture.componentRef.setInput('items', inputs?.items ?? []);
   if (inputs?.kind !== undefined) fixture.componentRef.setInput('kind', inputs.kind);
   if (inputs?.selectedId !== undefined) fixture.componentRef.setInput('selectedId', inputs.selectedId);
@@ -44,8 +37,6 @@ async function setup(inputs?: Partial<{
   if (inputs?.loadingMore !== undefined) fixture.componentRef.setInput('loadingMore', inputs.loadingMore);
   if (inputs?.loading !== undefined) fixture.componentRef.setInput('loading', inputs.loading);
   if (inputs?.error !== undefined) fixture.componentRef.setInput('error', inputs.error);
-  if (inputs?.canCreate !== undefined) fixture.componentRef.setInput('canCreate', inputs.canCreate);
-  if (inputs?.createLabel !== undefined) fixture.componentRef.setInput('createLabel', inputs.createLabel);
   if (inputs?.emptyMessage !== undefined) fixture.componentRef.setInput('emptyMessage', inputs.emptyMessage);
   if (inputs?.ariaLabel !== undefined) fixture.componentRef.setInput('ariaLabel', inputs.ariaLabel);
   fixture.detectChanges();
@@ -54,13 +45,12 @@ async function setup(inputs?: Partial<{
   return fixture;
 }
 
-describe('EntityListPaneComponent', () => {
+describe('SidePaneListComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('shows the empty message when there are no items, no loading, no error', async () => {
     const fx = await setup({ emptyMessage: 'No characters yet.' });
-    const text = (fx.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('No characters yet.');
+    expect((fx.nativeElement as HTMLElement).textContent).toContain('No characters yet.');
   });
 
   it('shows the loading message during the initial fetch instead of the empty message', async () => {
@@ -83,16 +73,13 @@ describe('EntityListPaneComponent', () => {
   });
 
   it('keeps the list visible while refreshing (items present + loading=true)', async () => {
-    const fx = await setup({
-      items: [{ id: 'a', label: 'Alpha' }],
-      loading: true,
-    });
+    const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }], loading: true });
     const buttons = (fx.nativeElement as HTMLElement).querySelectorAll('button[role=option]');
     expect(buttons.length).toBe(1);
     expect(buttons[0].textContent).toContain('Alpha');
   });
 
-  it('renders one button per item with the label and optional secondary text', async () => {
+  it('renders one option per item with the label and optional secondary text', async () => {
     const fx = await setup({
       items: [
         { id: 'a', label: 'Alpha', secondary: 'a-slug' },
@@ -108,14 +95,12 @@ describe('EntityListPaneComponent', () => {
 
   it('renders a kind-icon placeholder for cover-less items when kind is set', async () => {
     const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }], kind: 'character' });
-    const icon = (fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon');
-    expect(icon).toBeTruthy();
+    expect((fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon')).toBeTruthy();
   });
 
   it('renders no thumbnail slot for cover-less items when kind is unset', async () => {
     const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }] });
-    const icon = (fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon');
-    expect(icon).toBeNull();
+    expect((fx.nativeElement as HTMLElement).querySelector('app-entity-kind-icon')).toBeNull();
   });
 
   it('marks the selected item via aria-selected', async () => {
@@ -135,46 +120,17 @@ describe('EntityListPaneComponent', () => {
     const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }] });
     const emitted: string[] = [];
     fx.componentInstance.select.subscribe((id) => emitted.push(id));
-    const button = (fx.nativeElement as HTMLElement).querySelector(
-      'button[role=option]',
-    ) as HTMLButtonElement;
-    button.click();
+    (fx.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('button[role=option]')!
+      .click();
     expect(emitted).toEqual(['a']);
-  });
-
-  it('hides the create button when canCreate is false', async () => {
-    const fx = await setup({ items: [], canCreate: false, createLabel: 'New character' });
-    const button = (fx.nativeElement as HTMLElement).querySelector(
-      'button[aria-label="New character"]',
-    );
-    expect(button).toBeNull();
-  });
-
-  it('exposes the create label as the icon button accessible name when canCreate is true', async () => {
-    const fx = await setup({ items: [], canCreate: true, createLabel: 'New character' });
-    const button = (fx.nativeElement as HTMLElement).querySelector(
-      'button[aria-label="New character"]',
-    );
-    expect(button).toBeTruthy();
-  });
-
-  it('emits create when the create button is clicked', async () => {
-    const fx = await setup({ items: [], canCreate: true, createLabel: 'New' });
-    let createCount = 0;
-    fx.componentInstance.create.subscribe(() => createCount++);
-    const button = (fx.nativeElement as HTMLElement).querySelector(
-      'button[aria-label="New"]',
-    ) as HTMLButtonElement;
-    button.click();
-    expect(createCount).toBe(1);
   });
 
   it('renders the View more button only when hasMore is true and emits loadMore on click', async () => {
     const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }], hasMore: true });
     let loadMoreCount = 0;
     fx.componentInstance.loadMore.subscribe(() => loadMoreCount++);
-    const text = fx.nativeElement.textContent ?? '';
-    expect(text).toContain('View more');
+    expect((fx.nativeElement.textContent ?? '')).toContain('View more');
     const button = Array.from(
       (fx.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((b) => b.textContent?.trim() === 'View more') as HTMLButtonElement;
@@ -183,11 +139,7 @@ describe('EntityListPaneComponent', () => {
   });
 
   it('disables the View more button while loadingMore is true', async () => {
-    const fx = await setup({
-      items: [{ id: 'a', label: 'Alpha' }],
-      hasMore: true,
-      loadingMore: true,
-    });
+    const fx = await setup({ items: [{ id: 'a', label: 'Alpha' }], hasMore: true, loadingMore: true });
     const button = Array.from(
       (fx.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((b) => b.textContent?.trim().startsWith('Loading')) as HTMLButtonElement;

@@ -16,18 +16,21 @@ import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createTimelineStreamStore, SortDirection, TimelineRow } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
-import { PageComponent } from '@shared/ui';
+import {
+  ListPaneItem,
+  PageComponent,
+  SidePaneComponent,
+  SidePaneGroup,
+  SidePaneGroupedListComponent,
+  SidePaneHeaderComponent,
+  SidePaneSearchComponent,
+} from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import {
   EMPTY_EXPLORE_FILTERS,
   ExploreFilters,
   ExploreFiltersComponent,
 } from './explore-filters.component';
-import {
-  ExploreGroup,
-  ExploreItemVm,
-  ExploreListComponent,
-} from '../ui/explore-list.component';
 import { ExploreDetailComponent, ExploreDetailVm } from '../ui/explore-detail.component';
 import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
@@ -47,8 +50,11 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
   imports: [
     ExploreDetailComponent,
     ExploreFiltersComponent,
-    ExploreListComponent,
     PageComponent,
+    SidePaneComponent,
+    SidePaneGroupedListComponent,
+    SidePaneHeaderComponent,
+    SidePaneSearchComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -64,32 +70,38 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
     <ng-container *transloco="let t; prefix: 'explore'">
       <app-page class="h-full">
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-explore-list
-            class="md:w-80 md:shrink-0"
-            [title]="t('field.title')"
-            [groups]="groups()"
-            [selectedKey]="sel()"
-            [search]="filters().search"
-            [filtersActive]="filtersActive()"
-            [loading]="store.loading()"
-            [loadingMore]="store.loadingMore()"
-            [hasMore]="store.hasMore()"
-            [error]="store.error()"
-            [draftLabel]="t('badge.draft')"
-            (searchChange)="onSearchChange($event)"
-            (select)="onSelect($event)"
-            (loadMore)="store.loadMore()"
-            (retry)="store.refresh()"
-          >
-            <app-explore-filters
-              explore-filters
-              [value]="filters()"
-              [sortDirection]="sortDirection()"
-              (filtersChange)="filters.set($event)"
-              (sortDirectionChange)="sortDirection.set($event)"
-              (reset)="filters.set(EMPTY)"
+          <app-side-pane class="md:w-80 md:shrink-0" [ariaLabel]="t('tooltip.list')">
+            <app-side-pane-header [title]="t('field.title')" />
+
+            <app-side-pane-search
+              [searchValue]="filters().search"
+              [placeholder]="t('search.placeholder')"
+              [hasFilters]="true"
+              [filtersActive]="filtersActive()"
+              (searchChange)="onSearchChange($event)"
+            >
+              <app-explore-filters
+                [value]="filters()"
+                [sortDirection]="sortDirection()"
+                (filtersChange)="filters.set($event)"
+                (sortDirectionChange)="sortDirection.set($event)"
+                (reset)="filters.set(EMPTY)"
+              />
+            </app-side-pane-search>
+
+            <app-side-pane-grouped-list
+              [groups]="groups()"
+              [selectedId]="sel()"
+              [loading]="store.loading()"
+              [loadingMore]="store.loadingMore()"
+              [hasMore]="store.hasMore()"
+              [error]="store.error()"
+              [ariaLabel]="t('tooltip.list')"
+              [emptyMessage]="t('empty.list')"
+              (select)="onSelect($event)"
+              (loadMore)="store.loadMore()"
             />
-          </app-explore-list>
+          </app-side-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (detailLoading()) {
@@ -165,9 +177,9 @@ export class ExplorePage {
       );
   });
 
-  protected readonly groups = computed<ExploreGroup[]>(() => {
-    const out: ExploreGroup[] = [];
-    let current: ExploreGroup | null = null;
+  protected readonly groups = computed<SidePaneGroup[]>(() => {
+    const out: SidePaneGroup[] = [];
+    let current: SidePaneGroup | null = null;
     for (const r of this.visibleRows()) {
       const key = this.groupKey(r);
       if (!current || current.key !== key) {
@@ -204,10 +216,10 @@ export class ExplorePage {
     this.filters.update((f) => ({ ...f, search }));
   }
 
-  protected onSelect(row: TimelineRow): void {
+  protected onSelect(key: string): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { sel: rowKey(row) },
+      queryParams: { sel: key },
       queryParamsHandling: 'merge',
     });
   }
@@ -264,12 +276,16 @@ export class ExplorePage {
     return parts.length ? parts.join(' ') : this.transloco.translate('explore.group.undated');
   }
 
-  private toItem(r: TimelineRow): ExploreItemVm {
+  private toItem(r: TimelineRow): ListPaneItem {
     return {
-      row: r,
-      key: rowKey(r),
-      title: r.title || this.transloco.translate('explore.field.untitled'),
-      date: this.formatDate(r),
+      id: rowKey(r),
+      label: r.title || this.transloco.translate('explore.field.untitled'),
+      secondary: this.formatDate(r),
+      coverAssetId: r.coverAssetId,
+      kind: r.kind,
+      badge: r.draft
+        ? { text: this.transloco.translate('explore.badge.draft'), tone: 'amber' }
+        : undefined,
     };
   }
 

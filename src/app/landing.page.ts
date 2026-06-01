@@ -19,14 +19,24 @@ import {
   UniverseStore,
 } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
-import { EntityListPaneComponent, ListPaneItem, PageComponent } from '@shared/ui';
+import {
+  ListPaneItem,
+  PageComponent,
+  SidePaneComponent,
+  SidePaneHeaderComponent,
+  SidePaneListComponent,
+  SidePaneSearchComponent,
+} from '@shared/ui';
 
 @Component({
   selector: 'app-landing-page',
   host: { class: 'block h-full' },
   imports: [
-    EntityListPaneComponent,
     PageComponent,
+    SidePaneComponent,
+    SidePaneHeaderComponent,
+    SidePaneListComponent,
+    SidePaneSearchComponent,
     UniverseDetailComponent,
     UniverseFormComponent,
     TranslocoDirective,
@@ -35,23 +45,26 @@ import { EntityListPaneComponent, ListPaneItem, PageComponent } from '@shared/ui
     <ng-container *transloco="let t; prefix: 'general'">
       <app-page class="h-full">
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <app-entity-list-pane
-            class="md:w-80 md:shrink-0"
-            [title]="t('message.landingPickTitle')"
-            [items]="listItems()"
-            [selectedId]="selectedId()"
-            [loading]="loading()"
-            [canCreate]="canCreate()"
-            [createLabel]="t('action.newUniverse')"
-            [emptyMessage]="emptyMessage()"
-            [ariaLabel]="t('tooltip.universesList')"
-            [worldPlaceholder]="true"
-            [searchable]="true"
-            [searchValue]="search()"
-            (searchChange)="search.set($event)"
-            (select)="selectedId.set($event)"
-            (create)="startCreate()"
-          />
+          <app-side-pane class="md:w-80 md:shrink-0" [ariaLabel]="t('tooltip.universesList')">
+            <app-side-pane-header
+              [title]="t('message.landingPickTitle')"
+              [canCreate]="canCreate()"
+              [createLabel]="t('action.newUniverse')"
+              (create)="startCreate()"
+            />
+
+            <app-side-pane-search [searchValue]="search()" (searchChange)="search.set($event)" />
+
+            <app-side-pane-list
+              [items]="listItems()"
+              [selectedId]="selectedId()"
+              [loading]="loading()"
+              [emptyMessage]="emptyMessage()"
+              [ariaLabel]="t('tooltip.universesList')"
+              [worldPlaceholder]="true"
+              (select)="selectedId.set($event)"
+            />
+          </app-side-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.universesDetails')">
             @if (selectedUniverse(); as u) {
