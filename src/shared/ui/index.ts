@@ -13,7 +13,6 @@ export * from './form-error';
 export * from './entity-ref';
 export * from './in-game-date-input';
 export * from './lazy-thumb';
-export * from './list-pane-header';
 export * from './locale-toggle';
 export * from './markdown-text';
 export * from './page';

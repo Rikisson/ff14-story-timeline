@@ -5,7 +5,6 @@ import {
   EntityKindIconComponent,
   GhostButtonComponent,
   LazyThumbComponent,
-  ListPaneHeaderComponent,
 } from '@shared/ui';
 import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
@@ -38,7 +37,6 @@ export interface ExploreGroup {
     EntityKindIconComponent,
     GhostButtonComponent,
     LazyThumbComponent,
-    ListPaneHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -57,7 +55,9 @@ export interface ExploreGroup {
           class="flex h-full min-h-0 flex-col gap-2 rounded-lg border border-border bg-surface p-3"
           [attr.aria-label]="t('tooltip.list')"
         >
-          <app-list-pane-header [title]="title()" />
+          <h1 class="m-0 shrink-0 truncate font-display text-3xl font-semibold text-foreground">
+            {{ title() }}
+          </h1>
 
           <div class="flex shrink-0 items-center gap-2">
             <label class="min-w-0 flex-1">
