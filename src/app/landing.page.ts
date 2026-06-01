@@ -19,12 +19,7 @@ import {
   UniverseStore,
 } from '@features/universes';
 import { SlugTakenError } from '@shared/models';
-import {
-  EntityListPaneComponent,
-  ListPaneItem,
-  PageComponent,
-  PageHeaderComponent,
-} from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-landing-page',
@@ -32,7 +27,6 @@ import {
   imports: [
     EntityListPaneComponent,
     PageComponent,
-    PageHeaderComponent,
     UniverseDetailComponent,
     UniverseFormComponent,
     TranslocoDirective,
@@ -40,11 +34,10 @@ import {
   template: `
     <ng-container *transloco="let t; prefix: 'general'">
       <app-page class="h-full">
-        <app-page-header [title]="t('message.landingPickTitle')" />
-
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
             class="md:w-80 md:shrink-0"
+            [title]="t('message.landingPickTitle')"
             [items]="listItems()"
             [selectedId]="selectedId()"
             [loading]="loading()"

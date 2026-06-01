@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { EntityKind } from '@shared/models';
-import { PrimaryButtonComponent, GhostButtonComponent } from '../button';
+import { GhostButtonComponent } from '../button';
 import { EntityKindIconComponent } from '../entity-kind-icon';
 import { LazyThumbComponent } from '../lazy-thumb';
+import { ListPaneHeaderComponent } from '../list-pane-header';
 import { WorldIconComponent } from '../world-icon';
 
 export interface ListPaneItem {
@@ -23,10 +24,10 @@ export interface ListPaneItem {
 @Component({
   selector: 'app-entity-list-pane',
   imports: [
-    PrimaryButtonComponent,
     GhostButtonComponent,
     LazyThumbComponent,
     EntityKindIconComponent,
+    ListPaneHeaderComponent,
     WorldIconComponent,
     TranslocoDirective,
   ],
@@ -37,11 +38,14 @@ export interface ListPaneItem {
         class="flex h-full min-h-0 flex-col gap-2 rounded-lg border border-border bg-surface p-3"
         [attr.aria-label]="ariaLabel()"
       >
-        @if (canCreate()) {
-          <button uiPrimary type="button" class="w-full shrink-0" (click)="create.emit()">
-            {{ createLabel() }}
-          </button>
-        }
+        <app-list-pane-header
+          [title]="title()"
+          [canCreate]="canCreate()"
+          [createLabel]="createLabel()"
+          (create)="create.emit()"
+        >
+          <ng-content select="[list-title]" />
+        </app-list-pane-header>
 
         @if (searchable() || hasFilters()) {
           <div class="flex shrink-0 items-center gap-2">
@@ -188,6 +192,7 @@ export interface ListPaneItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EntityListPaneComponent {
+  readonly title = input<string>('');
   readonly items = input.required<ListPaneItem[]>();
   // Drives the no-cover placeholder glyph. Left unset by non-entity
   // panes (e.g. universe settings sections), which then render no slot.

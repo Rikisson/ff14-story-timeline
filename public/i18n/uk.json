@@ -117,6 +117,7 @@
       "tiptapItalic": "Курсив (Ctrl+I)",
       "tiptapEditRef": "Редагувати підпис посилання",
       "archivesAria": "Архіви",
+      "archivesSwitcher": "Розділ архіву: {{ name }}",
       "home": "Головна",
       "universesList": "Всесвіти",
       "universesDetails": "Деталі всесвіту",

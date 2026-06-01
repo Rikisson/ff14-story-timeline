@@ -9,7 +9,7 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
-  ArchivesHeaderComponent,
+  ArchivesSelectorComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
@@ -31,7 +31,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   selector: 'app-plotlines-page',
   host: { class: 'block h-full' },
   imports: [
-    ArchivesHeaderComponent,
+    ArchivesSelectorComponent,
     EntityListPaneComponent,
     PageComponent,
     PlotlineCardComponent,
@@ -50,8 +50,6 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
   template: `
     <ng-container *transloco="let t; prefix: 'plotline'">
       <app-page class="h-full">
-        <app-archives-header />
-
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
             class="md:w-80 md:shrink-0"
@@ -72,7 +70,9 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
             (select)="onSelect($event)"
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
-          />
+          >
+            <app-archives-selector list-title />
+          </app-entity-list-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.details')">
             @if (ctrl.mode().kind === 'create' || ctrl.mode().kind === 'edit') {

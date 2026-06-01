@@ -7,7 +7,7 @@ import { Story, StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createEntityDirectoryQueryStore } from '@shared/data-access';
 import {
-  ArchivesHeaderComponent,
+  ArchivesSelectorComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
@@ -20,7 +20,7 @@ import storyUk from '../i18n/uk.json';
   selector: 'app-stories-page',
   host: { class: 'block h-full' },
   imports: [
-    ArchivesHeaderComponent,
+    ArchivesSelectorComponent,
     StoryDetailComponent,
     EntityListPaneComponent,
     PageComponent,
@@ -38,8 +38,6 @@ import storyUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'story'">
       <app-page class="h-full">
-        <app-archives-header />
-
         @if (actionError(); as e) {
           <p class="m-0 text-sm text-danger-foreground">{{ e }}</p>
         }
@@ -64,7 +62,9 @@ import storyUk from '../i18n/uk.json';
             (select)="onSelect($event)"
             (create)="createStory()"
             (loadMore)="directory.loadMore()"
-          />
+          >
+            <app-archives-selector list-title />
+          </app-entity-list-pane>
 
           <section class="flex min-h-0 flex-col md:flex-1" [attr.aria-label]="t('tooltip.storyDetails')">
             @if (selected(); as s) {

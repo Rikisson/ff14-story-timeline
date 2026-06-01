@@ -5,12 +5,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { CalendarSettingsPanelComponent } from '@features/calendar';
 import { CodexCategoriesSettingsPanelComponent } from '@features/codex';
 import { UniverseTransferPage } from '@features/universe-transfer';
-import {
-  EntityListPaneComponent,
-  ListPaneItem,
-  PageComponent,
-  PageHeaderComponent,
-} from '@shared/ui';
+import { EntityListPaneComponent, ListPaneItem, PageComponent } from '@shared/ui';
 import { UniverseStore } from '../data-access/universe.store';
 import { UniverseGeneralSettingsComponent } from '../ui/universe-general-settings.component';
 import { UniverseMembersComponent } from '../ui/universe-members.component';
@@ -63,7 +58,6 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   imports: [
     EntityListPaneComponent,
     PageComponent,
-    PageHeaderComponent,
     UniverseGeneralSettingsComponent,
     UniverseMembersComponent,
     CalendarSettingsPanelComponent,
@@ -84,11 +78,10 @@ function isSection(value: string | null): value is UniverseSettingsSection {
   template: `
     <ng-container *transloco="let t; prefix: 'universe'">
       <app-page class="h-full">
-        <app-page-header [title]="t('field.settingsTitle')" />
-
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
             class="md:w-72 md:shrink-0"
+            [title]="t('field.settingsTitle')"
             [items]="listItems()"
             [selectedId]="section()"
             [ariaLabel]="t('tooltip.settingsList')"

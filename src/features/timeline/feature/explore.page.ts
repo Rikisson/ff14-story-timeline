@@ -16,7 +16,7 @@ import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
 import { createTimelineStreamStore, SortDirection, TimelineRow } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
-import { PageComponent, PageHeaderComponent } from '@shared/ui';
+import { PageComponent } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
 import {
   EMPTY_EXPLORE_FILTERS,
@@ -49,7 +49,6 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
     ExploreFiltersComponent,
     ExploreListComponent,
     PageComponent,
-    PageHeaderComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -64,11 +63,10 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
   template: `
     <ng-container *transloco="let t; prefix: 'explore'">
       <app-page class="h-full">
-        <app-page-header [title]="t('field.title')" />
-
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-explore-list
             class="md:w-80 md:shrink-0"
+            [title]="t('field.title')"
             [groups]="groups()"
             [selectedKey]="sel()"
             [search]="filters().search"

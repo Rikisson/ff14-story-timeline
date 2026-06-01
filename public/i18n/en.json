@@ -117,6 +117,7 @@
       "tiptapItalic": "Italic (Ctrl+I)",
       "tiptapEditRef": "Edit reference label",
       "archivesAria": "Archives",
+      "archivesSwitcher": "Archive section: {{ name }}",
       "home": "Home",
       "universesList": "Universes",
       "universesDetails": "Universe details",

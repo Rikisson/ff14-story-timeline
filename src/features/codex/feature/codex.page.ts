@@ -9,7 +9,7 @@ import {
   createEntityListController,
 } from '@shared/data-access';
 import {
-  ArchivesHeaderComponent,
+  ArchivesSelectorComponent,
   EntityListPaneComponent,
   ListPaneItem,
   PageComponent,
@@ -27,7 +27,7 @@ import codexUk from '../i18n/uk.json';
   selector: 'app-codex-page',
   host: { class: 'block h-full' },
   imports: [
-    ArchivesHeaderComponent,
+    ArchivesSelectorComponent,
     CodexCategoryTypeaheadComponent,
     EntityListPaneComponent,
     CodexEntryCardComponent,
@@ -47,8 +47,6 @@ import codexUk from '../i18n/uk.json';
   template: `
     <ng-container *transloco="let t; prefix: 'codex'">
       <app-page class="h-full">
-        <app-archives-header />
-
         <div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <app-entity-list-pane
             class="md:w-80 md:shrink-0"
@@ -72,6 +70,7 @@ import codexUk from '../i18n/uk.json';
             (create)="ctrl.startCreate()"
             (loadMore)="directory.loadMore()"
           >
+            <app-archives-selector list-title />
             <label list-filters class="flex flex-col gap-1">
               <span class="text-xs font-medium text-foreground-subtle">{{ t('field.category') }}</span>
               <app-codex-category-typeahead

@@ -143,22 +143,28 @@ describe('EntityListPaneComponent', () => {
   });
 
   it('hides the create button when canCreate is false', async () => {
-    const fx = await setup({ items: [], canCreate: false });
-    expect(fx.nativeElement.textContent).not.toContain('+ New');
+    const fx = await setup({ items: [], canCreate: false, createLabel: 'New character' });
+    const button = (fx.nativeElement as HTMLElement).querySelector(
+      'button[aria-label="New character"]',
+    );
+    expect(button).toBeNull();
   });
 
-  it('renders the create button label when canCreate is true', async () => {
+  it('exposes the create label as the icon button accessible name when canCreate is true', async () => {
     const fx = await setup({ items: [], canCreate: true, createLabel: 'New character' });
-    expect(fx.nativeElement.textContent).toContain('New character');
+    const button = (fx.nativeElement as HTMLElement).querySelector(
+      'button[aria-label="New character"]',
+    );
+    expect(button).toBeTruthy();
   });
 
   it('emits create when the create button is clicked', async () => {
     const fx = await setup({ items: [], canCreate: true, createLabel: 'New' });
     let createCount = 0;
     fx.componentInstance.create.subscribe(() => createCount++);
-    const button = Array.from(
-      (fx.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).find((b) => b.textContent?.includes('New')) as HTMLButtonElement;
+    const button = (fx.nativeElement as HTMLElement).querySelector(
+      'button[aria-label="New"]',
+    ) as HTMLButtonElement;
     button.click();
     expect(createCount).toBe(1);
   });
