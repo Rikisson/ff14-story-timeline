@@ -146,15 +146,21 @@ import { SfxController } from './sfx-controller';
                   <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/75 px-4 py-2 shadow-lg backdrop-blur-sm">
                     <h1 class="m-0 min-w-0 flex-1 truncate font-display text-2xl font-semibold text-foreground">{{ story.title }}</h1>
                     <div class="flex items-center gap-2">
-                      @if (store.resumedFromSave()) {
-                        <button uiSecondary type="button" (click)="store.restart()">{{ t('action.startOver') }}</button>
-                      }
                       <app-reader-back-menu
                         [canGoBack]="store.canGoBack()"
                         [options]="backOptions()"
                         (back)="goBack()"
                         (navigated)="onBackNavigated()"
                       />
+                      <button
+                        uiSecondary
+                        type="button"
+                        [disabled]="restartDisabled()"
+                        [attr.aria-label]="t('action.startOver')"
+                        (click)="store.restart()"
+                      >
+                        {{ t('action.restartEmoji') }}
+                      </button>
                       <button
                         uiSecondary
                         type="button"
@@ -291,6 +297,17 @@ export class ReaderStoryPage implements ReaderLeavable {
   // is hidden does nothing (see scene-view).
   protected readonly cardHidden = signal(false);
   protected readonly spritesHidden = signal(false);
+
+  // Start over is pointless when the read is already fresh at a start
+  // scene — the default entry or any `isEntry` scene with no history
+  // behind it. Standing on an entry scene mid-read still restarts.
+  protected readonly restartDisabled = computed(() => {
+    const content = this.store.content();
+    const sceneId = this.store.currentSceneId();
+    if (!content || !sceneId) return true;
+    if (this.store.history().length > 1) return false;
+    return sceneId === content.defaultEntrySceneId || content.scenes[sceneId]?.isEntry === true;
+  });
 
   // Scene fade-through-black state. `sceneOpacity` is the opacity of the
   // scene + chrome wrapper (1 visible, 0 faded to the canvas base);
