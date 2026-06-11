@@ -79,6 +79,8 @@ const STATUS_KEY_SUFFIX: Record<PlotlineStatus, string> = {
             @if (plotline().description; as d) {
               <app-markdown-text class="text-sm text-foreground-muted" [text]="d" />
             }
+
+            <ng-content />
           </div>
         </app-detail-card>
       </ng-container>

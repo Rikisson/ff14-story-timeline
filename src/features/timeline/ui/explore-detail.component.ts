@@ -97,7 +97,7 @@ export interface ExploreDetailVm {
           </a>
           @if (vm().readNext; as next) {
             <a
-              class="self-start text-sm font-medium text-accent-foreground underline-offset-2 hover:underline"
+              class="self-start text-sm font-medium text-accent underline-offset-2 hover:underline"
               [routerLink]="next.link"
               [queryParams]="next.queryParams ?? null"
             >{{ t('action.' + next.labelKey, { title: next.title }) }}</a>

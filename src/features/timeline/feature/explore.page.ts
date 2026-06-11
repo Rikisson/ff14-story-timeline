@@ -185,6 +185,7 @@ export class ExplorePage {
 
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
   protected readonly sel = computed(() => this.queryParams().get('sel'));
+  private readonly plotlineId = computed(() => this.filters().plotlineId);
 
   protected readonly detail = signal<ExploreDetailVm | null>(null);
   protected readonly detailLoading = signal(false);
@@ -282,6 +283,9 @@ export class ExplorePage {
     let token = 0;
     effect(() => {
       const sel = this.sel();
+      // Re-resolve when the plotline context changes — it decides which
+      // "Next in plotline" nudge (if any) the detail pane shows.
+      this.plotlineId();
       const my = ++token;
       if (!sel) {
         this.detail.set(null);
@@ -371,10 +375,11 @@ export class ExplorePage {
   /**
    * Forward nudge for the detail pane. Precedence: (1) a wired outbound
    * connection — "Continues in" for a single path, "Leads to" when there
-   * are several; (2) when a plotline filter is active, the next member in
-   * authored order. Both link into the reader. Dangling targets are
-   * dropped. Any read failure (e.g. a guest hitting a draft target) yields
-   * no nudge rather than an error.
+   * are several; (2) the next member, in authored order, of the plotline
+   * context — the active filter, or the entity's sole plotline when no
+   * filter narrows it (skipped if it belongs to several). Both link into
+   * the reader. Dangling targets are dropped. Any read failure (e.g. a
+   * guest hitting a draft target) yields no nudge rather than an error.
    */
   private async resolveReadNext(
     kind: 'story' | 'event',
@@ -383,7 +388,10 @@ export class ExplorePage {
     const universeId = this.universeId();
     if (!universeId) return undefined;
     try {
-      const outbound = await this.connections.outboundFor({ kind, id }, { readerOnly: true });
+      const outbound = await this.connections.outboundFor(
+        { kind, id },
+        { readerOnly: !this.effectiveDrafts() },
+      );
       const wired = outbound.filter((c) => c.to);
       if (wired.length > 0 && wired[0].to) {
         const ref = targetEntityRef(wired[0].to);
@@ -405,21 +413,28 @@ export class ExplorePage {
         }
       }
 
-      const pid = this.filters().plotlineId;
-      if (pid) {
-        const plotline = await this.plotlines.getById(pid);
-        const members = plotline?.members ?? [];
-        const idx = members.findIndex((m) => m.kind === kind && m.id === id);
-        if (idx >= 0 && idx < members.length - 1) {
-          const next = members[idx + 1];
-          const [row] = await this.directory.byIds({
-            universeId,
-            refs: [next],
-            includeDrafts: this.effectiveDrafts(),
-          });
-          if (row) {
-            return { labelKey: 'nextInPlotline', title: row.label, link: this.readerLink(next) };
-          }
+      // Plotline context: the active filter, else the entity's sole plotline.
+      // (Ambiguous when it belongs to several and no filter narrows it, so skip.)
+      let plotline = null;
+      const filterPid = this.filters().plotlineId;
+      if (filterPid) {
+        plotline = await this.plotlines.getById(filterPid);
+      } else {
+        const containing = await this.plotlines.plotlinesContaining({ kind, id });
+        if (containing.length === 1) plotline = containing[0];
+      }
+
+      const members = plotline?.members ?? [];
+      const idx = members.findIndex((m) => m.kind === kind && m.id === id);
+      if (idx >= 0 && idx < members.length - 1) {
+        const next = members[idx + 1];
+        const [row] = await this.directory.byIds({
+          universeId,
+          refs: [next],
+          includeDrafts: this.effectiveDrafts(),
+        });
+        if (row) {
+          return { labelKey: 'nextInPlotline', title: row.label, link: this.readerLink(next) };
         }
       }
     } catch {

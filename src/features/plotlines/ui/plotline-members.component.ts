@@ -40,6 +40,7 @@ interface MemberEntry {
  */
 @Component({
   selector: 'app-plotline-members',
+  host: { class: 'block' },
   imports: [
     CdkDropList,
     CdkDrag,

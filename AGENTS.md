@@ -31,11 +31,11 @@ When updating these docs, rewrite affected sections naturally as if writing them
 
 ## Comments
 
-- Do not add comments or JSDoc/method-doc blocks. They fall out of date, restate what the code already says, and accumulate into noise that obscures the code.
-- Let the code explain itself instead: clear names, small single-purpose functions, and expressive types.
-- Strive to remove comments and doc blocks from any code you create or modify — leave each file cleaner than you found it.
-- The only exception is a short note capturing genuinely non-obvious rationale the code cannot convey itself: why an unintuitive workaround exists, or a constraint that isn't visible locally. Keep these rare, and keep them about *why*, never *what*.
-- Functional directives such as `// eslint-disable-*` and `@ts-expect-error` are linter and compiler instructions, not documentation — keep them, together with any justification they require.
+- Never add comments or JSDoc/method-doc blocks. Not for rationale, not for "why", not for "non-obvious" workarounds, not to summarize a block, not to label a section — under no circumstances. There is no exception for clever or surprising code; if something needs explaining, the explanation goes in your message to me, not into the source.
+- The only time you may write a comment is when I explicitly ask you to in that request. Absent that explicit ask, the file gets zero comments you authored.
+- Comments fall out of date, restate what the code already says, and accumulate into noise. Let the code explain itself: clear names, small single-purpose functions, expressive types.
+- Remove comments and doc blocks from any code you create or modify — leave each file cleaner than you found it.
+- Functional directives such as `// eslint-disable-*` and `@ts-expect-error` are linter and compiler instructions, not documentation — keep them, together with any justification they require. These are the only `//` lines that may remain.
 
 ## Commits & Documentation
 

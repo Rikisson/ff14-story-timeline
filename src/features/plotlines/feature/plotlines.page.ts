@@ -110,7 +110,9 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
                   [canEdit]="ctrl.canCreate()"
                   (edit)="ctrl.startEdit(p)"
                   (remove)="ctrl.confirmRemove(p)"
-                />
+                >
+                  <app-plotline-members [plotlineId]="p.id" [canEdit]="ctrl.canCreate()" />
+                </app-plotline-card>
               </div>
             } @else {
               <p class="m-0 rounded-lg border border-border bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">
