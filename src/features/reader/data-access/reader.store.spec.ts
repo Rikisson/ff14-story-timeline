@@ -139,15 +139,24 @@ describe('ReaderStore', () => {
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
   });
 
-  it('starts fresh at an explicit entry scene, ignoring saved progress', async () => {
+  it('starts fresh at an explicit entry scene and persists the landing as progress', async () => {
     store.choose('c');
     await store.loadStory('s1', 'b');
 
     expect(store.currentSceneId()).toBe('b');
     expect(store.history()).toEqual(['b']);
     expect(store.resumedFromSave()).toBe(false);
-    // saved progress is left alone for the next default-entry load
-    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
+    // landing IS the new reading position — the old save is replaced
+    const saved = JSON.parse(localStorage.getItem('ff14-story-timeline:reader:s1') ?? '{}');
+    expect(saved).toEqual({ sceneId: 'b', history: ['b'] });
+  });
+
+  it('resumes to the landed entry on a reload without the override', async () => {
+    await store.loadStory('s1', 'b');
+    await store.loadStory('s1'); // the URL param was consumed; plain reload
+
+    expect(store.currentSceneId()).toBe('b');
+    expect(store.history()).toEqual(['b']);
   });
 
   it('restores the saved history when the explicit entry matches the saved position', async () => {

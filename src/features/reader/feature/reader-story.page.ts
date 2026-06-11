@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,7 +14,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
 import {
@@ -248,6 +248,9 @@ export class ReaderStoryPage implements ReaderLeavable {
   private readonly directory = inject(EntityDirectoryService);
   private readonly universes = inject(UniverseStore);
   private readonly referrer = inject(ReaderReferrerService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly prefs = inject(ReaderPreferencesService);
@@ -700,6 +703,25 @@ export class ReaderStoryPage implements ReaderLeavable {
   constructor() {
     effect(() => {
       this.store.loadStory(this.id(), this.scene());
+    });
+
+    // Consume the `?scene=` entry override once the reader is safely on
+    // a scene. The landing was persisted as progress inside `loadStory`,
+    // so the param carries no information afterwards — a reload resumes
+    // to the same place without it. `Location.replaceState` rewrites the
+    // address bar without a router navigation, so the `scene` input and
+    // the load effect above never re-fire.
+    effect(() => {
+      if (this.scene() === undefined) return;
+      if (this.store.loading() || this.store.error() !== null || !this.store.story()) return;
+      const url = this.router
+        .createUrlTree([], {
+          relativeTo: this.route,
+          queryParams: { scene: null },
+          queryParamsHandling: 'merge',
+        })
+        .toString();
+      untracked(() => this.location.replaceState(url));
     });
 
     // Fetch the story's connections once per loaded story. Keyed on the

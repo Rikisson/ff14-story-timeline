@@ -97,7 +97,11 @@ export function withReaderMethods() {
             // exactly where the saved progress left off — the reader
             // coming *back* to the ending they continued from — the
             // saved history is restored so in-story Back keeps walking
-            // scene by scene. Any other entry starts fresh.
+            // scene by scene. Any other entry starts fresh. Either way
+            // the landing is persisted immediately: saved progress is
+            // simply the last place the reader stood, so the URL param
+            // that brought them here carries no information afterwards
+            // and the page strips it.
             const entry =
               entrySceneId &&
               Object.prototype.hasOwnProperty.call(content.scenes, entrySceneId)
@@ -113,11 +117,13 @@ export function withReaderMethods() {
                 )
                   ? saved
                   : null;
+              const history = resumable?.history ?? [entry];
+              saveProgress(id, { sceneId: entry, history });
               patchState(store, {
                 story,
                 content,
                 currentSceneId: entry,
-                history: resumable?.history ?? [entry],
+                history,
                 loading: false,
                 resumedFromSave: false,
               });
