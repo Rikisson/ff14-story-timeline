@@ -138,6 +138,7 @@
     "descriptionPlaceholder": "Про що ця історія?",
     "relatedPlaceholder": "Шукати персонажів, місця, записи кодексу…",
     "plotlinesPlaceholder": "Шукати сюжетні лінії…",
+    "notInPlotlines": "Ще не входить до жодної сюжетної лінії. Додайте її на сторінці сюжетної лінії.",
     "searchCharacter": "Шукати персонажів…",
     "searchPlace": "Шукати місця…",
     "choiceLabelPlaceholder": "Мітка (напр. Так / Далі)",

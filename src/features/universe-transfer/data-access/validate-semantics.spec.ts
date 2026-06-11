@@ -23,7 +23,7 @@ function context(overrides: Partial<ImportContext> = {}): ImportContext {
 describe('validateSemantics', () => {
   it('passes when refs resolve within the package', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [{ slug: 'eldrin', name: 'Eldrin' }],
       places: [
         { slug: 'harbor', name: 'Harbor', relatedRefs: [{ kind: 'character', ref: 'eldrin' }] },
@@ -34,7 +34,7 @@ describe('validateSemantics', () => {
 
   it('flags an orphan structured ref as an error', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       stories: [
         {
           slug: 's',
@@ -60,7 +60,7 @@ describe('validateSemantics', () => {
 
   it('treats an orphan relatedRef as a warning', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [
         { slug: 'eldrin', name: 'Eldrin', relatedRefs: [{ kind: 'place', ref: 'nowhere' }] },
       ],
@@ -73,7 +73,7 @@ describe('validateSemantics', () => {
     const ctx = context();
     ctx.existingEntityIds.character.set('eldrin', 'existing-id');
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       places: [
         { slug: 'harbor', name: 'Harbor', relatedRefs: [{ kind: 'character', ref: 'eldrin' }] },
       ],
@@ -83,7 +83,7 @@ describe('validateSemantics', () => {
 
   it('warns about an unresolved inline token', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [{ slug: 'eldrin', name: 'Eldrin', description: 'Knows ${ch:ghost}[Ghost].' }],
     };
     const issues = validateSemantics(archive, context());
@@ -92,7 +92,7 @@ describe('validateSemantics', () => {
 
   it('flags an unresolved era as a config prerequisite error', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       events: [{ slug: 'e', name: 'E', description: 'x', inGameDate: { era: 'nope' } }],
     };
     const issues = validateSemantics(archive, context({ targetHasCalendar: true }));
@@ -103,7 +103,7 @@ describe('validateSemantics', () => {
 
   it('flags an unresolved codex category', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       codexEntries: [{ slug: 'c', title: 'C', description: 'x', category: 'missing' }],
     };
     expect(
@@ -113,7 +113,7 @@ describe('validateSemantics', () => {
 
   it('suggests a near-miss slug as a hint', () => {
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [{ slug: 'eldrin', name: 'Eldrin' }],
       places: [{ slug: 'h', name: 'H', relatedRefs: [{ kind: 'character', ref: 'eldrim' }] }],
     };
@@ -127,7 +127,7 @@ describe('validateSemantics', () => {
     const ctx = context();
     ctx.existingEntityIds.character.set('eldrin', 'x');
     const archive: UniverseArchive = {
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [
         { slug: 'eldrin', name: 'E' },
         { slug: 'new', name: 'N' },

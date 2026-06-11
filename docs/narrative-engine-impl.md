@@ -59,24 +59,25 @@ References live on two surfaces — typed pickers and inline `${kind:<guid>}[…
 | Tier        | Where                                                                  | Purpose                          | Drives runtime? |
 |-------------|------------------------------------------------------------------------|----------------------------------|-----------------|
 | Runtime     | `Scene.characters` / `speaker` / `place`, connection endpoints          | Staging, placement, continuation | Yes             |
-| Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                             | Catalog & filtering              | No              |
-| Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs`  | World-building                   | No              |
+| Curatorial  | `Story.relatedRefs`, `Plotline.members`                               | Catalog & filtering              | No              |
+| Factual     | `Event.relatedRefs`, lookup-tier `relatedRefs`                         | World-building                   | No              |
 | Decorative  | Inline `${…}[…]` in any rich-text body                                 | Tooltip / hover                  | No              |
 
 Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime staging is Character + Place only; runtime continuation is Story + Event, expressed through the connections collection (see *Connections*), never through picker refs on the entity itself.
 
-**Picker scope per entity.** Timeline-tier entities (Story, Event) reference lookup-tier entities (Character, Place, Codex) for world-building; lookup-tier entities reference each other; nothing references timeline-tier through pickers — those relationships are encoded by `inGameDate` and (for arc grouping) by the dedicated `plotlineRefs` field.
+**Picker scope per entity.** Timeline-tier entities (Story, Event) reference lookup-tier entities (Character, Place, Codex) for world-building; lookup-tier entities reference each other; nothing references timeline-tier through pickers — those relationships are encoded by `inGameDate` and (for arc grouping) by plotline membership, which the *plotline* owns.
 
-| Entity                      | `relatedRefs` accepts   | `plotlineRefs`                    |
-|-----------------------------|-------------------------|-----------------------------------|
-| Story, Event                | character, place, codex | yes (`EntityRef<'plotline'>[]`)   |
-| Character, Place, Codex     | character, place, codex | —                                 |
-| Universe, Plotline          | —                       | —                                 |
+| Entity                      | `relatedRefs` accepts   | Arc membership                          |
+|-----------------------------|-------------------------|-----------------------------------------|
+| Story, Event                | character, place, codex | read-only (reverse lookup, see below)   |
+| Character, Place, Codex     | character, place, codex | —                                       |
+| Plotline                    | —                       | owns ordered `members` + `memberKeys`   |
+| Universe                    | —                       | —                                       |
 
 - **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use Explore.
 - **Continuation lives in the connections collection, not on entities.** Story end-scenes and Events continue into other stories/events through `universes/{u}/connections` documents (see *Connections*). Entities store no edge data — inbound/outbound awareness is always a query, so deleting an entity never requires touching other entities. Authored intent, not date-derived adjacency.
 - **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
-- **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
+- **Plotlines own ordered membership.** A `Plotline` holds `members: EntityRef<'story' | 'event'>[]` in authored reading order — the sequence Explore's "Read next" steps through. Order is author-controlled and date-independent (a flashback can read before the event it depicts). A denormalized `memberKeys: string[]` (`'story:{id}'` / `'event:{id}'`, re-derived on every write) powers the reverse lookup "which plotlines is this entity in?" via one `array-contains` query. Story/Event carry no plotline field; their editors show read-only membership chips from that reverse lookup, and membership is curated on the plotline page (add, drag-reorder, remove). Members are bounded (cap 100) and live in the one plotline doc, so a reorder or membership change is a single-doc write. Dangling members (a deleted target) are skipped by readers and flagged for editors, mirroring the broken-edge policy.
 - **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
 
 ## Picker UX
@@ -95,8 +96,10 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 
 ## Explore UX
 
-- **One date stream, refined client-side.** Explore runs a single global query against `_timelineEntries` — the interleaved story+event stream — with one cursor and one *Load more*. Type (all / stories / events), a single plotline, and free-text title search filter the loaded rows in the client rather than refetching. Default order is oldest-first (ascending in-game date).
-- **Plotline filtering is client-side for now.** A selected plotline narrows the loaded rows by their `plotlineIds`; the server-side filter is a `plotlineIds` array-contains constraint on the same `_timelineEntries` stream once its composite index is deployed — see `backend-rules.md` *Timeline projections*.
+- **One date stream, refined client-side.** Explore runs a single global query against `_timelineEntries` — the interleaved story+event stream — with one cursor and one *Load more*. Type (all / stories / events) and free-text title search filter the loaded rows in the client rather than refetching. Default order is oldest-first (ascending in-game date).
+- **A plotline filter switches the data source.** Selecting a plotline replaces the date stream with that plotline's `members[]`: read the plotline doc (one get-by-id), then fetch each member's `_timelineEntries` row by id (per-doc reads, so a guest hitting a draft member skips that row instead of failing the batch; bounded by the member cap). An *Order* control then chooses **Plotline** (authored member order, rendered as one group titled by the plotline) or **Date** (the same rows sorted by `dateSortKey`). There is no `plotlineIds` denorm on rows and no array-contains query — membership lives on the plotline.
+- **First-in-stream landing.** With nothing selected, Explore opens the first visible row so a newcomer lands on content rather than an empty pane. Returning readers resume from saved progress in the reader, not here.
+- **Read next.** The detail pane offers one forward nudge beside *Read now*: a wired outbound connection ("Continues in" for a single path, "Leads to" when several end-scenes branch), or — when a plotline filter is active — the next member in authored order ("Next: {title}"). Connection wins; the plotline step is the fallback. Both link into the reader; a dangling target shows no nudge.
 - **Search is a loaded-rows filter.** Title search refines what's already paged in — a convenience over the visible stream, not a universe-wide find. The projection-backed picker search is the path that reaches every entity.
 
 ## Scope locks

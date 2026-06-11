@@ -138,6 +138,7 @@
     "descriptionPlaceholder": "What is this story about?",
     "relatedPlaceholder": "Search characters, places, codex entries…",
     "plotlinesPlaceholder": "Search plotlines…",
+    "notInPlotlines": "Not in any plotline yet. Add it from the plotline page.",
     "searchCharacter": "Search characters…",
     "searchPlace": "Search places…",
     "choiceLabelPlaceholder": "Label (e.g. Yes / Continue)",

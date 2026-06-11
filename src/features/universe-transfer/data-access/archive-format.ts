@@ -4,7 +4,7 @@ import { PlotlineStatus } from '@features/plotlines';
 import { BgmTransition, SceneLayout, SceneTransition, TextSpeed } from '@features/stories';
 import { UniverseLocale } from '@features/universes';
 
-export const FORMAT_VERSION = 2;
+export const FORMAT_VERSION = 3;
 
 export const ARCHIVE_ENTITY_KINDS: readonly EntityKind[] = [
   'character',
@@ -109,6 +109,8 @@ export interface ArchivePlotline {
   coverAsset?: string;
   color?: string;
   status?: PlotlineStatus;
+  /** Ordered membership — story / event slugs in authored order. */
+  members?: ArchiveRef<'story' | 'event'>[];
 }
 
 export interface ArchiveEvent {
@@ -120,7 +122,6 @@ export interface ArchiveEvent {
   backgroundEffect?: BackgroundEffect;
   inGameDate: ArchiveInGameDate;
   relatedRefs?: ArchiveRef[];
-  plotlineRefs?: ArchiveRef<'plotline'>[];
 }
 
 export interface ArchiveCodexEntry {
@@ -175,7 +176,6 @@ export interface ArchiveStory {
   draft?: boolean;
   inGameDate: ArchiveInGameDate;
   relatedRefs?: ArchiveRef[];
-  plotlineRefs?: ArchiveRef<'plotline'>[];
   defaultEntryScene: string;
   scenes: Record<string, ArchiveScene>;
 }

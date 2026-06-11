@@ -7,21 +7,30 @@
     "statusActive": "Active",
     "statusResolved": "Resolved",
     "formAdd": "Add plotline",
-    "formEdit": "Edit plotline"
+    "formEdit": "Edit plotline",
+    "members": "Members"
   },
   "action": {
-    "create": "+ Add plotline"
+    "create": "+ Add plotline",
+    "removeMember": "Remove from plotline",
+    "reorderMember": "Drag to reorder"
+  },
+  "badge": {
+    "unavailable": "Unavailable"
   },
   "empty": {
     "list": "No plotlines yet.",
     "selectDetail": "Select a plotline to view details.",
     "titlePlaceholder": "e.g. Shadowbringers main scenario",
     "slugPlaceholder": "e.g. shadowbringers-msq",
-    "descriptionPlaceholder": "High-level arc of this plotline."
+    "descriptionPlaceholder": "High-level arc of this plotline.",
+    "noMembers": "No stories or events yet. Add them in reading order.",
+    "addMember": "Add a story or event…"
   },
   "tooltip": {
     "list": "Plotlines list",
     "details": "Plotline details",
-    "colorAria": "Color"
+    "colorAria": "Color",
+    "members": "Plotline members"
   }
 }

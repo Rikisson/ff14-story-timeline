@@ -7,11 +7,18 @@ import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
 
 export type ExploreType = 'all' | 'story' | 'event';
+export type PlotlineOrder = 'authored' | 'date';
 
 export interface ExploreFilters {
   type: ExploreType;
-  /** Single plotline; narrows the same `_timelineEntries` stream server-side. */
+  /** Single plotline; scopes the list to that plotline's `members[]`. */
   plotlineId: string | null;
+  /**
+   * Ordering for the filtered plotline list — `authored` follows the
+   * plotline's member order, `date` sorts by in-game date. Ignored when
+   * no plotline is selected.
+   */
+  plotlineOrder: PlotlineOrder;
   /** Free-text title match, applied client-side over loaded rows. */
   search: string;
 }
@@ -19,6 +26,7 @@ export interface ExploreFilters {
 export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
   type: 'all',
   plotlineId: null,
+  plotlineOrder: 'authored',
   search: '',
 };
 
@@ -68,6 +76,20 @@ export const EMPTY_EXPLORE_FILTERS: ExploreFilters = {
               (valueChange)="onPlotline($event)"
             />
           </label>
+
+          @if (value().plotlineId) {
+            <label class="flex flex-col gap-1">
+              <span class="text-xs font-medium text-foreground-subtle">{{ t('filter.orderLabel') }}</span>
+              <select
+                class="h-9 w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-foreground"
+                [value]="value().plotlineOrder"
+                (change)="onOrder($event)"
+              >
+                <option value="authored">{{ t('filter.orderAuthored') }}</option>
+                <option value="date">{{ t('filter.orderDate') }}</option>
+              </select>
+            </label>
+          }
 
           <label class="flex flex-col gap-1">
             <span class="text-xs font-medium text-foreground-subtle">{{ t('field.sortByDate') }}</span>
@@ -119,6 +141,11 @@ export class ExploreFiltersComponent {
   protected onPlotline(refs: EntityRef[]): void {
     const id = refs.find((r) => r.kind === 'plotline')?.id ?? null;
     this.filtersChange.emit({ ...this.value(), plotlineId: id });
+  }
+
+  protected onOrder(event: Event): void {
+    const plotlineOrder = (event.target as HTMLSelectElement).value as PlotlineOrder;
+    this.filtersChange.emit({ ...this.value(), plotlineOrder });
   }
 
   protected onSort(event: Event): void {

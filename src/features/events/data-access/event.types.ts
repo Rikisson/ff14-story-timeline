@@ -10,7 +10,6 @@ export interface TimelineEvent {
   backgroundEffect?: BackgroundEffect;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
-  plotlineRefs?: EntityRef<'plotline'>[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -27,5 +26,4 @@ export interface TimelineEventDraft {
   backgroundEffect?: BackgroundEffect;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
-  plotlineRefs?: EntityRef<'plotline'>[];
 }

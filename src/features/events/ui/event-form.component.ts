@@ -5,6 +5,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { DateValidationError } from '@features/calendar';
 import { AssetPickerComponent, CoverSlotComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { PlotlinesService } from '@features/plotlines';
 import { AssetThumbResolver } from '@shared/data-access';
 import { BackgroundEffect, EntityRef, InGameDate, SLUG_MAX_LENGTH, SLUG_PATTERN } from '@shared/models';
 import {
@@ -16,6 +17,7 @@ import {
   SecondaryButtonComponent,
   SegmentedControlComponent,
   SegmentOption,
+  TagComponent,
 } from '@shared/ui';
 import { TimelineEventDraft } from '../data-access/event.types';
 import eventEn from '../i18n/en.json';
@@ -23,7 +25,6 @@ import eventUk from '../i18n/uk.json';
 
 /** Per `docs/backend-rules.md` *Cardinality limits*. */
 const RELATED_REFS_MAX = 50;
-const PLOTLINE_REFS_MAX = 10;
 const LONG_DESCRIPTION_THRESHOLD = 600;
 type BackgroundEffectOption = BackgroundEffect | 'none';
 const BG_EFFECTS: readonly BackgroundEffectOption[] = [
@@ -48,6 +49,7 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
     InGameDateInputComponent,
     RichTextInputComponent,
     SegmentedControlComponent,
+    TagComponent,
     TranslocoDirective,
     ContentLangDirective,
   ],
@@ -172,13 +174,15 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
 
           <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.plotlines') }}</span>
-            <app-entity-picker
-              [value]="plotlineValue()"
-              [kinds]="plotlineKinds"
-              [maxSelections]="plotlineMax"
-              [placeholder]="g('empty.searchPlotlines')"
-              (valueChange)="onPlotlineRefs($event)"
-            />
+            @if (plotlineChips().length) {
+              <ul class="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                @for (p of plotlineChips(); track p.id) {
+                  <li><app-tag>{{ p.title }}</app-tag></li>
+                }
+              </ul>
+            } @else {
+              <p class="m-0 text-xs text-foreground-faint">{{ t('empty.notInPlotlines') }}</p>
+            }
           </div>
 
           @if (errorMessage(); as e) {
@@ -204,6 +208,7 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
 })
 export class EventFormComponent {
   readonly initial = input<TimelineEventDraft | null>(null);
+  readonly eventId = input<string | null>(null);
   readonly busy = input<boolean>(false);
   readonly errorMessage = input<string | null>(null);
   readonly submitted = output<TimelineEventDraft>();
@@ -211,18 +216,17 @@ export class EventFormComponent {
 
   protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
   protected readonly relatedMax = RELATED_REFS_MAX;
-  protected readonly plotlineKinds = ['plotline'] as const;
-  protected readonly plotlineMax = PLOTLINE_REFS_MAX;
   protected readonly longDescriptionThreshold = LONG_DESCRIPTION_THRESHOLD;
 
   private readonly assets = inject(AssetThumbResolver);
+  private readonly plotlines = inject(PlotlinesService);
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
   });
 
   protected readonly related = signal<EntityRef[]>([]);
-  protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
+  protected readonly plotlineChips = signal<{ id: string; title: string }[]>([]);
   protected readonly description = signal<string>('');
   protected readonly cover = signal<string | undefined>(undefined);
   protected readonly bgmAssetId = signal<string | undefined>(undefined);
@@ -251,8 +255,6 @@ export class EventFormComponent {
     () => this.descriptionLength() > LONG_DESCRIPTION_THRESHOLD,
   );
 
-  protected readonly plotlineValue = computed<EntityRef[]>(() => this.plotlineRefs().slice());
-
   protected readonly inGameDate = signal<InGameDate>({});
   protected readonly dateErrors = signal<DateValidationError[]>([]);
 
@@ -269,12 +271,31 @@ export class EventFormComponent {
         name: init?.name ?? '',
       });
       this.related.set(init?.relatedRefs ?? []);
-      this.plotlineRefs.set(init?.plotlineRefs ?? []);
       this.description.set(init?.description ?? '');
       this.cover.set(init?.coverAssetId);
       this.bgmAssetId.set(init?.bgmAssetId);
       this.backgroundEffect.set(init?.backgroundEffect);
       this.inGameDate.set(init?.inGameDate ?? {});
+    });
+
+    let token = 0;
+    effect(() => {
+      const id = this.eventId();
+      const mine = ++token;
+      if (!id) {
+        this.plotlineChips.set([]);
+        return;
+      }
+      void this.plotlines
+        .plotlinesContaining({ kind: 'event', id })
+        .then((pls) => {
+          if (mine === token) {
+            this.plotlineChips.set(pls.map((p) => ({ id: p.id, title: p.title })));
+          }
+        })
+        .catch(() => {
+          if (mine === token) this.plotlineChips.set([]);
+        });
     });
   }
 
@@ -290,10 +311,6 @@ export class EventFormComponent {
     this.inGameDate.set(value);
   }
 
-  protected onPlotlineRefs(refs: EntityRef[]): void {
-    this.plotlineRefs.set(refs.filter((r) => r.kind === 'plotline') as EntityRef<'plotline'>[]);
-  }
-
   protected onDescription(value: string): void {
     this.description.set(value);
   }
@@ -302,7 +319,6 @@ export class EventFormComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     const related = this.related();
-    const plotlineRefs = this.plotlineRefs();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
@@ -312,7 +328,6 @@ export class EventFormComponent {
       bgmAssetId: this.bgmAssetId(),
       backgroundEffect: this.backgroundEffect(),
       relatedRefs: related.length > 0 ? related : undefined,
-      plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
     });
   }
 }

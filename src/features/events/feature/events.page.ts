@@ -93,6 +93,7 @@ import eventUk from '../i18n/uk.json';
               <div class="min-h-0 flex-1 overflow-y-auto">
                 <app-event-form
                   [initial]="ctrl.editingDraft()"
+                  [eventId]="editingEventId()"
                   [busy]="ctrl.busy()"
                   [errorMessage]="ctrl.errorMessage()"
                   (submitted)="ctrl.submit($event)"
@@ -173,7 +174,6 @@ export class EventsPage {
       backgroundEffect: e.backgroundEffect,
       inGameDate: e.inGameDate,
       relatedRefs: e.relatedRefs,
-      plotlineRefs: e.plotlineRefs,
     }),
     removeLabel: (e) => e.name,
   });

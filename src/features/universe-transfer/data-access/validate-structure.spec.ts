@@ -17,7 +17,7 @@ function minimalScene(): Record<string, unknown> {
 describe('validateStructure', () => {
   it('accepts a minimal valid archive', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [{ slug: 'eldrin', name: 'Eldrin' }],
     });
     expect(errors(issues)).toEqual([]);
@@ -29,19 +29,19 @@ describe('validateStructure', () => {
 
   it('flags a character missing its name', () => {
     expect(
-      codes(validateStructure({ formatVersion: 2, characters: [{ slug: 'eldrin' }] })),
+      codes(validateStructure({ formatVersion: 3, characters: [{ slug: 'eldrin' }] })),
     ).toContain('field-required');
   });
 
   it('flags an invalid slug', () => {
     expect(
-      codes(validateStructure({ formatVersion: 2, characters: [{ slug: 'Eldrin!', name: 'E' }] })),
+      codes(validateStructure({ formatVersion: 3, characters: [{ slug: 'Eldrin!', name: 'E' }] })),
     ).toContain('slug-invalid');
   });
 
   it('flags duplicate slugs within a section', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [
         { slug: 'eldrin', name: 'A' },
         { slug: 'eldrin', name: 'B' },
@@ -52,7 +52,7 @@ describe('validateStructure', () => {
 
   it('flags a story whose defaultEntryScene is not defined', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       stories: [
         {
           slug: 's',
@@ -68,7 +68,7 @@ describe('validateStructure', () => {
 
   it('flags a scene linking to an unknown scene', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       stories: [
         {
           slug: 's',
@@ -84,15 +84,42 @@ describe('validateStructure', () => {
 
   it('rejects an unknown enum value', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       plotlines: [{ slug: 'p', title: 'P', status: 'archived' }],
     });
     expect(codes(issues)).toContain('bad-enum');
   });
 
+  it('accepts plotline members that are stories or events', () => {
+    const issues = validateStructure({
+      formatVersion: 3,
+      plotlines: [
+        {
+          slug: 'arc',
+          title: 'Arc',
+          members: [
+            { kind: 'story', ref: 's1' },
+            { kind: 'event', ref: 'e1' },
+          ],
+        },
+      ],
+    });
+    expect(errors(issues)).toEqual([]);
+  });
+
+  it('rejects a plotline member of the wrong kind', () => {
+    const issues = validateStructure({
+      formatVersion: 3,
+      plotlines: [
+        { slug: 'arc', title: 'Arc', members: [{ kind: 'character', ref: 'c1' }] },
+      ],
+    });
+    expect(codes(issues)).toContain('ref-wrong-kind');
+  });
+
   it('notes server-managed fields as info, not error', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       characters: [{ slug: 'e', name: 'E', id: 'x', authorUid: 'u' }],
     });
     const info = issues.find((issue) => issue.code === 'server-fields-ignored');
@@ -102,7 +129,7 @@ describe('validateStructure', () => {
 
   it('flags a story whose scene content exceeds the document size limit', () => {
     const issues = validateStructure({
-      formatVersion: 2,
+      formatVersion: 3,
       stories: [
         {
           slug: 's',

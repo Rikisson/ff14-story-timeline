@@ -309,7 +309,6 @@ function buildTimelineInputs(kind, entity, ctx) {
     inGameDate: date,
     dateSortKey: inGameDateSortKey(date, eraOrdinal),
     dateKnown: !isInGameDateEmpty(date),
-    plotlineIds: (entity.plotlineRefs ?? []).map((r) => r.id),
     characterIds: (entity.relatedRefs ?? []).filter((r) => r.kind === 'character').map((r) => r.id),
     placeIds: (entity.relatedRefs ?? []).filter((r) => r.kind === 'place').map((r) => r.id),
   };
@@ -376,7 +375,6 @@ async function buildProjectionRows(firestore, universeId, kind, id, entity, ctx)
       inGameDate: timeline.inGameDate,
       dateSortKey: timeline.dateSortKey,
       dateKnown: timeline.dateKnown,
-      plotlineIds: timeline.plotlineIds,
       characterIds: timeline.characterIds,
       placeIds: timeline.placeIds,
       draft: draft === true,

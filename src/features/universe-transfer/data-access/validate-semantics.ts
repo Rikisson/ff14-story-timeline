@@ -42,6 +42,7 @@ export function validateSemantics(archive: UniverseArchive, ctx: ImportContext):
     const path = `plotlines[${index}]`;
     checkAsset(plotline.coverAsset, assetSlugs, `${path}.coverAsset`, issues);
     checkInlineText(plotline.description, entitySlugs, `${path}.description`, issues);
+    checkRefList(plotline.members, entitySlugs, `${path}.members`, 'error', issues);
   });
 
   (archive.events ?? []).forEach((event, index) => {
@@ -49,7 +50,6 @@ export function validateSemantics(archive: UniverseArchive, ctx: ImportContext):
     checkAsset(event.coverAsset, assetSlugs, `${path}.coverAsset`, issues);
     checkAsset(event.bgmAsset, assetSlugs, `${path}.bgmAsset`, issues);
     checkRefList(event.relatedRefs, entitySlugs, `${path}.relatedRefs`, 'warning', issues);
-    checkRefList(event.plotlineRefs, entitySlugs, `${path}.plotlineRefs`, 'error', issues);
     checkInlineText(event.description, entitySlugs, `${path}.description`, issues);
     checkEra(event.inGameDate?.era, eraSlugs, `${path}.inGameDate.era`, issues);
   });
@@ -197,7 +197,6 @@ function checkStory(
   checkAsset(story.coverAsset, assetSlugs, `${path}.coverAsset`, issues);
   checkAsset(story.bgmAsset, assetSlugs, `${path}.bgmAsset`, issues);
   checkRefList(story.relatedRefs, entitySlugs, `${path}.relatedRefs`, 'warning', issues);
-  checkRefList(story.plotlineRefs, entitySlugs, `${path}.plotlineRefs`, 'error', issues);
   checkEra(story.inGameDate?.era, eraSlugs, `${path}.inGameDate.era`, issues);
 
   for (const [key, scene] of Object.entries(story.scenes ?? {})) {

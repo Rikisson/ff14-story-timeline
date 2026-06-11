@@ -21,6 +21,7 @@ import { PlotlinesService } from '../data-access/plotlines.service';
 import { Plotline, PlotlineDraft, PlotlineStatus } from '../data-access/plotline.types';
 import { PlotlineCardComponent } from '../ui/plotline-card.component';
 import { PlotlineFormComponent } from '../ui/plotline-form.component';
+import { PlotlineMembersComponent } from '../ui/plotline-members.component';
 import plotlineEn from '../i18n/en.json';
 import plotlineUk from '../i18n/uk.json';
 
@@ -38,6 +39,7 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
     PageComponent,
     PlotlineCardComponent,
     PlotlineFormComponent,
+    PlotlineMembersComponent,
     SidePaneComponent,
     SidePaneHeaderComponent,
     SidePaneListComponent,
@@ -102,6 +104,9 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
                   (edit)="ctrl.startEdit(p)"
                   (remove)="ctrl.confirmRemove(p)"
                 />
+                <div class="mt-4">
+                  <app-plotline-members [plotlineId]="p.id" [canEdit]="ctrl.canCreate()" />
+                </div>
               </div>
             } @else {
               <p class="m-0 rounded-lg border border-border bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">

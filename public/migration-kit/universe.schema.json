@@ -7,8 +7,8 @@
   "required": ["formatVersion"],
   "properties": {
     "formatVersion": {
-      "const": 2,
-      "description": "Schema version. Must be 2."
+      "const": 3,
+      "description": "Schema version. Must be 3."
     },
     "generator": {
       "type": "string",
@@ -188,7 +188,12 @@
         "description": { "type": "string" },
         "coverAsset": { "type": "string" },
         "color": { "type": "string" },
-        "status": { "enum": ["planned", "active", "resolved"] }
+        "status": { "enum": ["planned", "active", "resolved"] },
+        "members": {
+          "type": "array",
+          "description": "Ordered membership — story and event slugs in authored reading order.",
+          "items": { "$ref": "#/$defs/ref" }
+        }
       }
     },
     "event": {
@@ -202,8 +207,7 @@
         "bgmAsset": { "type": "string" },
         "backgroundEffect": { "enum": ["darken", "desaturate", "sepia", "cool", "warm"] },
         "inGameDate": { "$ref": "#/$defs/inGameDate" },
-        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+        "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
       }
     },
     "codexEntry": {
@@ -230,7 +234,6 @@
         "draft": { "type": "boolean", "description": "Defaults to false. Set true to import the story unpublished." },
         "inGameDate": { "$ref": "#/$defs/inGameDate" },
         "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
         "defaultEntryScene": {
           "type": "string",
           "description": "The key of the scene readers start on by default. Make it a 'showcase' scene whose text is just the story title."

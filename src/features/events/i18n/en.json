@@ -28,6 +28,7 @@
     "namePlaceholder": "e.g. Calamity of the Seventh Umbral Era",
     "slugPlaceholder": "e.g. seventh-umbral-calamity",
     "descriptionPlaceholder": "What happens in this event…",
+    "notInPlotlines": "Not in any plotline yet. Add it from the plotline page.",
     "bgmHint": "Plays while the reader is on this event. Crossfades on exit.",
     "pickBgm": "Pick BGM",
     "replaceBgm": "Replace BGM",

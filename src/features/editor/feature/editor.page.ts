@@ -110,6 +110,7 @@ import editorUk from '../i18n/uk.json';
         <div class="layout">
           <app-story-meta-panel
             [meta]="store.meta()"
+            [storyId]="store.storyId()"
             (update)="store.updateMeta($event)"
           />
 

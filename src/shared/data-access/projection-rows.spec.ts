@@ -83,12 +83,11 @@ describe('buildProjectionRows — timeline row', () => {
     inGameDate: { era: 'e1', year: 1577 },
     dateSortKey: '00010001577000000000000000000',
     dateKnown: true,
-    plotlineIds: ['pl-a', 'pl-b'],
     characterIds: ['c1'],
     placeIds: ['p1'],
   };
 
-  it('carries the plotline / character / place id arrays', async () => {
+  it('carries the character / place id arrays', async () => {
     const out = await buildProjectionRows(
       {
         kind: 'story',
@@ -101,7 +100,6 @@ describe('buildProjectionRows — timeline row', () => {
     );
 
     expect(out.timelineRow).toMatchObject({
-      plotlineIds: ['pl-a', 'pl-b'],
       characterIds: ['c1'],
       placeIds: ['p1'],
     });
@@ -114,7 +112,7 @@ describe('buildProjectionRows — timeline row', () => {
         id: 's-draft',
         slug: 'wip',
         directory: { label: 'WIP', draft: true },
-        timeline: { ...baseTimeline, plotlineIds: [] },
+        timeline: baseTimeline,
       },
       FIXED_TS,
     );
@@ -134,7 +132,6 @@ describe('buildProjectionRows — fingerprint determinism', () => {
         inGameDate: { era: 'e1', year: 1577 },
         dateSortKey: 'k',
         dateKnown: true,
-        plotlineIds: ['pl-b', 'pl-a'],
         characterIds: ['c2', 'c1'],
         placeIds: [],
       },
@@ -178,7 +175,6 @@ describe('buildProjectionRows — fingerprint determinism', () => {
           inGameDate: { era: 'e1', year: 1572 },
           dateSortKey: 'k',
           dateKnown: true,
-          plotlineIds: ['pl-a'],
           characterIds: [],
           placeIds: [],
         },

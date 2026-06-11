@@ -48,7 +48,6 @@ export interface Story {
   bgmAssetId?: string;
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
-  plotlineRefs?: EntityRef<'plotline'>[];
   authorUid: string;
   draft: boolean;
   createdAt: number;

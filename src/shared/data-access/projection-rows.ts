@@ -31,7 +31,6 @@ export interface TimelineRowInputs {
   inGameDate: InGameDate;
   dateSortKey: string;
   dateKnown: boolean;
-  plotlineIds: string[];
   characterIds: string[];
   placeIds: string[];
 }
@@ -85,7 +84,6 @@ export async function buildProjectionRows(
       inGameDate: timeline.inGameDate,
       dateSortKey: timeline.dateSortKey,
       dateKnown: timeline.dateKnown,
-      plotlineIds: timeline.plotlineIds,
       characterIds: timeline.characterIds,
       placeIds: timeline.placeIds,
       draft: directory.draft === true,

@@ -8,7 +8,7 @@ import { Character } from '@features/characters';
 import { CodexCategoriesConfig, CodexEntry } from '@features/codex';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
-import { Plotline } from '@features/plotlines';
+import { Plotline, deriveMemberKeys } from '@features/plotlines';
 import { Story, StoryContent } from '@features/stories';
 import { SEED_AUTHOR_UID } from './seed-author';
 
@@ -217,6 +217,14 @@ export const SEED_PLOTLINES: Plotline[] = [
       'Ingrid escapes the destruction of her former master and rebuilds a quiet life in Ul’dah, all while searching for what remains of those nights.',
     color: '#6366f1',
     status: 'active',
+    members: [
+      { kind: 'event', id: 'event-brann-house-attack' },
+      { kind: 'story', id: 'story-shadows-and-provisions' },
+    ],
+    memberKeys: deriveMemberKeys([
+      { kind: 'event', id: 'event-brann-house-attack' },
+      { kind: 'story', id: 'story-shadows-and-provisions' },
+    ]),
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -227,6 +235,8 @@ export const SEED_PLOTLINES: Plotline[] = [
     description: 'The Doman resistance regroups in exile and prepares to retake the homeland.',
     color: '#10b981',
     status: 'planned',
+    members: [{ kind: 'event', id: 'event-fall-of-doma' }],
+    memberKeys: deriveMemberKeys([{ kind: 'event', id: 'event-fall-of-doma' }]),
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -237,6 +247,14 @@ export const SEED_PLOTLINES: Plotline[] = [
     description: 'The years immediately following Bahamut’s release and the realm’s slow recovery.',
     color: '#f59e0b',
     status: 'resolved',
+    members: [
+      { kind: 'event', id: 'event-seventh-umbral-calamity' },
+      { kind: 'event', id: 'event-brann-house-attack' },
+    ],
+    memberKeys: deriveMemberKeys([
+      { kind: 'event', id: 'event-seventh-umbral-calamity' },
+      { kind: 'event', id: 'event-brann-house-attack' },
+    ]),
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -456,7 +474,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'place', id: 'place-uldah-pearl-lane' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
     ],
-    plotlineRefs: [{ kind: 'plotline', id: 'plotline-calamity-aftermath' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -471,7 +488,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'character', id: 'char-sakuya' },
       { kind: 'place', id: 'place-doma' },
     ],
-    plotlineRefs: [{ kind: 'plotline', id: 'plotline-doman-liberation' }],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
   },
@@ -489,10 +505,6 @@ export const SEED_EVENTS: TimelineEvent[] = [
       { kind: 'character', id: 'char-zahir' },
       { kind: 'place', id: 'place-ishgard' },
       { kind: 'place', id: 'place-gridania-northern-shroud' },
-    ],
-    plotlineRefs: [
-      { kind: 'plotline', id: 'plotline-ingrid-flight' },
-      { kind: 'plotline', id: 'plotline-calamity-aftermath' },
     ],
     authorUid: SEED_AUTHOR_UID,
     createdAt: SEED_CREATED_AT,
@@ -537,7 +549,6 @@ export const SEED_STORY: SeedStory = {
     { kind: 'place', id: 'place-doma' },
     { kind: 'place', id: 'place-gridania-northern-shroud' },
   ],
-  plotlineRefs: [{ kind: 'plotline', id: 'plotline-ingrid-flight' }],
   defaultEntrySceneId: 's01_opening',
   authorUid: SEED_AUTHOR_UID,
   draft: false,

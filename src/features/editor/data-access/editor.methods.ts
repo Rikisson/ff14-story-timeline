@@ -29,7 +29,6 @@ export function withEditorMethods() {
               coverAssetId: story.coverAssetId,
               bgmAssetId: story.bgmAssetId,
               relatedRefs: story.relatedRefs,
-              plotlineRefs: story.plotlineRefs,
               inGameDate: story.inGameDate,
               draft: story.draft,
               publishedAt: story.publishedAt,

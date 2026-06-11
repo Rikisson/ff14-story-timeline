@@ -7,21 +7,30 @@
     "statusActive": "Активна",
     "statusResolved": "Завершена",
     "formAdd": "Додати сюжетну лінію",
-    "formEdit": "Редагувати сюжетну лінію"
+    "formEdit": "Редагувати сюжетну лінію",
+    "members": "Учасники"
   },
   "action": {
-    "create": "+ Додати сюжетну лінію"
+    "create": "+ Додати сюжетну лінію",
+    "removeMember": "Прибрати із сюжетної лінії",
+    "reorderMember": "Перетягніть, щоб змінити порядок"
+  },
+  "badge": {
+    "unavailable": "Недоступно"
   },
   "empty": {
     "list": "Поки немає сюжетних ліній.",
     "selectDetail": "Оберіть сюжетну лінію, щоб переглянути деталі.",
     "titlePlaceholder": "напр. Основний сценарій Shadowbringers",
     "slugPlaceholder": "напр. shadowbringers-msq",
-    "descriptionPlaceholder": "Загальний хід цієї сюжетної лінії."
+    "descriptionPlaceholder": "Загальний хід цієї сюжетної лінії.",
+    "noMembers": "Поки немає історій чи подій. Додайте їх у порядку читання.",
+    "addMember": "Додати історію або подію…"
   },
   "tooltip": {
     "list": "Список сюжетних ліній",
     "details": "Деталі сюжетної лінії",
-    "colorAria": "Колір"
+    "colorAria": "Колір",
+    "members": "Учасники сюжетної лінії"
   }
 }

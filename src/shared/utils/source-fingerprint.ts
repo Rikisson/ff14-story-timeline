@@ -8,8 +8,8 @@
  *
  * - object keys serialised in sorted order
  * - string values trimmed and Unicode-normalised (NFC)
- * - arrays of strings sorted ascending (covers `plotlineIds`,
- *   `characterIds`, `placeIds`, tag lists)
+ * - arrays of strings sorted ascending (covers `characterIds`,
+ *   `placeIds`, tag lists)
  * - arrays of objects keep their order (sequence-meaningful)
  * - `undefined`, `null`, and `[]` collapse to a single canonical form
  *   (omitted from the serialisation)

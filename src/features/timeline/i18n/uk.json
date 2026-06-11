@@ -15,14 +15,20 @@
     "typeLabel": "Тип",
     "all": "Усі",
     "stories": "Історії",
-    "events": "Події"
+    "events": "Події",
+    "orderLabel": "Порядок",
+    "orderAuthored": "За сюжетною лінією",
+    "orderDate": "За датою"
   },
   "action": {
     "oldestFirst": "Спочатку старі",
     "newestFirst": "Спочатку нові",
     "clearFilters": "Очистити фільтри",
     "loadMore": "Завантажити ще",
-    "filters": "Фільтри"
+    "filters": "Фільтри",
+    "continuesIn": "Продовжується в {{ title }}",
+    "leadsTo": "Веде до {{ title }}",
+    "nextInPlotline": "Далі: {{ title }}"
   },
   "kind": {
     "story": "Історія",

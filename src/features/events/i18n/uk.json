@@ -28,6 +28,7 @@
     "namePlaceholder": "напр. Катаклізм Сьомої Умбральної ери",
     "slugPlaceholder": "напр. seventh-umbral-calamity",
     "descriptionPlaceholder": "Що відбувається в цій події…",
+    "notInPlotlines": "Ще не входить до жодної сюжетної лінії. Додайте її на сторінці сюжетної лінії.",
     "bgmHint": "Грає, поки читач переглядає цю подію. Плавно затухає при виході.",
     "pickBgm": "Обрати BGM",
     "replaceBgm": "Замінити BGM",

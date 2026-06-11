@@ -145,6 +145,10 @@ These are design decisions, not gaps. Do not "fix" them.
 - **Projections** (`_directory`, `_timelineEntries`) and the
   **slug index** (`_slugIndex`) are never exported or imported — they are
   regenerable, and the import rebuilds them through the normal write path.
+- **`Plotline.memberKeys` is never exported.** The archive ships `Plotline.members`
+  (ordered story/event slugs); `memberKeys` is a denormalized reverse-lookup index
+  re-derived from `members` on import, the same way projections are. Only `members`
+  is part of the format — order is significant and preserved round-trip.
 - **Server-managed fields** — `id`, `authorUid`, `editorUids`, `createdAt` /
   `updatedAt` / `publishedAt`, `version`, `sourceFingerprint`, and the
   universe-level counter trio `deletedAt` / `storageBytes` / `assetCount`, plus the

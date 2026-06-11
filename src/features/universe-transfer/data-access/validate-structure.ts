@@ -346,6 +346,7 @@ function validatePlotline(
   if (entity['status'] !== undefined) {
     checkEnum(entity['status'], PLOTLINE_STATUSES, `${path}.status`, issues);
   }
+  checkRefArray(entity['members'], `${path}.members`, issues, ['story', 'event']);
 }
 
 function validateEvent(
@@ -362,7 +363,6 @@ function validateEvent(
   }
   validateInGameDate(entity['inGameDate'], `${path}.inGameDate`, issues, true);
   checkRefArray(entity['relatedRefs'], `${path}.relatedRefs`, issues);
-  checkRefArray(entity['plotlineRefs'], `${path}.plotlineRefs`, issues, ['plotline']);
 }
 
 function validateCodexEntry(
@@ -389,7 +389,6 @@ function validateStory(
   optBoolean(entity, 'draft', path, issues);
   validateInGameDate(entity['inGameDate'], `${path}.inGameDate`, issues, true);
   checkRefArray(entity['relatedRefs'], `${path}.relatedRefs`, issues);
-  checkRefArray(entity['plotlineRefs'], `${path}.plotlineRefs`, issues, ['plotline']);
 
   const scenes = entity['scenes'];
   const sceneKeys = new Set<string>();

@@ -15,14 +15,20 @@
     "typeLabel": "Type",
     "all": "All",
     "stories": "Stories",
-    "events": "Events"
+    "events": "Events",
+    "orderLabel": "Order",
+    "orderAuthored": "Plotline order",
+    "orderDate": "Date order"
   },
   "action": {
     "oldestFirst": "Oldest first",
     "newestFirst": "Newest first",
     "clearFilters": "Clear filters",
     "loadMore": "Load more",
-    "filters": "Filters"
+    "filters": "Filters",
+    "continuesIn": "Continues in {{ title }}",
+    "leadsTo": "Leads to {{ title }}",
+    "nextInPlotline": "Next: {{ title }}"
   },
   "kind": {
     "story": "Story",

@@ -9,7 +9,7 @@ import {
 } from '@features/connections';
 import { StoredTimelineEvent } from '@features/events';
 import { StoredPlace } from '@features/places';
-import { StoredPlotline } from '@features/plotlines';
+import { PlotlineMember, StoredPlotline, deriveMemberKeys } from '@features/plotlines';
 import { Scene, StagedCharacter, StoredStory, StoryContent } from '@features/stories';
 import { StoredCharacter } from '@features/characters';
 import { autoLayoutScenes } from './auto-layout-scenes';
@@ -200,6 +200,7 @@ function buildPlotline(
   slug: string,
   ctx: BuildDocsContext,
 ): StoredPlotline {
+  const members = resolveRefList(source.members, ctx) as PlotlineMember[] | undefined;
   return compact({
     slug,
     title: source.title,
@@ -207,6 +208,8 @@ function buildPlotline(
     coverAssetId: resolveAsset(source.coverAsset, ctx),
     color: source.color,
     status: source.status,
+    members,
+    memberKeys: members ? deriveMemberKeys(members) : undefined,
     authorUid: ctx.authorUid,
     createdAt: ctx.now,
     updatedAt: ctx.now,
@@ -227,7 +230,6 @@ function buildEvent(
     backgroundEffect: source.backgroundEffect,
     inGameDate: resolveDate(source.inGameDate, ctx),
     relatedRefs: resolveRefList(source.relatedRefs, ctx),
-    plotlineRefs: resolveRefList(source.plotlineRefs, ctx) as EntityRef<'plotline'>[] | undefined,
     authorUid: ctx.authorUid,
     createdAt: ctx.now,
     updatedAt: ctx.now,
@@ -279,7 +281,6 @@ function buildStory(
     bgmAssetId: resolveAsset(source.bgmAsset, ctx),
     inGameDate: resolveDate(source.inGameDate, ctx),
     relatedRefs: resolveRefList(source.relatedRefs, ctx),
-    plotlineRefs: resolveRefList(source.plotlineRefs, ctx) as EntityRef<'plotline'>[] | undefined,
     authorUid: ctx.authorUid,
     draft: source.draft ?? false,
     createdAt: ctx.now,

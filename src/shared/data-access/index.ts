@@ -48,6 +48,7 @@ export {
 } from './entity-directory.service';
 export {
   createTimelineStreamStore,
+  fetchTimelineRowsByIds,
   type TimelineQueryStore,
   type TimelineStreamStoreOptions,
   type TimelineRow,

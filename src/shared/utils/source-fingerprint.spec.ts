@@ -78,7 +78,6 @@ describe('computeSourceFingerprint', () => {
       slug: 'the-lightning-day',
       coverAssetId: 'asset-7',
       visiblePublic: true,
-      plotlineIds: ['pl-b', 'pl-a'],
       characterIds: ['ch-2', 'ch-1', 'ch-3'],
       placeIds: [],
       categoryKey: undefined,
@@ -87,7 +86,6 @@ describe('computeSourceFingerprint', () => {
     const a = await computeSourceFingerprint(slice);
     const b = await computeSourceFingerprint({
       ...slice,
-      plotlineIds: ['pl-a', 'pl-b'],
       characterIds: ['ch-3', 'ch-1', 'ch-2'],
       placeIds: undefined,
     });

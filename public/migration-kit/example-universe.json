@@ -1,5 +1,5 @@
 {
-  "formatVersion": 2,
+  "formatVersion": 3,
   "generator": "hand-authored example",
   "universe": {
     "slug": "aetheria",
@@ -55,7 +55,12 @@
       "title": "The Shattered Crown",
       "description": "The succession crisis that follows the old king's death.",
       "status": "active",
-      "color": "#d6a36b"
+      "color": "#d6a36b",
+      "members": [
+        { "kind": "story", "ref": "the-gathering-storm" },
+        { "kind": "event", "ref": "the-coronation" },
+        { "kind": "story", "ref": "the-crowned-day" }
+      ]
     }
   ],
   "events": [
@@ -63,8 +68,7 @@
       "slug": "the-coronation",
       "name": "The Contested Coronation",
       "description": "Two claimants are crowned on the same day within ${pl:silverhold}[Silverhold].",
-      "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 14 },
-      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }]
+      "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 14 }
     }
   ],
   "codexEntries": [
@@ -82,7 +86,6 @@
       "description": "Lyra returns to Silverhold on the eve of the coronation.",
       "draft": false,
       "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 13 },
-      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
       "defaultEntryScene": "title",
       "scenes": {
         "title": {
@@ -145,7 +148,6 @@
       "description": "Silverhold wakes to two crowns and one throne.",
       "draft": false,
       "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 14 },
-      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
       "defaultEntryScene": "title",
       "scenes": {
         "title": {

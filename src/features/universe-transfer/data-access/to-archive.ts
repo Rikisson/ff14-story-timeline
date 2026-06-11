@@ -192,6 +192,7 @@ function toArchivePlotline(plotline: Plotline, maps: ExportMaps): ArchivePlotlin
     coverAsset: assetSlug(plotline.coverAssetId, maps),
     color: plotline.color,
     status: plotline.status,
+    members: refList(plotline.members, maps),
   });
 }
 
@@ -205,7 +206,6 @@ function toArchiveEvent(event: TimelineEvent, maps: ExportMaps): ArchiveEvent {
     backgroundEffect: event.backgroundEffect,
     inGameDate: toArchiveDate(event.inGameDate, maps),
     relatedRefs: refList(event.relatedRefs, maps),
-    plotlineRefs: refList(event.plotlineRefs, maps),
   });
 }
 
@@ -250,7 +250,6 @@ function toArchiveStory(
     draft: story.draft,
     inGameDate: toArchiveDate(story.inGameDate, maps),
     relatedRefs: refList(story.relatedRefs, maps),
-    plotlineRefs: refList(story.plotlineRefs, maps),
     defaultEntryScene: keyBySceneId.get(content.defaultEntrySceneId) ?? sceneIds[0] ?? 'start',
     scenes,
   });

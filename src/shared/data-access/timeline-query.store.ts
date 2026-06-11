@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, filter } from 'rxjs/operators';
 import {
   collection,
+  doc,
   Firestore,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -35,7 +37,6 @@ export interface TimelineRow {
   inGameDate: InGameDate;
   dateSortKey: string;
   dateKnown: boolean;
-  plotlineIds: string[];
   characterIds: string[];
   placeIds: string[];
   draft: boolean;
@@ -64,10 +65,9 @@ export interface TimelineQueryStore {
 
 /**
  * Timeline stream store over `_timelineEntries` — the mixed story+event
- * date stream ordered by `dateSortKey`. Refinement (type, plotline, title)
- * runs client-side over loaded rows for now; server-side plotline
- * filtering (`plotlineIds` array-contains) returns with the plotlines
- * rework, once its composite index is deployed.
+ * date stream ordered by `dateSortKey`. Type and title refinement runs
+ * client-side over loaded rows; plotline filtering switches the data
+ * source to the selected plotline's `members[]` (see `ExplorePage`).
  *
  * See `docs/narrative-engine-impl.md` *Timeline UX* and
  * `docs/backend-rules.md` *Timeline projections*.
@@ -237,11 +237,42 @@ interface RawTimelineRow {
   inGameDate: InGameDate;
   dateSortKey: string;
   dateKnown: boolean;
-  plotlineIds: string[];
   characterIds: string[];
   placeIds: string[];
   draft: boolean;
   visiblePublic: boolean;
+}
+
+/**
+ * Fetch specific `_timelineEntries` rows by entity ref, preserving input
+ * order. Used by Explore's plotline filter, which scopes the list to a
+ * plotline's `members[]`. Per-doc gets (not an `in` query) so a single
+ * forbidden row — a guest hitting a draft member — is skipped rather than
+ * rejecting the whole batch. Missing rows (dangling members) are skipped
+ * too, mirroring the broken-edge policy. Bounded by the plotline member cap.
+ */
+export async function fetchTimelineRowsByIds(
+  firestore: Firestore,
+  universeId: string,
+  refs: readonly { kind: 'story' | 'event'; id: string }[],
+): Promise<TimelineRow[]> {
+  const out: TimelineRow[] = [];
+  for (const ref of refs) {
+    const rowRef = doc(
+      firestore,
+      'universes',
+      universeId,
+      TIMELINE_COLLECTION,
+      `${ref.kind}_${ref.id}`,
+    );
+    try {
+      const snap = await getDoc(rowRef);
+      if (snap.exists()) out.push(toTimelineRow(snap.data() as RawTimelineRow));
+    } catch {
+      // Forbidden (guest reading a draft member) or transient — skip.
+    }
+  }
+  return out;
 }
 
 function toTimelineRow(raw: RawTimelineRow): TimelineRow {
@@ -253,7 +284,6 @@ function toTimelineRow(raw: RawTimelineRow): TimelineRow {
     inGameDate: raw.inGameDate,
     dateSortKey: raw.dateSortKey,
     dateKnown: raw.dateKnown,
-    plotlineIds: raw.plotlineIds ?? [],
     characterIds: raw.characterIds ?? [],
     placeIds: raw.placeIds ?? [],
     draft: raw.draft ?? false,

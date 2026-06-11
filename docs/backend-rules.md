@@ -64,9 +64,9 @@ The per-kind `secondary` line follows the rules in `narrative-engine-impl.md` *S
 
 ### Timeline projections
 
-`universes/{u}/_timelineEntries/{kind}_{id}` — the mixed story+event date stream. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`.
+`universes/{u}/_timelineEntries/{kind}_{id}` — the mixed story+event date stream. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`.
 
-The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. Explore reads the single `_timelineEntries` stream and refines type / plotline / title client-side over the loaded page (see `narrative-engine-impl.md` *Explore UX*). The Explore filter takes at most one plotline at a time, so server-side plotline filtering, when it lands, is a `plotlineIds` array-contains constraint on this same stream (composite index required) — no per-lane collection, no query fan-out.
+The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. Explore reads the single `_timelineEntries` stream and refines type / title client-side over the loaded page (see `narrative-engine-impl.md` *Explore UX*). Plotline filtering is not a constraint on this stream: a selected plotline switches the data source to that plotline's `members[]`, fetching each member's row by id. Rows carry no `plotlineIds` — arc membership lives on the plotline (see `narrative-engine-impl.md` *Scope locks*), so there is no array-contains index here.
 
 `dateDisplay` is not stored. The client formats from `inGameDate` through `formatInGameDate` (see `narrative-engine-impl.md` *Calendar*) so a calendar config edit doesn't require a content rewrite.
 
@@ -96,7 +96,7 @@ Each projection row carries `sourceFingerprint` — a short stable hash of the r
 
 This decouples drift from canonical versioning. Story increments `version` on every save (metadata or content per `narrative-engine-impl.md` *Story persistence*); a content-only edit doesn't change any projected field, so the projection row's `sourceFingerprint` stays valid and a drift detector won't flag it. The fingerprint also covers unversioned kinds without special-casing — only the projected slice matters.
 
-Fingerprint computation is deterministic — every writer and the rebuild script must produce the same hash for the same projected slice or the whole mechanism degrades into spurious-rebuild noise. The shared util enforces: object keys serialized in sorted order; string fields trimmed and Unicode-normalized (NFC); reference-ID arrays (`plotlineIds`, `characterIds`, `placeIds`, the resolver-side `relatedRefs` IDs) sorted ascending; absent vs. empty-array vs. explicit-null collapsed to a single canonical form. Sequences whose order is semantically meaningful (none in current projections — scenes aren't projected) preserve order. Hash algorithm is implementation-defined; a short SHA-256 prefix (12 hex chars) is sufficient at the per-universe row counts we expect.
+Fingerprint computation is deterministic — every writer and the rebuild script must produce the same hash for the same projected slice or the whole mechanism degrades into spurious-rebuild noise. The shared util enforces: object keys serialized in sorted order; string fields trimmed and Unicode-normalized (NFC); reference-ID arrays (`characterIds`, `placeIds`, the resolver-side `relatedRefs` IDs) sorted ascending; absent vs. empty-array vs. explicit-null collapsed to a single canonical form. Sequences whose order is semantically meaningful (none in current projections — scenes aren't projected) preserve order. Hash algorithm is implementation-defined; a short SHA-256 prefix (12 hex chars) is sufficient at the per-universe row counts we expect.
 
 Drift sources: writer bugs, schema migrations, and out-of-band console edits. Firestore `runTransaction` atomicity rules out partial-write failure within a single entity save as a drift source.
 
@@ -104,7 +104,7 @@ Drift sources: writer bugs, schema migrations, and out-of-band console edits. Fi
 
 Projection fan-out has to be bounded or a single write balloons into hundreds of projection rows and a single timeline render fires hundreds of queries. v1 caps, enforced in forms with clear validation copy:
 
-- **`plotlineRefs` per Story / Event: 10.** Bounds the `plotlineIds[]` array on the timeline projection row; a UX / cost ceiling rather than a fan-out one now that membership is a row field instead of per-lane rows.
+- **`Plotline.members`: 100.** Membership lives in the one plotline doc as an ordered array, so the cap keeps it well under Firestore's 1 MB doc ceiling while staying generous for a curated arc. A reorder or add/remove is a single-doc write; `memberKeys` is re-derived in the same write. If a plotline ever needs more, migrate `members` to a sub-collection at that point — not pre-emptively.
 - **`relatedRefs` per entity: 50.** Bounds inline-ref hydration size on detail pages; for Story / Event the cap also caps `characterIds[]` / `placeIds[]` array length on timeline projection rows. For Character / Place / Codex, `relatedRefs` doesn't fan out to projections, so the cap is a UX / cost ceiling rather than a fan-out one.
 - **Inline-ref batch hydration per render pass: 30.** Matches Firestore's `in` chunk cap; the resolver chunks larger payloads transparently.
 - **`Character.sprites`: 32.** Bounds the sprite picker and per-character asset payload at scene render. Enforced in rules on every character write.
@@ -136,6 +136,14 @@ Public list, filter, picker, and timeline queries route through `_directory` and
 - **Rule shape** follows the public-read pattern with `visibility` as the inline data condition: `allow read: if (isUniverseActive(u) && resource.data.visibility == 'reader') || isMember(u) || isAdmin()`; writes are member-only. Guest list queries must include `where('visibility', '==', 'reader')` per the pre-check rule above.
 - **Reads are one-shot + session-cached.** `ConnectionsService` caches reader-visibility queries per `(universe, direction, entity)` and invalidates on every connection write. Editor reads are always fresh.
 - **Entity deletion cascades outbound only.** `StoriesService.deleteStory` and `EventsService.remove` best-effort delete the entity's outbound connections after the canonical delete transaction commits (a `writeBatch` over a `fromEntityKey` query). Inbound connections belong to other entities' authors and are left to surface as broken edges with editor fix actions — a failed cascade is covered by the same handling.
+
+### Plotline membership
+
+`Plotline.members` (ordered `EntityRef<'story' | 'event'>[]`) is the authored source of truth; `memberKeys: string[]` (`'{kind}:{id}'`) is re-derived from it on every write for the reverse lookup. Both are canonical-only — never projected, never serialized to the `.universe` archive (the archive ships `members`; `memberKeys` is rebuilt on import).
+
+- **Writes are single-doc.** `PlotlinesService.setMembers` patches `members` + `memberKeys` together via the non-projected `patchFields` path. Adding, removing, or reordering a member touches only the plotline doc — no fan-out into member entities, no projection rebuild.
+- **Two read paths, both on the existing `plotlines/{id}` rule** (`isUniverseActive || isMember || isAdmin`): Explore reads a plotline doc by id to drive its member-filtered view (public on active universes); the editor runs `where('memberKeys', 'array-contains', '{kind}:{id}')` to show an entity's read-only membership chips. The `array-contains` field is auto-indexed, and the rule's `isUniverseActive` clause is `resource.data`-independent so the query passes the list pre-check.
+- **Dangling members are tolerated, not cascaded.** Deleting a story/event does not scrub plotlines that list it; readers skip members whose row no longer resolves and the plotline editor flags them — the same passive policy as broken connections.
 
 ### Write discipline
 
@@ -269,10 +277,10 @@ Route every slug check through the same helper so no service path can skip the c
 Day-one combinations:
 
 - `_directory`: `(visiblePublic, kind, labelFolded)` for the public per-kind picker (the most-used query), `(visiblePublic, labelFolded)` for cross-kind inline-ref search, `(kind, labelFolded)` for member-only authoring pickers that need draft entities
-- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` for public reads; `(dateKnown, dateSortKey ASC)` and `(dateKnown, dateSortKey DESC)` for the member timeline that includes drafts and so drops the `visiblePublic` clause. The page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored for each scope. When the server-side single-plotline filter lands, each of the four gains an `array-contains` variant on `plotlineIds`
+- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` for public reads; `(dateKnown, dateSortKey ASC)` and `(dateKnown, dateSortKey DESC)` for the member timeline that includes drafts and so drops the `visiblePublic` clause. The page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored for each scope
 - `codexEntries`: `(categoryKey, titleFolded)`
 
-Character / place timeline filter indexes wait until the timeline UI offers those filters.
+The plotline reverse lookup (`plotlines where memberKeys array-contains '{kind}:{id}'`) needs no composite entry — `array-contains` on a single field is auto-indexed. Character / place timeline filter indexes wait until the timeline UI offers those filters.
 
 ## Firestore rules for projections
 

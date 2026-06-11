@@ -124,7 +124,6 @@ describe('applyEntityWrite —create', () => {
           inGameDate: { era: 'e1', year: 1577, month: 3, day: 15 },
           dateSortKey: '00010001577031500000000000000',
           dateKnown: true,
-          plotlineIds: ['pl-arr', 'pl-hw'],
           characterIds: ['c1'],
           placeIds: ['p1'],
         },
@@ -135,7 +134,7 @@ describe('applyEntityWrite —create', () => {
     expect(ops[timelinePath('story', 's1')]).toBeDefined();
     expect(ops[timelinePath('story', 's1')].data).toMatchObject({
       title: 'Opening',
-      plotlineIds: ['pl-arr', 'pl-hw'],
+      characterIds: ['c1'],
       visiblePublic: true,
       draft: false,
     });
@@ -156,7 +155,6 @@ describe('applyEntityWrite —create', () => {
           inGameDate: {},
           dateSortKey: '0',
           dateKnown: false,
-          plotlineIds: [],
           characterIds: [],
           placeIds: [],
         },
@@ -334,7 +332,7 @@ describe('applyEntityDelete', () => {
     setDocs({
       [`${U}/stories/s1`]: { slug: 'opening', title: 'Opening' },
       [dirPath('story', 's1')]: { kind: 'story', entityId: 's1' },
-      [timelinePath('story', 's1')]: { kind: 'story', plotlineIds: ['pl-a', 'pl-b'] },
+      [timelinePath('story', 's1')]: { kind: 'story', characterIds: ['c-a', 'c-b'] },
       [slugPath('story', 'opening')]: { entityId: 's1' },
     });
 

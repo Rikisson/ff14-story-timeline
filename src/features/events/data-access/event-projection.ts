@@ -31,7 +31,6 @@ export function buildEventTimelineInputs(
     inGameDate: entity.inGameDate,
     dateSortKey: inGameDateSortKey(entity.inGameDate, ctx.eraOrdinalLookup),
     dateKnown: !isInGameDateEmpty(entity.inGameDate),
-    plotlineIds: (entity.plotlineRefs ?? []).map((r) => r.id),
     characterIds: (entity.relatedRefs ?? [])
       .filter((r) => r.kind === 'character')
       .map((r) => r.id),

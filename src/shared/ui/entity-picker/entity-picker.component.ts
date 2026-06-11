@@ -206,7 +206,7 @@ export class EntityPickerComponent {
   readonly includeDrafts = input<boolean>(false);
   /** Single-select vs multi-select. Single-select replaces the previous value. */
   readonly multiple = input<boolean>(true);
-  /** Cap selections (e.g. 10 for plotlineRefs, 50 for relatedRefs). null = no cap. */
+  /** Cap selections (e.g. 50 for relatedRefs). null = no cap. */
   readonly maxSelections = input<number | null>(null);
   readonly placeholder = input<string>('');
   readonly disabled = input<boolean>(false);

@@ -17,6 +17,14 @@ import { formatInGameDate } from '@shared/utils';
 import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
 
+export interface ExploreReadNext {
+  /** Maps to an `explore.action.*` key: connection vs. plotline-next. */
+  labelKey: 'continuesIn' | 'leadsTo' | 'nextInPlotline';
+  title: string;
+  link: readonly [string, string];
+  queryParams?: Record<string, string>;
+}
+
 export interface ExploreDetailVm {
   kind: 'story' | 'event';
   id: string;
@@ -25,15 +33,17 @@ export interface ExploreDetailVm {
   coverAssetId?: string;
   inGameDate: TimelineRow['inGameDate'];
   draft: boolean;
-  /** Plotline arcs then related people/places, rendered as entity chips. */
+  /** Related people / places, rendered as entity chips. */
   refs: EntityRef[];
+  /** Forward nudge: a wired connection or the next plotline member. */
+  readNext?: ExploreReadNext;
 }
 
 /**
  * Detail pane for a selected story or event, matching the entity-card
  * convention: cover, a kind + date meta row, a "Read now" CTA into the
- * reader, the description, and entity-ref chips. The richer
- * "continues / next in arc" nudge waits on the connections model.
+ * reader, the description, entity-ref chips, and — when one exists — a
+ * "Read next" nudge to a wired continuation or the next plotline member.
  */
 @Component({
   selector: 'app-explore-detail',
@@ -80,10 +90,19 @@ export interface ExploreDetailVm {
           {{ vm().title || t('field.untitled') }}
         </h2>
 
-        <a uiPrimary class="self-start" [routerLink]="readLink()">
-          <app-book-icon icon-leading class="size-4" />
-          {{ g('action.readNow') }}
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+          <a uiPrimary class="self-start" [routerLink]="readLink()">
+            <app-book-icon icon-leading class="size-4" />
+            {{ g('action.readNow') }}
+          </a>
+          @if (vm().readNext; as next) {
+            <a
+              class="self-start text-sm font-medium text-accent-foreground underline-offset-2 hover:underline"
+              [routerLink]="next.link"
+              [queryParams]="next.queryParams ?? null"
+            >{{ t('action.' + next.labelKey, { title: next.title }) }}</a>
+          }
+        </div>
 
         @if (vm().description; as desc) {
           <app-markdown-text class="text-sm text-foreground-muted" [text]="desc" />

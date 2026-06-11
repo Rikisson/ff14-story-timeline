@@ -8,7 +8,6 @@ export type StoryMeta = Pick<
   | 'coverAssetId'
   | 'bgmAssetId'
   | 'relatedRefs'
-  | 'plotlineRefs'
   | 'inGameDate'
   | 'draft'
   | 'publishedAt'

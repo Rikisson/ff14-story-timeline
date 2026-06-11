@@ -11,10 +11,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import { CalendarService } from '@features/calendar';
+import { ConnectionsService, targetEntityRef } from '@features/connections';
 import { EventsService } from '@features/events';
+import { PlotlinesService } from '@features/plotlines';
 import { StoriesService } from '@features/stories';
 import { UniverseStore } from '@features/universes';
-import { createTimelineStreamStore, SortDirection, TimelineRow } from '@shared/data-access';
+import {
+  createTimelineStreamStore,
+  EntityDirectoryService,
+  fetchTimelineRowsByIds,
+  SortDirection,
+  TimelineRow,
+} from '@shared/data-access';
 import { EntityRef } from '@shared/models';
 import {
   ListPaneItem,
@@ -26,23 +34,36 @@ import {
   SidePaneSearchComponent,
 } from '@shared/ui';
 import { formatInGameDate } from '@shared/utils';
+import { FirebaseService } from '../../../app/firebase/firebase.service';
 import {
   EMPTY_EXPLORE_FILTERS,
   ExploreFilters,
   ExploreFiltersComponent,
 } from './explore-filters.component';
-import { ExploreDetailComponent, ExploreDetailVm } from '../ui/explore-detail.component';
+import {
+  ExploreDetailComponent,
+  ExploreDetailVm,
+  ExploreReadNext,
+} from '../ui/explore-detail.component';
 import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
 
 const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
 
+interface MemberView {
+  plotlineId: string;
+  title: string;
+  rows: TimelineRow[];
+}
+
 /**
  * Explore — the universe home. A combined stories + events stream rendered
  * as a softly date-grouped master rail with an in-page detail pane, over
- * the `_timelineEntries` projection. Type, plotline, and search refine the
- * loaded rows client-side; server-side plotline filtering returns with the
- * plotlines rework (it needs a `plotlineIds` array-contains index).
+ * the `_timelineEntries` projection. Type and title search refine the loaded
+ * rows client-side. Selecting a plotline switches the list to that plotline's
+ * `members[]` (fetched by id), shown in authored or date order. The detail
+ * pane offers a "Read next" nudge — a wired continuation, else the next
+ * plotline member when a plotline is active.
  */
 @Component({
   selector: 'app-explore-page',
@@ -92,9 +113,9 @@ const rowKey = (r: { kind: string; id: string }): string => `${r.kind}:${r.id}`;
             <app-side-pane-grouped-list
               [groups]="groups()"
               [selectedId]="sel()"
-              [loading]="store.loading()"
+              [loading]="listLoading()"
               [loadingMore]="store.loadingMore()"
-              [hasMore]="store.hasMore()"
+              [hasMore]="listHasMore()"
               [error]="store.error()"
               [ariaLabel]="t('tooltip.list')"
               [emptyMessage]="t('empty.list')"
@@ -132,6 +153,10 @@ export class ExplorePage {
   private readonly auth = inject(AuthStore);
   private readonly stories = inject(StoriesService);
   private readonly events = inject(EventsService);
+  private readonly plotlines = inject(PlotlinesService);
+  private readonly connections = inject(ConnectionsService);
+  private readonly directory = inject(EntityDirectoryService);
+  private readonly firebase = inject(FirebaseService);
   private readonly calendar = inject(CalendarService);
   private readonly transloco = inject(TranslocoService);
   private readonly router = inject(Router);
@@ -164,23 +189,64 @@ export class ExplorePage {
   protected readonly detail = signal<ExploreDetailVm | null>(null);
   protected readonly detailLoading = signal(false);
 
+  // Plotline filter switches the data source to the plotline's members.
+  private readonly memberView = signal<MemberView | null>(null);
+  private readonly memberLoading = signal(false);
+
+  private readonly activeMemberView = computed<MemberView | null>(() => {
+    const pid = this.filters().plotlineId;
+    const mv = this.memberView();
+    return pid && mv && mv.plotlineId === pid ? mv : null;
+  });
+
+  private readonly authoredView = computed(
+    () => this.filters().plotlineId !== null && this.filters().plotlineOrder === 'authored',
+  );
+
+  protected readonly listLoading = computed(() =>
+    this.filters().plotlineId !== null ? this.memberLoading() : this.store.loading(),
+  );
+  protected readonly listHasMore = computed(() =>
+    this.filters().plotlineId !== null ? false : this.store.hasMore(),
+  );
+
   private readonly visibleRows = computed<TimelineRow[]>(() => {
-    const { type, plotlineId, search } = this.filters();
+    const { type, plotlineId, plotlineOrder, search } = this.filters();
     const q = search.trim().toLowerCase();
-    return this.store
-      .rows()
-      .filter(
-        (r) =>
-          (type === 'all' || r.kind === type) &&
-          (plotlineId === null || r.plotlineIds.includes(plotlineId)) &&
-          (q === '' || r.title.toLowerCase().includes(q)),
-      );
+
+    let rows: TimelineRow[];
+    if (plotlineId !== null) {
+      const mv = this.activeMemberView();
+      rows = mv ? mv.rows : [];
+      if (plotlineOrder === 'date') {
+        const dir = this.sortDirection() === 'desc' ? -1 : 1;
+        rows = [...rows].sort((a, b) => dir * a.dateSortKey.localeCompare(b.dateSortKey));
+      }
+    } else {
+      rows = this.store.rows();
+    }
+
+    return rows.filter(
+      (r) =>
+        (type === 'all' || r.kind === type) &&
+        (q === '' || r.title.toLowerCase().includes(q)),
+    );
   });
 
   protected readonly groups = computed<SidePaneGroup[]>(() => {
+    const rows = this.visibleRows();
+
+    // Authored plotline order isn't date-monotonic, so render one flat
+    // group titled by the plotline rather than scattering date headers.
+    if (this.authoredView()) {
+      const mv = this.activeMemberView();
+      if (!mv || rows.length === 0) return [];
+      return [{ key: '__authored__', label: mv.title, items: rows.map((r) => this.toItem(r)) }];
+    }
+
     const out: SidePaneGroup[] = [];
     let current: SidePaneGroup | null = null;
-    for (const r of this.visibleRows()) {
+    for (const r of rows) {
       const key = this.groupKey(r);
       if (!current || current.key !== key) {
         current = { key, label: this.groupLabel(r), items: [] };
@@ -192,6 +258,25 @@ export class ExplorePage {
   });
 
   constructor() {
+    // Load the selected plotline's members whenever the filter changes.
+    let memberToken = 0;
+    effect(() => {
+      const pid = this.filters().plotlineId;
+      const uid = this.universeId();
+      const mine = ++memberToken;
+      if (!pid || !uid) {
+        this.memberView.set(null);
+        this.memberLoading.set(false);
+        return;
+      }
+      this.memberLoading.set(true);
+      void this.loadMemberView(uid, pid).then((mv) => {
+        if (mine !== memberToken) return;
+        this.memberView.set(mv);
+        this.memberLoading.set(false);
+      });
+    });
+
     // A monotonic token guards against out-of-order resolution when the
     // selection changes faster than the fetches settle.
     let token = 0;
@@ -210,6 +295,27 @@ export class ExplorePage {
         this.detailLoading.set(false);
       });
     });
+
+    // First-in-stream landing: when nothing is selected, open the first
+    // visible row. `replaceUrl` keeps it out of the back stack.
+    effect(() => {
+      if (this.sel() || this.listLoading()) return;
+      const first = this.visibleRows()[0];
+      if (!first) return;
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { sel: rowKey(first) },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
+  }
+
+  private async loadMemberView(universeId: string, plotlineId: string): Promise<MemberView> {
+    const plotline = await this.plotlines.getById(plotlineId);
+    const members = plotline?.members ?? [];
+    const rows = await fetchTimelineRowsByIds(this.firebase.firestore, universeId, members);
+    return { plotlineId, title: plotline?.title ?? '', rows };
   }
 
   protected onSearchChange(search: string): void {
@@ -228,7 +334,9 @@ export class ExplorePage {
     const sep = sel.indexOf(':');
     const kind = sel.slice(0, sep);
     const id = sel.slice(sep + 1);
+    if (kind !== 'story' && kind !== 'event') return null;
     if (!id) return null;
+
     if (kind === 'story') {
       const s = await this.stories.getStory(id);
       if (!s) return null;
@@ -240,24 +348,88 @@ export class ExplorePage {
         coverAssetId: s.coverAssetId,
         inGameDate: s.inGameDate,
         draft: s.draft,
-        refs: [...(s.plotlineRefs ?? []), ...(s.relatedRefs ?? [])],
+        refs: [...(s.relatedRefs ?? [])],
+        readNext: await this.resolveReadNext('story', id),
       };
     }
-    if (kind === 'event') {
-      const e = await this.events.getById(id);
-      if (!e) return null;
-      return {
-        kind: 'event',
-        id,
-        title: e.name,
-        description: e.description,
-        coverAssetId: e.coverAssetId,
-        inGameDate: e.inGameDate,
-        draft: false,
-        refs: [...(e.plotlineRefs ?? []), ...(e.relatedRefs ?? [])],
-      };
+
+    const e = await this.events.getById(id);
+    if (!e) return null;
+    return {
+      kind: 'event',
+      id,
+      title: e.name,
+      description: e.description,
+      coverAssetId: e.coverAssetId,
+      inGameDate: e.inGameDate,
+      draft: false,
+      refs: [...(e.relatedRefs ?? [])],
+      readNext: await this.resolveReadNext('event', id),
+    };
+  }
+
+  /**
+   * Forward nudge for the detail pane. Precedence: (1) a wired outbound
+   * connection — "Continues in" for a single path, "Leads to" when there
+   * are several; (2) when a plotline filter is active, the next member in
+   * authored order. Both link into the reader. Dangling targets are
+   * dropped. Any read failure (e.g. a guest hitting a draft target) yields
+   * no nudge rather than an error.
+   */
+  private async resolveReadNext(
+    kind: 'story' | 'event',
+    id: string,
+  ): Promise<ExploreReadNext | undefined> {
+    const universeId = this.universeId();
+    if (!universeId) return undefined;
+    try {
+      const outbound = await this.connections.outboundFor({ kind, id }, { readerOnly: true });
+      const wired = outbound.filter((c) => c.to);
+      if (wired.length > 0 && wired[0].to) {
+        const ref = targetEntityRef(wired[0].to);
+        if (ref) {
+          const [row] = await this.directory.byIds({
+            universeId,
+            refs: [ref],
+            includeDrafts: this.effectiveDrafts(),
+          });
+          if (row) {
+            const sceneId = wired[0].to.kind === 'story' ? wired[0].to.sceneId : undefined;
+            return {
+              labelKey: wired.length > 1 ? 'leadsTo' : 'continuesIn',
+              title: row.label,
+              link: this.readerLink(ref),
+              queryParams: sceneId ? { scene: sceneId } : undefined,
+            };
+          }
+        }
+      }
+
+      const pid = this.filters().plotlineId;
+      if (pid) {
+        const plotline = await this.plotlines.getById(pid);
+        const members = plotline?.members ?? [];
+        const idx = members.findIndex((m) => m.kind === kind && m.id === id);
+        if (idx >= 0 && idx < members.length - 1) {
+          const next = members[idx + 1];
+          const [row] = await this.directory.byIds({
+            universeId,
+            refs: [next],
+            includeDrafts: this.effectiveDrafts(),
+          });
+          if (row) {
+            return { labelKey: 'nextInPlotline', title: row.label, link: this.readerLink(next) };
+          }
+        }
+      }
+    } catch {
+      // Forbidden / transient read — surface no nudge.
     }
-    return null;
+    return undefined;
+  }
+
+  private readerLink(ref: EntityRef<'story' | 'event'>): readonly [string, string] {
+    return ref.kind === 'story' ? ['/reader/story', ref.id] : ['/reader/event', ref.id];
   }
 
   private groupKey(r: TimelineRow): string {

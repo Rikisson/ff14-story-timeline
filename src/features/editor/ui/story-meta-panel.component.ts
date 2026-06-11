@@ -1,8 +1,18 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AssetPickerComponent } from '@features/media';
 import { ContentLangDirective } from '@features/universes';
+import { PlotlinesService } from '@features/plotlines';
 import { AssetThumbResolver } from '@shared/data-access';
 import { EntityRef, InGameDate, SLUG_PATTERN } from '@shared/models';
 import {
@@ -11,6 +21,7 @@ import {
   InGameDateInputComponent,
   RichTextInputComponent,
   SecondaryButtonComponent,
+  TagComponent,
 } from '@shared/ui';
 import { StoryMeta } from '../data-access/editor.state';
 import editorEn from '../i18n/en.json';
@@ -18,7 +29,6 @@ import editorUk from '../i18n/uk.json';
 
 /** Per `docs/backend-rules.md` *Cardinality limits*. */
 const RELATED_REFS_MAX = 50;
-const PLOTLINE_REFS_MAX = 10;
 
 @Component({
   selector: 'app-story-meta-panel',
@@ -29,6 +39,7 @@ const PLOTLINE_REFS_MAX = 10;
     RichTextInputComponent,
     GhostButtonComponent,
     SecondaryButtonComponent,
+    TagComponent,
     NgOptimizedImage,
     TranslocoDirective,
     ContentLangDirective,
@@ -145,13 +156,15 @@ const PLOTLINE_REFS_MAX = 10;
 
         <div class="field">
           <label>{{ t('field.plotlines') }}</label>
-          <app-entity-picker
-            [value]="plotlineRefValues()"
-            [kinds]="plotlineKinds"
-            [maxSelections]="plotlineMax"
-            [placeholder]="t('empty.plotlinesPlaceholder')"
-            (valueChange)="onPlotlineRefs($event)"
-          />
+          @if (plotlineChips().length) {
+            <ul class="chips">
+              @for (p of plotlineChips(); track p.id) {
+                <li><app-tag>{{ p.title }}</app-tag></li>
+              }
+            </ul>
+          } @else {
+            <span class="hint">{{ t('empty.notInPlotlines') }}</span>
+          }
         </div>
 
         <div class="field">
@@ -243,19 +256,51 @@ const PLOTLINE_REFS_MAX = 10;
       gap: 0.5rem;
       margin-top: 0.5rem;
     }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StoryMetaPanelComponent {
   readonly meta = input.required<StoryMeta | null>();
+  readonly storyId = input<string | null>(null);
   readonly update = output<Partial<StoryMeta>>();
 
   private readonly assets = inject(AssetThumbResolver);
+  private readonly plotlines = inject(PlotlinesService);
 
   protected readonly relatedKinds = ['character', 'place', 'codexEntry'] as const;
   protected readonly relatedMax = RELATED_REFS_MAX;
-  protected readonly plotlineKinds = ['plotline'] as const;
-  protected readonly plotlineMax = PLOTLINE_REFS_MAX;
+
+  protected readonly plotlineChips = signal<{ id: string; title: string }[]>([]);
+
+  constructor() {
+    let token = 0;
+    effect(() => {
+      const id = this.storyId();
+      const mine = ++token;
+      if (!id) {
+        this.plotlineChips.set([]);
+        return;
+      }
+      void this.plotlines
+        .plotlinesContaining({ kind: 'story', id })
+        .then((pls) => {
+          if (mine === token) {
+            this.plotlineChips.set(pls.map((p) => ({ id: p.id, title: p.title })));
+          }
+        })
+        .catch(() => {
+          if (mine === token) this.plotlineChips.set([]);
+        });
+    });
+  }
 
   protected readonly coverUrl = computed(() =>
     this.assets.resolve(this.meta()?.coverAssetId)()?.url,
@@ -280,7 +325,6 @@ export class StoryMetaPanelComponent {
   });
 
   protected readonly relatedRefs = computed<EntityRef[]>(() => this.meta()?.relatedRefs ?? []);
-  protected readonly plotlineRefValues = computed<EntityRef[]>(() => this.meta()?.plotlineRefs ?? []);
 
   protected onTitle(event: Event): void {
     this.update.emit({ title: (event.target as HTMLInputElement).value });
@@ -296,11 +340,6 @@ export class StoryMetaPanelComponent {
 
   protected onRelatedRefs(refs: EntityRef[]): void {
     this.update.emit({ relatedRefs: refs.length > 0 ? refs : undefined });
-  }
-
-  protected onPlotlineRefs(refs: EntityRef[]): void {
-    const plotlineOnly = refs.filter((r) => r.kind === 'plotline') as EntityRef<'plotline'>[];
-    this.update.emit({ plotlineRefs: plotlineOnly.length > 0 ? plotlineOnly : undefined });
   }
 
   protected onDate(value: InGameDate): void {
