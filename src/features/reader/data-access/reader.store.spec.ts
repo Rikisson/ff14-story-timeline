@@ -150,6 +150,21 @@ describe('ReaderStore', () => {
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
   });
 
+  it('restores the saved history when the explicit entry matches the saved position', async () => {
+    // The reader walked a → b → c (end scene), continued elsewhere, and
+    // now comes back to the ending via the unified Back menu.
+    store.choose('b');
+    store.choose('c');
+    await store.loadStory('s1', 'c');
+
+    expect(store.currentSceneId()).toBe('c');
+    expect(store.history()).toEqual(['a', 'b', 'c']);
+    expect(store.canGoBack()).toBe(true);
+
+    store.back();
+    expect(store.currentSceneId()).toBe('b');
+  });
+
   it('falls back to default-entry behavior for an unknown entry scene', async () => {
     await store.loadStory('s1', 'missing');
 

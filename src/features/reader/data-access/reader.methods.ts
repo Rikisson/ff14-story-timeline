@@ -93,19 +93,31 @@ export function withReaderMethods() {
             }
             const { story, content } = result;
             // An explicit entry (continuation target or cross-entity
-            // back-nav) starts a fresh read at that scene; saved
-            // progress is left untouched for the default-entry path.
+            // back-nav) starts a read at that scene. When the entry is
+            // exactly where the saved progress left off — the reader
+            // coming *back* to the ending they continued from — the
+            // saved history is restored so in-story Back keeps walking
+            // scene by scene. Any other entry starts fresh.
             const entry =
               entrySceneId &&
               Object.prototype.hasOwnProperty.call(content.scenes, entrySceneId)
                 ? entrySceneId
                 : null;
             if (entry) {
+              const saved = loadSaved(id);
+              const resumable =
+                saved &&
+                saved.sceneId === entry &&
+                saved.history.every((sceneId) =>
+                  Object.prototype.hasOwnProperty.call(content.scenes, sceneId),
+                )
+                  ? saved
+                  : null;
               patchState(store, {
                 story,
                 content,
                 currentSceneId: entry,
-                history: [entry],
+                history: resumable?.history ?? [entry],
                 loading: false,
                 resumedFromSave: false,
               });
