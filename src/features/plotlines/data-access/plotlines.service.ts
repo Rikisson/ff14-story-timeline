@@ -40,12 +40,6 @@ export class PlotlinesService extends UniverseEntityService<Plotline, PlotlineDr
     return buildPlotlineDirectoryInputs(entity);
   }
 
-  /**
-   * Replace a plotline's ordered membership. `members` is the authored
-   * source of truth; `memberKeys` is derived for the reverse lookup and
-   * written in the same patch. Both are canonical-only (not projected),
-   * so this rides the non-projected `patchFields` escape hatch.
-   */
   async setMembers(id: string, members: readonly PlotlineMember[]): Promise<void> {
     await this.patchFields(id, {
       members: [...members],
@@ -53,12 +47,6 @@ export class PlotlinesService extends UniverseEntityService<Plotline, PlotlineDr
     });
   }
 
-  /**
-   * Reverse lookup: which plotlines contain this story / event. Member-only
-   * query over canonical `plotlines` via `memberKeys` array-contains.
-   * Session-cached per `(universe, entity)`; the cache clears on any
-   * plotline write through the cache-invalidation bus.
-   */
   async plotlinesContaining(entity: EntityRef<'story' | 'event'>): Promise<Plotline[]> {
     const universeId = this.requireUniverseId();
     const key = `${universeId}:${memberKeyOf(entity)}`;

@@ -11,15 +11,8 @@ export type PlotlineOrder = 'authored' | 'date';
 
 export interface ExploreFilters {
   type: ExploreType;
-  /** Single plotline; scopes the list to that plotline's `members[]`. */
   plotlineId: string | null;
-  /**
-   * Ordering for the filtered plotline list — `authored` follows the
-   * plotline's member order, `date` sorts by in-game date. Ignored when
-   * no plotline is selected.
-   */
   plotlineOrder: PlotlineOrder;
-  /** Free-text title match, applied client-side over loaded rows. */
   search: string;
 }
 

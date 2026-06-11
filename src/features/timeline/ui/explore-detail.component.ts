@@ -18,7 +18,6 @@ import exploreEn from '../i18n/en.json';
 import exploreUk from '../i18n/uk.json';
 
 export interface ExploreReadNext {
-  /** Maps to an `explore.action.*` key: connection vs. plotline-next. */
   labelKey: 'continuesIn' | 'leadsTo' | 'nextInPlotline';
   title: string;
   link: readonly [string, string];
@@ -33,18 +32,10 @@ export interface ExploreDetailVm {
   coverAssetId?: string;
   inGameDate: TimelineRow['inGameDate'];
   draft: boolean;
-  /** Related people / places, rendered as entity chips. */
   refs: EntityRef[];
-  /** Forward nudge: a wired connection or the next plotline member. */
   readNext?: ExploreReadNext;
 }
 
-/**
- * Detail pane for a selected story or event, matching the entity-card
- * convention: cover, a kind + date meta row, a "Read now" CTA into the
- * reader, the description, entity-ref chips, and — when one exists — a
- * "Read next" nudge to a wired continuation or the next plotline member.
- */
 @Component({
   selector: 'app-explore-detail',
   host: { class: 'block h-full min-h-0' },

@@ -30,14 +30,6 @@ interface MemberEntry {
   missing: boolean;
 }
 
-/**
- * Ordered membership editor for a plotline. Members are the authored
- * source of truth (`Plotline.members`); the order here is the reading
- * order Explore's "Read next" steps through. Add via the picker,
- * drag to reorder, remove with the trailing button. Members that no
- * longer resolve render muted with a remove action — mirroring the
- * broken-edge policy; readers simply skip them.
- */
 @Component({
   selector: 'app-plotline-members',
   host: { class: 'block' },

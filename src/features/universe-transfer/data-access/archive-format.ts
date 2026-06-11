@@ -109,7 +109,6 @@ export interface ArchivePlotline {
   coverAsset?: string;
   color?: string;
   status?: PlotlineStatus;
-  /** Ordered membership — story / event slugs in authored order. */
   members?: ArchiveRef<'story' | 'event'>[];
 }
 

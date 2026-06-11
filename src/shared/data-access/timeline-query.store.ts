@@ -243,14 +243,6 @@ interface RawTimelineRow {
   visiblePublic: boolean;
 }
 
-/**
- * Fetch specific `_timelineEntries` rows by entity ref, preserving input
- * order. Used by Explore's plotline filter, which scopes the list to a
- * plotline's `members[]`. Per-doc gets (not an `in` query) so a single
- * forbidden row — a guest hitting a draft member — is skipped rather than
- * rejecting the whole batch. Missing rows (dangling members) are skipped
- * too, mirroring the broken-edge policy. Bounded by the plotline member cap.
- */
 export async function fetchTimelineRowsByIds(
   firestore: Firestore,
   universeId: string,
@@ -269,7 +261,7 @@ export async function fetchTimelineRowsByIds(
       const snap = await getDoc(rowRef);
       if (snap.exists()) out.push(toTimelineRow(snap.data() as RawTimelineRow));
     } catch {
-      // Forbidden (guest reading a draft member) or transient — skip.
+      continue;
     }
   }
   return out;

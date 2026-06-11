@@ -56,15 +56,6 @@ interface MemberView {
   rows: TimelineRow[];
 }
 
-/**
- * Explore — the universe home. A combined stories + events stream rendered
- * as a softly date-grouped master rail with an in-page detail pane, over
- * the `_timelineEntries` projection. Type and title search refine the loaded
- * rows client-side. Selecting a plotline switches the list to that plotline's
- * `members[]` (fetched by id), shown in authored or date order. The detail
- * pane offers a "Read next" nudge — a wired continuation, else the next
- * plotline member when a plotline is active.
- */
 @Component({
   selector: 'app-explore-page',
   host: { class: 'block h-full' },
@@ -190,7 +181,6 @@ export class ExplorePage {
   protected readonly detail = signal<ExploreDetailVm | null>(null);
   protected readonly detailLoading = signal(false);
 
-  // Plotline filter switches the data source to the plotline's members.
   private readonly memberView = signal<MemberView | null>(null);
   private readonly memberLoading = signal(false);
 
@@ -237,8 +227,6 @@ export class ExplorePage {
   protected readonly groups = computed<SidePaneGroup[]>(() => {
     const rows = this.visibleRows();
 
-    // Authored plotline order isn't date-monotonic, so render one flat
-    // group titled by the plotline rather than scattering date headers.
     if (this.authoredView()) {
       const mv = this.activeMemberView();
       if (!mv || rows.length === 0) return [];
@@ -259,7 +247,6 @@ export class ExplorePage {
   });
 
   constructor() {
-    // Load the selected plotline's members whenever the filter changes.
     let memberToken = 0;
     effect(() => {
       const pid = this.filters().plotlineId;
@@ -283,8 +270,6 @@ export class ExplorePage {
     let token = 0;
     effect(() => {
       const sel = this.sel();
-      // Re-resolve when the plotline context changes — it decides which
-      // "Next in plotline" nudge (if any) the detail pane shows.
       this.plotlineId();
       const my = ++token;
       if (!sel) {
@@ -300,8 +285,6 @@ export class ExplorePage {
       });
     });
 
-    // First-in-stream landing: when nothing is selected, open the first
-    // visible row. `replaceUrl` keeps it out of the back stack.
     effect(() => {
       if (this.sel() || this.listLoading()) return;
       const first = this.visibleRows()[0];
@@ -372,15 +355,6 @@ export class ExplorePage {
     };
   }
 
-  /**
-   * Forward nudge for the detail pane. Precedence: (1) a wired outbound
-   * connection — "Continues in" for a single path, "Leads to" when there
-   * are several; (2) the next member, in authored order, of the plotline
-   * context — the active filter, or the entity's sole plotline when no
-   * filter narrows it (skipped if it belongs to several). Both link into
-   * the reader. Dangling targets are dropped. Any read failure (e.g. a
-   * guest hitting a draft target) yields no nudge rather than an error.
-   */
   private async resolveReadNext(
     kind: 'story' | 'event',
     id: string,
@@ -413,8 +387,6 @@ export class ExplorePage {
         }
       }
 
-      // Plotline context: the active filter, else the entity's sole plotline.
-      // (Ambiguous when it belongs to several and no filter narrows it, so skip.)
       let plotline = null;
       const filterPid = this.filters().plotlineId;
       if (filterPid) {
@@ -438,7 +410,7 @@ export class ExplorePage {
         }
       }
     } catch {
-      // Forbidden / transient read — surface no nudge.
+      return undefined;
     }
     return undefined;
   }
