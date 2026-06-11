@@ -24,7 +24,6 @@ import eventUk from '../i18n/uk.json';
 /** Per `docs/backend-rules.md` *Cardinality limits*. */
 const RELATED_REFS_MAX = 50;
 const PLOTLINE_REFS_MAX = 10;
-const NEXT_REFS_MAX = 1;
 const LONG_DESCRIPTION_THRESHOLD = 600;
 type BackgroundEffectOption = BackgroundEffect | 'none';
 const BG_EFFECTS: readonly BackgroundEffectOption[] = [
@@ -161,19 +160,6 @@ const BG_EFFECTS: readonly BackgroundEffectOption[] = [
           </div>
 
           <div class="flex flex-col gap-1 text-sm">
-            <span class="font-medium text-foreground-muted">{{ t('field.nextRefs') }}</span>
-            <app-entity-picker
-              [value]="nextRefsValue()"
-              [kinds]="nextKinds"
-              [maxSelections]="nextRefsMax"
-              [includeDrafts]="true"
-              [placeholder]="t('empty.searchContinuation')"
-              (valueChange)="onNextRefs($event)"
-            />
-            <span class="text-xs text-foreground-faint">{{ t('empty.nextRefsHint') }}</span>
-          </div>
-
-          <div class="flex flex-col gap-1 text-sm">
             <span class="font-medium text-foreground-muted">{{ g('field.relatedEntities') }}</span>
             <app-entity-picker
               [value]="related()"
@@ -227,8 +213,6 @@ export class EventFormComponent {
   protected readonly relatedMax = RELATED_REFS_MAX;
   protected readonly plotlineKinds = ['plotline'] as const;
   protected readonly plotlineMax = PLOTLINE_REFS_MAX;
-  protected readonly nextKinds = ['story', 'event'] as const;
-  protected readonly nextRefsMax = NEXT_REFS_MAX;
   protected readonly longDescriptionThreshold = LONG_DESCRIPTION_THRESHOLD;
 
   private readonly assets = inject(AssetThumbResolver);
@@ -239,13 +223,11 @@ export class EventFormComponent {
 
   protected readonly related = signal<EntityRef[]>([]);
   protected readonly plotlineRefs = signal<EntityRef<'plotline'>[]>([]);
-  protected readonly nextRefs = signal<EntityRef<'story' | 'event'>[]>([]);
   protected readonly description = signal<string>('');
   protected readonly cover = signal<string | undefined>(undefined);
   protected readonly bgmAssetId = signal<string | undefined>(undefined);
   protected readonly backgroundEffect = signal<BackgroundEffect | undefined>(undefined);
 
-  protected readonly nextRefsValue = computed<EntityRef[]>(() => this.nextRefs().slice());
   protected readonly resolvedBackgroundEffect = computed<BackgroundEffectOption>(
     () => this.backgroundEffect() ?? 'none',
   );
@@ -288,7 +270,6 @@ export class EventFormComponent {
       });
       this.related.set(init?.relatedRefs ?? []);
       this.plotlineRefs.set(init?.plotlineRefs ?? []);
-      this.nextRefs.set(init?.nextRefs ?? []);
       this.description.set(init?.description ?? '');
       this.cover.set(init?.coverAssetId);
       this.bgmAssetId.set(init?.bgmAssetId);
@@ -303,12 +284,6 @@ export class EventFormComponent {
 
   protected onBgmPicked(ids: string[]): void {
     this.bgmAssetId.set(ids[0]);
-  }
-
-  protected onNextRefs(refs: EntityRef[]): void {
-    this.nextRefs.set(
-      refs.filter((r) => r.kind === 'story' || r.kind === 'event') as EntityRef<'story' | 'event'>[],
-    );
   }
 
   protected onDate(value: InGameDate): void {
@@ -328,7 +303,6 @@ export class EventFormComponent {
     const v = this.form.getRawValue();
     const related = this.related();
     const plotlineRefs = this.plotlineRefs();
-    const nextRefs = this.nextRefs();
     this.submitted.emit({
       slug: v.slug.trim().toLowerCase(),
       name: v.name.trim(),
@@ -339,7 +313,6 @@ export class EventFormComponent {
       backgroundEffect: this.backgroundEffect(),
       relatedRefs: related.length > 0 ? related : undefined,
       plotlineRefs: plotlineRefs.length > 0 ? plotlineRefs : undefined,
-      nextRefs: nextRefs.length > 0 ? nextRefs : undefined,
     });
   }
 }

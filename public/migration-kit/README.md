@@ -95,10 +95,30 @@ story's title, with no staged characters; its `next` leads into the real opening
 scene. `showcase` is for this title card only; every other scene omits `layout`.
 
 **Wiring.** Scenes are a map keyed by short strings you choose (`title`, `the-gate`).
-`startScene` names the opening scene. Each scene's `next` lists its branches — one
-entry continues, several make a choice, an empty list ends the story. Keep stories
-linear unless branching is genuinely intended. Never set `position`; the app places
-scenes automatically.
+`defaultEntryScene` names the scene readers start on. Each scene's `next` lists its
+branches — one entry continues, several make a choice, an empty list ends the story.
+Keep stories linear unless branching is genuinely intended. Never set `position`; the
+app places scenes automatically.
+
+**Entries.** A scene marked `"isEntry": true` is an additional doorway into the story:
+connections from other stories or events may start the reader there instead of at the
+`defaultEntryScene`. Most stories need no extra entries.
+
+## Connections
+
+`connections` are typed continuation edges between stories and events — "this ending
+continues in that story/event". Each edge runs from a source ending (a story scene
+with an empty `next`, or an event) to one target; **a source continues to at most one
+target**, while any story or event can receive many inbound edges.
+
+- Both endpoints must be entities **in this same package** — scene keys are local to
+  the file and mean nothing against an already-imported universe.
+- A story target may name an entry scene (`isEntry` or the `defaultEntryScene`); omit
+  `scene` to use the default entry.
+- `"to": null` is a *pending* hand-off — the ending is marked as continuing, but the
+  target isn't written yet. Use `note` to say what comes next.
+- `visibility: "reader"` shows the continuation to readers; `"editor"` keeps it as an
+  authoring note.
 
 ## Calendar, categories, and media
 
@@ -110,5 +130,6 @@ Omit the `assets` section and all art fields — add images and audio in the app
 importing.
 
 Study `example-universe.json`: a title card, then short multi-sentence descriptive
-beats with no `speaker`, then dialogue turns each in their own scene. It models every
-rule above.
+beats with no `speaker`, then dialogue turns each in their own scene — plus a wired
+connection chain (story → event → story at a named entry) and one pending hand-off.
+It models every rule above.

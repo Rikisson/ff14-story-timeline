@@ -143,6 +143,15 @@ service cloud.firestore {
                       && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
+      match /connections/{connectionId} {
+        allow read: if (isUniverseActive(universeId) && resource.data.visibility == 'reader')
+                    || isMember(universeId)
+                    || isAdmin();
+        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
+        allow delete: if isMember(universeId)
+                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
+      }
+
       match /stories/{storyId} {
         allow read: if (isUniverseActive(universeId) && resource.data.draft == false)
                     || isMember(universeId)

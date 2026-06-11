@@ -10,14 +10,14 @@ const ROW_PITCH = 220;
 
 export function autoLayoutScenes(
   scenes: Record<string, ArchiveScene>,
-  startScene: string,
+  defaultEntryScene: string,
 ): Map<string, ScenePosition> {
   const depth = new Map<string, number>();
   const queue: string[] = [];
 
-  if (scenes[startScene]) {
-    depth.set(startScene, 0);
-    queue.push(startScene);
+  if (scenes[defaultEntryScene]) {
+    depth.set(defaultEntryScene, 0);
+    queue.push(defaultEntryScene);
   }
 
   while (queue.length > 0) {

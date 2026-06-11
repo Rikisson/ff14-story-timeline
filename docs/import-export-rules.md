@@ -63,6 +63,18 @@ functions in `to-archive.ts` and `build-canonical-docs.ts`, `validateScene` in
 `validate-structure.ts`, the `scene` definition in `universe.schema.json`. If it
 affects graph shape, `auto-layout-scenes.ts`.
 
+**The connection model** (`Connection`, its endpoints, visibility): connections are
+*not* an archive entity kind — they ride as a top-level `connections[]` array with
+no slug and no id minting; identity is rebuilt from endpoints at import via the
+deterministic doc id. The sites: `archive-format.ts` (`ArchiveConnection*`),
+`toArchiveConnections` in `to-archive.ts` (which consumes the per-story
+scene-key maps collected during story serialization), `buildConnections` in
+`build-canonical-docs.ts` (which consumes the per-story minted scene-id maps),
+`validateConnection*` in `validate-structure.ts`, `checkConnections` in
+`validate-semantics.ts`, the plain `setDoc` loop in `universe-import.service.ts`,
+the `connections` collection read in `export-read.service.ts`, and the
+`connection` definition in `universe.schema.json`.
+
 **A new entity kind** — a large change. `ARCHIVE_ENTITY_KINDS` and
 `COLLECTION_BY_KIND`, a new `Archive*` interface added to `UniverseArchive`,
 `to-archive.ts`, `build-canonical-docs.ts` (the kind switch), both validators,
@@ -145,6 +157,15 @@ These are design decisions, not gaps. Do not "fix" them.
   them if a file supplies them.
 - Entities are keyed and cross-referenced by **slug**, never raw id. This is what
   makes a package portable between universes — keep it.
+- **Connection endpoints are slug-keyed and archive-internal.** `story` / `event`
+  fields hold entity slugs; `scene` holds the archive-local scene key (the same
+  keys `next[].scene` uses). Scene keys mean nothing against an already-imported
+  universe, so both endpoints must resolve inside the same archive — semantics
+  rejects anything else, and export silently drops a connection whose endpoint
+  isn't in the export set (this is also how connections ride along automatically
+  with no kind checkbox in the export panel). The derived `fromEntityKey` /
+  `toEntityKey` query fields and `createdBy` / `updatedBy` / `updatedAt` are never
+  serialized — the importer re-derives and re-stamps them.
 - **Import is additive.** It merges into the active universe, never creates one, and
   never deletes or overwrites existing entities. A slug collision is resolved by
   *skip* or *rename*, never overwrite. Any extension of the import path must

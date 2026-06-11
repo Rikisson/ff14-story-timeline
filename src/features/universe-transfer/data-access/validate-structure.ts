@@ -11,6 +11,7 @@ const FACINGS = ['left', 'right'];
 const PLOTLINE_STATUSES = ['planned', 'active', 'resolved'];
 const ASSET_KINDS = ['cover', 'sprite', 'background', 'ambient', 'sfx'];
 const LOCALES = ['en', 'uk'];
+const CONNECTION_VISIBILITIES = ['editor', 'reader'];
 const SERVER_FIELDS = [
   'id',
   'authorUid',
@@ -45,8 +46,69 @@ export function validateStructure(raw: unknown): ValidationIssue[] {
   validateSection(raw['events'], 'events', issues, validateEvent);
   validateSection(raw['codexEntries'], 'codexEntries', issues, validateCodexEntry);
   validateSection(raw['stories'], 'stories', issues, validateStory);
+  validateConnections(raw['connections'], issues);
 
   return issues;
+}
+
+function validateConnections(value: unknown, issues: ValidationIssue[]): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    issues.push(err('connections', 'connections-not-array', '"connections" must be an array.'));
+    return;
+  }
+  value.forEach((entry, index) => validateConnection(entry, `connections[${index}]`, issues));
+}
+
+function validateConnection(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (!isRecord(value)) {
+    issues.push(err(path, 'connection-not-object', `${path} must be an object.`));
+    return;
+  }
+  if (value['type'] !== 'continues') {
+    issues.push(
+      err(`${path}.type`, 'connection-type-unsupported', `${path}.type must be "continues".`),
+    );
+  }
+  checkEnum(value['visibility'], CONNECTION_VISIBILITIES, `${path}.visibility`, issues);
+  optString(value, 'note', path, issues);
+  optString(value, 'snapshotTitle', path, issues);
+  validateConnectionEndpoint(value['from'], `${path}.from`, issues, true);
+  if (value['to'] === undefined) {
+    issues.push(
+      err(`${path}.to`, 'connection-to-missing', `${path}.to is required (an endpoint or null).`),
+    );
+  } else if (value['to'] !== null) {
+    validateConnectionEndpoint(value['to'], `${path}.to`, issues, false);
+  }
+}
+
+function validateConnectionEndpoint(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  requireScene: boolean,
+): void {
+  if (!isRecord(value)) {
+    issues.push(err(path, 'connection-endpoint-not-object', `${path} must be an object.`));
+    return;
+  }
+  const kind = value['kind'];
+  if (kind === 'story') {
+    reqString(value, 'story', path, issues);
+    if (requireScene) reqString(value, 'scene', path, issues);
+    else optString(value, 'scene', path, issues);
+  } else if (kind === 'event') {
+    reqString(value, 'event', path, issues);
+  } else {
+    issues.push(
+      err(
+        `${path}.kind`,
+        'connection-endpoint-kind',
+        `${path}.kind must be "story" or "event".`,
+      ),
+    );
+  }
 }
 
 function validateFormatVersion(value: unknown, issues: ValidationIssue[]): void {
@@ -301,7 +363,6 @@ function validateEvent(
   validateInGameDate(entity['inGameDate'], `${path}.inGameDate`, issues, true);
   checkRefArray(entity['relatedRefs'], `${path}.relatedRefs`, issues);
   checkRefArray(entity['plotlineRefs'], `${path}.plotlineRefs`, issues, ['plotline']);
-  checkRefArray(entity['nextRefs'], `${path}.nextRefs`, issues, ['story', 'event']);
 }
 
 function validateCodexEntry(
@@ -347,17 +408,21 @@ function validateStory(
     }
   }
 
-  const startScene = entity['startScene'];
-  if (typeof startScene !== 'string' || startScene.length === 0) {
-    issues.push(
-      err(`${path}.startScene`, 'start-scene-missing', `${path}.startScene is required.`),
-    );
-  } else if (sceneKeys.size > 0 && !sceneKeys.has(startScene)) {
+  const defaultEntryScene = entity['defaultEntryScene'];
+  if (typeof defaultEntryScene !== 'string' || defaultEntryScene.length === 0) {
     issues.push(
       err(
-        `${path}.startScene`,
-        'start-scene-unknown',
-        `${path}.startScene "${startScene}" is not a defined scene.`,
+        `${path}.defaultEntryScene`,
+        'default-entry-scene-missing',
+        `${path}.defaultEntryScene is required.`,
+      ),
+    );
+  } else if (sceneKeys.size > 0 && !sceneKeys.has(defaultEntryScene)) {
+    issues.push(
+      err(
+        `${path}.defaultEntryScene`,
+        'default-entry-scene-unknown',
+        `${path}.defaultEntryScene "${defaultEntryScene}" is not a defined scene.`,
       ),
     );
   }
@@ -407,6 +472,7 @@ function validateScene(value: unknown, path: string, issues: ValidationIssue[]):
   optString(value, 'sfxAsset', path, issues);
   optString(value, 'bgmAsset', path, issues);
   optBoolean(value, 'bgmSilence', path, issues);
+  optBoolean(value, 'isEntry', path, issues);
   optNumber(value, 'transitionMs', path, issues);
 
   if (value['backgroundEffect'] !== undefined) {
@@ -432,7 +498,6 @@ function validateScene(value: unknown, path: string, issues: ValidationIssue[]):
   if (value['place'] !== undefined) {
     checkRef(value['place'], `${path}.place`, issues, ['place']);
   }
-  checkRefArray(value['nextRefs'], `${path}.nextRefs`, issues, ['story', 'event']);
 
   const characters = value['characters'];
   if (characters !== undefined) {

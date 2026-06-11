@@ -11,7 +11,8 @@
     "exitFullscreen": "Exit fullscreen",
     "fullscreenEmoji": "⛶",
     "close": "Close",
-    "continueReading": "Continue reading: {{ title }}",
+    "continuesIn": "Continues in: {{ title }}",
+    "leadsTo": "Leads to: {{ title }}",
     "hideText": "Hide text box",
     "showText": "Show text box",
     "hideSprites": "Hide characters",
@@ -23,10 +24,13 @@
     "loading": "Loading…",
     "end": "The end.",
     "storyUnavailable": "This story isn't available. The link may be private, or the story may have been removed.",
-    "eventUnavailable": "This event isn't available. The link may be private, or the event may have been removed."
+    "eventUnavailable": "This event isn't available. The link may be private, or the event may have been removed.",
+    "continuationUnavailable": "This continuation is no longer available."
   },
   "aria": {
-    "narration": "Scene narration"
+    "narration": "Scene narration",
+    "backTo": "Back to {{ title }}",
+    "backMenu": "Back destinations"
   },
   "tooltip": {
     "position": "Position: {{ slot }}"

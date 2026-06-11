@@ -26,6 +26,7 @@
       "@features/events": ["src/features/events/index.ts"],
       "@features/plotlines": ["src/features/plotlines/index.ts"],
       "@features/codex": ["src/features/codex/index.ts"],
+      "@features/connections": ["src/features/connections/index.ts"],
       "@features/calendar": ["src/features/calendar/index.ts"],
       "@features/media": ["src/features/media/index.ts"],
       "@features/timeline": ["src/features/timeline/index.ts"],

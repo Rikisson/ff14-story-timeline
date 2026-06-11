@@ -1,0 +1,43 @@
+{
+  "section": {
+    "connections": "Continuation",
+    "inbound": "Inbound connections"
+  },
+  "field": {
+    "visibility": "Visibility",
+    "note": "Author note",
+    "entryScene": "Entry scene",
+    "entryDefault": "Default entry"
+  },
+  "visibility": {
+    "reader": "Readers",
+    "editor": "Editors only"
+  },
+  "status": {
+    "pending": "Pending — no target yet",
+    "broken": "Target is missing",
+    "editorOnly": "editor-only"
+  },
+  "action": {
+    "addContinuation": "+ Add continuation",
+    "savePending": "Save as pending",
+    "makePending": "Make pending",
+    "retarget": "Retarget",
+    "cancel": "Cancel",
+    "delete": "Remove connection",
+    "deleteStale": "Remove"
+  },
+  "empty": {
+    "none": "This ending doesn't continue anywhere yet.",
+    "noInbound": "Nothing links here yet.",
+    "searchTarget": "Search stories or events…",
+    "notePlaceholder": "Optional note for co-authors…",
+    "noteHint": "Notes travel with the connection — handy for pending hand-offs.",
+    "loading": "Loading…"
+  },
+  "message": {
+    "stale": "Connections left behind by removed or no-longer-final scenes:",
+    "wasTitle": "Was: {{ title }}",
+    "fromScene": "from scene {{ label }}"
+  }
+}

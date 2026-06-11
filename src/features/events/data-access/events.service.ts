@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { CalendarProjectionContext, CalendarService } from '@features/calendar';
+import { ConnectionsService } from '@features/connections';
 import { EntityKind } from '@shared/models';
 import {
   DirectoryRowInputs,
@@ -18,6 +19,19 @@ export class EventsService extends UniverseEntityService<TimelineEvent, Timeline
   protected readonly kind: EntityKind = 'event';
 
   private readonly calendar = inject(CalendarService);
+  private readonly connections = inject(ConnectionsService);
+
+  override async remove(id: string): Promise<void> {
+    await super.remove(id);
+    // Outbound connections belong to the deleted event; inbound ones
+    // stay behind as broken edges with editor fix actions. Best-effort:
+    // a failed cascade leaves orphans the broken-edge handling covers.
+    try {
+      await this.connections.deleteOutboundFor({ kind: 'event', id });
+    } catch {
+      // ignore — broken-edge rendering covers leftovers
+    }
+  }
 
   protected toDirectoryInputs(entity: TimelineEvent): DirectoryRowInputs {
     return buildEventDirectoryInputs(entity, this.calendarContext());

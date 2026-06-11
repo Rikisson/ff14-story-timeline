@@ -125,7 +125,9 @@ import editorUk from '../i18n/uk.json';
           <app-scene-editor-panel
             [sceneId]="store.selectedSceneId()"
             [scene]="store.selectedScene()"
-            [isStartScene]="isSelectedStart()"
+            [storyId]="store.storyId()"
+            [defaultEntrySceneId]="store.defaultEntrySceneId()"
+            [endSceneIds]="endSceneIds()"
             [characterSprites]="characterSprites()"
             [characterNames]="characterNames()"
             [placeBackgrounds]="placeBackgrounds()"
@@ -134,7 +136,7 @@ import editorUk from '../i18n/uk.json';
             (updateChoiceLabel)="onChoiceLabel($event)"
             (reorderChoices)="onReorderChoices($event)"
             (remove)="store.removeScene($event)"
-            (setAsStart)="store.setStartScene($event)"
+            (setAsDefaultEntry)="store.setDefaultEntryScene($event)"
             (duplicate)="store.duplicateScene($event)"
           />
         </div>
@@ -267,9 +269,10 @@ export class EditorPage implements HasUnsavedChanges {
     return validateInGameDate(meta.inGameDate, this.calendarService.calendar()).length > 0;
   });
 
-  protected readonly isSelectedStart = computed(
-    () => this.store.selectedSceneId() !== null
-      && this.store.selectedSceneId() === this.store.startSceneId(),
+  protected readonly endSceneIds = computed<string[]>(() =>
+    Object.entries(this.store.scenes())
+      .filter(([, scene]) => scene.next.length === 0)
+      .map(([id]) => id),
   );
 
   /**
@@ -414,7 +417,7 @@ export class EditorPage implements HasUnsavedChanges {
     if (event.key === 'Delete') {
       const id = this.store.selectedSceneId();
       if (!id) return;
-      if (id === this.store.startSceneId()) return;
+      if (id === this.store.defaultEntrySceneId()) return;
       event.preventDefault();
       this.store.removeScene(id);
       return;

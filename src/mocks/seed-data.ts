@@ -538,7 +538,7 @@ export const SEED_STORY: SeedStory = {
     { kind: 'place', id: 'place-gridania-northern-shroud' },
   ],
   plotlineRefs: [{ kind: 'plotline', id: 'plotline-ingrid-flight' }],
-  startSceneId: 's01_opening',
+  defaultEntrySceneId: 's01_opening',
   authorUid: SEED_AUTHOR_UID,
   draft: false,
   createdAt: SEED_CREATED_AT,
@@ -757,7 +757,7 @@ export const SEED_STORIES: SeedStory[] = [
   SEED_STORY,
   ...Array.from({ length: 26 }, (_, i): SeedStory => {
     const idx = i + 1;
-    const startSceneId = `s01_opening`;
+    const defaultEntrySceneId = `s01_opening`;
     // Spread filler dates across both eras so timeline pagination has
     // something to scroll through — and the unassigned-lane toggle isn't
     // empty when the timeline filters `dateKnown == true`.
@@ -770,9 +770,9 @@ export const SEED_STORIES: SeedStory[] = [
       slug: `filler-story-${String(idx).padStart(2, '0')}`,
       title: `Filler story ${idx}`,
       inGameDate,
-      startSceneId,
+      defaultEntrySceneId,
       scenes: {
-        [startSceneId]: {
+        [defaultEntrySceneId]: {
           text: `Auto-generated filler story #${idx} for pagination testing.`,
           position: { x: 0, y: 0 },
           characters: [],

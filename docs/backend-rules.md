@@ -128,6 +128,16 @@ Public list, filter, picker, and timeline queries route through `_directory`, `_
 
 **Firestore rules do not auto-filter query results — they gate each returned doc and reject the whole query if any returned doc fails.** Public callers must include `where('visiblePublic', '==', true)` in every projection query; the rule alone is not a filter. A query that omits the predicate may work for members (`isMember` short-circuits the gate) and fail for guests as soon as one draft row falls into the result page.
 
+### Connections
+
+`universes/{u}/connections/{id}` stores the typed `continues` edges between stories and events (model semantics in `narrative-engine-impl.md` *Connections*). The collection is canonical and queried directly — no projection rows, no `connectionCount` denorms, no listeners.
+
+- **Deterministic doc IDs** (`story_{storyId}_{sceneId}` / `event_{eventId}`) make the one-outbound-per-endpoint cap structural — the only race-free client-side enforcement, since the web SDK cannot query inside transactions.
+- **Queries are equality-only** on the denormalized `fromEntityKey` / `toEntityKey` strings (`'{kind}:{id}'`, re-derived on every write), optionally plus `visibility` — served by single-field auto-indexes with zig-zag merge; no composite-index entries until an `orderBy` appears.
+- **Rule shape** follows the public-read pattern with `visibility` as the inline data condition: `allow read: if (isUniverseActive(u) && resource.data.visibility == 'reader') || isMember(u) || isAdmin()`; writes are member-only. Guest list queries must include `where('visibility', '==', 'reader')` per the pre-check rule above.
+- **Reads are one-shot + session-cached.** `ConnectionsService` caches reader-visibility queries per `(universe, direction, entity)` and invalidates on every connection write. Editor reads are always fresh.
+- **Entity deletion cascades outbound only.** `StoriesService.deleteStory` and `EventsService.remove` best-effort delete the entity's outbound connections after the canonical delete transaction commits (a `writeBatch` over a `fromEntityKey` query). Inbound connections belong to other entities' authors and are left to surface as broken edges with editor fix actions — a failed cascade is covered by the same handling.
+
 ### Write discipline
 
 Entity create / update / delete uses `runTransaction`, not `writeBatch` — slug claim (read-then-write against `_slugIndex`) and OCC version checks both require the transaction's read-before-write semantics; `writeBatch` is write-only and cannot enforce either. A single transaction writes:

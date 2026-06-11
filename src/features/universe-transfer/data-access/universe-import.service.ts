@@ -155,7 +155,12 @@ export class UniverseImportService {
 
       const assetOutcome = await this.uploadAssets(universeId, dryRun, resolution, authorUid, now);
 
-      const docs = buildCanonicalDocs(dryRun.archive, { resolution, authorUid, now, idGen });
+      const { docs, connections } = buildCanonicalDocs(dryRun.archive, {
+        resolution,
+        authorUid,
+        now,
+        idGen,
+      });
       const calendarContext = this.calendarContext();
       const categoryContext = this.categoryContext();
       const renamed: RenamedEntity[] = [];
@@ -165,7 +170,7 @@ export class UniverseImportService {
       this._commitProgress.update((progress) => ({
         ...progress,
         phase: 'writing',
-        entitiesTotal: docs.length,
+        entitiesTotal: docs.length + connections.length,
       }));
 
       for (const builtDoc of docs) {
@@ -178,6 +183,22 @@ export class UniverseImportService {
           }
         } catch (err) {
           console.error('import write failed', builtDoc.kind, builtDoc.slug, err);
+          failed++;
+        }
+        this._commitProgress.update((progress) => ({
+          ...progress,
+          entitiesDone: progress.entitiesDone + 1,
+        }));
+      }
+
+      for (const connection of connections) {
+        try {
+          await setDoc(
+            doc(this.firebase.firestore, 'universes', universeId, 'connections', connection.id),
+            connection.doc,
+          );
+        } catch (err) {
+          console.error('import connection write failed', connection.id, err);
           failed++;
         }
         this._commitProgress.update((progress) => ({
@@ -216,7 +237,11 @@ export class UniverseImportService {
   ): Promise<void> {
     if (builtDoc.kind === 'story') {
       const story = { id: builtDoc.id, ...builtDoc.doc } as unknown as Story;
-      await this.stories.saveStory(story, builtDoc.content ?? { startSceneId: '', scenes: {} }, 0);
+      await this.stories.saveStory(
+        story,
+        builtDoc.content ?? { defaultEntrySceneId: '', scenes: {} },
+        0,
+      );
       return;
     }
     await writeEntityWithProjections(this.firebase.firestore, {

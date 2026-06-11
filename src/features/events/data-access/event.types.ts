@@ -11,7 +11,6 @@ export interface TimelineEvent {
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
-  nextRefs?: EntityRef<'story' | 'event'>[];
   authorUid: string;
   createdAt: number;
   updatedAt?: number;
@@ -29,5 +28,4 @@ export interface TimelineEventDraft {
   inGameDate: InGameDate;
   relatedRefs?: EntityRef[];
   plotlineRefs?: EntityRef<'plotline'>[];
-  nextRefs?: EntityRef<'story' | 'event'>[];
 }

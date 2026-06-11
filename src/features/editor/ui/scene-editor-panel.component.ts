@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import {
+  ConnectionSectionComponent,
+  ConnectionSource,
+  InboundSectionComponent,
+  InboundTarget,
+} from '@features/connections';
 import { Scene, SceneLayout, StagedCharacter } from '@features/stories';
 import { ContentLangDirective } from '@features/universes';
 import { EntityRef } from '@shared/models';
@@ -48,9 +54,11 @@ function defaultFacingFor(position: string): Facing {
   selector: 'app-scene-editor-panel',
   imports: [
     CollapsibleSectionComponent,
+    ConnectionSectionComponent,
     DangerButtonComponent,
     EntityPickerComponent,
     GhostButtonComponent,
+    InboundSectionComponent,
     RichTextInputComponent,
     SceneAssetsPanelComponent,
     SegmentedControlComponent,
@@ -72,10 +80,10 @@ function defaultFacingFor(position: string): Facing {
         @if (scene(); as s) {
           <header class="header">
             <h2>{{ t('field.scenePrefix') }} <code>{{ headLabel(id, s) }}</code></h2>
-            @if (isStartScene()) {
-              <span class="badge">{{ t('field.startBadge') }}</span>
+            @if (isDefaultEntry()) {
+              <span class="badge">{{ t('field.defaultEntryBadge') }}</span>
             } @else {
-              <button uiGhost type="button" (click)="confirmSetAsStart(id)">{{ t('action.setAsStart') }}</button>
+              <button uiGhost type="button" (click)="confirmSetAsDefaultEntry(id)">{{ t('action.setAsDefaultEntry') }}</button>
             }
             <button uiGhost type="button" (click)="duplicate.emit(id)">{{ t('action.duplicateScene') }}</button>
           </header>
@@ -93,6 +101,19 @@ function defaultFacingFor(position: string): Facing {
                   (input)="emitLabel($event, id)"
                 />
                 <span class="hint">{{ t('empty.labelHint') }}</span>
+              </div>
+
+              <div class="field">
+                <label class="entry-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="s.isEntry === true || isDefaultEntry()"
+                    [disabled]="isDefaultEntry()"
+                    (change)="onIsEntry(id, $event)"
+                  />
+                  <span>{{ t('field.isEntry') }}</span>
+                </label>
+                <span class="hint">{{ t('empty.isEntryHint') }}</span>
               </div>
 
               <div class="field">
@@ -230,18 +251,6 @@ function defaultFacingFor(position: string): Facing {
               <h4>{{ t('message.choicesCount', { count: s.next.length }) }}</h4>
               @if (s.next.length === 0) {
                 <p class="hint">{{ t('empty.noChoicesHint') }}</p>
-                <fieldset class="group">
-                  <legend>{{ t('field.nextRefs') }}</legend>
-                  <p class="hint">{{ t('empty.nextRefsHint') }}</p>
-                  <app-entity-picker
-                    [value]="nextRefsValue()"
-                    [kinds]="continuationKinds"
-                    [maxSelections]="1"
-                    [includeDrafts]="true"
-                    [placeholder]="t('empty.searchContinuation')"
-                    (valueChange)="onNextRefs(id, $event)"
-                  />
-                </fieldset>
               } @else {
                 @if (s.next.length > 1) {
                   <p class="hint">{{ t('empty.reorderHint') }}</p>
@@ -281,6 +290,18 @@ function defaultFacingFor(position: string): Facing {
               }
             </app-collapsible-section>
 
+            @if (connectionSource(); as src) {
+              <app-connection-section
+                [source]="src"
+                [endSceneIds]="endSceneIds()"
+                [sceneLabels]="sceneLabels()"
+              />
+            }
+
+            @if (inboundTarget(); as target) {
+              <app-inbound-section [target]="target" />
+            }
+
             <app-scene-assets-panel
               [backgroundAssetId]="s.backgroundAssetId"
               [backgroundEffect]="s.backgroundEffect"
@@ -297,10 +318,10 @@ function defaultFacingFor(position: string): Facing {
           </div>
 
           <div class="footer">
-            <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isStartScene()">
+            <button uiDanger type="button" (click)="remove.emit(id)" [disabled]="isDefaultEntry()">
               {{ t('action.deleteScene') }}
             </button>
-            @if (isStartScene()) {
+            @if (isDefaultEntry()) {
               <p class="hint">{{ t('empty.cantDeleteStartHint') }}</p>
             }
           </div>
@@ -534,6 +555,11 @@ function defaultFacingFor(position: string): Facing {
       color: var(--color-foreground-faint);
       font-style: italic;
     }
+    .entry-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .footer {
       display: flex;
       flex-direction: column;
@@ -546,17 +572,41 @@ function defaultFacingFor(position: string): Facing {
 export class SceneEditorPanelComponent {
   readonly sceneId = input.required<string | null>();
   readonly scene = input.required<Scene | null>();
-  readonly isStartScene = input.required<boolean>();
+  readonly storyId = input<string | null>(null);
+  readonly defaultEntrySceneId = input<string | null>(null);
+  readonly endSceneIds = input<string[] | null>(null);
   readonly characterSprites = input<Record<string, { id: string; label: string }[]>>({});
   readonly characterNames = input<Record<string, string>>({});
   readonly placeBackgrounds = input<string[]>([]);
   readonly sceneLabels = input<Record<string, string>>({});
 
+  protected readonly isDefaultEntry = computed(
+    () => this.sceneId() !== null && this.sceneId() === this.defaultEntrySceneId(),
+  );
+
+  protected readonly connectionSource = computed<ConnectionSource | null>(() => {
+    const storyId = this.storyId();
+    const id = this.sceneId();
+    const s = this.scene();
+    if (!storyId || !id || !s || s.next.length > 0) return null;
+    return { kind: 'story', storyId, sceneId: id };
+  });
+
+  protected readonly inboundTarget = computed<InboundTarget | null>(() => {
+    const storyId = this.storyId();
+    const id = this.sceneId();
+    const s = this.scene();
+    const defaultEntry = this.defaultEntrySceneId();
+    if (!storyId || !id || !s || !defaultEntry) return null;
+    if (!s.isEntry && id !== defaultEntry) return null;
+    return { kind: 'story', id: storyId, sceneId: id, defaultEntrySceneId: defaultEntry };
+  });
+
   readonly update = output<SceneUpdate>();
   readonly updateChoiceLabel = output<ChoiceLabelUpdate>();
   readonly reorderChoices = output<ChoiceReorder>();
   readonly remove = output<string>();
-  readonly setAsStart = output<string>();
+  readonly setAsDefaultEntry = output<string>();
   readonly duplicate = output<string>();
 
   private readonly transloco = inject(TranslocoService);
@@ -585,17 +635,12 @@ export class SceneEditorPanelComponent {
   protected readonly positionOptions = ['left', 'center', 'right'];
   protected readonly characterKinds = ['character'] as const;
   protected readonly placeKinds = ['place'] as const;
-  protected readonly continuationKinds = ['story', 'event'] as const;
   protected readonly facings = FACINGS;
   protected readonly emptyRefArray: readonly EntityRef[] = [];
 
   protected facingDefault(position: string): Facing {
     return defaultFacingFor(position);
   }
-
-  protected readonly nextRefsValue = computed<EntityRef[]>(
-    () => this.scene()?.nextRefs ?? [],
-  );
 
   // Speaker mode is UI state seeded from the scene's `speaker` value but
   // independently settable: the author must be able to enter "character"
@@ -743,14 +788,9 @@ export class SceneEditorPanelComponent {
     this.update.emit({ id, patch: { layout: layout === 'dialog' ? undefined : layout } });
   }
 
-  protected onNextRefs(id: string, refs: EntityRef[]): void {
-    const filtered = refs.filter(
-      (r) => r.kind === 'story' || r.kind === 'event',
-    ) as EntityRef<'story' | 'event'>[];
-    this.update.emit({
-      id,
-      patch: { nextRefs: filtered.length > 0 ? filtered : undefined },
-    });
+  protected onIsEntry(id: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.update.emit({ id, patch: { isEntry: checked || undefined } });
   }
 
   protected emitChoiceLabel(event: Event, fromSceneId: string, toSceneId: string): void {
@@ -771,9 +811,9 @@ export class SceneEditorPanelComponent {
     return this.sceneLabels()[targetId] ?? this.shortId(targetId);
   }
 
-  protected confirmSetAsStart(id: string): void {
-    const ok = window.confirm(this.transloco.translate('editor.message.setAsStartConfirm'));
-    if (ok) this.setAsStart.emit(id);
+  protected confirmSetAsDefaultEntry(id: string): void {
+    const ok = window.confirm(this.transloco.translate('editor.message.setAsDefaultEntryConfirm'));
+    if (ok) this.setAsDefaultEntry.emit(id);
   }
 
   protected onDragStart(event: DragEvent, index: number): void {

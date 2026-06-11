@@ -19,10 +19,13 @@ export function withEditorComputed() {
       }),
       orphanSceneIds: computed<string[]>(() => {
         const scenes = state.scenes();
-        const start = state.startSceneId();
+        const start = state.defaultEntrySceneId();
         if (!start || !scenes[start]) return [];
         const reachable = new Set<string>();
-        const queue: string[] = [start];
+        const queue: string[] = [
+          start,
+          ...Object.keys(scenes).filter((id) => scenes[id].isEntry),
+        ];
         while (queue.length) {
           const id = queue.shift()!;
           if (reachable.has(id)) continue;

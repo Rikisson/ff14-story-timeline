@@ -19,7 +19,7 @@ export type EditorState = {
   meta: StoryMeta | null;
   authorUid: string | null;
   createdAt: number | null;
-  startSceneId: string | null;
+  defaultEntrySceneId: string | null;
   scenes: Record<string, Scene>;
   selectedSceneId: string | null;
   version: number;
@@ -34,7 +34,7 @@ export const initialEditorState: EditorState = {
   meta: null,
   authorUid: null,
   createdAt: null,
-  startSceneId: null,
+  defaultEntrySceneId: null,
   scenes: {},
   selectedSceneId: null,
   version: 0,

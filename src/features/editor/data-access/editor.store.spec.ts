@@ -27,16 +27,16 @@ describe('EditorStore', () => {
     ({ store } = setup());
   });
 
-  it('addScene appends a scene, marks dirty, and seeds startSceneId', () => {
+  it('addScene appends a scene, marks dirty, and seeds defaultEntrySceneId', () => {
     expect(store.dirty()).toBe(false);
-    expect(store.startSceneId()).toBeNull();
+    expect(store.defaultEntrySceneId()).toBeNull();
 
     const id = store.addScene({ x: 100, y: 200 });
 
     expect(Object.keys(store.scenes()).length).toBe(1);
     expect(store.scenes()[id].position).toEqual({ x: 100, y: 200 });
     expect(store.dirty()).toBe(true);
-    expect(store.startSceneId()).toBe(id);
+    expect(store.defaultEntrySceneId()).toBe(id);
     expect(store.selectedSceneId()).toBe(id);
   });
 
@@ -71,14 +71,14 @@ describe('EditorStore', () => {
     expect(store.scenes()[a].next).toEqual([]);
   });
 
-  it('removeScene reassigns startSceneId when the start scene is removed', () => {
+  it('removeScene reassigns defaultEntrySceneId when the default entry is removed', () => {
     const a = store.addScene();
     const b = store.addScene();
-    expect(store.startSceneId()).toBe(a);
+    expect(store.defaultEntrySceneId()).toBe(a);
 
     store.removeScene(a);
 
-    expect(store.startSceneId()).toBe(b);
+    expect(store.defaultEntrySceneId()).toBe(b);
   });
 
   it('updateChoiceLabel updates the label on the matching next entry', () => {
@@ -133,8 +133,8 @@ describe('EditorStore', () => {
     expect(copy.next).toEqual([{ sceneId: b }]);
     expect(copy.next).not.toBe(store.scenes()[a].next);
     expect(store.selectedSceneId()).toBe(copyId);
-    // the start scene is left untouched
-    expect(store.startSceneId()).toBe(a);
+    // the default entry is left untouched
+    expect(store.defaultEntrySceneId()).toBe(a);
   });
 
   it('duplicateScene returns null for an unknown id', () => {

@@ -6,8 +6,7 @@
     "formAdd": "Add event",
     "formEdit": "Edit event",
     "backgroundEffect": "Background effect",
-    "bgm": "Background music",
-    "nextRefs": "Continue reading"
+    "bgm": "Background music"
   },
   "effect": {
     "none": "None",
@@ -29,8 +28,6 @@
     "namePlaceholder": "e.g. Calamity of the Seventh Umbral Era",
     "slugPlaceholder": "e.g. seventh-umbral-calamity",
     "descriptionPlaceholder": "What happens in this event…",
-    "nextRefsHint": "Pick the story or event that continues from this one.",
-    "searchContinuation": "Search stories or events…",
     "bgmHint": "Plays while the reader is on this event. Crossfades on exit.",
     "pickBgm": "Pick BGM",
     "replaceBgm": "Replace BGM",

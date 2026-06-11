@@ -36,7 +36,7 @@ export interface Scene {
   transitionMs?: number;
   position: { x: number; y: number };
   next: Array<{ label?: string; sceneId: string }>;
-  nextRefs?: EntityRef<'story' | 'event'>[];
+  isEntry?: boolean;
 }
 
 export interface Story {
@@ -58,7 +58,7 @@ export interface Story {
 }
 
 export interface StoryContent {
-  startSceneId: string;
+  defaultEntrySceneId: string;
   scenes: Record<string, Scene>;
 }
 

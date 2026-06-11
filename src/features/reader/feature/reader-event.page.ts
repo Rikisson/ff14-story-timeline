@@ -14,13 +14,29 @@ import {
 import { RouterLink } from '@angular/router';
 import { FirebaseError } from 'firebase/app';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import {
+  Connection,
+  ConnectionsService,
+  entityKeyOf,
+  sourceEntityRef,
+  targetEntityRef,
+} from '@features/connections';
 import { EventsService, TimelineEvent } from '@features/events';
-import { AssetThumbResolver, EntityResolverCache, LayoutStore } from '@shared/data-access';
+import { UniverseStore } from '@features/universes';
+import {
+  AssetThumbResolver,
+  EntityDirectoryService,
+  EntityResolverCache,
+  LayoutStore,
+  ResolvedDirectoryRow,
+} from '@shared/data-access';
 import { EntityRef } from '@shared/models';
 import { ReaderPreferencesService } from '@shared/services';
 import { SecondaryButtonComponent } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
+import { ReaderReferrerService } from '../data-access/reader-referrer.service';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
+import { BackOption, ReaderBackMenuComponent } from '../ui/reader-back-menu.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneContinuation, SceneViewComponent } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
@@ -42,8 +58,8 @@ import {
  * description as a dialog-style scene-view, with the cover image as the
  * background and BGM piped through a fresh `BgmController`. There's no
  * scene graph, no choices, no localStorage progress. The first entry of
- * `event.nextRefs` (if any) becomes a Continue anchor inside the
- * floating card.
+ * the event's outbound connection (if any) becomes a Continue anchor
+ * inside the floating card.
  *
  * Chrome (title bar + buttons) shows on load, hides after 2.5s, and
  * re-appears only while the pointer hovers the top zone — matching the
@@ -55,6 +71,7 @@ import {
   imports: [
     RouterLink,
     SceneViewComponent,
+    ReaderBackMenuComponent,
     ReaderPreferencesDialogComponent,
     SecondaryButtonComponent,
     TranslocoDirective,
@@ -100,10 +117,12 @@ import {
               [staged]="[]"
               [choices]="[]"
               [continuation]="continuation()"
+              [continuationBroken]="continuationBroken()"
               [inlineRefOptions]="inlineRefOptions()"
               [textSpeed]="effectiveTextSpeed()"
               cardVariant="page"
               [cardHidden]="cardHidden()"
+              (continuationFollowed)="onContinuationFollowed()"
             />
 
             <div
@@ -116,6 +135,11 @@ import {
                 <div class="pointer-events-auto flex w-full items-center gap-3 rounded-lg border border-border bg-surface/75 px-4 py-2 shadow-lg backdrop-blur-sm">
                   <h1 class="m-0 min-w-0 flex-1 truncate font-display text-2xl font-semibold text-foreground">{{ ev.name }}</h1>
                   <div class="flex items-center gap-2">
+                    <app-reader-back-menu
+                      [canGoBack]="false"
+                      [options]="backOptions()"
+                      (navigated)="onBackNavigated()"
+                    />
                     <button
                       uiSecondary
                       type="button"
@@ -174,6 +198,10 @@ export class ReaderEventPage implements ReaderLeavable {
   private readonly transloco = inject(TranslocoService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
+  private readonly connections = inject(ConnectionsService);
+  private readonly directory = inject(EntityDirectoryService);
+  private readonly universes = inject(UniverseStore);
+  private readonly referrer = inject(ReaderReferrerService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly prefs = inject(ReaderPreferencesService);
   protected readonly layout = inject(LayoutStore);
@@ -291,22 +319,121 @@ export class ReaderEventPage implements ReaderLeavable {
     return out;
   });
 
-  // Continuation reads the first entry of `nextRefs[]` — editors cap
-  // selection to one but the schema preserves the array shape. The
-  // anchor renders inside the floating card via scene-view, taking
-  // the resolved entity's title as its label.
-  private readonly continuationRef = computed(() => this.event()?.nextRefs?.[0] ?? null);
-  private readonly resolvedContinuation = computed(() => {
-    const ref = this.continuationRef();
-    return ref ? this.resolver.resolve(ref)() : null;
+  // Connections for the loaded event: at most one outbound (the event
+  // is a single source endpoint) plus any inbound, fetched once per
+  // event with the directory rows of every endpoint. A wired target
+  // with no public row renders the soft "no longer available" notice.
+  private connectionsSeq = 0;
+  private readonly connectionsState = signal<{
+    eventId: string;
+    outbound: Connection[];
+    inbound: Connection[];
+    rows: Map<string, ResolvedDirectoryRow>;
+  } | null>(null);
+
+  private async loadConnections(eventId: string, seq: number): Promise<void> {
+    try {
+      const entity = { kind: 'event', id: eventId } as const;
+      const [outbound, inbound] = await Promise.all([
+        this.connections.outboundFor(entity, { readerOnly: true }),
+        this.connections.inboundFor(entity, { readerOnly: true }),
+      ]);
+      const refs: EntityRef[] = [];
+      for (const c of outbound) {
+        const target = targetEntityRef(c.to);
+        if (target) refs.push(target);
+      }
+      for (const c of inbound) refs.push(sourceEntityRef(c.from));
+      const universeId = this.universes.activeUniverseId();
+      const rows = new Map<string, ResolvedDirectoryRow>();
+      if (universeId && refs.length > 0) {
+        const resolved = await this.directory.byIds({ universeId, refs });
+        for (const row of resolved) rows.set(`${row.kind}:${row.id}`, row);
+      }
+      if (seq !== this.connectionsSeq) return;
+      this.connectionsState.set({ eventId, outbound, inbound, rows });
+    } catch {
+      if (seq !== this.connectionsSeq) return;
+      this.connectionsState.set({ eventId, outbound: [], inbound: [], rows: new Map() });
+    }
+  }
+
+  private readonly outboundConnection = computed<Connection | null>(() => {
+    const state = this.connectionsState();
+    const ev = this.event();
+    if (!state || !ev || state.eventId !== ev.id) return null;
+    return state.outbound.find((c) => c.to !== null) ?? null;
   });
   protected readonly continuation = computed<SceneContinuation | null>(() => {
-    const ref = this.continuationRef();
-    const row = this.resolvedContinuation();
-    if (!ref || !row) return null;
-    const base = ref.kind === 'story' ? '/reader/story' : '/reader/event';
-    return { label: row.label, link: [base, ref.id] as const };
+    const conn = this.outboundConnection();
+    const state = this.connectionsState();
+    if (!conn?.to || !state) return null;
+    const ref = targetEntityRef(conn.to);
+    if (!ref) return null;
+    const row = state.rows.get(entityKeyOf(ref));
+    if (!row) return null;
+    return {
+      label: row.label,
+      labelKey: 'continuesIn',
+      link: [ref.kind === 'story' ? '/reader/story' : '/reader/event', ref.id] as const,
+      queryParams:
+        conn.to.kind === 'story' && conn.to.sceneId ? { scene: conn.to.sceneId } : undefined,
+    };
   });
+  protected readonly continuationBroken = computed<boolean>(() => {
+    const conn = this.outboundConnection();
+    const state = this.connectionsState();
+    if (!conn?.to || !state) return false;
+    const ref = targetEntityRef(conn.to);
+    return ref !== null && !state.rows.has(entityKeyOf(ref));
+  });
+
+  protected onContinuationFollowed(): void {
+    const ev = this.event();
+    if (!ev) return;
+    this.referrer.set({ kind: 'event', id: ev.id, label: ev.name });
+  }
+
+  protected readonly backOptions = computed<BackOption[]>(() => {
+    const ev = this.event();
+    const state = this.connectionsState();
+    if (!ev) return [];
+    const options: BackOption[] = [];
+    const seen = new Set<string>();
+    const ref = this.referrer.current();
+    if (ref && !(ref.kind === 'event' && ref.id === ev.id)) {
+      const key = `${ref.kind}:${ref.id}`;
+      options.push({
+        key,
+        label: ref.label,
+        link: [ref.kind === 'story' ? '/reader/story' : '/reader/event', ref.id] as const,
+        queryParams: ref.sceneId ? { scene: ref.sceneId } : undefined,
+        highlighted: true,
+      });
+      seen.add(key);
+    }
+    if (state && state.eventId === ev.id) {
+      for (const c of state.inbound) {
+        const srcRef = sourceEntityRef(c.from);
+        const key = entityKeyOf(srcRef);
+        if (seen.has(key)) continue;
+        const row = state.rows.get(key);
+        if (!row) continue;
+        seen.add(key);
+        options.push({
+          key,
+          label: row.label,
+          link: [srcRef.kind === 'story' ? '/reader/story' : '/reader/event', srcRef.id] as const,
+          queryParams: c.from.kind === 'story' ? { scene: c.from.sceneId } : undefined,
+        });
+      }
+    }
+    return options;
+  });
+
+  protected onBackNavigated(): void {
+    this.referrer.clear();
+  }
 
   constructor() {
     // Stale-response guard — fast id swaps could otherwise overwrite the
@@ -344,6 +471,14 @@ export class ReaderEventPage implements ReaderLeavable {
 
     this.destroyRef.onDestroy(() => {
       this.bgmController?.dispose();
+    });
+
+    // Fetch the event's connections once per loaded event.
+    effect(() => {
+      const ev = this.event();
+      if (!ev) return;
+      const seq = ++this.connectionsSeq;
+      untracked(() => void this.loadConnections(ev.id, seq));
     });
 
     // Instantiate the BGM controller once both audio slots mount. Same

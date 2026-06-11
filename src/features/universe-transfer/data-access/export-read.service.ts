@@ -3,11 +3,12 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore/lite';
 import { Calendar } from '@features/calendar';
 import { Character } from '@features/characters';
 import { CodexCategoriesConfig, CodexEntry } from '@features/codex';
+import { Connection } from '@features/connections';
 import { TimelineEvent } from '@features/events';
 import { AssetDoc } from '@features/media';
 import { Place } from '@features/places';
 import { Plotline } from '@features/plotlines';
-import { Story, StoryContent } from '@features/stories';
+import { Story, StoryContent, normalizeStoryContent } from '@features/stories';
 import { DEFAULT_UNIVERSE_LOCALE, Universe } from '@features/universes';
 import { FirebaseService } from '../../../app/firebase/firebase.service';
 import { ExportInput } from './to-archive';
@@ -30,6 +31,7 @@ export class ExportReadService {
       events,
       codexEntries,
       storyMetas,
+      connections,
     ] = await Promise.all([
       this.readUniverse(universeId),
       this.readMeta<Calendar>(universeId, 'calendar'),
@@ -41,6 +43,7 @@ export class ExportReadService {
       this.readCollection<TimelineEvent>(universeId, 'events'),
       this.readCollection<CodexEntry>(universeId, 'codexEntries'),
       this.readCollection<Story>(universeId, 'stories'),
+      this.readCollection<Connection>(universeId, 'connections'),
     ]);
 
     const stories = await Promise.all(
@@ -61,6 +64,7 @@ export class ExportReadService {
       events,
       codexEntries,
       stories,
+      connections,
     };
   }
 
@@ -90,6 +94,8 @@ export class ExportReadService {
     const snap = await getDoc(
       doc(this.firebase.firestore, 'universes', universeId, 'stories', storyId, '_content', 'main'),
     );
-    return snap.exists() ? (snap.data() as StoryContent) : { startSceneId: '', scenes: {} };
+    return snap.exists()
+      ? normalizeStoryContent(snap.data() as Record<string, unknown>)
+      : { defaultEntrySceneId: '', scenes: {} };
   }
 }

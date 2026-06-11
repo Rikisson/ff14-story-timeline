@@ -4,7 +4,7 @@ import { PlotlineStatus } from '@features/plotlines';
 import { BgmTransition, SceneLayout, SceneTransition, TextSpeed } from '@features/stories';
 import { UniverseLocale } from '@features/universes';
 
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 2;
 
 export const ARCHIVE_ENTITY_KINDS: readonly EntityKind[] = [
   'character',
@@ -121,7 +121,6 @@ export interface ArchiveEvent {
   inGameDate: ArchiveInGameDate;
   relatedRefs?: ArchiveRef[];
   plotlineRefs?: ArchiveRef<'plotline'>[];
-  nextRefs?: ArchiveRef<'story' | 'event'>[];
 }
 
 export interface ArchiveCodexEntry {
@@ -164,7 +163,7 @@ export interface ArchiveScene {
   transitionMs?: number;
   position?: { x: number; y: number };
   next: ArchiveSceneNext[];
-  nextRefs?: ArchiveRef<'story' | 'event'>[];
+  isEntry?: boolean;
 }
 
 export interface ArchiveStory {
@@ -177,8 +176,29 @@ export interface ArchiveStory {
   inGameDate: ArchiveInGameDate;
   relatedRefs?: ArchiveRef[];
   plotlineRefs?: ArchiveRef<'plotline'>[];
-  startScene: string;
+  defaultEntryScene: string;
   scenes: Record<string, ArchiveScene>;
+}
+
+// Connection endpoints are slug-keyed (`story` / `event` hold entity
+// slugs); `scene` holds the archive-local scene key, mirroring
+// `ArchiveSceneNext.scene`. Both endpoints must resolve inside the same
+// archive — scene keys have no meaning against an existing universe.
+export type ArchiveConnectionSource =
+  | { kind: 'story'; story: string; scene: string }
+  | { kind: 'event'; event: string };
+
+export type ArchiveConnectionTarget =
+  | { kind: 'story'; story: string; scene?: string }
+  | { kind: 'event'; event: string };
+
+export interface ArchiveConnection {
+  type: 'continues';
+  from: ArchiveConnectionSource;
+  to: ArchiveConnectionTarget | null;
+  visibility: 'editor' | 'reader';
+  note?: string;
+  snapshotTitle?: string;
 }
 
 export interface UniverseArchive {
@@ -195,4 +215,5 @@ export interface UniverseArchive {
   events?: ArchiveEvent[];
   codexEntries?: ArchiveCodexEntry[];
   stories?: ArchiveStory[];
+  connections?: ArchiveConnection[];
 }

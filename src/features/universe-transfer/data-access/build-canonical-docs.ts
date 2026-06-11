@@ -1,5 +1,12 @@
 import { EntityKind, EntityRef, InGameDate } from '@shared/models';
 import { StoredCodexEntry } from '@features/codex';
+import {
+  ConnectionSource,
+  ConnectionTarget,
+  StoredConnection,
+  connectionIdFor,
+  deriveConnectionKeys,
+} from '@features/connections';
 import { StoredTimelineEvent } from '@features/events';
 import { StoredPlace } from '@features/places';
 import { StoredPlotline } from '@features/plotlines';
@@ -9,6 +16,8 @@ import { autoLayoutScenes } from './auto-layout-scenes';
 import {
   ArchiveCharacter,
   ArchiveCodexEntry,
+  ArchiveConnectionSource,
+  ArchiveConnectionTarget,
   ArchiveEvent,
   ArchiveInGameDate,
   ArchivePlace,
@@ -40,10 +49,20 @@ export interface BuiltEntityDoc {
   content?: StoryContent;
 }
 
+export interface BuiltConnectionDoc {
+  id: string;
+  doc: StoredConnection;
+}
+
+export interface BuildDocsResult {
+  docs: BuiltEntityDoc[];
+  connections: BuiltConnectionDoc[];
+}
+
 export function buildCanonicalDocs(
   archive: UniverseArchive,
   ctx: BuildDocsContext,
-): BuiltEntityDoc[] {
+): BuildDocsResult {
   const characters = bySlug(archive.characters);
   const places = bySlug(archive.places);
   const plotlines = bySlug(archive.plotlines);
@@ -51,6 +70,7 @@ export function buildCanonicalDocs(
   const codexEntries = bySlug(archive.codexEntries);
   const stories = bySlug(archive.stories);
 
+  const sceneIdsByStorySlug = new Map<string, Map<string, string>>();
   const docs: BuiltEntityDoc[] = [];
   for (const resolved of ctx.resolution.entities) {
     if (resolved.action === 'skip') continue;
@@ -82,12 +102,64 @@ export function buildCanonicalDocs(
       }
       case 'story': {
         const source = stories.get(resolved.archiveSlug);
-        if (source) docs.push(buildStory(source, resolved, ctx));
+        if (source) docs.push(buildStory(source, resolved, ctx, sceneIdsByStorySlug));
         break;
       }
     }
   }
-  return docs;
+  return { docs, connections: buildConnections(archive, ctx, sceneIdsByStorySlug) };
+}
+
+// Endpoints resolve strictly inside the archive: a connection whose
+// story endpoint was skipped (or whose scene key no longer exists) is
+// dropped rather than imported dangling — scene keys carry no meaning
+// against the destination universe.
+function buildConnections(
+  archive: UniverseArchive,
+  ctx: BuildDocsContext,
+  sceneIdsByStorySlug: Map<string, Map<string, string>>,
+): BuiltConnectionDoc[] {
+  const out: BuiltConnectionDoc[] = [];
+  for (const source of archive.connections ?? []) {
+    const from = resolveEndpoint(source.from, ctx, sceneIdsByStorySlug);
+    if (!from || (from.kind === 'story' && from.sceneId === undefined)) continue;
+    let to: ConnectionTarget | null = null;
+    if (source.to !== null) {
+      to = resolveEndpoint(source.to, ctx, sceneIdsByStorySlug);
+      if (!to) continue;
+    }
+    const fromSource = from as ConnectionSource;
+    const doc: StoredConnection = compact({
+      type: 'continues' as const,
+      from: fromSource,
+      to,
+      ...deriveConnectionKeys(fromSource, to),
+      visibility: source.visibility,
+      note: source.note,
+      snapshotTitle: source.snapshotTitle,
+      createdBy: ctx.authorUid,
+      updatedBy: ctx.authorUid,
+      updatedAt: ctx.now,
+    });
+    out.push({ id: connectionIdFor(fromSource), doc });
+  }
+  return out;
+}
+
+function resolveEndpoint(
+  endpoint: ArchiveConnectionSource | ArchiveConnectionTarget,
+  ctx: BuildDocsContext,
+  sceneIdsByStorySlug: Map<string, Map<string, string>>,
+): ConnectionTarget | null {
+  if (endpoint.kind === 'event') {
+    const eventId = ctx.resolution.idBySlug.event.get(endpoint.event);
+    return eventId ? { kind: 'event', eventId } : null;
+  }
+  const storyId = ctx.resolution.idBySlug.story.get(endpoint.story);
+  if (!storyId) return null;
+  if (endpoint.scene === undefined) return { kind: 'story', storyId };
+  const sceneId = sceneIdsByStorySlug.get(endpoint.story)?.get(endpoint.scene);
+  return sceneId ? { kind: 'story', storyId, sceneId } : null;
 }
 
 function buildCharacter(
@@ -156,7 +228,6 @@ function buildEvent(
     inGameDate: resolveDate(source.inGameDate, ctx),
     relatedRefs: resolveRefList(source.relatedRefs, ctx),
     plotlineRefs: resolveRefList(source.plotlineRefs, ctx) as EntityRef<'plotline'>[] | undefined,
-    nextRefs: resolveRefList(source.nextRefs, ctx) as EntityRef<'story' | 'event'>[] | undefined,
     authorUid: ctx.authorUid,
     createdAt: ctx.now,
     updatedAt: ctx.now,
@@ -185,12 +256,14 @@ function buildStory(
   source: ArchiveStory,
   resolved: ResolvedEntity,
   ctx: BuildDocsContext,
+  sceneIdsByStorySlug: Map<string, Map<string, string>>,
 ): BuiltEntityDoc {
   const sceneKeyToId = new Map<string, string>();
   for (const key of Object.keys(source.scenes)) sceneKeyToId.set(key, ctx.idGen());
+  sceneIdsByStorySlug.set(resolved.archiveSlug, sceneKeyToId);
 
   const needsLayout = Object.values(source.scenes).some((scene) => !scene.position);
-  const layout = needsLayout ? autoLayoutScenes(source.scenes, source.startScene) : null;
+  const layout = needsLayout ? autoLayoutScenes(source.scenes, source.defaultEntryScene) : null;
 
   const scenes: Record<string, Scene> = {};
   for (const [key, archiveScene] of Object.entries(source.scenes)) {
@@ -215,7 +288,7 @@ function buildStory(
   });
 
   const content: StoryContent = {
-    startSceneId: sceneKeyToId.get(source.startScene) ?? '',
+    defaultEntrySceneId: sceneKeyToId.get(source.defaultEntryScene) ?? '',
     scenes,
   };
 
@@ -274,7 +347,7 @@ function buildScene(
     transitionMs: source.transitionMs,
     position: source.position ?? layout?.get(key) ?? { x: 0, y: 0 },
     next,
-    nextRefs: resolveRefList(source.nextRefs, ctx) as EntityRef<'story' | 'event'>[] | undefined,
+    isEntry: source.isEntry,
   });
 }
 

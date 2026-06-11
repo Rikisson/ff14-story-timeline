@@ -2,6 +2,8 @@ import { EntityKind } from '@shared/models';
 import { isRefSegment, parseRefs } from '@shared/utils';
 import {
   ARCHIVE_ENTITY_KINDS,
+  ArchiveConnectionSource,
+  ArchiveConnectionTarget,
   ArchiveRef,
   ArchiveScene,
   ArchiveStory,
@@ -48,7 +50,6 @@ export function validateSemantics(archive: UniverseArchive, ctx: ImportContext):
     checkAsset(event.bgmAsset, assetSlugs, `${path}.bgmAsset`, issues);
     checkRefList(event.relatedRefs, entitySlugs, `${path}.relatedRefs`, 'warning', issues);
     checkRefList(event.plotlineRefs, entitySlugs, `${path}.plotlineRefs`, 'error', issues);
-    checkRefList(event.nextRefs, entitySlugs, `${path}.nextRefs`, 'error', issues);
     checkInlineText(event.description, entitySlugs, `${path}.description`, issues);
     checkEra(event.inGameDate?.era, eraSlugs, `${path}.inGameDate.era`, issues);
   });
@@ -65,7 +66,103 @@ export function validateSemantics(archive: UniverseArchive, ctx: ImportContext):
     checkStory(story, `stories[${index}]`, entitySlugs, assetSlugs, eraSlugs, issues);
   });
 
+  checkConnections(archive, issues);
+
   return issues;
+}
+
+// Connection endpoints must resolve inside this archive — scene keys
+// are archive-local, so an endpoint pointing at an existing-universe
+// story has nothing to bind its scene against.
+function checkConnections(archive: UniverseArchive, issues: ValidationIssue[]): void {
+  const connections = archive.connections ?? [];
+  if (connections.length === 0) return;
+  const storiesBySlug = new Map((archive.stories ?? []).map((story) => [story.slug, story]));
+  const eventSlugs = new Set((archive.events ?? []).map((event) => event.slug));
+  const seenSources = new Set<string>();
+
+  connections.forEach((connection, index) => {
+    const path = `connections[${index}]`;
+    const sourceKey = checkConnectionEndpoint(
+      connection.from,
+      `${path}.from`,
+      storiesBySlug,
+      eventSlugs,
+      issues,
+      { requireEntry: false },
+    );
+    if (sourceKey) {
+      if (seenSources.has(sourceKey)) {
+        issues.push({
+          severity: 'error',
+          code: 'connection-source-duplicate',
+          path: `${path}.from`,
+          message: `${path}.from duplicates another connection's source endpoint — each ending continues to at most one target.`,
+        });
+      }
+      seenSources.add(sourceKey);
+    }
+    if (connection.to !== null && connection.to !== undefined) {
+      checkConnectionEndpoint(connection.to, `${path}.to`, storiesBySlug, eventSlugs, issues, {
+        requireEntry: true,
+      });
+    }
+  });
+}
+
+function checkConnectionEndpoint(
+  endpoint: ArchiveConnectionSource | ArchiveConnectionTarget,
+  path: string,
+  storiesBySlug: Map<string, ArchiveStory>,
+  eventSlugs: Set<string>,
+  issues: ValidationIssue[],
+  opts: { requireEntry: boolean },
+): string | null {
+  if (endpoint.kind === 'event') {
+    if (!eventSlugs.has(endpoint.event)) {
+      issues.push({
+        severity: 'error',
+        code: 'connection-endpoint-unresolved',
+        path,
+        message: `${path} references event "${endpoint.event}", which is not in this package — connection endpoints must be included in the same archive.`,
+        ...hintFor(endpoint.event, eventSlugs),
+      });
+      return null;
+    }
+    return `event:${endpoint.event}`;
+  }
+  const story = storiesBySlug.get(endpoint.story);
+  if (!story) {
+    issues.push({
+      severity: 'error',
+      code: 'connection-endpoint-unresolved',
+      path,
+      message: `${path} references story "${endpoint.story}", which is not in this package — connection endpoints must be included in the same archive.`,
+      ...hintFor(endpoint.story, storiesBySlug.keys()),
+    });
+    return null;
+  }
+  if (endpoint.scene === undefined) return `story:${endpoint.story}`;
+  const scene = story.scenes?.[endpoint.scene];
+  if (!scene) {
+    issues.push({
+      severity: 'error',
+      code: 'connection-scene-unknown',
+      path: `${path}.scene`,
+      message: `${path}.scene "${endpoint.scene}" is not a scene of story "${endpoint.story}".`,
+      ...hintFor(endpoint.scene, Object.keys(story.scenes ?? {})),
+    });
+    return null;
+  }
+  if (opts.requireEntry && scene.isEntry !== true && story.defaultEntryScene !== endpoint.scene) {
+    issues.push({
+      severity: 'error',
+      code: 'connection-target-not-entry',
+      path: `${path}.scene`,
+      message: `${path}.scene "${endpoint.scene}" must be an entry scene ("isEntry": true) or the story's defaultEntryScene.`,
+    });
+  }
+  return `story:${endpoint.story}:${endpoint.scene}`;
 }
 
 export function countCollisions(
@@ -126,7 +223,6 @@ function checkScene(
   if (scene.place) {
     checkRef(scene.place, entitySlugs, `${path}.place`, 'error', issues);
   }
-  checkRefList(scene.nextRefs, entitySlugs, `${path}.nextRefs`, 'error', issues);
 
   (scene.characters ?? []).forEach((staged, index) => {
     checkRef(staged.entity, entitySlugs, `${path}.characters[${index}].entity`, 'error', issues);

@@ -15,10 +15,10 @@ const sampleStory: Story = {
 };
 
 const sampleContent: StoryContent = {
-  startSceneId: 'a',
+  defaultEntrySceneId: 'a',
   scenes: {
     a: { text: 'A', characters: [], position: { x: 0, y: 0 }, next: [{ sceneId: 'b' }, { sceneId: 'c' }] },
-    b: { text: 'B', characters: [], position: { x: 100, y: 0 }, next: [{ sceneId: 'c' }] },
+    b: { text: 'B', characters: [], position: { x: 100, y: 0 }, next: [{ sceneId: 'c' }], isEntry: true },
     c: { text: 'C', characters: [], position: { x: 200, y: 0 }, next: [] },
   },
 };
@@ -137,5 +137,23 @@ describe('ReaderStore', () => {
     expect(store.history()).toEqual(['a']);
     expect(store.resumedFromSave()).toBe(false);
     expect(localStorage.getItem('ff14-story-timeline:reader:s1')).toBeNull();
+  });
+
+  it('starts fresh at an explicit entry scene, ignoring saved progress', async () => {
+    store.choose('c');
+    await store.loadStory('s1', 'b');
+
+    expect(store.currentSceneId()).toBe('b');
+    expect(store.history()).toEqual(['b']);
+    expect(store.resumedFromSave()).toBe(false);
+    // saved progress is left alone for the next default-entry load
+    expect(localStorage.getItem('ff14-story-timeline:reader:s1')).not.toBeNull();
+  });
+
+  it('falls back to default-entry behavior for an unknown entry scene', async () => {
+    await store.loadStory('s1', 'missing');
+
+    expect(store.currentSceneId()).toBe('a');
+    expect(store.history()).toEqual(['a']);
   });
 });

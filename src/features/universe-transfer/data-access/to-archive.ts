@@ -3,6 +3,7 @@ import { foldLabel } from '@shared/utils';
 import { Calendar } from '@features/calendar';
 import { Character } from '@features/characters';
 import { CodexCategoriesConfig, CodexEntry } from '@features/codex';
+import { Connection, ConnectionSource, ConnectionTarget } from '@features/connections';
 import { TimelineEvent } from '@features/events';
 import { Place } from '@features/places';
 import { Plotline } from '@features/plotlines';
@@ -15,6 +16,9 @@ import {
   ArchiveCharacter,
   ArchiveCodexCategory,
   ArchiveCodexEntry,
+  ArchiveConnection,
+  ArchiveConnectionSource,
+  ArchiveConnectionTarget,
   ArchiveEvent,
   ArchiveInGameDate,
   ArchivePlace,
@@ -44,6 +48,7 @@ export interface ExportInput {
   events: readonly TimelineEvent[];
   codexEntries: readonly CodexEntry[];
   stories: readonly ExportStoryInput[];
+  connections: readonly Connection[];
   generator?: string;
 }
 
@@ -76,6 +81,7 @@ export function buildUniverseArchive(input: ExportInput): ExportArchiveResult {
     eraSlugById: calendar.eraSlugById,
   };
 
+  const sceneKeysByStoryId = new Map<string, Map<string, string>>();
   const archive: UniverseArchive = compact({
     formatVersion: FORMAT_VERSION,
     exportedAt: Date.now(),
@@ -89,10 +95,60 @@ export function buildUniverseArchive(input: ExportInput): ExportArchiveResult {
     plotlines: mapList(input.plotlines, (item) => toArchivePlotline(item, maps)),
     events: mapList(input.events, (item) => toArchiveEvent(item, maps)),
     codexEntries: mapList(input.codexEntries, (item) => toArchiveCodexEntry(item, maps)),
-    stories: mapList(input.stories, (item) => toArchiveStory(item, maps)),
+    stories: mapList(input.stories, (item) => toArchiveStory(item, maps, sceneKeysByStoryId)),
+    connections: toArchiveConnections(input.connections, maps, sceneKeysByStoryId),
   });
 
   return { archive, assetPlan: assets.plan };
+}
+
+// Connections ride along automatically: an edge whose endpoint isn't in
+// the export set (entity unselected, or a stale source scene) is
+// silently dropped, mirroring how `refList` drops unresolvable refs.
+function toArchiveConnections(
+  connections: readonly Connection[],
+  maps: ExportMaps,
+  sceneKeys: Map<string, Map<string, string>>,
+): ArchiveConnection[] | undefined {
+  const out: ArchiveConnection[] = [];
+  for (const connection of connections) {
+    const from = toArchiveEndpoint(connection.from, maps, sceneKeys) as
+      | ArchiveConnectionSource
+      | null;
+    if (!from) continue;
+    let to: ArchiveConnectionTarget | null = null;
+    if (connection.to !== null) {
+      to = toArchiveEndpoint(connection.to, maps, sceneKeys);
+      if (!to) continue;
+    }
+    out.push(
+      compact({
+        type: 'continues' as const,
+        from,
+        to,
+        visibility: connection.visibility,
+        note: connection.note,
+        snapshotTitle: connection.snapshotTitle,
+      }),
+    );
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function toArchiveEndpoint(
+  endpoint: ConnectionSource | ConnectionTarget,
+  maps: ExportMaps,
+  sceneKeys: Map<string, Map<string, string>>,
+): ArchiveConnectionTarget | null {
+  if (endpoint.kind === 'event') {
+    const slug = maps.slugById.event.get(endpoint.eventId);
+    return slug ? { kind: 'event', event: slug } : null;
+  }
+  const slug = maps.slugById.story.get(endpoint.storyId);
+  if (!slug) return null;
+  if (endpoint.sceneId === undefined) return { kind: 'story', story: slug };
+  const scene = sceneKeys.get(endpoint.storyId)?.get(endpoint.sceneId);
+  return scene ? { kind: 'story', story: slug, scene } : null;
 }
 
 function toArchiveUniverse(universe: Universe, maps: ExportMaps): ArchiveUniverse {
@@ -150,7 +206,6 @@ function toArchiveEvent(event: TimelineEvent, maps: ExportMaps): ArchiveEvent {
     inGameDate: toArchiveDate(event.inGameDate, maps),
     relatedRefs: refList(event.relatedRefs, maps),
     plotlineRefs: refList(event.plotlineRefs, maps),
-    nextRefs: refList(event.nextRefs, maps),
   });
 }
 
@@ -165,7 +220,11 @@ function toArchiveCodexEntry(entry: CodexEntry, maps: ExportMaps): ArchiveCodexE
   });
 }
 
-function toArchiveStory(input: ExportStoryInput, maps: ExportMaps): ArchiveStory {
+function toArchiveStory(
+  input: ExportStoryInput,
+  maps: ExportMaps,
+  sceneKeysByStoryId: Map<string, Map<string, string>>,
+): ArchiveStory {
   const { story, content } = input;
   const sceneIds = Object.keys(content.scenes);
   const keyBySceneId = new Map<string, string>();
@@ -174,6 +233,7 @@ function toArchiveStory(input: ExportStoryInput, maps: ExportMaps): ArchiveStory
     const base = foldLabel(content.scenes[id]?.label ?? '') || `scene-${index + 1}`;
     keyBySceneId.set(id, uniqueName(base, usedKeys));
   });
+  sceneKeysByStoryId.set(story.id, keyBySceneId);
 
   const scenes: Record<string, ArchiveScene> = {};
   for (const id of sceneIds) {
@@ -191,7 +251,7 @@ function toArchiveStory(input: ExportStoryInput, maps: ExportMaps): ArchiveStory
     inGameDate: toArchiveDate(story.inGameDate, maps),
     relatedRefs: refList(story.relatedRefs, maps),
     plotlineRefs: refList(story.plotlineRefs, maps),
-    startScene: keyBySceneId.get(content.startSceneId) ?? sceneIds[0] ?? 'start',
+    defaultEntryScene: keyBySceneId.get(content.defaultEntrySceneId) ?? sceneIds[0] ?? 'start',
     scenes,
   });
 }
@@ -221,7 +281,7 @@ function toArchiveScene(
     next: scene.next.map((branch) =>
       compact({ label: branch.label, scene: keyBySceneId.get(branch.sceneId) ?? branch.sceneId }),
     ),
-    nextRefs: refList(scene.nextRefs, maps),
+    isEntry: scene.isEntry,
   });
 }
 

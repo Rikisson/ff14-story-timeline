@@ -17,20 +17,32 @@ import {
 import { RouterLink } from '@angular/router';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { Character, CharactersService } from '@features/characters';
+import {
+  Connection,
+  ConnectionsService,
+  connectionTargetsEntry,
+  entityKeyOf,
+  sourceEntityRef,
+  targetEntityRef,
+} from '@features/connections';
 import { Scene } from '@features/stories';
+import { UniverseStore } from '@features/universes';
 import {
   AssetThumbResolver,
+  EntityDirectoryService,
   EntityResolverCache,
   LayoutStore,
   ResolvedDirectoryRow,
 } from '@shared/data-access';
 import { EntityRef } from '@shared/models';
 import { ReaderPreferencesService } from '@shared/services';
-import { GhostButtonComponent, SecondaryButtonComponent } from '@shared/ui';
+import { SecondaryButtonComponent } from '@shared/ui';
 import { InlineRefOption, parseRefs } from '@shared/utils';
 import { resolveEffectiveBgm } from '../data-access/bgm';
+import { ReaderReferrerService } from '../data-access/reader-referrer.service';
 import { ReaderStore } from '../data-access/reader.store';
 import { resolveEffectiveTextSpeed } from '../data-access/text-speed';
+import { BackOption, ReaderBackMenuComponent } from '../ui/reader-back-menu.component';
 import { ReaderPreferencesDialogComponent } from '../ui/reader-preferences-dialog.component';
 import { SceneContinuation, SceneViewComponent, StagedView } from '../ui/scene-view.component';
 import readerEn from '../i18n/en.json';
@@ -54,9 +66,9 @@ import { SfxController } from './sfx-controller';
   imports: [
     RouterLink,
     SceneViewComponent,
+    ReaderBackMenuComponent,
     ReaderPreferencesDialogComponent,
     SecondaryButtonComponent,
-    GhostButtonComponent,
     TranslocoDirective,
   ],
   providers: [
@@ -114,11 +126,13 @@ import { SfxController } from './sfx-controller';
                   [staged]="stagedView()"
                   [choices]="scene.next"
                   [continuation]="continuation()"
+                  [continuationBroken]="continuationBroken()"
                   [inlineRefOptions]="inlineRefOptions()"
                   [textSpeed]="effectiveTextSpeed()"
                   [cardHidden]="cardHidden()"
                   [spritesHidden]="spritesHidden()"
                   (choose)="advance($event)"
+                  (continuationFollowed)="onContinuationFollowed()"
                 />
               }
 
@@ -135,14 +149,12 @@ import { SfxController } from './sfx-controller';
                       @if (store.resumedFromSave()) {
                         <button uiSecondary type="button" (click)="store.restart()">{{ t('action.startOver') }}</button>
                       }
-                      <button
-                        uiGhost
-                        type="button"
-                        [disabled]="!store.canGoBack()"
-                        (click)="goBack()"
-                      >
-                        {{ t('action.back') }}
-                      </button>
+                      <app-reader-back-menu
+                        [canGoBack]="store.canGoBack()"
+                        [options]="backOptions()"
+                        (back)="goBack()"
+                        (navigated)="onBackNavigated()"
+                      />
                       <button
                         uiSecondary
                         type="button"
@@ -218,10 +230,18 @@ import { SfxController } from './sfx-controller';
 })
 export class ReaderStoryPage implements ReaderLeavable {
   readonly id = input.required<string>();
+  // Entry override bound from the `?scene=` query param — set by
+  // continuation links targeting a non-default entry and by the unified
+  // Back menu returning to the end scene that led here.
+  readonly scene = input<string>();
   protected readonly store = inject(ReaderStore);
   private readonly characters = inject(CharactersService);
   private readonly assets = inject(AssetThumbResolver);
   private readonly resolver = inject(EntityResolverCache);
+  private readonly connections = inject(ConnectionsService);
+  private readonly directory = inject(EntityDirectoryService);
+  private readonly universes = inject(UniverseStore);
+  private readonly referrer = inject(ReaderReferrerService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly prefs = inject(ReaderPreferencesService);
@@ -491,28 +511,144 @@ export class ReaderStoryPage implements ReaderLeavable {
     return out;
   });
 
-  // End-of-content continuation. Surfaces only on end-scenes
-  // (`scene.next.length === 0`) and reads the first entry of
-  // `nextRefs[]` — editors cap selection to one; the array shape is
-  // preserved for future flexibility. Resolves the target's title
-  // through the directory cache; unresolved or missing refs yield
-  // null so the card simply omits the button.
-  private readonly continuationRef = computed(() => {
+  // Outbound + inbound connections for the loaded story, fetched once
+  // per story (reader-visible only) together with the directory rows of
+  // every endpoint. Rows double as the broken-edge detector: a wired
+  // target with no public directory row is hidden, and the card shows a
+  // soft notice instead.
+  private connectionsSeq = 0;
+  private readonly connectionsState = signal<{
+    storyId: string;
+    outbound: Connection[];
+    inbound: Connection[];
+    rows: Map<string, ResolvedDirectoryRow>;
+  } | null>(null);
+
+  private async loadConnections(storyId: string, seq: number): Promise<void> {
+    try {
+      const entity = { kind: 'story', id: storyId } as const;
+      const [outbound, inbound] = await Promise.all([
+        this.connections.outboundFor(entity, { readerOnly: true }),
+        this.connections.inboundFor(entity, { readerOnly: true }),
+      ]);
+      const refs: EntityRef[] = [];
+      for (const c of outbound) {
+        const target = targetEntityRef(c.to);
+        if (target) refs.push(target);
+      }
+      for (const c of inbound) refs.push(sourceEntityRef(c.from));
+      const universeId = this.universes.activeUniverseId();
+      const rows = new Map<string, ResolvedDirectoryRow>();
+      if (universeId && refs.length > 0) {
+        const resolved = await this.directory.byIds({ universeId, refs });
+        for (const row of resolved) rows.set(`${row.kind}:${row.id}`, row);
+      }
+      if (seq !== this.connectionsSeq) return;
+      this.connectionsState.set({ storyId, outbound, inbound, rows });
+    } catch {
+      if (seq !== this.connectionsSeq) return;
+      this.connectionsState.set({ storyId, outbound: [], inbound: [], rows: new Map() });
+    }
+  }
+
+  // End-of-content continuation: the outbound connection wired to the
+  // current end scene. "Leads to" when the story branches from several
+  // end scenes; "Continues in" for the single unambiguous path.
+  private readonly endSceneConnection = computed<Connection | null>(() => {
+    const state = this.connectionsState();
+    const story = this.store.story();
     const scene = this.store.currentScene();
-    if (!scene || scene.next.length > 0) return null;
-    return scene.nextRefs?.[0] ?? null;
-  });
-  private readonly resolvedContinuation = computed(() => {
-    const ref = this.continuationRef();
-    return ref ? this.resolver.resolve(ref)() : null;
+    const sceneId = this.store.currentSceneId();
+    if (!state || !story || state.storyId !== story.id) return null;
+    if (!scene || !sceneId || scene.next.length > 0) return null;
+    return (
+      state.outbound.find((c) => c.from.kind === 'story' && c.from.sceneId === sceneId) ?? null
+    );
   });
   protected readonly continuation = computed<SceneContinuation | null>(() => {
-    const ref = this.continuationRef();
-    const row = this.resolvedContinuation();
-    if (!ref || !row) return null;
-    const base = ref.kind === 'story' ? '/reader/story' : '/reader/event';
-    return { label: row.label, link: [base, ref.id] as const };
+    const conn = this.endSceneConnection();
+    const state = this.connectionsState();
+    if (!conn?.to || !state) return null;
+    const ref = targetEntityRef(conn.to);
+    if (!ref) return null;
+    const row = state.rows.get(entityKeyOf(ref));
+    if (!row) return null;
+    const wired = state.outbound.filter((c) => c.to !== null);
+    return {
+      label: row.label,
+      labelKey: wired.length > 1 ? 'leadsTo' : 'continuesIn',
+      link: [ref.kind === 'story' ? '/reader/story' : '/reader/event', ref.id] as const,
+      queryParams:
+        conn.to.kind === 'story' && conn.to.sceneId ? { scene: conn.to.sceneId } : undefined,
+    };
   });
+  protected readonly continuationBroken = computed<boolean>(() => {
+    const conn = this.endSceneConnection();
+    const state = this.connectionsState();
+    if (!conn?.to || !state) return false;
+    const ref = targetEntityRef(conn.to);
+    return ref !== null && !state.rows.has(entityKeyOf(ref));
+  });
+
+  protected onContinuationFollowed(): void {
+    const story = this.store.story();
+    if (!story) return;
+    this.referrer.set({
+      kind: 'story',
+      id: story.id,
+      label: story.title,
+      sceneId: this.store.currentSceneId() ?? undefined,
+    });
+  }
+
+  // Cross-entity Back options at an entry scene: the session referrer
+  // first (highlighted), then persistent inbound connections targeting
+  // the scene the reader is on. Within-story history handles the rest.
+  protected readonly backOptions = computed<BackOption[]>(() => {
+    if (this.store.canGoBack()) return [];
+    const story = this.store.story();
+    const state = this.connectionsState();
+    const content = this.store.content();
+    const sceneId = this.store.currentSceneId();
+    if (!story || !content || !sceneId) return [];
+    const options: BackOption[] = [];
+    const seen = new Set<string>();
+    const ref = this.referrer.current();
+    if (ref && !(ref.kind === 'story' && ref.id === story.id)) {
+      const key = `${ref.kind}:${ref.id}`;
+      options.push({
+        key,
+        label: ref.label,
+        link: [ref.kind === 'story' ? '/reader/story' : '/reader/event', ref.id] as const,
+        queryParams: ref.sceneId ? { scene: ref.sceneId } : undefined,
+        highlighted: true,
+      });
+      seen.add(key);
+    }
+    if (state && state.storyId === story.id) {
+      for (const c of state.inbound) {
+        const entry = { sceneId, defaultEntrySceneId: content.defaultEntrySceneId };
+        if (!connectionTargetsEntry(c, entry)) continue;
+        const srcRef = sourceEntityRef(c.from);
+        const key = entityKeyOf(srcRef);
+        if (seen.has(key)) continue;
+        const row = state.rows.get(key);
+        if (!row) continue;
+        seen.add(key);
+        options.push({
+          key,
+          label: row.label,
+          link: [srcRef.kind === 'story' ? '/reader/story' : '/reader/event', srcRef.id] as const,
+          queryParams: c.from.kind === 'story' ? { scene: c.from.sceneId } : undefined,
+        });
+      }
+    }
+    return options;
+  });
+
+  protected onBackNavigated(): void {
+    this.referrer.clear();
+  }
 
   /**
    * Asset IDs reachable from the current scene's `next[]` choices. The
@@ -546,7 +682,17 @@ export class ReaderStoryPage implements ReaderLeavable {
 
   constructor() {
     effect(() => {
-      this.store.loadStory(this.id());
+      this.store.loadStory(this.id(), this.scene());
+    });
+
+    // Fetch the story's connections once per loaded story. Keyed on the
+    // loaded story id (not the route input) so the fetch follows actual
+    // load completions.
+    effect(() => {
+      const story = this.store.story();
+      if (!story) return;
+      const seq = ++this.connectionsSeq;
+      untracked(() => void this.loadConnections(story.id, seq));
     });
 
     this.destroyRef.onDestroy(() => {

@@ -7,8 +7,8 @@
   "required": ["formatVersion"],
   "properties": {
     "formatVersion": {
-      "const": 1,
-      "description": "Schema version. Must be 1."
+      "const": 2,
+      "description": "Schema version. Must be 2."
     },
     "generator": {
       "type": "string",
@@ -35,7 +35,12 @@
     "plotlines": { "type": "array", "items": { "$ref": "#/$defs/plotline" } },
     "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
     "codexEntries": { "type": "array", "items": { "$ref": "#/$defs/codexEntry" } },
-    "stories": { "type": "array", "items": { "$ref": "#/$defs/story" } }
+    "stories": { "type": "array", "items": { "$ref": "#/$defs/story" } },
+    "connections": {
+      "type": "array",
+      "description": "Typed continuation edges between stories and events. Each ending (a story's end scene, or an event) continues to at most one target.",
+      "items": { "$ref": "#/$defs/connection" }
+    }
   },
   "$defs": {
     "slug": {
@@ -198,8 +203,7 @@
         "backgroundEffect": { "enum": ["darken", "desaturate", "sepia", "cool", "warm"] },
         "inGameDate": { "$ref": "#/$defs/inGameDate" },
         "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "nextRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+        "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
       }
     },
     "codexEntry": {
@@ -216,7 +220,7 @@
     },
     "story": {
       "type": "object",
-      "required": ["slug", "title", "inGameDate", "startScene", "scenes"],
+      "required": ["slug", "title", "inGameDate", "defaultEntryScene", "scenes"],
       "properties": {
         "slug": { "$ref": "#/$defs/slug" },
         "title": { "type": "string" },
@@ -227,9 +231,9 @@
         "inGameDate": { "$ref": "#/$defs/inGameDate" },
         "relatedRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
         "plotlineRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
-        "startScene": {
+        "defaultEntryScene": {
           "type": "string",
-          "description": "The key of the opening scene. Make it a 'showcase' scene whose text is just the story title."
+          "description": "The key of the scene readers start on by default. Make it a 'showcase' scene whose text is just the story title."
         },
         "scenes": {
           "type": "object",
@@ -276,7 +280,10 @@
           "description": "Branches out of this scene. One entry is a linear continuation; several entries make a choice. An empty array is an ending.",
           "items": { "$ref": "#/$defs/sceneNext" }
         },
-        "nextRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+        "isEntry": {
+          "type": "boolean",
+          "description": "Marks an additional entry scene — connections from other stories or events may start the story here. The defaultEntryScene is always an entry."
+        }
       }
     },
     "stagedCharacter": {
@@ -296,6 +303,65 @@
       "properties": {
         "label": { "type": "string", "description": "Choice text shown to the reader. Omit for a linear continuation." },
         "scene": { "type": "string", "description": "The key of the scene this branch leads to." }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "description": "A 'continues' edge. Both endpoints must be entities included in this same package — scene keys are local to the package.",
+      "required": ["type", "from", "to", "visibility"],
+      "properties": {
+        "type": { "const": "continues" },
+        "from": {
+          "description": "The source ending: a story end scene (empty next) or an event. At most one connection per source.",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["kind", "story", "scene"],
+              "properties": {
+                "kind": { "const": "story" },
+                "story": { "$ref": "#/$defs/slug" },
+                "scene": { "type": "string", "description": "Key of the source end scene." }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "event"],
+              "properties": {
+                "kind": { "const": "event" },
+                "event": { "$ref": "#/$defs/slug" }
+              }
+            }
+          ]
+        },
+        "to": {
+          "description": "The target, or null for a pending hand-off (no target chosen yet). A story target may name an entry scene; omit 'scene' to use the story's defaultEntryScene.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["kind", "story"],
+              "properties": {
+                "kind": { "const": "story" },
+                "story": { "$ref": "#/$defs/slug" },
+                "scene": { "type": "string", "description": "Key of an entry scene (isEntry or the defaultEntryScene)." }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "event"],
+              "properties": {
+                "kind": { "const": "event" },
+                "event": { "$ref": "#/$defs/slug" }
+              }
+            }
+          ]
+        },
+        "visibility": {
+          "enum": ["reader", "editor"],
+          "description": "'reader' surfaces the continuation in the reader; 'editor' keeps it as an authoring note."
+        },
+        "note": { "type": "string", "description": "Optional author note — handy for pending hand-offs." },
+        "snapshotTitle": { "type": "string", "description": "Cached target title, shown if the target later goes missing." }
       }
     }
   }

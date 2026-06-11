@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore/lite';
 import { TranslocoService } from '@jsverse/transloco';
 import { CalendarProjectionContext, CalendarService } from '@features/calendar';
+import { ConnectionsService } from '@features/connections';
 import { UniverseStore } from '@features/universes';
 import {
   applyEntityDelete,
@@ -20,6 +21,7 @@ import {
   buildStoryTimelineInputs,
 } from './story-projection';
 import {
+  Scene,
   StoredStory,
   StoredStoryContent,
   Story,
@@ -55,6 +57,7 @@ export class StoriesService {
   private readonly transloco = inject(TranslocoService);
   private readonly calendar = inject(CalendarService);
   private readonly bus = inject(CacheInvalidationBus);
+  private readonly connections = inject(ConnectionsService);
 
   async getStory(id: string): Promise<Story | undefined> {
     const universeId = this.requireUniverseId();
@@ -66,7 +69,7 @@ export class StoriesService {
     const universeId = this.requireUniverseId();
     const snap = await getDoc(this.contentDocRef(universeId, id));
     if (!snap.exists()) return undefined;
-    return normalizeLegacySceneFields(snap.data() as StoredStoryContent);
+    return normalizeStoryContent(snap.data() as Record<string, unknown>);
   }
 
   async getStoryWithContent(
@@ -158,7 +161,7 @@ export class StoriesService {
     // picks later through the asset-resolution fallback; until then
     // the centered title acts as the visual.
     const contentData: StoredStoryContent = {
-      startSceneId: introSceneId,
+      defaultEntrySceneId: introSceneId,
       scenes: {
         [introSceneId]: {
           text: title,
@@ -216,6 +219,15 @@ export class StoriesService {
       tx.delete(contentRef);
     });
     this.bus.publishEntityWrite({ universeId, kind: 'story', id });
+    // Outbound connections belong to the deleted story; inbound ones
+    // belong to other authors' entities and stay behind as broken
+    // edges with editor fix actions. Best-effort: a failed cascade
+    // leaves orphans that the same broken-edge handling covers.
+    try {
+      await this.connections.deleteOutboundFor({ kind: 'story', id });
+    } catch {
+      // ignore — broken-edge rendering covers leftovers
+    }
   }
 
   private buildDirectoryInputs(story: Story): DirectoryRowInputs {
@@ -281,23 +293,25 @@ export class StoriesService {
 }
 
 /**
- * One-shot read-side migration: legacy stories were authored with
- * `Scene.audioAssetId`, which has since been renamed to `sfxAssetId`
- * to reflect its narrower (one-shot SFX/voice) semantics. Map the old
- * field onto the new one at load time so existing content keeps
- * playing. The next save rewrites the doc without the legacy key.
+ * One-shot read-side migration for legacy content docs: `audioAssetId`
+ * maps onto `sfxAssetId`, `startSceneId` onto `defaultEntrySceneId`,
+ * and dropped `nextRefs` (replaced by the connections collection) are
+ * stripped so they never reach the UI. The next save rewrites the doc
+ * without the legacy keys.
  */
-function normalizeLegacySceneFields(content: StoredStoryContent): StoryContent {
-  const scenes: Record<string, (typeof content.scenes)[string]> = {};
-  for (const [id, scene] of Object.entries(content.scenes)) {
-    const legacy = (scene as { audioAssetId?: string }).audioAssetId;
-    if (legacy && !scene.sfxAssetId) {
-      const { ...rest } = scene as typeof scene & { audioAssetId?: string };
-      delete (rest as { audioAssetId?: string }).audioAssetId;
-      scenes[id] = { ...rest, sfxAssetId: legacy };
-    } else {
-      scenes[id] = scene;
-    }
+export function normalizeStoryContent(raw: Record<string, unknown>): StoryContent {
+  const rawScenes = (raw['scenes'] ?? {}) as Record<
+    string,
+    Scene & { audioAssetId?: string; nextRefs?: unknown }
+  >;
+  const scenes: Record<string, Scene> = {};
+  for (const [id, scene] of Object.entries(rawScenes)) {
+    const { audioAssetId, nextRefs: _dropped, ...rest } = scene;
+    scenes[id] =
+      audioAssetId && !rest.sfxAssetId ? { ...rest, sfxAssetId: audioAssetId } : rest;
   }
-  return { ...content, scenes };
+  return {
+    defaultEntrySceneId: (raw['defaultEntrySceneId'] ?? raw['startSceneId'] ?? '') as string,
+    scenes,
+  };
 }

@@ -61,7 +61,7 @@ function clearProgress(storyId: string): void {
 }
 
 function isUsableResume(content: StoryContent, saved: SavedProgress): boolean {
-  if (saved.sceneId === content.startSceneId) return false;
+  if (saved.sceneId === content.defaultEntrySceneId) return false;
   if (!Object.prototype.hasOwnProperty.call(content.scenes, saved.sceneId)) return false;
   return saved.history.every((id) => Object.prototype.hasOwnProperty.call(content.scenes, id));
 }
@@ -81,7 +81,7 @@ export function withReaderMethods() {
       // resolutions short-circuit.
       let loadSeq = 0;
       return {
-        async loadStory(id: string) {
+        async loadStory(id: string, entrySceneId?: string) {
           const seq = ++loadSeq;
           patchState(store, { loading: true, error: null, resumedFromSave: false });
           try {
@@ -92,14 +92,33 @@ export function withReaderMethods() {
               return;
             }
             const { story, content } = result;
+            // An explicit entry (continuation target or cross-entity
+            // back-nav) starts a fresh read at that scene; saved
+            // progress is left untouched for the default-entry path.
+            const entry =
+              entrySceneId &&
+              Object.prototype.hasOwnProperty.call(content.scenes, entrySceneId)
+                ? entrySceneId
+                : null;
+            if (entry) {
+              patchState(store, {
+                story,
+                content,
+                currentSceneId: entry,
+                history: [entry],
+                loading: false,
+                resumedFromSave: false,
+              });
+              return;
+            }
             const saved = loadSaved(id);
             const usable = saved && isUsableResume(content, saved) ? saved : null;
             if (saved && !usable) clearProgress(id);
             patchState(store, {
               story,
               content,
-              currentSceneId: usable?.sceneId ?? content.startSceneId,
-              history: usable?.history ?? [content.startSceneId],
+              currentSceneId: usable?.sceneId ?? content.defaultEntrySceneId,
+              history: usable?.history ?? [content.defaultEntrySceneId],
               loading: false,
               resumedFromSave: usable !== null,
             });
@@ -125,9 +144,9 @@ export function withReaderMethods() {
             if (!state.story || !state.content) return state;
             const history = [...state.history, sceneId];
             // Progress is retained even on end-scenes so a reader can
-            // chain forward via `nextRefs`, hit the browser back button,
-            // and land back on the ending they came from rather than the
-            // start. Only `restart()` clears.
+            // chain forward through a continuation, hit the browser back
+            // button, and land back on the ending they came from rather
+            // than the start. Only `restart()` clears.
             saveProgress(state.story.id, { sceneId, history });
             return { currentSceneId: sceneId, history, resumedFromSave: false };
           });
@@ -138,7 +157,7 @@ export function withReaderMethods() {
             if (state.history.length <= 1 || !state.story || !state.content) return state;
             const history = state.history.slice(0, -1);
             const sceneId = history[history.length - 1];
-            if (sceneId === state.content.startSceneId) clearProgress(state.story.id);
+            if (sceneId === state.content.defaultEntrySceneId) clearProgress(state.story.id);
             else saveProgress(state.story.id, { sceneId, history });
             return { currentSceneId: sceneId, history, resumedFromSave: false };
           });
@@ -149,8 +168,8 @@ export function withReaderMethods() {
             if (!state.story || !state.content) return state;
             clearProgress(state.story.id);
             return {
-              currentSceneId: state.content.startSceneId,
-              history: [state.content.startSceneId],
+              currentSceneId: state.content.defaultEntrySceneId,
+              history: [state.content.defaultEntrySceneId],
               resumedFromSave: false,
             };
           });

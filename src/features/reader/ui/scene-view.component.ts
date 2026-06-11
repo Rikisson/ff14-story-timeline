@@ -26,7 +26,9 @@ import { Choice, ChoiceListComponent } from './choice-list.component';
 
 export interface SceneContinuation {
   label: string;
+  labelKey: 'continuesIn' | 'leadsTo';
   link: readonly [string, string];
+  queryParams?: Record<string, string>;
 }
 
 export interface StagedView {
@@ -175,9 +177,18 @@ type CrossfadeSlot = 'A' | 'B';
               @if (choices().length > 0) {
                 <app-choice-list class="block shrink-0" [choices]="choices()" (choose)="choose.emit($event)" />
               } @else if (continuation(); as cont) {
-                <a class="reader-action shrink-0" [routerLink]="cont.link">
-                  {{ t('action.continueReading', { title: cont.label }) }}
+                <a
+                  class="reader-action shrink-0"
+                  [routerLink]="cont.link"
+                  [queryParams]="cont.queryParams ?? null"
+                  (click)="continuationFollowed.emit()"
+                >
+                  {{ t('action.' + cont.labelKey, { title: cont.label }) }}
                 </a>
+              } @else if (continuationBroken()) {
+                <p class="shrink-0 text-sm italic text-foreground-faint">
+                  {{ t('message.continuationUnavailable') }}
+                </p>
               }
             </div>
           }
@@ -215,6 +226,7 @@ export class SceneViewComponent {
   readonly staged = input<StagedView[]>([]);
   readonly choices = input<Choice[]>([]);
   readonly continuation = input<SceneContinuation | null>(null);
+  readonly continuationBroken = input<boolean>(false);
   readonly inlineRefOptions = input<InlineRefOption[]>([]);
   readonly textSpeed = input<TextSpeed>('fast');
   readonly cardVariant = input<'floating' | 'page'>('floating');
@@ -222,6 +234,7 @@ export class SceneViewComponent {
   readonly spritesHidden = input<boolean>(false);
 
   readonly choose = output<string>();
+  readonly continuationFollowed = output<void>();
 
   protected readonly speakerLabels = computed(() => {
     const text = this.speaker();

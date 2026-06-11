@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "generator": "hand-authored example",
   "universe": {
     "slug": "aetheria",
@@ -83,7 +83,7 @@
       "draft": false,
       "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 13 },
       "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
-      "startScene": "title",
+      "defaultEntryScene": "title",
       "scenes": {
         "title": {
           "text": "The Gathering Storm",
@@ -138,6 +138,55 @@
           "next": []
         }
       }
+    },
+    {
+      "slug": "the-crowned-day",
+      "title": "The Crowned Day",
+      "description": "Silverhold wakes to two crowns and one throne.",
+      "draft": false,
+      "inGameDate": { "era": "third-age", "year": 412, "month": 2, "day": 14 },
+      "plotlineRefs": [{ "kind": "plotline", "ref": "the-shattered-crown" }],
+      "defaultEntryScene": "title",
+      "scenes": {
+        "title": {
+          "text": "The Crowned Day",
+          "layout": "showcase",
+          "characters": [],
+          "next": [{ "scene": "aftermath" }]
+        },
+        "aftermath": {
+          "text": "Bells rang from both towers at once, each claiming the dawn for its own claimant. In the square below, ${ch:lyra-dawnwhisper}[Lyra] watched the crowds divide like a tide around two rocks.",
+          "place": { "kind": "place", "ref": "silverhold" },
+          "characters": [
+            { "entity": { "kind": "character", "ref": "lyra-dawnwhisper" }, "position": "center" }
+          ],
+          "next": [],
+          "isEntry": true
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "type": "continues",
+      "from": { "kind": "story", "story": "the-gathering-storm", "scene": "the-threshold" },
+      "to": { "kind": "event", "event": "the-coronation" },
+      "visibility": "reader",
+      "snapshotTitle": "The Contested Coronation"
+    },
+    {
+      "type": "continues",
+      "from": { "kind": "event", "event": "the-coronation" },
+      "to": { "kind": "story", "story": "the-crowned-day", "scene": "aftermath" },
+      "visibility": "reader",
+      "snapshotTitle": "The Crowned Day"
+    },
+    {
+      "type": "continues",
+      "from": { "kind": "story", "story": "the-crowned-day", "scene": "aftermath" },
+      "to": null,
+      "visibility": "editor",
+      "note": "Hand-off: the next chapter is not written yet."
     }
   ]
 }

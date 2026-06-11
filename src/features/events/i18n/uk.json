@@ -6,8 +6,7 @@
     "formAdd": "Додати подію",
     "formEdit": "Редагувати подію",
     "backgroundEffect": "Ефект фону",
-    "bgm": "Фонова музика",
-    "nextRefs": "Читати далі"
+    "bgm": "Фонова музика"
   },
   "effect": {
     "none": "Немає",
@@ -29,8 +28,6 @@
     "namePlaceholder": "напр. Катаклізм Сьомої Умбральної ери",
     "slugPlaceholder": "напр. seventh-umbral-calamity",
     "descriptionPlaceholder": "Що відбувається в цій події…",
-    "nextRefsHint": "Виберіть історію або подію, що продовжує цю.",
-    "searchContinuation": "Шукати історії або події…",
     "bgmHint": "Грає, поки читач переглядає цю подію. Плавно затухає при виході.",
     "pickBgm": "Обрати BGM",
     "replaceBgm": "Замінити BGM",

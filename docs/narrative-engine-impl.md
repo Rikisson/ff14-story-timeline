@@ -58,12 +58,12 @@ References live on two surfaces — typed pickers and inline `${kind:<guid>}[…
 
 | Tier        | Where                                                                  | Purpose                          | Drives runtime? |
 |-------------|------------------------------------------------------------------------|----------------------------------|-----------------|
-| Runtime     | `Scene.characters` / `speaker` / `place`, end-of-content `Scene.nextRefs` and `Event.nextRefs` | Staging, placement, continuation | Yes             |
+| Runtime     | `Scene.characters` / `speaker` / `place`, connection endpoints          | Staging, placement, continuation | Yes             |
 | Curatorial  | `Story.relatedRefs` / `Story.plotlineRefs`                             | Catalog & filtering              | No              |
 | Factual     | `Event.relatedRefs` / `Event.plotlineRefs`, lookup-tier `relatedRefs`  | World-building                   | No              |
 | Decorative  | Inline `${…}[…]` in any rich-text body                                 | Tooltip / hover                  | No              |
 
-Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime staging is Character + Place only; runtime continuation is Story + Event, limited to the dedicated `nextRefs` slot.
+Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime. Runtime staging is Character + Place only; runtime continuation is Story + Event, expressed through the connections collection (see *Connections*), never through picker refs on the entity itself.
 
 **Picker scope per entity.** Timeline-tier entities (Story, Event) reference lookup-tier entities (Character, Place, Codex) for world-building; lookup-tier entities reference each other; nothing references timeline-tier through pickers — those relationships are encoded by `inGameDate` and (for arc grouping) by the dedicated `plotlineRefs` field.
 
@@ -74,7 +74,7 @@ Codex refs appear in Curatorial, Factual, and Decorative tiers — never Runtime
 | Universe, Plotline          | —                       | —                                 |
 
 - **No timeline-to-timeline picker refs for browsing.** Story↔Event and Event↔Event for "what happened nearby in time" are derivable from `inGameDate`; use Explore.
-- **Continuation is the one runtime exception.** Story end-scenes and Events expose `nextRefs: EntityRef<'story' | 'event'>[]` for an authored "Continue reading" handoff. The schema keeps the array shape but the editors cap selection to one — branching is the scene graph's job, not `nextRefs`'. Authored intent, not date-derived adjacency.
+- **Continuation lives in the connections collection, not on entities.** Story end-scenes and Events continue into other stories/events through `universes/{u}/connections` documents (see *Connections*). Entities store no edge data — inbound/outbound awareness is always a query, so deleting an entity never requires touching other entities. Authored intent, not date-derived adjacency.
 - **No lookup-to-timeline picker refs.** A codex entry references an event or story through an inline `${event:…}` / `${story:…}` token in prose, not the picker.
 - **`plotlineRefs` is the one structural exception.** Arc grouping isn't derivable from dates, so Story/Event carry it explicitly. Plotline itself doesn't store back-refs — membership lives on Story/Event.
 - **Inline tokens accept all kinds** — they're decorative-tier and a separate surface from picker refs.
@@ -196,16 +196,21 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   with neither, the article shows its theme surface color. Lazy
   authors get a coherent visual identity without per-scene
   backgrounds; committed authors override per scene.
+- **Entry scenes.** `StoryContent.defaultEntrySceneId` names the scene
+  readers start on; any other scene flagged `Scene.isEntry: true` is an
+  additional entry that inbound connections may target (see
+  *Connections*). The orphan-scene check treats every entry as a
+  reachability root. The default entry cannot be deleted without
+  reassigning it first.
 - **End-of-content continuation.** End-scenes (`scene.next.length ===
-  0`) may carry `nextRefs: EntityRef<'story' | 'event'>[]`. The
-  editors cap selection to one; the array shape is preserved for
-  future flexibility. The reader renders `nextRefs[0]` (resolved via
-  the directory cache) as a Continue anchor inside the floating card,
-  labelled with the target's title. Restart and Back-to-catalog stay
-  in the chrome. End-scene progress is retained in localStorage —
-  only `Restart` clears it — so the reader can chain forward through
-  the continuation and use the browser back button to revisit
-  endings.
+  0`) surface the outbound connection wired to them (see
+  *Connections*). The reader renders the target — resolved through the
+  directory — as a Continue anchor inside the floating card, labelled
+  "Continues in {title}", or "Leads to {title}" when the story branches
+  from several end scenes. Restart and Back-to-catalog stay in the
+  chrome. End-scene progress is retained in localStorage — only
+  `Restart` clears it — so the reader can chain forward through the
+  continuation and use the browser back button to revisit endings.
 - **BGM is a separate concern from scene SFX.** `Story.bgmAssetId`
   declares the story-wide track. A scene may override with its own
   `bgmAssetId`, or force quiet with `bgmSilence: true`. The optional
@@ -363,8 +368,13 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 
 - **Story metadata and content live in separate Firestore documents.**
   Metadata (slug, title, description, refs, lifecycle) at
-  `universes/{u}/stories/{sid}`; content (`startSceneId`, `scenes`) at
-  `universes/{u}/stories/{sid}/_content/main`.
+  `universes/{u}/stories/{sid}`; content (`defaultEntrySceneId`,
+  `scenes`) at `universes/{u}/stories/{sid}/_content/main`.
+- **Content reads normalize legacy fields.** `normalizeStoryContent`
+  maps the historical `startSceneId` onto `defaultEntrySceneId`,
+  `audioAssetId` onto `sfxAssetId`, and strips dropped `nextRefs` so
+  stale data never reaches the UI; the next save rewrites the doc
+  without the legacy keys.
 - **Catalog and Explore list views read metadata only.** Reader and
   editor read both via `StoriesService.getStoryWithContent()`.
 - **Saves write both docs in a single transaction** with the version
@@ -377,7 +387,8 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   `StoriesService.createDraftStory()` writes two scenes inside the
   same transaction as the metadata: a `showcase`-layout intro scene
   whose text is the placeholder title and whose `next` already points
-  at a second empty dialog scene. `startSceneId` points at the intro.
+  at a second empty dialog scene. `defaultEntrySceneId` points at the
+  intro.
   Authors edit, rewire, or delete either scene like any other; the
   seed is convenience, not enforcement. The intro inherits the story
   cover through the background fallback chain until the author picks
@@ -399,10 +410,11 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   applies the same mood filter as on scenes.
 - **No scene graph, no SFX, no localStorage progress.** Events are
   one frame; there's nothing to restart, nothing to resume to. The
-  Continue anchor mirrors the story end-scene's: `event.nextRefs[0]`
-  (editors cap to one) renders inside the card next to the
-  description, while Back-to-catalog lives in the chrome. Restart is
-  suppressed because the concept doesn't apply.
+  Continue anchor mirrors the story end-scene's: the event's outbound
+  connection (an event is a single source endpoint, so at most one)
+  renders inside the card next to the description, while
+  Back-to-catalog lives in the chrome. Restart is suppressed because
+  the concept doesn't apply.
 - **Long descriptions scroll inside the reading page.** The event
   reader's text sits in `.reader-card-page` — a centered, narrower
   panel capped at `78vh`; a description longer than that scrolls
@@ -414,6 +426,79 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
   parses `${kind:guid}[…]` exactly as it does for scene text, so
   events can hover-link characters, places, and codex entries the
   same way scenes do.
+
+## Connections
+
+Typed `continues` edges between stories and events, stored in their own
+collection at `universes/{u}/connections/{id}`. Entities carry no edge
+data — inbound and outbound awareness is always a query — so deleting a
+story or event never requires updating other entities.
+
+- **Shape.** `{ type: 'continues', from, to, fromEntityKey,
+  toEntityKey, visibility, note?, snapshotTitle?, createdBy, updatedBy,
+  updatedAt }`. The source endpoint is a story end-scene
+  (`{ kind: 'story', storyId, sceneId }`) or an event
+  (`{ kind: 'event', eventId }`). The target is a story (optionally
+  with an entry-scene override) or an event, or `null` for a *pending*
+  hand-off whose target isn't written yet. `type` carries a single
+  value at launch; the field exists for forward-compat.
+- **One outbound per source endpoint, by construction.** The document
+  ID is deterministic — `story_{storyId}_{sceneId}` / `event_{eventId}`
+  — so a second outbound from the same ending is the same document.
+  This is the only race-free client-side enforcement available (the
+  Firestore web SDK cannot query inside transactions). Inbound is
+  unbounded. A story with several end scenes can have one outbound per
+  ending.
+- **Flat query keys.** `fromEntityKey` / `toEntityKey` mirror the
+  structured endpoints as `'{kind}:{id}'` strings, re-derived on every
+  write. Outbound for an entity is one equality query on
+  `fromEntityKey`; inbound one on `toEntityKey`; scene-level detail
+  filters client-side. The keys are a Firestore query detail and never
+  serialize into the `.universe` archive.
+- **Targets must be entry scenes.** A story target with a `sceneId`
+  must point at an `isEntry` scene or the `defaultEntrySceneId`;
+  omitting `sceneId` means the default entry. The wiring picker offers
+  only entries; import validation enforces the same.
+- **Visibility.** `'reader'` surfaces the continuation in the reader;
+  `'editor'` keeps it as an authoring note (pending hand-offs between
+  co-authors, planning edges). Guest list queries must include the
+  `visibility == 'reader'` predicate per the rules shape.
+- **Deletion is ownership-based.** Deleting a story or event
+  best-effort cascade-deletes its *outbound* connections (they're
+  authored from the deleted thing); *inbound* connections belong to
+  other entities' authors and stay behind as **broken edges**: the
+  reader hides them (showing a soft "no longer available" notice when
+  the wired ending has nothing else to show), the editor lists them
+  with the cached `snapshotTitle` and fix actions — retarget, make
+  pending, delete. Broken-edge handling exists regardless of the
+  cascade, so a failed cleanup is harmless.
+- **Stale sources stay passive.** A deleted end-scene, or a scene that
+  gains `next[]` and stops being terminal, leaves its outbound edge
+  orphaned at the source. The reader never sees it (outbound lookup
+  starts from live terminal scenes); the editor's Connections section
+  flags such edges with a delete action.
+- **Editor surfaces.** The scene editor shows a *Continuation* section
+  on end scenes (wire / pending / retarget / visibility / note /
+  delete, plus the stale list) and an *Inbound* section on entry
+  scenes (read-only list, links to sources). The event editor gets the
+  same pair at entity level. Wiring writes only the connection doc —
+  no story/event writes, no OCC interplay with content saves.
+- **Reader vocabulary stays narrative.** "Continues in {title}" for a
+  single unambiguous path; "Leads to {title}" when several end scenes
+  of the story branch to different targets. Never "edge", "node",
+  "connection", or "graph" in reader-facing copy.
+- **Unified Back.** Within-story scene history wins. At an entry scene
+  the Back control goes cross-entity: the session referrer (set when a
+  continuation is followed) first and highlighted, then persistent
+  inbound connections targeting that entry; one option navigates
+  directly, several open a small popup, none disables Back. Story
+  options reopen the source at the end scene that led here via the
+  reader's `?scene=` query param.
+- **Cost shape.** One outbound + one inbound query per loaded
+  story/event in the reader (reader-visibility only, session-cached in
+  `ConnectionsService`), endpoint labels resolved through `_directory`
+  in one batched `byIds` read. No realtime listeners, no
+  `connectionCount` denorms, no projection rows.
 
 ## Scene rendering layers
 

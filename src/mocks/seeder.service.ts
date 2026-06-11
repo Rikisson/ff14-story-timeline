@@ -157,7 +157,7 @@ export class SeederService {
     const calendarCtx = makeCalendarContext(SEED_CALENDAR);
 
     const built = await Promise.all(
-      SEED_STORIES.map(async ({ id, startSceneId, scenes, ...meta }) => {
+      SEED_STORIES.map(async ({ id, defaultEntrySceneId, scenes, ...meta }) => {
         const story = { id, ...meta, authorUid };
         const rows = await buildProjectionRows(
           {
@@ -169,7 +169,7 @@ export class SeederService {
           },
           story.updatedAt ?? story.createdAt,
         );
-        return { id, story, content: { startSceneId, scenes }, rows };
+        return { id, story, content: { defaultEntrySceneId, scenes }, rows };
       }),
     );
 

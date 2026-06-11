@@ -36,7 +36,7 @@ export function withEditorMethods() {
             },
             authorUid: story.authorUid,
             createdAt: story.createdAt,
-            startSceneId: content.startSceneId,
+            defaultEntrySceneId: content.defaultEntrySceneId,
             scenes: content.scenes,
             selectedSceneId: null,
             version: story.version ?? 0,
@@ -61,8 +61,8 @@ export function withEditorMethods() {
           const id = store.storyId();
           const meta = store.meta();
           const authorUid = store.authorUid();
-          const startSceneId = store.startSceneId();
-          if (!id || !meta || !authorUid || !startSceneId) return;
+          const defaultEntrySceneId = store.defaultEntrySceneId();
+          if (!id || !meta || !authorUid || !defaultEntrySceneId) return;
 
           patchState(store, { saving: true, error: null });
           try {
@@ -73,7 +73,7 @@ export function withEditorMethods() {
               createdAt: store.createdAt() ?? Date.now(),
             };
             const content: StoryContent = {
-              startSceneId,
+              defaultEntrySceneId,
               scenes: store.scenes(),
             };
             const nextVersion = await stories.saveStory(story, content, store.version());
@@ -151,7 +151,7 @@ export function withEditorMethods() {
           };
           patchState(store, (state) => ({
             scenes: { ...state.scenes, [id]: scene },
-            startSceneId: state.startSceneId ?? id,
+            defaultEntrySceneId: state.defaultEntrySceneId ?? id,
             selectedSceneId: id,
             dirty: true,
           }));
@@ -162,9 +162,9 @@ export function withEditorMethods() {
           const source = store.scenes()[id];
           if (!source) return null;
           const newId = crypto.randomUUID();
-          // structuredClone gives the copy its own `next` / `nextRefs` /
-          // `characters` arrays — a true independent scene, not a shared
-          // reference. `startSceneId` is deliberately left untouched.
+          // structuredClone gives the copy its own `next` / `characters`
+          // arrays — a true independent scene, not a shared reference.
+          // `defaultEntrySceneId` is deliberately left untouched.
           const copy: Scene = {
             ...structuredClone(source),
             position: { x: source.position.x + 48, y: source.position.y + 48 },
@@ -190,18 +190,20 @@ export function withEditorMethods() {
             }
             return {
               scenes: newScenes,
-              startSceneId:
-                state.startSceneId === id ? (Object.keys(newScenes)[0] ?? null) : state.startSceneId,
+              defaultEntrySceneId:
+                state.defaultEntrySceneId === id
+                  ? (Object.keys(newScenes)[0] ?? null)
+                  : state.defaultEntrySceneId,
               selectedSceneId: state.selectedSceneId === id ? null : state.selectedSceneId,
               dirty: true,
             };
           });
         },
 
-        setStartScene(id: string) {
+        setDefaultEntryScene(id: string) {
           patchState(store, (state) =>
-            state.scenes[id] && state.startSceneId !== id
-              ? { startSceneId: id, dirty: true }
+            state.scenes[id] && state.defaultEntrySceneId !== id
+              ? { defaultEntrySceneId: id, dirty: true }
               : state,
           );
         },

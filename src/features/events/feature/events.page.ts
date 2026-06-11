@@ -4,6 +4,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth';
 import {
+  ConnectionSectionComponent,
+  ConnectionSource,
+  InboundSectionComponent,
+  InboundTarget,
+} from '@features/connections';
+import {
   EventCardComponent,
   EventsService,
   TimelineEvent,
@@ -32,8 +38,10 @@ import eventUk from '../i18n/uk.json';
   host: { class: 'block h-full' },
   imports: [
     ArchivesSelectorComponent,
+    ConnectionSectionComponent,
     EventCardComponent,
     EventFormComponent,
+    InboundSectionComponent,
     PageComponent,
     SidePaneComponent,
     SidePaneHeaderComponent,
@@ -90,6 +98,14 @@ import eventUk from '../i18n/uk.json';
                   (submitted)="ctrl.submit($event)"
                   (cancelled)="ctrl.cancel()"
                 />
+                @if (eventConnectionSource(); as src) {
+                  <div class="mt-4 flex flex-col gap-3">
+                    <app-connection-section [source]="src" />
+                    @if (eventInboundTarget(); as target) {
+                      <app-inbound-section [target]="target" />
+                    }
+                  </div>
+                }
               </div>
             } @else if (ctrl.selected(); as e) {
               <div class="min-h-0 flex-1 overflow-y-auto">
@@ -124,6 +140,21 @@ export class EventsPage {
     () => !!this.user() && this.universes.isMemberOfActive(),
   );
 
+  protected readonly editingEventId = computed<string | null>(() => {
+    const mode = this.ctrl.mode();
+    return mode.kind === 'edit' ? mode.id : null;
+  });
+
+  protected readonly eventConnectionSource = computed<ConnectionSource | null>(() => {
+    const id = this.editingEventId();
+    return id ? { kind: 'event', eventId: id } : null;
+  });
+
+  protected readonly eventInboundTarget = computed<InboundTarget | null>(() => {
+    const id = this.editingEventId();
+    return id ? { kind: 'event', id } : null;
+  });
+
   protected readonly directory = createEntityDirectoryQueryStore({
     universeId: computed(() => this.universes.activeUniverseId()),
     kind: computed(() => 'event' as const),
@@ -143,7 +174,6 @@ export class EventsPage {
       inGameDate: e.inGameDate,
       relatedRefs: e.relatedRefs,
       plotlineRefs: e.plotlineRefs,
-      nextRefs: e.nextRefs,
     }),
     removeLabel: (e) => e.name,
   });
