@@ -95,6 +95,13 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
                   (submitted)="ctrl.submit($event)"
                   (cancelled)="ctrl.cancel()"
                 />
+                @if (ctrl.mode().kind === 'edit' && ctrl.selectedId(); as pid) {
+                  <div class="mt-4">
+                    <app-plotline-members [plotlineId]="pid" [canEdit]="ctrl.canCreate()" />
+                  </div>
+                } @else {
+                  <p class="mt-4 text-xs text-foreground-faint">{{ t('empty.membersAfterSave') }}</p>
+                }
               </div>
             } @else if (ctrl.selected(); as p) {
               <div class="min-h-0 flex-1 overflow-y-auto">
@@ -104,9 +111,6 @@ const STATUS_KEY: Record<PlotlineStatus, string> = {
                   (edit)="ctrl.startEdit(p)"
                   (remove)="ctrl.confirmRemove(p)"
                 />
-                <div class="mt-4">
-                  <app-plotline-members [plotlineId]="p.id" [canEdit]="ctrl.canCreate()" />
-                </div>
               </div>
             } @else {
               <p class="m-0 rounded-lg border border-border bg-surface-subtle px-4 py-12 text-center text-sm text-foreground-faint">

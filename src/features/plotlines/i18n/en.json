@@ -25,7 +25,8 @@
     "slugPlaceholder": "e.g. shadowbringers-msq",
     "descriptionPlaceholder": "High-level arc of this plotline.",
     "noMembers": "No stories or events yet. Add them in reading order.",
-    "addMember": "Add a story or event…"
+    "addMember": "Add a story or event…",
+    "membersAfterSave": "Save the plotline first, then add its stories and events."
   },
   "tooltip": {
     "list": "Plotlines list",
