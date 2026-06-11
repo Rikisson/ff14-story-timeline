@@ -10,7 +10,6 @@ export {
   applyEntityDelete,
   applyEntityWrite,
   deleteEntityWithProjections,
-  UNASSIGNED_LANE_KEY,
   writeEntityWithProjections,
   type EntityDeleteRequest,
   type EntityWriteRequest,
@@ -22,7 +21,6 @@ export {
 export {
   buildProjectionRows,
   entityRowKey,
-  laneIdsOf,
   slugRowKey,
   type BuiltProjectionRows,
   type DirectoryRowInputs,

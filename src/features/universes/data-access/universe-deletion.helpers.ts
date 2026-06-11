@@ -9,6 +9,7 @@ export const SUBCOLLECTIONS_TO_DELETE: readonly string[] = [
   'codexEntries',
   '_directory',
   '_timelineEntries',
+  // No longer written; kept so universes created before its removal still purge fully.
   '_timelineLaneEntries',
   '_slugIndex',
   '_meta',

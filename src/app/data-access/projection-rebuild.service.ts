@@ -36,7 +36,6 @@ import {
   ProjectionRowsInputs,
   slugRowKey,
   TimelineRowInputs,
-  UNASSIGNED_LANE_KEY,
 } from '@shared/data-access';
 import { EntityKind } from '@shared/models';
 import { FirebaseService } from '../firebase/firebase.service';
@@ -65,10 +64,9 @@ import { FirebaseService } from '../firebase/firebase.service';
  *
  * `rebuildKind` and `rebuildForCalendarChange` invoke an orphan-sweep
  * pass after the canonical walk: rows in `_directory` /
- * `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` whose
- * `entityId` no longer matches any canonical doc (or whose lane key is
- * no longer in the entity's current `plotlineIds`) are deleted. Without
- * this, deleted entities and removed-plotline lanes leak as stale rows.
+ * `_timelineEntries` / `_slugIndex` whose `entityId` no longer matches
+ * any canonical doc are deleted. Without this, deleted entities leak
+ * as stale rows.
  *
  * `rebuildForCategoryRename` does NOT sweep — it's a targeted refresh
  * of one categoryKey, not a full rebuild, and a sweep would walk every
@@ -82,7 +80,6 @@ import { FirebaseService } from '../firebase/firebase.service';
 const BATCH_OP_LIMIT = 450;
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
-const LANE = '_timelineLaneEntries';
 const SLUG_INDEX = '_slugIndex';
 
 const KIND_TO_COLLECTION: Record<EntityKind, string> = {
@@ -112,8 +109,6 @@ const IDLE: RebuildProgress = { phase: 'idle', processed: 0, total: 0 };
 
 interface WalkResult {
   canonicalIds: Set<string>;
-  /** Only populated for timeline kinds. Maps entityId → set of laneKeys we expect to see. */
-  expectedLanesPerEntity: Map<string, Set<string>>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -180,9 +175,8 @@ export class ProjectionRebuildService {
   }
 
   // -------------------------------------------------------------------------
-  // Per-kind canonical walks. Each returns the walked canonical IDs +
-  // (for timeline kinds) the expected lane keys per entity, so the
-  // subsequent sweep pass can identify orphans without re-reading.
+  // Per-kind canonical walks. Each returns the walked canonical IDs so
+  // the subsequent sweep pass can identify orphans without re-reading.
   // -------------------------------------------------------------------------
 
   private async writeKindRows(
@@ -246,7 +240,6 @@ export class ProjectionRebuildService {
     },
   ): Promise<WalkResult> {
     const canonicalIds = new Set<string>();
-    const expectedLanesPerEntity = new Map<string, Set<string>>();
     let batch = writeBatch(this.firebase.firestore);
     let opCount = 0;
     // Cache-bus events MUST fire after the corresponding batch commits,
@@ -274,10 +267,6 @@ export class ProjectionRebuildService {
       };
       if (inputs.timeline) {
         rowsInputs.timeline = inputs.timeline;
-        const laneKeys = inputs.timeline.plotlineIds.length === 0
-          ? new Set<string>([UNASSIGNED_LANE_KEY])
-          : new Set<string>(inputs.timeline.plotlineIds);
-        expectedLanesPerEntity.set(d.id, laneKeys);
       }
 
       const rows = await buildProjectionRows(rowsInputs, entityTimestamp(raw));
@@ -297,7 +286,7 @@ export class ProjectionRebuildService {
     if (opCount > 0) await batch.commit();
     publish(pendingForBatch);
 
-    return { canonicalIds, expectedLanesPerEntity };
+    return { canonicalIds };
   }
 
   private opsForRows(
@@ -317,12 +306,6 @@ export class ProjectionRebuildService {
         ref: doc(this.firebase.firestore, 'universes', universeId, TIMELINE, entityRowKey(kind, id)),
         data: rows.timelineRow,
       });
-      for (const lane of rows.laneRows) {
-        out.push({
-          ref: doc(this.firebase.firestore, 'universes', universeId, LANE, lane.rowKey),
-          data: lane.row,
-        });
-      }
     }
     return out;
   }
@@ -359,22 +342,6 @@ export class ProjectionRebuildService {
         const data = d.data() as { entityId?: string };
         if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
           refs.push(doc(fs, 'universes', universeId, TIMELINE, d.id));
-        }
-      }
-
-      // Lane orphans: canonical gone OR laneKey no longer expected for this entity
-      const lSnap = await getDocs(
-        query(collection(fs, 'universes', universeId, LANE), where('kind', '==', kind)),
-      );
-      for (const d of lSnap.docs) {
-        const data = d.data() as { entityId?: string; laneKey?: string };
-        if (!data.entityId || !walk.canonicalIds.has(data.entityId)) {
-          refs.push(doc(fs, 'universes', universeId, LANE, d.id));
-          continue;
-        }
-        const expected = walk.expectedLanesPerEntity.get(data.entityId);
-        if (!expected || !data.laneKey || !expected.has(data.laneKey)) {
-          refs.push(doc(fs, 'universes', universeId, LANE, d.id));
         }
       }
     }

@@ -45,7 +45,6 @@ export const DEFAULT_UNIVERSE_SLUG = 'default-universe';
 
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
-const LANE = '_timelineLaneEntries';
 const SLUG_INDEX = '_slugIndex';
 
 interface SeedItem {
@@ -59,8 +58,7 @@ interface SeedItem {
  * `docs/backend-rules.md` *Seed schema*: every collection the new code
  * reads must be populated at seed time — canonical entity docs,
  * `_slugIndex` claims, `_directory` projection rows, `_timelineEntries`
- * + `_timelineLaneEntries` rows for stories and events, and the two
- * `_meta` config docs.
+ * rows for stories and events, and the two `_meta` config docs.
  *
  * Writes use direct `setDoc` (no transaction) because the target is an
  * empty database; transactional slug-claim + fingerprint-diff semantics
@@ -200,12 +198,6 @@ export class SeederService {
               doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, entityRowKey('story', id)),
               rows.timelineRow,
             ),
-            ...rows.laneRows.map((lane) =>
-              setDoc(
-                doc(db, 'universes', DEFAULT_UNIVERSE_ID, LANE, lane.rowKey),
-                lane.row,
-              ),
-            ),
           );
         }
         return ops;
@@ -290,12 +282,6 @@ export class SeederService {
             setDoc(
               doc(db, 'universes', DEFAULT_UNIVERSE_ID, TIMELINE, entityRowKey(opts.kind, id)),
               rows.timelineRow,
-            ),
-            ...rows.laneRows.map((lane) =>
-              setDoc(
-                doc(db, 'universes', DEFAULT_UNIVERSE_ID, LANE, lane.rowKey),
-                lane.row,
-              ),
             ),
           );
         }

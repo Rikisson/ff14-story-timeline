@@ -96,7 +96,7 @@ Picker styling, the *Draft* pill, loading / empty / error states, the auto-creat
 ## Explore UX
 
 - **One date stream, refined client-side.** Explore runs a single global query against `_timelineEntries` — the interleaved story+event stream — with one cursor and one *Load more*. Type (all / stories / events), a single plotline, and free-text title search filter the loaded rows in the client rather than refetching. Default order is oldest-first (ascending in-game date).
-- **Plotline filtering is client-side for now.** A selected plotline narrows the loaded rows by their `plotlineIds`; the server-side plotline filter and the swimlane projection it reads return with a `plotlineIds` array-contains index — see `backend-rules.md` *Timeline projections*.
+- **Plotline filtering is client-side for now.** A selected plotline narrows the loaded rows by their `plotlineIds`; the server-side filter is a `plotlineIds` array-contains constraint on the same `_timelineEntries` stream once its composite index is deployed — see `backend-rules.md` *Timeline projections*.
 - **Search is a loaded-rows filter.** Title search refines what's already paged in — a convenience over the visible stream, not a universe-wide find. The projection-backed picker search is the path that reaches every entity.
 
 ## Scope locks

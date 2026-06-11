@@ -52,15 +52,7 @@ export interface BuiltProjectionRows {
   directoryRow: Record<string, unknown>;
   /** `_timelineEntries/{kind}_{id}` row. `null` for non-timeline kinds. */
   timelineRow: Record<string, unknown> | null;
-  /**
-   * `_timelineLaneEntries/{laneKey}_{kind}_{id}` rows. Empty for
-   * non-timeline kinds. For timeline kinds with no plotline refs, this
-   * carries a single row keyed by `__unassigned__`.
-   */
-  laneRows: Array<{ laneKey: string; rowKey: string; row: Record<string, unknown> }>;
 }
-
-export const UNASSIGNED_LANE_KEY = '__unassigned__';
 
 export async function buildProjectionRows(
   input: ProjectionRowsInputs,
@@ -85,7 +77,6 @@ export async function buildProjectionRows(
   setIfDefined(directoryRow, 'draft', directory.draft);
 
   let timelineRow: Record<string, unknown> | null = null;
-  let laneIds: string[] = [];
   if (timeline) {
     timelineRow = {
       kind,
@@ -101,7 +92,6 @@ export async function buildProjectionRows(
       visiblePublic,
     };
     setIfDefined(timelineRow, 'coverAssetId', timeline.coverAssetId);
-    laneIds = laneIdsOf(timeline.plotlineIds);
   }
 
   const fingerprint = await computeSourceFingerprint({
@@ -116,21 +106,13 @@ export async function buildProjectionRows(
     timelineRow['updatedAt'] = updatedAt;
   }
 
-  const laneRows = timelineRow
-    ? laneIds.map((laneKey) => ({
-        laneKey,
-        rowKey: `${laneKey}_${kind}_${id}`,
-        row: { ...timelineRow, laneKey },
-      }))
-    : [];
-
-  return { fingerprint, directoryRow, timelineRow, laneRows };
+  return { fingerprint, directoryRow, timelineRow };
 }
 
 /**
  * Composite key used by `_directory/{kind}_{id}` AND
  * `_timelineEntries/{kind}_{id}`. The two collections share the same
- * row-key shape; only the lane key prepends a `laneKey_` segment.
+ * row-key shape.
  */
 export function entityRowKey(kind: EntityKind, id: string): string {
   return `${kind}_${id}`;
@@ -138,10 +120,6 @@ export function entityRowKey(kind: EntityKind, id: string): string {
 
 export function slugRowKey(kind: EntityKind, slug: string): string {
   return `${kind}_${slug}`;
-}
-
-export function laneIdsOf(plotlineIds: readonly string[]): string[] {
-  return plotlineIds.length === 0 ? [UNASSIGNED_LANE_KEY] : [...plotlineIds];
 }
 
 function setIfDefined<K extends string>(

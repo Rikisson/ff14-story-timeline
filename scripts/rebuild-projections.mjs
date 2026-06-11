@@ -2,10 +2,10 @@
 // scripts/rebuild-projections.mjs
 //
 // Walks every canonical doc in the target universe and rewrites the
-// `_directory`, `_timelineEntries`, and `_timelineLaneEntries` rows
-// from current canonical state. Idempotent — each row's fingerprint is
-// derived from its current projected slice, not from prior projection
-// state — so rerunning produces identical output.
+// `_directory` and `_timelineEntries` rows from current canonical
+// state. Idempotent — each row's fingerprint is derived from its
+// current projected slice, not from prior projection state — so
+// rerunning produces identical output.
 //
 // Use after schema changes, calendar config edits, category renames, or
 // out-of-band Firestore console edits. Per docs `backend-rules.md`
@@ -24,9 +24,6 @@
 // Limitations (v1, intentional):
 //   - Skips `_slugIndex` rewriting (slugs are written at entity-create
 //     time and are stable; rebuild has no reason to touch them).
-//   - Skips orphan lane cleanup (rows from removed plotlineRefs persist
-//     until the entity is edited again). Orphan removal is a separate
-//     admin task.
 //   - Story rebuild reads metadata only (universes/{u}/stories/{id});
 //     the `_content/main` subdoc is never touched.
 
@@ -59,9 +56,9 @@ const firebaseConfig = {
 
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
+// Retired collection — swept (never written) so legacy universes purge fully.
 const LANE = '_timelineLaneEntries';
 const SLUG_INDEX = '_slugIndex';
-const UNASSIGNED_LANE = '__unassigned__';
 const BATCH_OP_LIMIT = 450; // 500 is the hard cap; leave headroom for one entity's full fan-out
 const TIMELINE_KINDS = new Set(['event', 'story']);
 
@@ -345,14 +342,6 @@ function rowKey(kind, id) {
   return `${kind}_${id}`;
 }
 
-function laneRowKey(laneId, kind, id) {
-  return `${laneId}_${kind}_${id}`;
-}
-
-function laneIdsOf(plotlineIds) {
-  return plotlineIds.length === 0 ? [UNASSIGNED_LANE] : plotlineIds;
-}
-
 function setIfDefined(obj, key, value) {
   if (value !== undefined) obj[key] = value;
 }
@@ -379,7 +368,6 @@ async function buildProjectionRows(firestore, universeId, kind, id, entity, ctx)
   setIfDefined(directoryRow, 'draft', draft);
 
   let timelineRow = null;
-  let laneIds = [];
   if (timeline) {
     timelineRow = {
       kind,
@@ -395,7 +383,6 @@ async function buildProjectionRows(firestore, universeId, kind, id, entity, ctx)
       visiblePublic,
     };
     setIfDefined(timelineRow, 'coverAssetId', timeline.coverAssetId);
-    laneIds = laneIdsOf(timeline.plotlineIds);
   }
 
   const fingerprint = await computeSourceFingerprint({
@@ -420,20 +407,8 @@ async function buildProjectionRows(firestore, universeId, kind, id, entity, ctx)
       ref: doc(firestore, 'universes', universeId, TIMELINE, rowKey(kind, id)),
       data: timelineRow,
     });
-    for (const laneId of laneIds) {
-      ops.push({
-        ref: doc(
-          firestore,
-          'universes',
-          universeId,
-          LANE,
-          laneRowKey(laneId, kind, id),
-        ),
-        data: { ...timelineRow, laneKey: laneId },
-      });
-    }
   }
-  return { ops, laneIds };
+  return { ops };
 }
 
 // ---------------------------------------------------------------------------
@@ -480,7 +455,6 @@ async function rebuildKind(firestore, universeId, kind, ctx) {
   console.log(`  ${kind}: ${snap.docs.length} canonical docs`);
 
   const canonicalIds = new Set();
-  const expectedLanesPerEntity = new Map();
   let batch = writeBatch(firestore);
   let opCount = 0;
   let committed = 0;
@@ -488,8 +462,7 @@ async function rebuildKind(firestore, universeId, kind, ctx) {
   for (const d of snap.docs) {
     const entity = { id: d.id, ...d.data() };
     canonicalIds.add(d.id);
-    const { ops, laneIds } = await buildProjectionRows(firestore, universeId, kind, d.id, entity, ctx);
-    if (laneIds.length > 0) expectedLanesPerEntity.set(d.id, new Set(laneIds));
+    const { ops } = await buildProjectionRows(firestore, universeId, kind, d.id, entity, ctx);
 
     if (opCount + ops.length > BATCH_OP_LIMIT) {
       await batch.commit();
@@ -511,23 +484,23 @@ async function rebuildKind(firestore, universeId, kind, ctx) {
 
   console.log(`  ${kind}: committed ${committed} projection ops`);
 
-  const swept = await sweepOrphans(firestore, universeId, kind, canonicalIds, expectedLanesPerEntity);
+  const swept = await sweepOrphans(firestore, universeId, kind, canonicalIds);
   console.log(`  ${kind}: swept ${swept} orphaned rows`);
 }
 
 /**
  * Per-kind orphan sweep — see `ProjectionRebuildService.sweepOrphans`
- * in src/shared/data-access/projection-rebuild.service.ts for the
+ * in src/app/data-access/projection-rebuild.service.ts for the
  * reference implementation. Deletes:
  *
  *   - `_directory` rows whose entityId isn't in the current canonical set
  *   - `_timelineEntries` rows whose entityId isn't in the canonical set
  *     (timeline kinds only)
- *   - `_timelineLaneEntries` rows whose entityId is gone OR whose
- *     laneKey is no longer expected for that entity (timeline kinds only)
+ *   - every `_timelineLaneEntries` row — the collection is retired and
+ *     no longer written; rows are legacy leftovers (timeline kinds only)
  *   - `_slugIndex` rows (doc-ID prefix `{kind}_`) whose entityId is gone
  */
-async function sweepOrphans(firestore, universeId, kind, canonicalIds, expectedLanesPerEntity) {
+async function sweepOrphans(firestore, universeId, kind, canonicalIds) {
   const refs = [];
 
   const dirSnap = await getDocs(
@@ -555,15 +528,7 @@ async function sweepOrphans(firestore, universeId, kind, canonicalIds, expectedL
       query(collection(firestore, 'universes', universeId, LANE), where('kind', '==', kind)),
     );
     for (const d of lSnap.docs) {
-      const data = d.data();
-      if (!data.entityId || !canonicalIds.has(data.entityId)) {
-        refs.push(doc(firestore, 'universes', universeId, LANE, d.id));
-        continue;
-      }
-      const expected = expectedLanesPerEntity.get(data.entityId);
-      if (!expected || !data.laneKey || !expected.has(data.laneKey)) {
-        refs.push(doc(firestore, 'universes', universeId, LANE, d.id));
-      }
+      refs.push(doc(firestore, 'universes', universeId, LANE, d.id));
     }
   }
 

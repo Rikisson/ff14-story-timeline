@@ -142,7 +142,7 @@ deliberately, not casually.
 
 These are design decisions, not gaps. Do not "fix" them.
 
-- **Projections** (`_directory`, `_timelineEntries`, `_timelineLaneEntries`) and the
+- **Projections** (`_directory`, `_timelineEntries`) and the
   **slug index** (`_slugIndex`) are never exported or imported — they are
   regenerable, and the import rebuilds them through the normal write path.
 - **Server-managed fields** — `id`, `authorUid`, `editorUids`, `createdAt` /

@@ -64,9 +64,9 @@ The per-kind `secondary` line follows the rules in `narrative-engine-impl.md` *S
 
 ### Timeline projections
 
-`universes/{u}/_timelineEntries/{kind}_{id}` for the mixed story+event date stream, and `universes/{u}/_timelineLaneEntries/{laneKey}_{kind}_{id}` for plotline-filtered swimlanes. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`. Entries with no plotline land in `laneKey: '__unassigned__'`.
+`universes/{u}/_timelineEntries/{kind}_{id}` — the mixed story+event date stream. Each row carries `title, coverAssetId, inGameDate, dateSortKey, dateKnown, plotlineIds[], characterIds[], placeIds[], draft, visiblePublic, sourceFingerprint, updatedAt`.
 
-The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. Explore reads the single `_timelineEntries` stream and refines type / plotline / title client-side over the loaded page (see `narrative-engine-impl.md` *Explore UX*). The `_timelineLaneEntries` swimlanes back the deferred server-side plotline filter, which needs a `plotlineIds` array-contains index; once it returns, a multi-plotline UI fans out one query per selected lane (`array-contains-any` caps at 10, foreclosing per-lane pagination), so fan-out is the cost shape.
+The projection interleaves stories and events by date — do not fetch them separately and stitch client-side. Explore reads the single `_timelineEntries` stream and refines type / plotline / title client-side over the loaded page (see `narrative-engine-impl.md` *Explore UX*). The Explore filter takes at most one plotline at a time, so server-side plotline filtering, when it lands, is a `plotlineIds` array-contains constraint on this same stream (composite index required) — no per-lane collection, no query fan-out.
 
 `dateDisplay` is not stored. The client formats from `inGameDate` through `formatInGameDate` (see `narrative-engine-impl.md` *Calendar*) so a calendar config edit doesn't require a content rewrite.
 
@@ -104,9 +104,8 @@ Drift sources: writer bugs, schema migrations, and out-of-band console edits. Fi
 
 Projection fan-out has to be bounded or a single write balloons into hundreds of projection rows and a single timeline render fires hundreds of queries. v1 caps, enforced in forms with clear validation copy:
 
-- **`plotlineRefs` per Story / Event: 10.** Each ref produces one `_timelineLaneEntries` row at write time, so 10 keeps per-entity write fan-out at ≤ 1 directory + 1 timeline + 10 lane = 12 rows.
+- **`plotlineRefs` per Story / Event: 10.** Bounds the `plotlineIds[]` array on the timeline projection row; a UX / cost ceiling rather than a fan-out one now that membership is a row field instead of per-lane rows.
 - **`relatedRefs` per entity: 50.** Bounds inline-ref hydration size on detail pages; for Story / Event the cap also caps `characterIds[]` / `placeIds[]` array length on timeline projection rows. For Character / Place / Codex, `relatedRefs` doesn't fan out to projections, so the cap is a UX / cost ceiling rather than a fan-out one.
-- **Selected timeline lanes in the filter UI: 10.** Each selected lane fires its own query with its own cursor; the cap bounds concurrent read fan-out per pagination step.
 - **Inline-ref batch hydration per render pass: 30.** Matches Firestore's `in` chunk cap; the resolver chunks larger payloads transparently.
 - **`Character.sprites`: 32.** Bounds the sprite picker and per-character asset payload at scene render. Enforced in rules on every character write.
 - **`Place.backgrounds`: 32.** Same rationale for place backgrounds; same rule enforcement.
@@ -117,14 +116,14 @@ Projection fan-out has to be bounded or a single write balloons into hundreds of
 Client-side caches don't auto-invalidate on write. The entity-write helper publishes invalidation events that every session-scoped cache subscribes to:
 
 - **Entity write** invalidates `EntityResolverCache` entries keyed by `(universeId, kind, id)` so the next inline-ref render fetches the new label.
-- **Entity write** dirties matching rows in any active query store (directory, timeline, lane); the store either patches the row in place from the freshly-written projection or refetches the current page.
+- **Entity write** dirties matching rows in any active query store (directory, timeline); the store either patches the row in place from the freshly-written projection or refetches the current page.
 - **Asset write / delete** invalidates `AssetThumbResolver` entries keyed by `(universeId, assetId)`. Asset URLs are immutable per asset ID, so this only matters for asset deletes and metadata edits — but the listener is the same shape.
 
 Without these hooks, editor surfaces show stale names / chips / thumbnails after save until the page reloads.
 
 ### Public read surface
 
-Public list, filter, picker, and timeline queries route through `_directory`, `_timelineEntries`, and `_timelineLaneEntries` and rely on `visiblePublic` for visibility — one rule shape (`allow read: if resource.data.visiblePublic == true || isMember(...)`) covers every kind uniformly. Canonical collections serve detail-by-ID reads, gated per-kind. When a non-story kind gains `draft` later, its canonical-read rule gains the same `draft == false || isMember(...)` clause Story carries today; the projection-read rule never changes.
+Public list, filter, picker, and timeline queries route through `_directory` and `_timelineEntries` and rely on `visiblePublic` for visibility — one rule shape (`allow read: if resource.data.visiblePublic == true || isMember(...)`) covers every kind uniformly. Canonical collections serve detail-by-ID reads, gated per-kind. When a non-story kind gains `draft` later, its canonical-read rule gains the same `draft == false || isMember(...)` clause Story carries today; the projection-read rule never changes.
 
 **Firestore rules do not auto-filter query results — they gate each returned doc and reject the whole query if any returned doc fails.** Public callers must include `where('visiblePublic', '==', true)` in every projection query; the rule alone is not a filter. A query that omits the predicate may work for members (`isMember` short-circuits the gate) and fail for guests as soon as one draft row falls into the result page.
 
@@ -145,12 +144,11 @@ Entity create / update / delete uses `runTransaction`, not `writeBatch` — slug
 - canonical doc
 - `_directory/{kind}_{id}`
 - `_timelineEntries/{kind}_{id}` for story / event only
-- `_timelineLaneEntries/{laneKey}_{kind}_{id}` for story / event only
 - the relevant `_slugIndex/{kind}_{slug}` entries (see *Atomic slug uniqueness* in Implementation)
 
 Projection writes fire on canonical metadata-doc writes only — Story scene/content edits at `_content/main` never touch projections. Writers compare the new projected slice's `sourceFingerprint` against the existing row's and skip the projection legs of the transaction when the fingerprint matches; a cover swap or rename pays the fanout, a body edit doesn't.
 
-The shared write helper factors into a composable transaction-body primitive (`applyEntityWrite(tx, ...)` / `applyEntityDelete(tx, ...)`) plus thin `runTransaction` wrappers for kinds with no per-kind logic. Story composes the primitive inside its own `runTransaction` to combine the metadata write, the `_content/main` write, and the OCC version check with the projection fan-out — all atomic. Because Firestore requires every `tx.get` to precede every `tx.set` / `tx.delete`, callers composing the primitive must do their own reads (OCC version check, custom validation) before the `applyEntityWrite` call returns. The primitive itself reads canonical, the existing directory row, the existing timeline row, and the new slug-claim doc up front, then writes.
+The shared write helper factors into a composable transaction-body primitive (`applyEntityWrite(tx, ...)` / `applyEntityDelete(tx, ...)`) plus thin `runTransaction` wrappers for kinds with no per-kind logic. Story composes the primitive inside its own `runTransaction` to combine the metadata write, the `_content/main` write, and the OCC version check with the projection fan-out — all atomic. Because Firestore requires every `tx.get` to precede every `tx.set` / `tx.delete`, callers composing the primitive must do their own reads (OCC version check, custom validation) before the `applyEntityWrite` call returns. The primitive itself reads canonical, the existing directory row, and the new slug-claim doc up front, then writes.
 
 Three lifecycle transitions invalidate projection rows beyond the canonical edit. v1 has no Cloud Functions; every rebuild is a client-side action initiated by the settings UI that performed the triggering change, with visible progress and chunked writes:
 
@@ -250,7 +248,6 @@ The seeder at `src/mocks/seeder.service.ts` is the source of truth for a fresh d
 - `_slugIndex/{kind}_{slug}` for every seeded entity
 - `_directory/{kind}_{id}` rows with computed `labelFolded`, `secondary`, `visiblePublic`, `sourceFingerprint`, `updatedAt`
 - `_timelineEntries/{kind}_{id}` for stories and events
-- `_timelineLaneEntries/{laneKey}_{kind}_{id}` fanned out per `plotlineRefs` entry (with `__unassigned__` for empty)
 
 Production-side rebuild for ongoing recovery (out-of-band edits, calendar / category lifecycle triggers) lives in *Projection writers and rebuild*; the seeder doesn't share that code path because it runs against an empty DB and doesn't need the diff-against-existing logic.
 
@@ -272,15 +269,14 @@ Route every slug check through the same helper so no service path can skip the c
 Day-one combinations:
 
 - `_directory`: `(visiblePublic, kind, labelFolded)` for the public per-kind picker (the most-used query), `(visiblePublic, labelFolded)` for cross-kind inline-ref search, `(kind, labelFolded)` for member-only authoring pickers that need draft entities
-- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` for public reads; `(dateKnown, dateSortKey ASC)` and `(dateKnown, dateSortKey DESC)` for the member timeline that includes drafts and so drops the `visiblePublic` clause. The page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored for each scope
-- `_timelineLaneEntries`: `(visiblePublic, laneKey, dateKnown, dateSortKey ASC)` and `(visiblePublic, laneKey, dateKnown, dateSortKey DESC)` for public reads; `(laneKey, dateKnown, dateSortKey ASC)` and `(laneKey, dateKnown, dateSortKey DESC)` for the member view — same dual-direction, dual-scope rationale
+- `_timelineEntries`: `(visiblePublic, dateKnown, dateSortKey ASC)` and `(visiblePublic, dateKnown, dateSortKey DESC)` for public reads; `(dateKnown, dateSortKey ASC)` and `(dateKnown, dateSortKey DESC)` for the member timeline that includes drafts and so drops the `visiblePublic` clause. The page offers both newest-first and oldest-first sorting; Firestore composite indexes are direction-specific so both variants must be authored for each scope. When the server-side single-plotline filter lands, each of the four gains an `array-contains` variant on `plotlineIds`
 - `codexEntries`: `(categoryKey, titleFolded)`
 
 Character / place timeline filter indexes wait until the timeline UI offers those filters.
 
 ## Firestore rules for projections
 
-`_directory`, `_timelineEntries`, `_timelineLaneEntries`, and `_slugIndex` are new collections with no rules yet. The shape for every projection collection follows the *Public read surface* rule:
+`_directory`, `_timelineEntries`, and `_slugIndex` are new collections with no rules yet. The shape for every projection collection follows the *Public read surface* rule:
 
 ```
 match /universes/{universeId}/_directory/{rowId} {
@@ -289,7 +285,7 @@ match /universes/{universeId}/_directory/{rowId} {
 }
 ```
 
-Same pattern for `_timelineEntries` and `_timelineLaneEntries`. `_slugIndex` is member-only on both read and write — it has no public consumer because slug lookups happen by exact doc ID, never by query, so a public read rule would only enable enumeration without enabling any feature.
+Same pattern for `_timelineEntries`. The retired `_timelineLaneEntries` collection keeps a read/delete-only rule so legacy rows in older universes can still be swept and purged. `_slugIndex` is member-only on both read and write — it has no public consumer because slug lookups happen by exact doc ID, never by query, so a public read rule would only enable enumeration without enabling any feature.
 
 ## Projection writers and rebuild
 
@@ -302,7 +298,7 @@ Rebuild has two forms:
 
 Both forms recompute `sourceFingerprint` from canonical projected fields and mirror `canonical.updatedAt` onto every projection row, so rebuilt rows aren't immediately flagged as stale by drift detectors. Both forms chunk writes via `writeBatch` (≤450 ops to leave headroom under the 500-op cap).
 
-Both forms run an orphan-sweep pass per kind after the canonical walk: rows in `_directory` / `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` whose `entityId` no longer matches any canonical doc (or whose lane `laneKey` is no longer in the entity's current `plotlineIds`) are deleted. Without this, deleted entities and removed-plotline lanes leak as stale rows that no live edit ever cleans up. The `rebuildForCategoryRename` path is the one exception — it's a targeted refresh of one key, not a full rebuild, so it skips the sweep.
+Both forms run an orphan-sweep pass per kind after the canonical walk: rows in `_directory` / `_timelineEntries` / `_slugIndex` whose `entityId` no longer matches any canonical doc are deleted. Without this, deleted entities leak as stale rows that no live edit ever cleans up. The CLI sweep additionally deletes every row it finds in the retired `_timelineLaneEntries` collection — those are legacy leftovers from before the per-lane projection was removed. The `rebuildForCategoryRename` path is the one exception — it's a targeted refresh of one key, not a full rebuild, so it skips the sweep.
 
 ## Search service
 

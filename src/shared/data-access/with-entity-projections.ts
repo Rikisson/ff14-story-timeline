@@ -9,20 +9,17 @@ import {
   buildProjectionRows,
   DirectoryRowInputs,
   entityRowKey,
-  laneIdsOf,
   slugRowKey,
   TimelineRowInputs,
-  UNASSIGNED_LANE_KEY,
 } from './projection-rows';
 
-export { UNASSIGNED_LANE_KEY };
 export type { DirectoryRowInputs, TimelineRowInputs };
 
 /**
  * Projection-write primitives. Per `docs/backend-rules.md` *Write
  * discipline* + *Atomic slug uniqueness*: every canonical entity write
- * fans out to `_directory`, `_timelineEntries`, `_timelineLaneEntries`,
- * and `_slugIndex` rows inside one `runTransaction`. The fan-out is
+ * fans out to `_directory`, `_timelineEntries`, and `_slugIndex` rows
+ * inside one `runTransaction`. The fan-out is
  * factored so callers can compose it with their own per-kind logic in
  * the same transaction — this is not a closed helper that hides the
  * transaction.
@@ -58,7 +55,7 @@ export type { DirectoryRowInputs, TimelineRowInputs };
  *
  * Firestore's reads-before-writes rule still applies: caller tx.gets
  * must precede the `applyEntityWrite` call; `applyEntityWrite` does its
- * own reads first (canonical, directory, timeline, slug-claim) and then
+ * own reads first (canonical, directory, slug-claim) and then
  * all writes.
  *
  * ## The convenience wrappers
@@ -72,7 +69,6 @@ export type { DirectoryRowInputs, TimelineRowInputs };
 
 const DIRECTORY = '_directory';
 const TIMELINE = '_timelineEntries';
-const LANE = '_timelineLaneEntries';
 const SLUG_INDEX = '_slugIndex';
 
 const TIMELINE_KINDS: ReadonlySet<EntityKind> = new Set(['event', 'story']);
@@ -141,10 +137,9 @@ export async function applyEntityWrite(
     : null;
   const newSlugRef = doc(firestore, 'universes', universeId, SLUG_INDEX, slugRowKey(kind, slug));
 
-  const [canonicalSnap, directorySnap, timelineSnap, newSlugSnap] = await Promise.all([
+  const [canonicalSnap, directorySnap, newSlugSnap] = await Promise.all([
     tx.get(canonicalRef),
     tx.get(directoryRef),
-    timelineRef ? tx.get(timelineRef) : Promise.resolve(null),
     tx.get(newSlugRef),
   ]);
 
@@ -157,9 +152,6 @@ export async function applyEntityWrite(
     oldSlugRef = doc(firestore, 'universes', universeId, SLUG_INDEX, slugRowKey(kind, prevSlug));
   }
 
-  const prevLaneIds = timelineSnap && timelineSnap.exists()
-    ? laneIdsOf((timelineSnap.data() as TimelineRowInputs).plotlineIds ?? [])
-    : [];
   const prevFingerprint = directorySnap.exists()
     ? ((directorySnap.data() as { sourceFingerprint?: string }).sourceFingerprint)
     : undefined;
@@ -201,23 +193,6 @@ export async function applyEntityWrite(
   tx.set(directoryRef, built.directoryRow);
   if (timelineRef && built.timelineRow) {
     tx.set(timelineRef, built.timelineRow);
-
-    const newLaneKeys = new Set(built.laneRows.map((l) => l.laneKey));
-    for (const lane of built.laneRows) {
-      const laneRef = doc(firestore, 'universes', universeId, LANE, lane.rowKey);
-      tx.set(laneRef, lane.row);
-    }
-    for (const laneId of prevLaneIds) {
-      if (newLaneKeys.has(laneId)) continue;
-      const laneRef = doc(
-        firestore,
-        'universes',
-        universeId,
-        LANE,
-        `${laneId}_${kind}_${id}`,
-      );
-      tx.delete(laneRef);
-    }
   }
 }
 
@@ -241,17 +216,11 @@ export async function applyEntityDelete(
   const prevSlug = prevCanonical && typeof prevCanonical['slug'] === 'string'
     ? (prevCanonical['slug'] as string)
     : undefined;
-  const prevLaneIds = timelineSnap.exists()
-    ? laneIdsOf((timelineSnap.data() as TimelineRowInputs).plotlineIds ?? [])
-    : [];
 
   tx.delete(canonicalRef);
   tx.delete(directoryRef);
   if (timelineSnap.exists()) tx.delete(timelineRef);
   if (prevSlug) {
     tx.delete(doc(firestore, 'universes', universeId, SLUG_INDEX, slugRowKey(kind, prevSlug)));
-  }
-  for (const laneId of prevLaneIds) {
-    tx.delete(doc(firestore, 'universes', universeId, LANE, `${laneId}_${kind}_${id}`));
   }
 }

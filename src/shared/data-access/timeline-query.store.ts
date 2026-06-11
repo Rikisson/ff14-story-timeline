@@ -17,7 +17,6 @@ import {
 import { InGameDate } from '@shared/models';
 import { FirebaseService } from '../../app/firebase/firebase.service';
 import { CacheInvalidationBus } from './cache-invalidation.bus';
-import { UNASSIGNED_LANE_KEY } from './projection-rows';
 
 const TIMELINE_COLLECTION = '_timelineEntries';
 const DEFAULT_PAGE_SIZE = 25;
@@ -41,8 +40,6 @@ export interface TimelineRow {
   placeIds: string[];
   draft: boolean;
   visiblePublic: boolean;
-  /** Lane projections carry this; entity projections don't. */
-  laneKey?: string;
 }
 
 export type SortDirection = 'asc' | 'desc';
@@ -64,9 +61,6 @@ export interface TimelineQueryStore {
   refresh: () => Promise<void>;
   loadMore: () => Promise<void>;
 }
-
-/** Sentinel used by the timeline store / caller for the "no plotlines" lane. */
-export { UNASSIGNED_LANE_KEY };
 
 /**
  * Timeline stream store over `_timelineEntries` — the mixed story+event
@@ -248,7 +242,6 @@ interface RawTimelineRow {
   placeIds: string[];
   draft: boolean;
   visiblePublic: boolean;
-  laneKey?: string;
 }
 
 function toTimelineRow(raw: RawTimelineRow): TimelineRow {
@@ -265,6 +258,5 @@ function toTimelineRow(raw: RawTimelineRow): TimelineRow {
     placeIds: raw.placeIds ?? [],
     draft: raw.draft ?? false,
     visiblePublic: raw.visiblePublic ?? false,
-    laneKey: raw.laneKey,
   };
 }

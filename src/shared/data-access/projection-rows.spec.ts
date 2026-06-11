@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProjectionRows, UNASSIGNED_LANE_KEY } from './projection-rows';
+import { buildProjectionRows } from './projection-rows';
 
 const FIXED_TS = 1700000000000;
 
@@ -26,7 +26,6 @@ describe('buildProjectionRows — directory row shape', () => {
     });
     expect(out.directoryRow['sourceFingerprint']).toMatch(/^[0-9a-f]{12}$/);
     expect(out.timelineRow).toBeNull();
-    expect(out.laneRows).toEqual([]);
   });
 
   it('drops draft entities from visiblePublic and tags the row', async () => {
@@ -78,7 +77,7 @@ describe('buildProjectionRows — directory row shape', () => {
   });
 });
 
-describe('buildProjectionRows — timeline + lane fan-out', () => {
+describe('buildProjectionRows — timeline row', () => {
   const baseTimeline = {
     title: 'Opening',
     inGameDate: { era: 'e1', year: 1577 },
@@ -89,7 +88,7 @@ describe('buildProjectionRows — timeline + lane fan-out', () => {
     placeIds: ['p1'],
   };
 
-  it('emits one lane row per plotline id', async () => {
+  it('carries the plotline / character / place id arrays', async () => {
     const out = await buildProjectionRows(
       {
         kind: 'story',
@@ -101,28 +100,14 @@ describe('buildProjectionRows — timeline + lane fan-out', () => {
       FIXED_TS,
     );
 
-    expect(out.laneRows.map((l) => l.laneKey)).toEqual(['pl-a', 'pl-b']);
-    expect(out.laneRows[0].rowKey).toBe('pl-a_story_s1');
-    expect(out.laneRows[0].row).toMatchObject({ laneKey: 'pl-a', plotlineIds: ['pl-a', 'pl-b'] });
+    expect(out.timelineRow).toMatchObject({
+      plotlineIds: ['pl-a', 'pl-b'],
+      characterIds: ['c1'],
+      placeIds: ['p1'],
+    });
   });
 
-  it('emits a single __unassigned__ lane row when plotlineIds is empty', async () => {
-    const out = await buildProjectionRows(
-      {
-        kind: 'event',
-        id: 'e1',
-        slug: 'fall',
-        directory: { label: 'Fall' },
-        timeline: { ...baseTimeline, plotlineIds: [] },
-      },
-      FIXED_TS,
-    );
-    expect(out.laneRows).toHaveLength(1);
-    expect(out.laneRows[0].laneKey).toBe(UNASSIGNED_LANE_KEY);
-    expect(out.laneRows[0].rowKey).toBe(`${UNASSIGNED_LANE_KEY}_event_e1`);
-  });
-
-  it('mirrors draft + visiblePublic onto timeline and lane rows', async () => {
+  it('mirrors draft + visiblePublic onto the timeline row', async () => {
     const out = await buildProjectionRows(
       {
         kind: 'story',
@@ -134,7 +119,6 @@ describe('buildProjectionRows — timeline + lane fan-out', () => {
       FIXED_TS,
     );
     expect(out.timelineRow).toMatchObject({ draft: true, visiblePublic: false });
-    expect(out.laneRows[0].row).toMatchObject({ visiblePublic: false });
   });
 });
 
@@ -203,7 +187,5 @@ describe('buildProjectionRows — fingerprint determinism', () => {
     );
     expect(out.directoryRow['sourceFingerprint']).toBe(out.fingerprint);
     expect(out.timelineRow!['sourceFingerprint']).toBe(out.fingerprint);
-    // Lane rows are spread from timelineRow so they inherit the fingerprint.
-    expect(out.laneRows[0].row['sourceFingerprint']).toBe(out.fingerprint);
   });
 });

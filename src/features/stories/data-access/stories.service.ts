@@ -83,7 +83,7 @@ export class StoriesService {
   /**
    * Save story metadata + content in one `runTransaction`. The OCC version
    * check, the canonical metadata write, the `_directory` /
-   * `_timelineEntries` / `_timelineLaneEntries` / `_slugIndex` fan-out
+   * `_timelineEntries` / `_slugIndex` fan-out
    * (via `applyEntityWrite`), and the `_content/main` subdoc write all
    * commit or all fail together.
    */

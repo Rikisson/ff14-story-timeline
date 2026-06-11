@@ -213,11 +213,10 @@ service cloud.firestore {
                       && (isUniverseActive(universeId) || isPendingCleanup(universeId));
       }
 
+      // Retired projection — never written anymore; members can still list
+      // and delete leftover rows so legacy universes purge fully.
       match /_timelineLaneEntries/{rowId} {
-        allow read: if resource.data.visiblePublic == true || isMember(universeId) || isAdmin();
-        allow create, update: if isMember(universeId) && isUniverseActive(universeId);
-        allow delete: if isMember(universeId)
-                      && (isUniverseActive(universeId) || isPendingCleanup(universeId));
+        allow read, delete: if isMember(universeId) || isAdmin();
       }
 
       // Slug uniqueness index — member-only because lookups happen by exact doc ID

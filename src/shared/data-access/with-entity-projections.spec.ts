@@ -5,7 +5,6 @@ import { SlugTakenError } from '@shared/models';
 import {
   applyEntityDelete,
   applyEntityWrite,
-  UNASSIGNED_LANE_KEY,
 } from './with-entity-projections';
 import type { DirectoryRowInputs, TimelineRowInputs } from './projection-rows';
 
@@ -67,8 +66,6 @@ function fixedInputs(
 const U = 'universes/u1';
 const dirPath = (kind: string, id: string) => `${U}/_directory/${kind}_${id}`;
 const timelinePath = (kind: string, id: string) => `${U}/_timelineEntries/${kind}_${id}`;
-const lanePath = (lane: string, kind: string, id: string) =>
-  `${U}/_timelineLaneEntries/${lane}_${kind}_${id}`;
 const slugPath = (kind: string, slug: string) => `${U}/_slugIndex/${kind}_${slug}`;
 
 beforeEach(() => {
@@ -112,7 +109,7 @@ describe('applyEntityWrite —create', () => {
     expect(ops[timelinePath('character', 'c1')]).toBeUndefined();
   });
 
-  it('writes timeline + lane rows for a story', async () => {
+  it('writes the timeline row for a story', async () => {
     await applyEntityWrite(fakeTx as never, firestore, {
       universeId: 'u1',
       kind: 'story',
@@ -142,39 +139,6 @@ describe('applyEntityWrite —create', () => {
       visiblePublic: true,
       draft: false,
     });
-    expect(ops[lanePath('pl-arr', 'story', 's1')].data).toMatchObject({
-      laneKey: 'pl-arr',
-      plotlineIds: ['pl-arr', 'pl-hw'],
-    });
-    expect(ops[lanePath('pl-hw', 'story', 's1')].data).toMatchObject({
-      laneKey: 'pl-hw',
-      plotlineIds: ['pl-arr', 'pl-hw'],
-    });
-  });
-
-  it('writes an __unassigned__ lane row when plotlineIds is empty', async () => {
-    await applyEntityWrite(fakeTx as never, firestore, {
-      universeId: 'u1',
-      kind: 'event',
-      id: 'e1',
-      canonicalCollection: 'events',
-      patch: { slug: 'fall', name: 'Fall' },
-      slug: 'fall',
-      buildInputs: fixedInputs(
-        { label: 'Fall' },
-        {
-          title: 'Fall',
-          inGameDate: { era: 'e1', year: 1572 },
-          dateSortKey: 'k',
-          dateKnown: true,
-          plotlineIds: [],
-          characterIds: [],
-          placeIds: [],
-        },
-      ),
-    });
-
-    expect(opsByPath()[lanePath(UNASSIGNED_LANE_KEY, 'event', 'e1')]).toBeDefined();
   });
 
   it('marks drafts with visiblePublic=false on directory and timeline rows', async () => {
@@ -202,10 +166,6 @@ describe('applyEntityWrite —create', () => {
     const ops = opsByPath();
     expect(ops[dirPath('story', 's-draft')].data).toMatchObject({ visiblePublic: false, draft: true });
     expect(ops[timelinePath('story', 's-draft')].data).toMatchObject({ visiblePublic: false, draft: true });
-    expect(ops[lanePath(UNASSIGNED_LANE_KEY, 'story', 's-draft')].data).toMatchObject({
-      visiblePublic: false,
-      draft: true,
-    });
   });
 });
 
@@ -369,68 +329,13 @@ describe('applyEntityWrite —fingerprint diff', () => {
   });
 });
 
-describe('applyEntityWrite —lane diff', () => {
-  it('deletes lanes the entity left and writes new lanes when plotlineIds change', async () => {
-    await applyEntityWrite(fakeTx as never, firestore, {
-      universeId: 'u1',
-      kind: 'story',
-      id: 's1',
-      canonicalCollection: 'stories',
-      patch: { slug: 'opening', title: 'Opening', draft: false },
-      slug: 'opening',
-      buildInputs: fixedInputs(
-        { label: 'Opening', draft: false },
-        {
-          title: 'Opening',
-          inGameDate: { era: 'e1', year: 1577 },
-          dateSortKey: 'k1',
-          dateKnown: true,
-          plotlineIds: ['pl-a', 'pl-b'],
-          characterIds: [],
-          placeIds: [],
-        },
-      ),
-    });
-
-    recordedOps = [];
-
-    await applyEntityWrite(fakeTx as never, firestore, {
-      universeId: 'u1',
-      kind: 'story',
-      id: 's1',
-      canonicalCollection: 'stories',
-      patch: { slug: 'opening', title: 'Opening v2', draft: false },
-      slug: 'opening',
-      buildInputs: fixedInputs(
-        { label: 'Opening v2', draft: false }, // label change → fingerprint differs
-        {
-          title: 'Opening v2',
-          inGameDate: { era: 'e1', year: 1577 },
-          dateSortKey: 'k1',
-          dateKnown: true,
-          plotlineIds: ['pl-b', 'pl-c'], // pl-a removed, pl-c added
-          characterIds: [],
-          placeIds: [],
-        },
-      ),
-    });
-
-    const ops = opsByPath();
-    expect(ops[lanePath('pl-a', 'story', 's1')].op).toBe('delete');
-    expect(ops[lanePath('pl-b', 'story', 's1')].op).toBe('set');
-    expect(ops[lanePath('pl-c', 'story', 's1')].op).toBe('set');
-  });
-});
-
 describe('applyEntityDelete', () => {
-  it('deletes canonical, directory, timeline, slug-index, and every lane row', async () => {
+  it('deletes canonical, directory, timeline, and slug-index rows', async () => {
     setDocs({
       [`${U}/stories/s1`]: { slug: 'opening', title: 'Opening' },
       [dirPath('story', 's1')]: { kind: 'story', entityId: 's1' },
       [timelinePath('story', 's1')]: { kind: 'story', plotlineIds: ['pl-a', 'pl-b'] },
       [slugPath('story', 'opening')]: { entityId: 's1' },
-      [lanePath('pl-a', 'story', 's1')]: { laneKey: 'pl-a' },
-      [lanePath('pl-b', 'story', 's1')]: { laneKey: 'pl-b' },
     });
 
     await applyEntityDelete(fakeTx as never, firestore, {
@@ -445,8 +350,6 @@ describe('applyEntityDelete', () => {
     expect(ops[dirPath('story', 's1')].op).toBe('delete');
     expect(ops[timelinePath('story', 's1')].op).toBe('delete');
     expect(ops[slugPath('story', 'opening')].op).toBe('delete');
-    expect(ops[lanePath('pl-a', 'story', 's1')].op).toBe('delete');
-    expect(ops[lanePath('pl-b', 'story', 's1')].op).toBe('delete');
   });
 
   it('handles delete of an entity with no timeline row (non-timeline kind)', async () => {
